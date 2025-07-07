@@ -41,7 +41,12 @@ namespace CatalogoArticulosBC.Adapters.Output.Persistence.InMemory
             return Task.CompletedTask;
         }
 
-        public Task<ProductoVariante?> GetProductoVarianteBySkuAsync(SKU sku) => throw new NotImplementedException();
+        public Task<ProductoVariante?> GetProductoVarianteBySkuAsync(SKU sku)
+{
+    if (_productos.TryGetValue(sku, out var v) && v is ProductoVariante pv && pv.Sku == sku)
+        return Task.FromResult<ProductoVariante?>(pv);
+    return Task.FromResult<ProductoVariante?>(null);
+}
         public Task AddProductoVarianteAsync(ProductoVariante producto)
         {
         if (!_productos.TryAdd(producto.Sku, producto))

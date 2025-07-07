@@ -40,7 +40,7 @@ namespace CatalogoArticulosBC.Tests.UnitTests.UseCases
             var varId = await useCase.HandleAsync(dto);
 
             // Assert
-            var variante = await repo.GetProductoSimpleBySkuAsync(new SKU("PADRE01-ROJO-M"));
+            var variante = await repo.GetProductoVarianteBySkuAsync(new SKU("PADRE01-ROJO-M"));
             Assert.That(variante, Is.Not.Null);
             Assert.That(uow.WasCommitted, Is.True);
         }
@@ -52,7 +52,7 @@ namespace CatalogoArticulosBC.Tests.UnitTests.UseCases
             var repo = new InMemoryCatalogoArticulosRepository();
             var uow  = new InMemoryUnitOfWork();
             var useCase = new CrearProductoVarianteUseCase(repo, uow);
-            var dto = new CrearProductoVarianteDto("SINEXISTIR", Guid.NewGuid(), new List<KeyValuePair<string,string>>());
+            var dto = new CrearProductoVarianteDto("PADREX-ROJO-M", Guid.NewGuid(), new List<KeyValuePair<string,string>>());
 
             // Act & Assert
             Assert.That(
