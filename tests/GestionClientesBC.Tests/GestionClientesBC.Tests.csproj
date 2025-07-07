@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
     <LangVersion>latest</LangVersion>
-    <ImplicitUsings>enable</ImplicitUsings>
+    <ImplicitUsings>disable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
@@ -18,6 +18,12 @@
 
   <ItemGroup>
     <Using Include="NUnit.Framework" />
+  </ItemGroup>
+
+  <ItemGroup>
+   <ProjectReference Include="..\..\src\GestionClientesBC\Application\GestionClientesBC.Application.csproj" />
+   <ProjectReference Include="..\..\src\GestionClientesBC\Domain\GestionClientesBC.Domain.csproj" />
+   <ProjectReference Include="..\..\src\GestionClientesBC\Adapters\GestionClientesBC.Adapters.csproj" />
   </ItemGroup>
 
 </Project>
