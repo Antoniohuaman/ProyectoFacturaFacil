@@ -1,7 +1,7 @@
 // src/CatalogoArticulosBC/Domain/ValueObjects/AfectacionIGV.cs
 using System;
 
-namespace CatalogoArticulosBC.Domain<ValueObjects>
+namespace CatalogoArticulosBC.Domain.ValueObjects
 {
     public sealed record AfectacionIGV
     {

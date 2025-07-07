@@ -6,6 +6,7 @@ using CatalogoArticulosBC.Application.Interfaces;
 using CatalogoArticulosBC.Domain.Aggregates;
 using CatalogoArticulosBC.Domain.ValueObjects;
 
+
 namespace CatalogoArticulosBC.Application.UseCases
 {
     /// <summary>
@@ -37,7 +38,8 @@ namespace CatalogoArticulosBC.Application.UseCases
             var cuenta    = new CuentaContable(dto.CuentaContable);
             var centro    = new CentroCosto(dto.CentroCosto);
             var presupuesto = new Presupuesto(dto.Presupuesto);
-            var peso      = new Peso(dto.Peso);
+            var peso = new Peso(dto.Peso)
+            ;
 
             var producto = new ProductoSimple(
                 dto.Sku,
@@ -49,7 +51,9 @@ namespace CatalogoArticulosBC.Application.UseCases
                 cuenta,
                 centro,
                 presupuesto,
-                peso);
+                peso,
+                dto.Tipo
+                );
 
             // 3. Persistir y commitear
             await _repo.AddProductoSimpleAsync(producto);

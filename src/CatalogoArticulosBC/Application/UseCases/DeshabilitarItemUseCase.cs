@@ -2,6 +2,7 @@
 using System;
 using System.Threading.Tasks;
 using CatalogoArticulosBC.Application.Interfaces;
+using CatalogoArticulosBC.Domain.Entities;
 
 namespace CatalogoArticulosBC.Application.UseCases
 {

@@ -2,17 +2,27 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using CatalogoArticulosBC.Application.Interfaces;
 using CatalogoArticulosBC.Domain.Aggregates;
 using CatalogoArticulosBC.Domain.ValueObjects;
+using CatalogoArticulosBC.Domain.Entities;
 
 namespace CatalogoArticulosBC.Adapters.Output.Persistence.InMemory
 {
     public class InMemoryCatalogoArticulosRepository : ICatalogoArticulosRepository
     {
-        // Diccionario clave = SKU, valor = objeto de dominio (ProductoSimple, Variante o Combo)
         private readonly ConcurrentDictionary<SKU, object> _productos = new();
+
+        public Task AddAsync(ProductoSimple producto, CancellationToken ct = default)
+            => AddProductoSimpleAsync(producto);
+
+        public Task<ProductoSimple?> GetBySkuAsync(string sku, CancellationToken ct = default)
+        {
+            var key = new SKU(sku);
+            return GetProductoSimpleBySkuAsync(key);
+        }
 
         public Task<ProductoSimple?> GetProductoSimpleBySkuAsync(SKU sku)
         {
@@ -28,11 +38,11 @@ namespace CatalogoArticulosBC.Adapters.Output.Persistence.InMemory
             return Task.CompletedTask;
         }
 
-        public Task UpdateProductoSimpleAsync(ProductoSimple producto)
-        {
-            _productos[producto.Sku] = producto;
-            return Task.CompletedTask;
-        }
+        public Task<ProductoVariante?> GetProductoVarianteBySkuAsync(SKU sku) => throw new NotImplementedException();
+        public Task AddProductoVarianteAsync(ProductoVariante producto) => throw new NotImplementedException();
+        public Task<ProductoCombo?> GetProductoComboBySkuAsync(SKU sku) => throw new NotImplementedException();
+        public Task AddProductoComboAsync(ProductoCombo producto) => throw new NotImplementedException();
+        public Task UpdateAsync(object producto) => throw new NotImplementedException();
 
         public Task<IReadOnlyCollection<ProductoSimple>> ListarProductosSimplesAsync()
         {
@@ -42,7 +52,8 @@ namespace CatalogoArticulosBC.Adapters.Output.Persistence.InMemory
             return Task.FromResult((IReadOnlyCollection<ProductoSimple>)lista);
         }
 
-        // Nota: Si tienes métodos específicos para variantes y combos, repite el patrón:
-        // GetProductoVarianteBySkuAsync, AddProductoVarianteAsync, etc.
+        public Task<IReadOnlyCollection<object>> ListarAsync() => throw new NotImplementedException();
+        public Task<ProductoSimple?> GetByIdAsync(Guid productoId) => throw new NotImplementedException();
+        public Task<IReadOnlyCollection<ProductoSimple>> ListarAsync(int pagina, int tamano, string filtrosJson) => throw new NotImplementedException();
     }
 }

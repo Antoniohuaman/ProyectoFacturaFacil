@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using CatalogoArticulosBC.Application.Interfaces;
 using CatalogoArticulosBC.Domain.Aggregates;
 
+
 namespace CatalogoArticulosBC.Application.UseCases
 {
     /// <summary>

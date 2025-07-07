@@ -1,3 +1,4 @@
+using System.Threading;
 using System.Threading.Tasks;
 using CatalogoArticulosBC.Application.Interfaces;
 
@@ -5,12 +6,15 @@ namespace CatalogoArticulosBC.Adapters.Output.Persistence.InMemory
 {
     public class InMemoryUnitOfWork : IUnitOfWork
     {
-        // Los tests verificarán que esto quede en true tras el Commit
-        public bool WasCommitted { get; private set; }
+        public Task SaveChangesAsync(CancellationToken cancellationToken = default)
+        {
+            // Implementación real o temporal
+            return Task.CompletedTask;
+        }
 
         public Task CommitAsync()
         {
-            WasCommitted = true;
+            // Implementación real o temporal
             return Task.CompletedTask;
         }
     }

@@ -6,6 +6,7 @@ using CatalogoArticulosBC.Application.DTOs;
 using CatalogoArticulosBC.Application.Interfaces;
 using CatalogoArticulosBC.Domain.Aggregates;
 using CatalogoArticulosBC.Domain.ValueObjects;
+using CatalogoArticulosBC.Domain.Entities;
 
 namespace CatalogoArticulosBC.Application.UseCases
 {

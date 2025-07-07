@@ -13,18 +13,20 @@ namespace CatalogoArticulosBC.Application.DTOs
             string cuentaContable,
             string centroCosto,
             decimal presupuesto,
-            decimal peso)
+            decimal peso,
+            string tipo)
         {
-            Sku              = sku;
-            Nombre           = nombre;
-            Descripcion      = descripcion;
-            UnidadMedida     = unidadMedida;
-            AfectacionIgv    = afectacionIgv;
-            CodigoSunat      = codigoSunat;
-            CuentaContable   = cuentaContable;
-            CentroCosto      = centroCosto;
-            Presupuesto      = presupuesto;
-            Peso             = peso;
+            Sku = sku;
+            Nombre = nombre;
+            Descripcion = descripcion;
+            UnidadMedida = unidadMedida;
+            AfectacionIgv = afectacionIgv;
+            CodigoSunat = codigoSunat;
+            CuentaContable = cuentaContable;
+            CentroCosto = centroCosto;
+            Presupuesto = presupuesto;
+            Peso = peso;
+            Tipo = tipo;
         }
 
         public string Sku { get; }
@@ -37,5 +39,6 @@ namespace CatalogoArticulosBC.Application.DTOs
         public string CentroCosto { get; }
         public decimal Presupuesto { get; }
         public decimal Peso { get; }
+        public string Tipo { get; }
     }
 }

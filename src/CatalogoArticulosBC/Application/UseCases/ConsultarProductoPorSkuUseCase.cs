@@ -5,6 +5,7 @@ using CatalogoArticulosBC.Application.DTOs;
 using CatalogoArticulosBC.Application.Interfaces;
 using CatalogoArticulosBC.Domain.ValueObjects;
 
+
 namespace CatalogoArticulosBC.Application.UseCases
 {
     /// <summary>
@@ -19,7 +20,7 @@ namespace CatalogoArticulosBC.Application.UseCases
 
         public async Task<ProductoDetalleDto> HandleAsync(string sku)
         {
-            var item = await _repo.GetBySkuAsync(new SKU(sku))
+            var item = await _repo.GetBySkuAsync(sku)
                        ?? throw new InvalidOperationException($"SKU {sku} no encontrado.");  // :contentReference[oaicite:6]{index=6}
 
             return new ProductoDetalleDto(

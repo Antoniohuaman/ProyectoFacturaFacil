@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using CatalogoArticulosBC.Application.DTOs;
 using CatalogoArticulosBC.Application.Interfaces;
+using CatalogoArticulosBC.Domain.Entities;
 
 namespace CatalogoArticulosBC.Application.UseCases
 {

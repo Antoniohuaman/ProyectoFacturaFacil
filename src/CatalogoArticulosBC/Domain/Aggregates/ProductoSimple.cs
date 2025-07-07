@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using CatalogoArticulosBC.Domain.Events;
 using CatalogoArticulosBC.Domain.ValueObjects;
+using CatalogoArticulosBC.Domain.Entities;
 
 namespace CatalogoArticulosBC.Domain.Aggregates
 {
@@ -22,6 +23,7 @@ namespace CatalogoArticulosBC.Domain.Aggregates
         public Presupuesto Presupuesto { get; }
         public Peso Peso { get; private set; }
         public bool Activo { get; private set; } = true;
+        public string Tipo { get; set; }
         public IReadOnlyCollection<MultimediaProducto> Multimedia => _multimedia.AsReadOnly();
 
         public ProductoSimple(
@@ -34,7 +36,8 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             CuentaContable cuentaContable,
             CentroCosto centroCosto,
             Presupuesto presupuesto,
-            Peso peso)
+            Peso peso,
+            string tipo)
         {
             if (string.IsNullOrWhiteSpace(sku)) throw new ArgumentException("SKU no puede estar vacío.", nameof(sku));
             ProductoId    = Guid.NewGuid();
@@ -47,7 +50,8 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             CuentaContable= cuentaContable;
             CentroCosto   = centroCosto;
             Presupuesto   = presupuesto;
-            Peso          = peso;
+            Peso = peso;
+            Tipo          = tipo ?? throw new ArgumentNullException(nameof(tipo)); // <-- asigna aquí;
 
             var ev = new ProductoCreado(ProductoId, Sku);
             // Dispatch(ev);
