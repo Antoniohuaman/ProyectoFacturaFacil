@@ -1,18 +1,15 @@
-namespace CatalogoArticulosBC.Domain.ValueObjects
+// src/CatalogoArticulosBC/Domain/ValueObjects/AfectacionIGV.cs
+using System;
+
+namespace CatalogoArticulosBC.Domain<ValueObjects>
 {
-    public record AfectacionIGV
+    public sealed record AfectacionIGV
     {
-        public string Codigo { get; }
-        private AfectacionIGV(string codigo) => Codigo = codigo;
+        public string Value { get; }
 
-        public static AfectacionIGV From(string codigo)
+        public AfectacionIGV(string value)
         {
-            var validos = new[] { "10", "20", "30" };
-            if (!validos.Contains(codigo))
-                throw new ArgumentException("Código de afectación IGV inválido.", nameof(codigo));
-            return new AfectacionIGV(codigo);
+            Value = value ?? throw new ArgumentNullException(nameof(value));
         }
-
-        public override string ToString() => Codigo;
     }
 }

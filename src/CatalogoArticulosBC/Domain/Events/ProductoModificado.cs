@@ -1,7 +1,16 @@
+// src/CatalogoArticulosBC/Domain/Events/ProductoModificado.cs
+using System;
+
 namespace CatalogoArticulosBC.Domain.Events
 {
-    public record ProductoModificado(Guid Id) : IDomainEvent
+    public sealed class ProductoModificado : IDomainEvent
     {
-        public DateTime OccurredOn { get; init; } = DateTime.UtcNow;
+        public Guid ProductoId { get; }
+        public DateTime OccurredOn { get; } = DateTime.UtcNow;
+
+        public ProductoModificado(Guid productoId)
+        {
+            ProductoId = productoId;
+        }
     }
-}
+}   

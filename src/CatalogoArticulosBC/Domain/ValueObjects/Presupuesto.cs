@@ -1,17 +1,16 @@
+// src/CatalogoArticulosBC/Domain/ValueObjects/Presupuesto.cs
+using System;
+
 namespace CatalogoArticulosBC.Domain.ValueObjects
 {
-    public record Presupuesto
+    public sealed record Presupuesto
     {
-        public decimal Monto { get; }
-        private Presupuesto(decimal monto) => Monto = monto;
+        public decimal Value { get; }
 
-        public static Presupuesto From(decimal monto)
+        public Presupuesto(decimal value)
         {
-            if (monto < 0)
-                throw new ArgumentException("Presupuesto no puede ser negativo.", nameof(monto));
-            return new Presupuesto(monto);
+            if (value < 0) throw new ArgumentException("Presupuesto no puede ser negativo.", nameof(value));
+            Value = value;
         }
-
-        public override string ToString() => Monto.ToString("F2");
     }
 }

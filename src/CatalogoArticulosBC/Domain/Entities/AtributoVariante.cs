@@ -1,19 +1,18 @@
+using System;
+
 namespace CatalogoArticulosBC.Domain.Entities
 {
-    public class AtributoVariante
+    public sealed class AtributoVariante
     {
-        public string Nombre { get; private set; }
-        public string Valor { get; private set; }
+        public string Nombre  { get; }
+        public string Valor   { get; }
 
         public AtributoVariante(string nombre, string valor)
         {
-            if (string.IsNullOrWhiteSpace(nombre))
-                throw new ArgumentException("Nombre de atributo inválido.", nameof(nombre));
-            if (string.IsNullOrWhiteSpace(valor))
-                throw new ArgumentException("Valor de atributo inválido.", nameof(valor));
-
-            Nombre = nombre;
-            Valor = valor;
+            Nombre = !string.IsNullOrWhiteSpace(nombre)
+                ? nombre
+                : throw new ArgumentException("El nombre no puede estar vacío.", nameof(nombre));
+            Valor  = valor ?? throw new ArgumentNullException(nameof(valor));
         }
     }
 }

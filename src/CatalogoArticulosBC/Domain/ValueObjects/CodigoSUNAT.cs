@@ -1,17 +1,15 @@
-namespace CatalogoArticulosBC.Domain.ValueObjects
+// src/CatalogoArticulosBC/Domain/ValueObjects/CodigoSUNAT.cs
+using System;
+
+namespace CatalogoArticulosBC.Domain<ValueObjects>
 {
-    public record CodigoSUNAT
+    public sealed record CodigoSUNAT
     {
         public string Value { get; }
-        private CodigoSUNAT(string value) => Value = value;
 
-        public static CodigoSUNAT From(string code)
+        public CodigoSUNAT(string value)
         {
-            if (string.IsNullOrWhiteSpace(code) || code.Length != 8)
-                throw new ArgumentException("Código SUNAT inválido.", nameof(code));
-            return new CodigoSUNAT(code);
+            Value = value ?? throw new ArgumentNullException(nameof(value));
         }
-
-        public override string ToString() => Value;
     }
 }

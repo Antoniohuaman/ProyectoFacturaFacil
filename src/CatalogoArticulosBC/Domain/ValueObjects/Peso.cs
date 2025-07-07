@@ -1,17 +1,16 @@
+// src/CatalogoArticulosBC/Domain/ValueObjects/Peso.cs
+using System;
+
 namespace CatalogoArticulosBC.Domain.ValueObjects
 {
-    public record Peso
-    {
-        public double Valor { get; }
-        private Peso(double valor) => Valor = valor;
+    public sealed record Peso
+   {
+        public decimal Value { get; }
 
-        public static Peso From(double valor)
+        public Peso(decimal value)
         {
-            if (valor <= 0)
-                throw new ArgumentException("Peso debe ser mayor que cero.", nameof(valor));
-            return new Peso(valor);
+            if (value < 0) throw new ArgumentException("Peso no puede ser negativo.", nameof(value));
+            Value = value;
         }
-
-        public override string ToString() => Valor.ToString("F2");
     }
 }

@@ -1,17 +1,15 @@
+// src/CatalogoArticulosBC/Domain/ValueObjects/CentroCosto.cs
+using System;
+
 namespace CatalogoArticulosBC.Domain.ValueObjects
 {
-    public record CentroCosto
+    public sealed record CentroCosto
     {
-        public string Codigo { get; }
-        private CentroCosto(string codigo) => Codigo = codigo;
+        public string Value { get; }
 
-        public static CentroCosto From(string codigo)
+        public CentroCosto(string value)
         {
-            if (string.IsNullOrWhiteSpace(codigo))
-                throw new ArgumentException("Centro de costo inválido.", nameof(codigo));
-            return new CentroCosto(codigo);
+            Value = value ?? throw new ArgumentNullException(nameof(value));
         }
-
-        public override string ToString() => Codigo;
     }
 }

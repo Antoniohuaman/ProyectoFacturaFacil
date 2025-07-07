@@ -1,17 +1,15 @@
+// src/CatalogoArticulosBC/Domain/ValueObjects/UnidadMedida.cs
+using System;
+
 namespace CatalogoArticulosBC.Domain.ValueObjects
 {
-    public record UnidadMedida
+    public sealed record UnidadMedida
     {
-        public string Valor { get; }
-        private UnidadMedida(string valor) => Valor = valor;
+        public string Value { get; }
 
-        public static UnidadMedida From(string valor)
+        public UnidadMedida(string value)
         {
-            if (string.IsNullOrWhiteSpace(valor))
-                throw new ArgumentException("Unidad inválida.", nameof(valor));
-            return new UnidadMedida(valor);
+            Value = value ?? throw new ArgumentNullException(nameof(value));
         }
-
-        public override string ToString() => Valor;
     }
 }

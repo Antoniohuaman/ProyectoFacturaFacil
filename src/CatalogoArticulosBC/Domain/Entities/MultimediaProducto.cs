@@ -1,21 +1,25 @@
+// src/CatalogoArticulosBC/Domain/Entities/MultimediaProducto.cs
+using System;
+
 namespace CatalogoArticulosBC.Domain.Entities
 {
-    public class MultimediaProducto
+    public sealed class MultimediaProducto
     {
-        public Guid Id { get; private set; }
-        public string Url { get; private set; }
-        public string Tipo { get; private set; }
+        public Guid MultimediaId  { get; }
+        public Guid ProductoId    { get; }
+        public string Tipo        { get; }
+        public byte[] Contenido   { get; }
 
-        public MultimediaProducto(Guid id, string url, string tipo)
+        public MultimediaProducto(Guid multimediaId, Guid productoId, string tipo, byte[] contenido)
         {
-            if (string.IsNullOrWhiteSpace(url))
-                throw new ArgumentException("URL inválida.", nameof(url));
-            if (string.IsNullOrWhiteSpace(tipo))
-                throw new ArgumentException("Tipo inválido.", nameof(tipo));
-
-            Id = id;
-            Url = url;
-            Tipo = tipo;
+            MultimediaId = multimediaId != Guid.Empty
+                ? multimediaId
+                : throw new ArgumentException("MultimediaId inválido.", nameof(multimediaId));
+            ProductoId = productoId;
+            Tipo = !string.IsNullOrWhiteSpace(tipo)
+                ? tipo
+                : throw new ArgumentException("El tipo no puede estar vacío.", nameof(tipo));
+            Contenido = contenido ?? throw new ArgumentNullException(nameof(contenido));
         }
     }
 }
