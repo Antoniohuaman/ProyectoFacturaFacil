@@ -1,15 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
   </PropertyGroup>
 
   <ItemGroup>
-  <ProjectReference Include="..\..\..\CatalogoArticulosBC.Adapters\CatalogoArticulosBC.Adapters.csproj" />
-  <ProjectReference Include="..\..\..\CatalogoArticulosBC.Domain\CatalogoArticulosBC.Domain.csproj" />
-  <ProjectReference Include="..\..\..\CatalogoArticulosBC.Application\CatalogoArticulosBC.Application.csproj" />
-</ItemGroup>
-
+    <!-- Referencias a tu capa de Application y Domain -->
+    <ProjectReference Include="../../../../Application/CatalogoArticulosBC.Application.csproj" />
+    <ProjectReference Include="../../../../Domain/CatalogoArticulosBC.Domain.csproj" />
+  </ItemGroup>
 </Project>

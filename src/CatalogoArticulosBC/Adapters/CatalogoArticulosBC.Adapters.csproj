@@ -1,15 +1,27 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
   </PropertyGroup>
-  
+
   <ItemGroup>
-  <ProjectReference Include="..\..\CatalogoArticulosBC.Domain\CatalogoArticulosBC.Domain.csproj" />
-  <ProjectReference Include="..\..\CatalogoArticulosBC.Application\CatalogoArticulosBC.Application.csproj" />
-</ItemGroup>
+    <!-- Proyecto de Application y Domain -->
+    <ProjectReference Include="..\Application\CatalogoArticulosBC.Application.csproj" />
+    <ProjectReference Include="..\Domain\CatalogoArticulosBC.Domain.csproj" />
+  </ItemGroup>
 
+  <ItemGroup>
+    <!-- Referencias a los adaptadores concretos -->
+    <ProjectReference Include="Output\Persistence\InMemory\CatalogoArticulosBC.Adapters.InMemory.csproj" />
+    <!-- Si tienes EFCore ya creado, habilítalo igual que en ControlCajaBC: -->
+    <!-- <ProjectReference Include="Output\Persistence\EFCore\CatalogoArticulosBC.Adapters.EFCore\CatalogoArticulosBC.Adapters.EFCore.csproj" /> -->
+  </ItemGroup>
 
+  <ItemGroup>
+    <!-- Excluye el código InMemory de la build principal si prefieres EFCore por defecto -->
+    <Compile Remove="Output\Persistence\InMemory\**\*.cs" />
+  </ItemGroup>
 </Project>
