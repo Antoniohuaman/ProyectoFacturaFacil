@@ -1,7 +1,6 @@
 // tests/CatalogoArticulosBC.Tests/IntegrationTests/ProductoRepositoryIntegrationTests.cs
 using System.Threading.Tasks;
 using NUnit.Framework;
-using CatalogoArticulosBC.Adapters.Output.Persistence.EFCore;
 using CatalogoArticulosBC.Domain.ValueObjects;
 using CatalogoArticulosBC.Domain.Aggregates;
 using CatalogoArticulosBC.Adapters.Output.Persistence.InMemory;
@@ -19,7 +18,7 @@ namespace CatalogoArticulosBC.Tests.IntegrationTests
                 "INT01","Int","Desc",
                 new UnidadMedida("UN"), new AfectacionIGV("10%"),
                 new CodigoSUNAT("3000"), new CuentaContable("40.03"),
-                new CentroCosto("CC03"), new Presupuesto(300m), new Peso(3m)
+                new CentroCosto("CC03"), new Presupuesto(300m), new Peso(3m), "SERVICIO"
             );
 
             // Act

@@ -29,7 +29,8 @@ namespace CatalogoArticulosBC.Tests.UnitTests.UseCases
                 cuentaContable: "40.01",
                 centroCosto: "CC01",
                 presupuesto: 100m,
-                peso: 1.5m
+                peso: 1.5m,
+                tipo: "SERVICIO" // <-- agrega este argumento(incorporado)
             );
 
             // Act
@@ -58,7 +59,8 @@ namespace CatalogoArticulosBC.Tests.UnitTests.UseCases
                 cuentaContable: "40.01",
                 centroCosto: "CC01",
                 presupuesto: 50m,
-                peso: 0.5m
+                peso: 0.5m,
+                tipo: "SERVICIO" // <-- agrega este argumento(incorporado)
             );
             // crear primero
             var initUse = new CrearProductoSimpleUseCase(repo, uow);

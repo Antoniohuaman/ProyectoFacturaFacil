@@ -26,8 +26,11 @@ namespace CatalogoArticulosBC.Adapters.Output.Persistence.InMemory
 
         public Task<ProductoSimple?> GetProductoSimpleBySkuAsync(SKU sku)
         {
-            if (_productos.TryGetValue(sku, out var p) && p is ProductoSimple ps && ps.Sku == sku)
-                return Task.FromResult(ps);
+             if (_productos.TryGetValue(sku, out var p) && p is ProductoSimple ps && ps.Sku == sku)
+                 return Task.FromResult<ProductoSimple?>(ps);
+    // Elimina la siguiente línea porque ProductoVariante no es ProductoSimple
+    // if (_productos.TryGetValue(sku, out var v) && v is ProductoVariante pv && pv.Sku == sku)
+    //     return Task.FromResult<ProductoSimple?>(pv as ProductoSimple);
             return Task.FromResult<ProductoSimple?>(null);
         }
 
@@ -39,7 +42,12 @@ namespace CatalogoArticulosBC.Adapters.Output.Persistence.InMemory
         }
 
         public Task<ProductoVariante?> GetProductoVarianteBySkuAsync(SKU sku) => throw new NotImplementedException();
-        public Task AddProductoVarianteAsync(ProductoVariante producto) => throw new NotImplementedException();
+        public Task AddProductoVarianteAsync(ProductoVariante producto)
+        {
+        if (!_productos.TryAdd(producto.Sku, producto))
+        throw new InvalidOperationException($"El SKU {producto.Sku} ya existe en el catálogo");
+        return Task.CompletedTask;
+        }
         public Task<ProductoCombo?> GetProductoComboBySkuAsync(SKU sku) => throw new NotImplementedException();
         public Task AddProductoComboAsync(ProductoCombo producto) => throw new NotImplementedException();
         public Task UpdateAsync(object producto) => throw new NotImplementedException();

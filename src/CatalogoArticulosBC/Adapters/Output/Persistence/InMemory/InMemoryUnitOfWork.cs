@@ -6,15 +6,16 @@ namespace CatalogoArticulosBC.Adapters.Output.Persistence.InMemory
 {
     public class InMemoryUnitOfWork : IUnitOfWork
     {
+        public bool WasCommitted { get; private set; }
+
         public Task SaveChangesAsync(CancellationToken cancellationToken = default)
         {
-            // Implementación real o temporal
             return Task.CompletedTask;
         }
 
         public Task CommitAsync()
         {
-            // Implementación real o temporal
+            WasCommitted = true;
             return Task.CompletedTask;
         }
     }

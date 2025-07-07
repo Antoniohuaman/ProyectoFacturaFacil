@@ -25,7 +25,8 @@ namespace CatalogoArticulosBC.Tests.UnitTests.UseCases
                 "PADRE01","Padre","Desc",
                 new UnidadMedida("UN"), new AfectacionIGV("10%"),
                 new CodigoSUNAT("2000"), new CuentaContable("40.02"),
-                new CentroCosto("CC02"), new Presupuesto(200m), new Peso(2m)
+                new CentroCosto("CC02"), new Presupuesto(200m), new Peso(2m),
+                "SERVICIO" // <-- agrega este argumento al final
             );
             await repo.AddProductoSimpleAsync(padre);
             var useCase = new CrearProductoVarianteUseCase(repo, uow);

@@ -27,24 +27,30 @@ namespace CatalogoArticulosBC.Application.UseCases
 
         public async Task<Guid> HandleAsync(CrearProductoVarianteDto dto)
         {
-            // 1. Obtener padre y validar estado
-            var padre = await _repo.GetProductoSimpleBySkuAsync(new SKU(dto.SkuVariante.Substring(0, dto.SkuVariante.IndexOf('-'))));
-            if (padre is null)
-                throw new InvalidOperationException("Producto padre no existe.");           // :contentReference[oaicite:1]{index=1}
-            if (!padre.Activo)
-                throw new InvalidOperationException("Producto padre está inactivo.");     // RN-CA-005
+            // Validar formato de SKU variante
+        int dashIndex = dto.SkuVariante.IndexOf('-');
+        if (dashIndex <= 0)
+            throw new InvalidOperationException("El SKU de la variante no contiene un separador válido para identificar el padre.");
 
-            // 2. Crear y persistir
-            var variante = padre.CrearVariante(
-                dto.SkuVariante,
-                dto.Atributos
-                    .Select(kv => new AtributoVariante(kv.Key, kv.Value))
-                    .ToList());
+        // 1. Obtener padre y validar estado
+        var padreSku = dto.SkuVariante.Substring(0, dashIndex);
+        var padre = await _repo.GetProductoSimpleBySkuAsync(new SKU(padreSku));
+        if (padre is null)
+            throw new InvalidOperationException("Producto padre no existe.");
+        if (!padre.Activo)
+            throw new InvalidOperationException("Producto padre está inactivo.");
 
-            await _repo.AddProductoVarianteAsync(variante);
-            await _uow.CommitAsync();
+        // 2. Crear y persistir
+        var variante = padre.CrearVariante(
+            dto.SkuVariante,
+            dto.Atributos
+             .Select(kv => new AtributoVariante(kv.Key, kv.Value))
+             .ToList());
 
-            return variante.ProductoVarianteId;
+        await _repo.AddProductoVarianteAsync(variante);
+        await _uow.CommitAsync();
+
+        return variante.ProductoVarianteId;
         }
     }
 }

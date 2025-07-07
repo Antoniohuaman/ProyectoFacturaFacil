@@ -1,4 +1,4 @@
-// tests/CatalogoArticulosBC.Tests/CatalogoArticulosBC.Tests.csproj
+
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
