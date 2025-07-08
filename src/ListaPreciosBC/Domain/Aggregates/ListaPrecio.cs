@@ -66,10 +66,20 @@ namespace ListaPreciosBC.Domain.Aggregates
         public void Inhabilitar(string usuarioId)
         {
             if (!Activa)
-             throw new InvalidOperationException("La lista de precios ya está inhabilitada.");
+                throw new InvalidOperationException("La lista de precios ya está inhabilitada.");
 
             Activa = false;
             // Aquí podrías agregar lógica para auditar el usuario que inhabilitó, si lo necesitas
+        }
+        public void ActualizarVigencia(PeriodoVigencia nuevaVigencia)
+        {
+         if (!Activa)
+        throw new InvalidOperationException("No se puede modificar la vigencia de una lista inhabilitada.");
+
+        if (nuevaVigencia.FechaInicio > nuevaVigencia.FechaFin)
+        throw new InvalidOperationException("La fecha de inicio no puede ser mayor que la fecha de fin.");
+
+        Vigencia = nuevaVigencia;
         }
     }
 }
