@@ -40,28 +40,36 @@ namespace ListaPreciosBC.Domain.Aggregates
 
         // Métodos de comportamiento (agregarPrecioEspecifico, inhabilitarLista, etc.) se agregan aquí
         public void AgregarPrecioEspecifico(PrecioEspecifico precio)
-{
-    if (precio == null)
-        throw new ArgumentNullException(nameof(precio));
+        {
+            if (precio == null)
+                throw new ArgumentNullException(nameof(precio));
 
-    // Validar que la vigencia del precio esté dentro de la vigencia de la lista
-    if (precio.Vigencia.FechaInicio < Vigencia.FechaInicio || precio.Vigencia.FechaFin > Vigencia.FechaFin)
-        throw new InvalidOperationException("La vigencia del precio debe estar dentro de la vigencia de la lista.");
+            // Validar que la vigencia del precio esté dentro de la vigencia de la lista
+            if (precio.Vigencia.FechaInicio < Vigencia.FechaInicio || precio.Vigencia.FechaFin > Vigencia.FechaFin)
+                throw new InvalidOperationException("La vigencia del precio debe estar dentro de la vigencia de la lista.");
 
-    // No permitir precios duplicados en el mismo rango/vigencia
-    bool existeDuplicado = _precios.Exists(p =>
-        p.Moneda == precio.Moneda &&
-        p.Prioridad.Valor == precio.Prioridad.Valor &&
-        ((p.RangoVolumen == null && precio.RangoVolumen == null) ||
-         (p.RangoVolumen != null && precio.RangoVolumen != null && p.RangoVolumen.Equals(precio.RangoVolumen))) &&
-        p.Vigencia.FechaInicio == precio.Vigencia.FechaInicio &&
-        p.Vigencia.FechaFin == precio.Vigencia.FechaFin
-    );
+            // No permitir precios duplicados en el mismo rango/vigencia
+            bool existeDuplicado = _precios.Exists(p =>
+                p.Moneda == precio.Moneda &&
+                p.Prioridad.Valor == precio.Prioridad.Valor &&
+                ((p.RangoVolumen == null && precio.RangoVolumen == null) ||
+                 (p.RangoVolumen != null && precio.RangoVolumen != null && p.RangoVolumen.Equals(precio.RangoVolumen))) &&
+                p.Vigencia.FechaInicio == precio.Vigencia.FechaInicio &&
+                p.Vigencia.FechaFin == precio.Vigencia.FechaFin
+            );
 
-    if (existeDuplicado)
-        throw new InvalidOperationException("Ya existe un precio específico con el mismo rango y vigencia.");
+            if (existeDuplicado)
+                throw new InvalidOperationException("Ya existe un precio específico con el mismo rango y vigencia.");
 
-    _precios.Add(precio);
-    }
+            _precios.Add(precio);
+        }
+        public void Inhabilitar(string usuarioId)
+        {
+            if (!Activa)
+             throw new InvalidOperationException("La lista de precios ya está inhabilitada.");
+
+            Activa = false;
+            // Aquí podrías agregar lógica para auditar el usuario que inhabilitó, si lo necesitas
+        }
     }
 }
