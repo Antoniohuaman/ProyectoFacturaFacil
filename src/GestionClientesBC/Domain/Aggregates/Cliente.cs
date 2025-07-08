@@ -51,6 +51,16 @@ namespace GestionClientesBC.Domain.Aggregates
             Estado = estado;
             FechaRegistro = fechaRegistro ?? throw new ArgumentNullException(nameof(fechaRegistro));
         }
+        public void ActualizarDatosContacto(string nuevoCorreo, string nuevoCelular)
+        {
+        if (string.IsNullOrWhiteSpace(nuevoCorreo))
+        throw new ArgumentException("El correo no puede estar vacío.");
+        if (string.IsNullOrWhiteSpace(nuevoCelular))
+        throw new ArgumentException("El celular no puede estar vacío.");
+
+        Correo = nuevoCorreo;
+        Celular = nuevoCelular;
+    }
 
         // Métodos de comportamiento (crear, editar, deshabilitar, eliminar, etc.) se agregan aquí
     }

@@ -40,7 +40,7 @@ namespace GestionClientesBC.Application.UseCases
                 FechaRegistro.Now()
             );
 
-            await _repo.AddClienteAsync(cliente);
+            await _repo.AddAsync(cliente);
             await _uow.CommitAsync();
 
             return cliente.ClienteId;
