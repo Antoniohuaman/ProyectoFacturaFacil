@@ -23,10 +23,15 @@ namespace CatalogoArticulosBC.Tests.UnitTests.UseCases
             // agregar producto padre
             var padre = new ProductoSimple(
                 "PADRE01","Padre","Desc",
-                new UnidadMedida("UN"), new AfectacionIGV("10%"),
-                new CodigoSUNAT("2000"), new CuentaContable("40.02"),
-                new CentroCosto("CC02"), new Presupuesto(200m), new Peso(2m),
-                "SERVICIO" // <-- agrega este argumento al final
+                new UnidadMedida("UN"),
+                new AfectacionIGV("10%"),
+                new CodigoSUNAT("2000"),
+                new CuentaContable("40.02"),
+                new CentroCosto("CC02"),
+                new Presupuesto(200m),
+                new Peso(2m),
+                "SERVICIO",
+                100.50m// <-- agrega este argumento al final
             );
             await repo.AddProductoSimpleAsync(padre);
             var useCase = new CrearProductoVarianteUseCase(repo, uow);

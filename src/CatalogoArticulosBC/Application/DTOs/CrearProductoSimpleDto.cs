@@ -40,5 +40,6 @@ namespace CatalogoArticulosBC.Application.DTOs
         public decimal Presupuesto { get; }
         public decimal Peso { get; }
         public string Tipo { get; }
+        public decimal Precio { get; set; }
     }
 }

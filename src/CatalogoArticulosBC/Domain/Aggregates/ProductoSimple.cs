@@ -24,6 +24,7 @@ namespace CatalogoArticulosBC.Domain.Aggregates
         public Peso Peso { get; private set; }
         public bool Activo { get; private set; } = true;
         public string Tipo { get; set; }
+        public decimal Precio { get; private set; }
         public IReadOnlyCollection<MultimediaProducto> Multimedia => _multimedia.AsReadOnly();
 
         public ProductoSimple(
@@ -37,21 +38,23 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             CentroCosto centroCosto,
             Presupuesto presupuesto,
             Peso peso,
-            string tipo)
+            string tipo,
+            decimal precio)
         {
             if (string.IsNullOrWhiteSpace(sku)) throw new ArgumentException("SKU no puede estar vacío.", nameof(sku));
-            ProductoId    = Guid.NewGuid();
-            Sku           = new SKU(sku);
-            Nombre        = nombre ?? throw new ArgumentNullException(nameof(nombre));
-            Descripcion   = descripcion ?? string.Empty;
-            UnidadMedida  = unidadMedida;
+            ProductoId = Guid.NewGuid();
+            Sku = new SKU(sku);
+            Nombre = nombre ?? throw new ArgumentNullException(nameof(nombre));
+            Descripcion = descripcion ?? string.Empty;
+            UnidadMedida = unidadMedida;
             AfectacionIgv = afectacionIgv;
-            CodigoSunat   = codigoSunat;
-            CuentaContable= cuentaContable;
-            CentroCosto   = centroCosto;
-            Presupuesto   = presupuesto;
+            CodigoSunat = codigoSunat;
+            CuentaContable = cuentaContable;
+            CentroCosto = centroCosto;
+            Presupuesto = presupuesto;
             Peso = peso;
-            Tipo          = tipo ?? throw new ArgumentNullException(nameof(tipo)); // <-- asigna aquí;
+            Precio = precio;
+            Tipo = tipo ?? throw new ArgumentNullException(nameof(tipo)); // <-- asigna aquí;
 
             var ev = new ProductoCreado(ProductoId, Sku);
             // Dispatch(ev);
@@ -107,6 +110,17 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             if (media == null) throw new InvalidOperationException("Multimedia no encontrada.");
             _multimedia.Remove(media);
             // Dispatch(...)
+        }
+        public void EditarDatos(string nuevoNombre, string nuevaDescripcion, decimal nuevoPrecio)
+        {
+            if (string.IsNullOrWhiteSpace(nuevoNombre))
+            throw new ArgumentException("El nombre no puede estar vacío.");
+            if (nuevoPrecio < 0)
+            throw new ArgumentException("El precio no puede ser negativo.");
+
+            Nombre = nuevoNombre;
+            Descripcion = nuevaDescripcion;
+        Precio = nuevoPrecio;
         }
     }
 }

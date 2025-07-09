@@ -55,7 +55,24 @@ namespace CatalogoArticulosBC.Adapters.Output.Persistence.InMemory
         }
         public Task<ProductoCombo?> GetProductoComboBySkuAsync(SKU sku) => throw new NotImplementedException();
         public Task AddProductoComboAsync(ProductoCombo producto) => throw new NotImplementedException();
-        public Task UpdateAsync(object producto) => throw new NotImplementedException();
+        public Task UpdateAsync(object producto)
+        {
+        switch (producto)
+        {
+        case ProductoSimple simple:
+            _productos[simple.Sku] = simple;
+            break;
+        case ProductoVariante variante:
+            _productos[variante.Sku] = variante;
+            break;
+        case ProductoCombo combo:
+            _productos[combo.Sku] = combo;
+            break;
+        default:
+            throw new ArgumentException("Tipo de producto no soportado");
+        }
+        return Task.CompletedTask;
+}
 
         public Task<IReadOnlyCollection<ProductoSimple>> ListarProductosSimplesAsync()
         {
@@ -66,7 +83,14 @@ namespace CatalogoArticulosBC.Adapters.Output.Persistence.InMemory
         }
 
         public Task<IReadOnlyCollection<object>> ListarAsync() => throw new NotImplementedException();
-        public Task<ProductoSimple?> GetByIdAsync(Guid productoId) => throw new NotImplementedException();
+        public Task<ProductoSimple?> GetByIdAsync(Guid productoId)
+        {
+        var producto = _productos.Values
+        .OfType<ProductoSimple>()
+        .FirstOrDefault(p => p.ProductoId == productoId);
+         return Task.FromResult(producto);
+        }
+        
         public Task<IReadOnlyCollection<ProductoSimple>> ListarAsync(int pagina, int tamano, string filtrosJson) => throw new NotImplementedException();
     }
 }

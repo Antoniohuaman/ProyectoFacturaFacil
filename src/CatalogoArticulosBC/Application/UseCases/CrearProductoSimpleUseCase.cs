@@ -38,7 +38,8 @@ namespace CatalogoArticulosBC.Application.UseCases
             var cuenta    = new CuentaContable(dto.CuentaContable);
             var centro    = new CentroCosto(dto.CentroCosto);
             var presupuesto = new Presupuesto(dto.Presupuesto);
-            var peso = new Peso(dto.Peso)
+            var peso = new Peso(dto.Peso);
+            
             ;
 
             var producto = new ProductoSimple(
@@ -52,7 +53,8 @@ namespace CatalogoArticulosBC.Application.UseCases
                 centro,
                 presupuesto,
                 peso,
-                dto.Tipo
+                dto.Tipo,
+                dto.Precio
                 );
 
             // 3. Persistir y commitear

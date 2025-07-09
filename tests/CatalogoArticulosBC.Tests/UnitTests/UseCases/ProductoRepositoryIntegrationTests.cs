@@ -16,9 +16,15 @@ namespace CatalogoArticulosBC.Tests.IntegrationTests
             var repo = new InMemoryCatalogoArticulosRepository();
             var simple = new ProductoSimple(
                 "INT01","Int","Desc",
-                new UnidadMedida("UN"), new AfectacionIGV("10%"),
-                new CodigoSUNAT("3000"), new CuentaContable("40.03"),
-                new CentroCosto("CC03"), new Presupuesto(300m), new Peso(3m), "SERVICIO"
+                new UnidadMedida("UN"),
+                new AfectacionIGV("10%"),
+                new CodigoSUNAT("3000"),
+                new CuentaContable("40.03"),
+                new CentroCosto("CC03"),
+                new Presupuesto(300m),
+                new Peso(3m),
+                "SERVICIO",
+                100.50m
             );
 
             // Act
