@@ -104,5 +104,12 @@ namespace CatalogoArticulosBC.Adapters.Output.Persistence.InMemory
             }
             return Task.CompletedTask;
         }
+        public Task<ProductoVariante?> GetProductoVarianteByIdAsync(Guid productoVarianteId)
+        {
+        var variante = _productos.Values
+        .OfType<ProductoVariante>()
+        .FirstOrDefault(v => v.ProductoVarianteId == productoVarianteId);
+        return Task.FromResult(variante);
+        }
     }
 }

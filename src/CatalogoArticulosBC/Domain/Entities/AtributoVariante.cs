@@ -1,5 +1,5 @@
 using System;
-
+using System.Linq;
 namespace CatalogoArticulosBC.Domain.Entities
 {
     public sealed class AtributoVariante
