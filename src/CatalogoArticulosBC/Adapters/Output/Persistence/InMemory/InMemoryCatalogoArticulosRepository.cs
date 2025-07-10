@@ -26,11 +26,11 @@ namespace CatalogoArticulosBC.Adapters.Output.Persistence.InMemory
 
         public Task<ProductoSimple?> GetProductoSimpleBySkuAsync(SKU sku)
         {
-             if (_productos.TryGetValue(sku, out var p) && p is ProductoSimple ps && ps.Sku == sku)
-                 return Task.FromResult<ProductoSimple?>(ps);
-    // Elimina la siguiente línea porque ProductoVariante no es ProductoSimple
-    // if (_productos.TryGetValue(sku, out var v) && v is ProductoVariante pv && pv.Sku == sku)
-    //     return Task.FromResult<ProductoSimple?>(pv as ProductoSimple);
+            if (_productos.TryGetValue(sku, out var p) && p is ProductoSimple ps && ps.Sku == sku)
+                return Task.FromResult<ProductoSimple?>(ps);
+            // Elimina la siguiente línea porque ProductoVariante no es ProductoSimple
+            // if (_productos.TryGetValue(sku, out var v) && v is ProductoVariante pv && pv.Sku == sku)
+            //     return Task.FromResult<ProductoSimple?>(pv as ProductoSimple);
             return Task.FromResult<ProductoSimple?>(null);
         }
 
@@ -42,37 +42,37 @@ namespace CatalogoArticulosBC.Adapters.Output.Persistence.InMemory
         }
 
         public Task<ProductoVariante?> GetProductoVarianteBySkuAsync(SKU sku)
-{
-    if (_productos.TryGetValue(sku, out var v) && v is ProductoVariante pv && pv.Sku == sku)
-        return Task.FromResult<ProductoVariante?>(pv);
-    return Task.FromResult<ProductoVariante?>(null);
-}
+        {
+            if (_productos.TryGetValue(sku, out var v) && v is ProductoVariante pv && pv.Sku == sku)
+                return Task.FromResult<ProductoVariante?>(pv);
+            return Task.FromResult<ProductoVariante?>(null);
+        }
         public Task AddProductoVarianteAsync(ProductoVariante producto)
         {
-        if (!_productos.TryAdd(producto.Sku, producto))
-        throw new InvalidOperationException($"El SKU {producto.Sku} ya existe en el catálogo");
-        return Task.CompletedTask;
+            if (!_productos.TryAdd(producto.Sku, producto))
+                throw new InvalidOperationException($"El SKU {producto.Sku} ya existe en el catálogo");
+            return Task.CompletedTask;
         }
         public Task<ProductoCombo?> GetProductoComboBySkuAsync(SKU sku) => throw new NotImplementedException();
         public Task AddProductoComboAsync(ProductoCombo producto) => throw new NotImplementedException();
         public Task UpdateAsync(object producto)
         {
-        switch (producto)
-        {
-        case ProductoSimple simple:
-            _productos[simple.Sku] = simple;
-            break;
-        case ProductoVariante variante:
-            _productos[variante.Sku] = variante;
-            break;
-        case ProductoCombo combo:
-            _productos[combo.Sku] = combo;
-            break;
-        default:
-            throw new ArgumentException("Tipo de producto no soportado");
+            switch (producto)
+            {
+                case ProductoSimple simple:
+                    _productos[simple.Sku] = simple;
+                    break;
+                case ProductoVariante variante:
+                    _productos[variante.Sku] = variante;
+                    break;
+                case ProductoCombo combo:
+                    _productos[combo.Sku] = combo;
+                    break;
+                default:
+                    throw new ArgumentException("Tipo de producto no soportado");
+            }
+            return Task.CompletedTask;
         }
-        return Task.CompletedTask;
-}
 
         public Task<IReadOnlyCollection<ProductoSimple>> ListarProductosSimplesAsync()
         {
@@ -85,12 +85,24 @@ namespace CatalogoArticulosBC.Adapters.Output.Persistence.InMemory
         public Task<IReadOnlyCollection<object>> ListarAsync() => throw new NotImplementedException();
         public Task<ProductoSimple?> GetByIdAsync(Guid productoId)
         {
-        var producto = _productos.Values
-        .OfType<ProductoSimple>()
-        .FirstOrDefault(p => p.ProductoId == productoId);
-         return Task.FromResult(producto);
+            var producto = _productos.Values
+            .OfType<ProductoSimple>()
+            .FirstOrDefault(p => p.ProductoId == productoId);
+            return Task.FromResult(producto);
         }
-        
+
         public Task<IReadOnlyCollection<ProductoSimple>> ListarAsync(int pagina, int tamano, string filtrosJson) => throw new NotImplementedException();
+
+        public Task EliminarProductoSimpleAsync(Guid productoId)
+        {
+            var producto = _productos.Values
+                .OfType<ProductoSimple>()
+                .FirstOrDefault(p => p.ProductoId == productoId);
+            if (producto != null)
+            {
+                _productos.TryRemove(producto.Sku, out _);
+            }
+            return Task.CompletedTask;
+        }
     }
 }

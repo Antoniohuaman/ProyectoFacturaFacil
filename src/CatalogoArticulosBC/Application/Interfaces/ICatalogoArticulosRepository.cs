@@ -22,5 +22,6 @@ namespace CatalogoArticulosBC.Application.Interfaces
         Task<IReadOnlyCollection<object>> ListarAsync(); // Ajusta el tipo según tu modelo
         Task<ProductoSimple?> GetByIdAsync(Guid productoId);
         Task<IReadOnlyCollection<ProductoSimple>> ListarAsync(int pagina, int tamano, string filtrosJson);
+        Task EliminarProductoSimpleAsync(Guid productoId);
     }
 }
