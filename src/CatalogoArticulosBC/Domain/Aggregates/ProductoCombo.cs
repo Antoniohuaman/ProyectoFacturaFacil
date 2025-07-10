@@ -1,4 +1,3 @@
-// src/CatalogoArticulosBC/Domain/Aggregates/ProductoCombo.cs
 using System;
 using System.Collections.Generic;
 using CatalogoArticulosBC.Domain.ValueObjects;
@@ -7,7 +6,7 @@ using CatalogoArticulosBC.Domain.Events;
 
 namespace CatalogoArticulosBC.Domain.Aggregates
 {
-    public class ProductoCombo
+    public class ProductoCombo : IProductoConPeso
     {
         public Guid ProductoComboId { get; }
         public SKU Sku { get; }
@@ -16,9 +15,22 @@ namespace CatalogoArticulosBC.Domain.Aggregates
         public decimal Precio { get; private set; }
         public UnidadMedida UnidadMedida { get; }
         public AfectacionIGV AfectacionIgv { get; }
+        public decimal PesoTotal { get; private set; }
+        public string Estado { get; private set; }
         public bool Activo { get; private set; } = true;
 
-        public ProductoCombo(string sku, string nombre, IEnumerable<ComponenteCombo> componentes, decimal precio, UnidadMedida unidad, AfectacionIGV igv)
+        // Implementación explícita de la interfaz
+        decimal IProductoConPeso.Peso => PesoTotal;
+
+        public ProductoCombo(
+            string sku,
+            string nombre,
+            IEnumerable<ComponenteCombo> componentes,
+            decimal precio,
+            UnidadMedida unidad,
+            AfectacionIGV igv,
+            decimal pesoTotal,
+            string estado)
         {
             ProductoComboId = Guid.NewGuid();
             Sku             = new SKU(sku);
@@ -27,6 +39,8 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             Precio          = precio;
             UnidadMedida    = unidad;
             AfectacionIgv   = igv;
+            PesoTotal       = pesoTotal;
+            Estado          = estado;
 
             var ev = new ProductoCreado(ProductoComboId, Sku);
             // Dispatch(ev);

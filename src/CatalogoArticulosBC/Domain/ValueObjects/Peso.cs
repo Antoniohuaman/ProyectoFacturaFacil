@@ -4,13 +4,13 @@ using System;
 namespace CatalogoArticulosBC.Domain.ValueObjects
 {
     public sealed record Peso
-   {
-        public decimal Value { get; }
+    {
+        public decimal Valor { get; }
 
-        public Peso(decimal value)
+        public Peso(decimal valor)
         {
-            if (value < 0) throw new ArgumentException("Peso no puede ser negativo.", nameof(value));
-            Value = value;
+            if (valor < 0) throw new ArgumentException("Peso no puede ser negativo.", nameof(valor));
+            Valor = valor;
         }
     }
 }

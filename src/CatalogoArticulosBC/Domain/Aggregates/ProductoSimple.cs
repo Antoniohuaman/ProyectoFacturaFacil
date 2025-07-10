@@ -1,4 +1,3 @@
-// src/CatalogoArticulosBC/Domain/Aggregates/ProductoSimple.cs
 using System;
 using System.Collections.Generic;
 using CatalogoArticulosBC.Domain.Events;
@@ -7,7 +6,7 @@ using CatalogoArticulosBC.Domain.Entities;
 
 namespace CatalogoArticulosBC.Domain.Aggregates
 {
-    public class ProductoSimple
+    public class ProductoSimple : IProductoConPeso
     {
         private readonly List<MultimediaProducto> _multimedia = new();
 
@@ -26,6 +25,9 @@ namespace CatalogoArticulosBC.Domain.Aggregates
         public string Tipo { get; set; }
         public decimal Precio { get; private set; }
         public IReadOnlyCollection<MultimediaProducto> Multimedia => _multimedia.AsReadOnly();
+
+        // Implementación explícita de la interfaz
+        decimal IProductoConPeso.Peso => Peso.Valor;
 
         public ProductoSimple(
             string sku,
@@ -54,7 +56,7 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             Presupuesto = presupuesto;
             Peso = peso;
             Precio = precio;
-            Tipo = tipo ?? throw new ArgumentNullException(nameof(tipo)); // <-- asigna aquí;
+            Tipo = tipo ?? throw new ArgumentNullException(nameof(tipo));
 
             var ev = new ProductoCreado(ProductoId, Sku);
             // Dispatch(ev);
@@ -68,10 +70,19 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             return variante;
         }
 
-        public ProductoCombo CrearCombo(string skuCombo, string nombreCombo, IEnumerable<ComponenteCombo> componentes, decimal precio, UnidadMedida unidad, AfectacionIGV igv)
+        // Ajusta este método si tu constructor de ProductoCombo requiere pesoTotal y estado
+        public ProductoCombo CrearCombo(
+            string skuCombo,
+            string nombreCombo,
+            IEnumerable<ComponenteCombo> componentes,
+            decimal precio,
+            UnidadMedida unidad,
+            AfectacionIGV igv,
+            decimal pesoTotal,
+            string estado)
         {
             if (!Activo) throw new InvalidOperationException("No se puede crear combo de producto inactivo.");
-            var combo = new ProductoCombo(skuCombo, nombreCombo, componentes, precio, unidad, igv);
+            var combo = new ProductoCombo(skuCombo, nombreCombo, componentes, precio, unidad, igv, pesoTotal, estado);
             // Dispatch(...)
             return combo;
         }
@@ -111,16 +122,17 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             _multimedia.Remove(media);
             // Dispatch(...)
         }
+
         public void EditarDatos(string nuevoNombre, string nuevaDescripcion, decimal nuevoPrecio)
         {
             if (string.IsNullOrWhiteSpace(nuevoNombre))
-            throw new ArgumentException("El nombre no puede estar vacío.");
+                throw new ArgumentException("El nombre no puede estar vacío.");
             if (nuevoPrecio < 0)
-            throw new ArgumentException("El precio no puede ser negativo.");
+                throw new ArgumentException("El precio no puede ser negativo.");
 
             Nombre = nuevoNombre;
             Descripcion = nuevaDescripcion;
-        Precio = nuevoPrecio;
+            Precio = nuevoPrecio;
         }
     }
 }

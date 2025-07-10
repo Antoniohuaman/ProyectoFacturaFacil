@@ -1,29 +1,46 @@
-// src/CatalogoArticulosBC/Application/DTOs/CrearProductoComboDto.cs
+using System;
+using System.Collections.Generic;
+
 namespace CatalogoArticulosBC.Application.DTOs
 {
-    public sealed class CrearProductoComboDto
+    public class CrearProductoComboDto
     {
+        public string SkuCombo { get; }
+        public string NombreCombo { get; }
+        public List<ComponenteComboDto> Componentes { get; }
+        public decimal PrecioCombo { get; }
+        public string UnidadMedida { get; }
+        public string AfectacionIGV { get; }
+        public string Estado { get; }
+
         public CrearProductoComboDto(
             string skuCombo,
             string nombreCombo,
-            IReadOnlyCollection<(Guid productoId,int cantidad)> componentes,
+            List<ComponenteComboDto> componentes,
             decimal precioCombo,
             string unidadMedida,
-            string afectacionIgv)
+            string afectacionIGV,
+            string estado)
         {
-            SkuCombo       = skuCombo;
-            NombreCombo    = nombreCombo;
-            Componentes    = componentes;
-            PrecioCombo    = precioCombo;
-            UnidadMedida   = unidadMedida;
-            AfectacionIgv  = afectacionIgv;
+            SkuCombo = skuCombo;
+            NombreCombo = nombreCombo;
+            Componentes = componentes;
+            PrecioCombo = precioCombo;
+            UnidadMedida = unidadMedida;
+            AfectacionIGV = afectacionIGV;
+            Estado = estado;
         }
+    }
 
-        public string SkuCombo { get; }
-        public string NombreCombo { get; }
-        public IReadOnlyCollection<(Guid productoId,int cantidad)> Componentes { get; }
-        public decimal PrecioCombo { get; }
-        public string UnidadMedida { get; }
-        public string AfectacionIgv { get; }
+    public class ComponenteComboDto
+    {
+        public Guid ProductoServicioId { get; }
+        public int Cantidad { get; }
+
+        public ComponenteComboDto(Guid productoServicioId, int cantidad)
+        {
+            ProductoServicioId = productoServicioId;
+            Cantidad = cantidad;
+        }
     }
 }

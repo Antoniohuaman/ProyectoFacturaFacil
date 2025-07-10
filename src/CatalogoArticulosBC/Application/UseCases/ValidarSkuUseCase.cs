@@ -28,7 +28,7 @@ namespace CatalogoArticulosBC.Application.UseCases
                 item.Nombre,
                 item.Descripcion,
                 item.Tipo.ToString(),
-                item.Peso.Value);
+                item.Peso.Valor);
         }
     }
 }

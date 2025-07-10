@@ -28,9 +28,6 @@ namespace CatalogoArticulosBC.Adapters.Output.Persistence.InMemory
         {
             if (_productos.TryGetValue(sku, out var p) && p is ProductoSimple ps && ps.Sku == sku)
                 return Task.FromResult<ProductoSimple?>(ps);
-            // Elimina la siguiente línea porque ProductoVariante no es ProductoSimple
-            // if (_productos.TryGetValue(sku, out var v) && v is ProductoVariante pv && pv.Sku == sku)
-            //     return Task.FromResult<ProductoSimple?>(pv as ProductoSimple);
             return Task.FromResult<ProductoSimple?>(null);
         }
 
@@ -47,14 +44,29 @@ namespace CatalogoArticulosBC.Adapters.Output.Persistence.InMemory
                 return Task.FromResult<ProductoVariante?>(pv);
             return Task.FromResult<ProductoVariante?>(null);
         }
+
         public Task AddProductoVarianteAsync(ProductoVariante producto)
         {
             if (!_productos.TryAdd(producto.Sku, producto))
                 throw new InvalidOperationException($"El SKU {producto.Sku} ya existe en el catálogo");
             return Task.CompletedTask;
         }
-        public Task<ProductoCombo?> GetProductoComboBySkuAsync(SKU sku) => throw new NotImplementedException();
-        public Task AddProductoComboAsync(ProductoCombo producto) => throw new NotImplementedException();
+
+        // IMPLEMENTACIÓN CORRECTA PARA COMBOS
+        public Task<ProductoCombo?> GetProductoComboBySkuAsync(SKU sku)
+        {
+            if (_productos.TryGetValue(sku, out var c) && c is ProductoCombo combo && combo.Sku == sku)
+                return Task.FromResult<ProductoCombo?>(combo);
+            return Task.FromResult<ProductoCombo?>(null);
+        }
+
+        public Task AddProductoComboAsync(ProductoCombo producto)
+        {
+            if (!_productos.TryAdd(producto.Sku, producto))
+                throw new InvalidOperationException($"El SKU {producto.Sku} ya existe en el catálogo");
+            return Task.CompletedTask;
+        }
+
         public Task UpdateAsync(object producto)
         {
             switch (producto)
@@ -83,6 +95,7 @@ namespace CatalogoArticulosBC.Adapters.Output.Persistence.InMemory
         }
 
         public Task<IReadOnlyCollection<object>> ListarAsync() => throw new NotImplementedException();
+
         public Task<ProductoSimple?> GetByIdAsync(Guid productoId)
         {
             var producto = _productos.Values
@@ -104,12 +117,13 @@ namespace CatalogoArticulosBC.Adapters.Output.Persistence.InMemory
             }
             return Task.CompletedTask;
         }
+
         public Task<ProductoVariante?> GetProductoVarianteByIdAsync(Guid productoVarianteId)
         {
-        var variante = _productos.Values
-        .OfType<ProductoVariante>()
-        .FirstOrDefault(v => v.ProductoVarianteId == productoVarianteId);
-        return Task.FromResult(variante);
+            var variante = _productos.Values
+            .OfType<ProductoVariante>()
+            .FirstOrDefault(v => v.ProductoVarianteId == productoVarianteId);
+            return Task.FromResult(variante);
         }
     }
 }
