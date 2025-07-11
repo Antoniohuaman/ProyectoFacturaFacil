@@ -36,8 +36,8 @@ namespace GestionClientesBC.Application.UseCases
                 dto.Celular,
                 dto.DireccionPostal,
                 Enum.Parse<TipoCliente>(dto.TipoCliente),
-                EstadoCliente.Activo,
-                FechaRegistro.Now()
+                EstadoCliente.Activo
+                // Ya no se pasa FechaRegistro
             );
 
             await _repo.AddAsync(cliente);

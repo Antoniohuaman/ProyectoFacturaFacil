@@ -27,8 +27,8 @@ namespace GestionClientesBC.Tests.UnitTests
                 "999999999",
                 "Av. Siempre Viva 123",
                 TipoCliente.Mayorista,
-                EstadoCliente.Activo,
-                new FechaRegistro(DateTime.UtcNow)
+                EstadoCliente.Activo
+                
             );
             await repo.AddAsync(cliente);
 

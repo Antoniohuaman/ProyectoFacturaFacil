@@ -4,6 +4,7 @@ using System.Linq;
 using GestionClientesBC.Domain.Entities;
 using GestionClientesBC.Domain.Events;
 using GestionClientesBC.Domain.ValueObjects;
+// using GestionClientesBC.Domain.ValueObjects; // <-- Ya no es necesario para FechaRegistro
 
 namespace GestionClientesBC.Domain.Aggregates
 {
@@ -24,7 +25,7 @@ namespace GestionClientesBC.Domain.Aggregates
         public string DireccionPostal { get; private set; }
         public TipoCliente TipoCliente { get; private set; }
         public EstadoCliente Estado { get; private set; }
-        public FechaRegistro FechaRegistro { get; private set; }
+        public DateTime FechaRegistro { get; private set; } // Ahora es DateTime
 
         public IReadOnlyCollection<ContactoCliente> Contactos => _contactos.AsReadOnly();
         public IReadOnlyCollection<AdjuntoCliente> Adjuntos => _adjuntos.AsReadOnly();
@@ -38,8 +39,7 @@ namespace GestionClientesBC.Domain.Aggregates
             string celular,
             string direccionPostal,
             TipoCliente tipoCliente,
-            EstadoCliente estado,
-            FechaRegistro fechaRegistro)
+            EstadoCliente estado)
         {
             ClienteId = clienteId != Guid.Empty ? clienteId : throw new ArgumentException("El Id no puede ser vacío.", nameof(clienteId));
             DocumentoIdentidad = documentoIdentidad ?? throw new ArgumentNullException(nameof(documentoIdentidad));
@@ -49,18 +49,19 @@ namespace GestionClientesBC.Domain.Aggregates
             DireccionPostal = direccionPostal ?? throw new ArgumentNullException(nameof(direccionPostal));
             TipoCliente = tipoCliente;
             Estado = estado;
-            FechaRegistro = fechaRegistro ?? throw new ArgumentNullException(nameof(fechaRegistro));
+            FechaRegistro = DateTime.UtcNow; // Asignación automática
         }
+
         public void ActualizarDatosContacto(string nuevoCorreo, string nuevoCelular)
         {
-        if (string.IsNullOrWhiteSpace(nuevoCorreo))
-        throw new ArgumentException("El correo no puede estar vacío.");
-        if (string.IsNullOrWhiteSpace(nuevoCelular))
-        throw new ArgumentException("El celular no puede estar vacío.");
+            if (string.IsNullOrWhiteSpace(nuevoCorreo))
+                throw new ArgumentException("El correo no puede estar vacío.");
+            if (string.IsNullOrWhiteSpace(nuevoCelular))
+                throw new ArgumentException("El celular no puede estar vacío.");
 
-        Correo = nuevoCorreo;
-        Celular = nuevoCelular;
-    }
+            Correo = nuevoCorreo;
+            Celular = nuevoCelular;
+        }
 
         // Métodos de comportamiento (crear, editar, deshabilitar, eliminar, etc.) se agregan aquí
     }
