@@ -4,13 +4,13 @@ namespace GestionClientesBC.Application.DTOs
 {
     public class ClienteDto
     {
-        public Guid ClienteId { get; set; }
-        public string TipoDocumento { get; set; } = default!;
-        public string NumeroDocumento { get; set; } = default!;
-        public string RazonSocialONombres { get; set; } = default!;
-        public string Correo { get; set; } = default!;
-        public string Celular { get; set; } = default!;
-        public string DireccionPostal { get; set; } = default!;
-        public string TipoCliente { get; set; } = default!;
+        public string? TipoDocumento { get; set; }
+        public string? NumeroDocumento { get; set; }
+        public string? RazonSocialONombres { get; set; }
+        public string? Correo { get; set; }
+        public string? Celular { get; set; }
+        public string? DireccionPostal { get; set; }
+        public string? TipoCliente { get; set; }
+        // Si luego necesitas moneda o forma de pago, agrégalas aquí como opcionales.
     }
 }

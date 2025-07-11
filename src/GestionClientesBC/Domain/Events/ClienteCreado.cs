@@ -3,23 +3,40 @@ using GestionClientesBC.Domain.ValueObjects;
 
 namespace GestionClientesBC.Domain.Events
 {
-    /// <summary>
-    /// Evento que se dispara cuando se crea un cliente.
-    /// </summary>
-    public sealed class ClienteCreado : IDomainEvent
+    public class ClienteCreado : IDomainEvent
     {
         public Guid ClienteId { get; }
         public DocumentoIdentidad DocumentoIdentidad { get; }
+        public string RazonSocialONombres { get; }
         public string Correo { get; }
+        public string Celular { get; }
+        public string DireccionPostal { get; }
         public TipoCliente TipoCliente { get; }
-        public DateTime OccurredOn { get; } = DateTime.UtcNow;
+        public EstadoCliente Estado { get; }
+        public DateTime FechaRegistro { get; }
+        public DateTime OccurredOn { get; } // Implementación de la interfaz
 
-        public ClienteCreado(Guid clienteId, DocumentoIdentidad documentoIdentidad, string correo, TipoCliente tipoCliente)
+        public ClienteCreado(
+            Guid clienteId,
+            DocumentoIdentidad documentoIdentidad,
+            string razonSocialONombres,
+            string correo,
+            string celular,
+            string direccionPostal,
+            TipoCliente tipoCliente,
+            EstadoCliente estado,
+            DateTime fechaRegistro)
         {
             ClienteId = clienteId;
             DocumentoIdentidad = documentoIdentidad;
+            RazonSocialONombres = razonSocialONombres;
             Correo = correo;
+            Celular = celular;
+            DireccionPostal = direccionPostal;
             TipoCliente = tipoCliente;
+            Estado = estado;
+            FechaRegistro = fechaRegistro;
+            OccurredOn = DateTime.UtcNow;
         }
     }
 }
