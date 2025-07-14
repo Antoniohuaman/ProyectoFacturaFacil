@@ -16,7 +16,7 @@ namespace GestionClientesBC.Domain.Aggregates
         private readonly List<OperacionCliente> _operaciones = new();
 
         public Guid ClienteId { get; }
-        public DocumentoIdentidad DocumentoIdentidad { get; }
+        public DocumentoIdentidad DocumentoIdentidad { get; private set; }
         public string RazonSocialONombres { get; private set; }
         public string Correo { get; private set; }
         public string Celular { get; private set; }
@@ -78,6 +78,43 @@ namespace GestionClientesBC.Domain.Aggregates
 
             Correo = nuevoCorreo;
             Celular = nuevoCelular;
+        }
+
+        // --- Métodos de edición para el caso de uso EditarCliente ---
+
+        public void ActualizarDireccion(string nuevaDireccion)
+        {
+            if (nuevaDireccion == null)
+                throw new ArgumentNullException(nameof(nuevaDireccion));
+            DireccionPostal = nuevaDireccion;
+            FechaRegistro = DateTime.UtcNow; // Actualiza la fecha internamente
+        }
+
+        public void ActualizarNombre(string nuevoNombre)
+        {
+            if (string.IsNullOrWhiteSpace(nuevoNombre))
+                throw new ArgumentException("El nombre/razón social no puede estar vacío.");
+            RazonSocialONombres = nuevoNombre;
+        }
+
+        public void ActualizarTipoCliente(TipoCliente nuevoTipo)
+        {
+            TipoCliente = nuevoTipo;
+        }
+
+        public void ActualizarDocumentoIdentidad(DocumentoIdentidad nuevoDocumento)
+        {
+            DocumentoIdentidad = nuevoDocumento ?? throw new ArgumentNullException(nameof(nuevoDocumento));
+        }
+
+        public void RegistrarModificacion(IDictionary<string, (object? anterior, object? nuevo)> cambios)
+        {
+            // Evento de dominio: ClienteModificado
+            _domainEvents.Add(new ClienteModificado(
+                ClienteId,
+                cambios,
+                DateTime.UtcNow
+            ));
         }
 
         // Métodos de comportamiento (crear, editar, deshabilitar, eliminar, etc.) se agregan aquí

@@ -3,19 +3,18 @@ using System.Collections.Generic;
 
 namespace GestionClientesBC.Domain.Events
 {
-    /// <summary>
-    /// Evento que se dispara cuando se modifica un cliente.
-    /// </summary>
-    public sealed class ClienteModificado : IDomainEvent
+    public class ClienteModificado : IDomainEvent
     {
         public Guid ClienteId { get; }
-        public IReadOnlyDictionary<string, (object? Anterior, object? Nuevo)> Cambios { get; }
-        public DateTime OccurredOn { get; } = DateTime.UtcNow;
+        public IDictionary<string, (object? anterior, object? nuevo)> Cambios { get; }
+        public DateTime Fecha { get; }
+        public DateTime OccurredOn => Fecha; // Implementación de la interfaz
 
-        public ClienteModificado(Guid clienteId, IReadOnlyDictionary<string, (object?, object?)> cambios)
+        public ClienteModificado(Guid clienteId, IDictionary<string, (object? anterior, object? nuevo)> cambios, DateTime fecha)
         {
             ClienteId = clienteId;
             Cambios = cambios;
+            Fecha = fecha;
         }
     }
 }
