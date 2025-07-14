@@ -13,6 +13,7 @@ namespace GestionClientesBC.Domain.Entities
         public MontoOperacion MontoOperacion { get; }
         public ReferenciaId ReferenciaId { get; }
         public DateTime FechaOperacion { get; }
+        public bool EstaPendiente { get; set; }
 
         public OperacionCliente(Guid operacionId, TipoOperacion tipoOperacion, MontoOperacion montoOperacion, ReferenciaId referenciaId, DateTime fechaOperacion)
         {

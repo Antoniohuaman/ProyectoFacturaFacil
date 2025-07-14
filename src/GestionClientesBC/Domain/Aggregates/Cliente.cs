@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using GestionClientesBC.Domain.Entities;
 using GestionClientesBC.Domain.Events;
 using GestionClientesBC.Domain.ValueObjects;
@@ -25,11 +26,14 @@ namespace GestionClientesBC.Domain.Aggregates
         public EstadoCliente Estado { get; private set; }
         public DateTime FechaRegistro { get; private set; }
 
+        // Propiedades para deshabilitación
+        public string? MotivoDeshabilitacion { get; private set; }
+        public DateTime? FechaDeshabilitacion { get; private set; }
+
         public IReadOnlyCollection<ContactoCliente> Contactos => _contactos.AsReadOnly();
         public IReadOnlyCollection<AdjuntoCliente> Adjuntos => _adjuntos.AsReadOnly();
         public IReadOnlyCollection<OperacionCliente> Operaciones => _operaciones.AsReadOnly();
 
-        // Evento de dominio para ClienteCreado
         private readonly List<IDomainEvent> _domainEvents = new();
         public IReadOnlyCollection<IDomainEvent> DomainEvents => _domainEvents.AsReadOnly();
 
@@ -115,6 +119,18 @@ namespace GestionClientesBC.Domain.Aggregates
                 cambios,
                 DateTime.UtcNow
             ));
+        }
+
+        public void Deshabilitar(string? motivo, DateTime fecha)
+        {
+            Estado = EstadoCliente.Inactivo;
+            FechaDeshabilitacion = fecha;
+            MotivoDeshabilitacion = motivo;
+        }
+
+        public void RegistrarDeshabilitacion(string? motivo, DateTime fecha)
+        {
+            _domainEvents.Add(new ClienteDeshabilitado(ClienteId, motivo, fecha));
         }
 
         // Métodos de comportamiento (crear, editar, deshabilitar, eliminar, etc.) se agregan aquí

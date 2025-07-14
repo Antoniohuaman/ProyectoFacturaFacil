@@ -2,19 +2,18 @@ using System;
 
 namespace GestionClientesBC.Domain.Events
 {
-    /// <summary>
-    /// Evento que se dispara cuando un cliente es deshabilitado.
-    /// </summary>
-    public sealed class ClienteDeshabilitado : IDomainEvent
+    public class ClienteDeshabilitado : IDomainEvent
     {
         public Guid ClienteId { get; }
-        public string Motivo { get; }
-        public DateTime OccurredOn { get; } = DateTime.UtcNow;
+        public string? Motivo { get; }
+        public DateTime Fecha { get; }
+        public DateTime OccurredOn => Fecha;
 
-        public ClienteDeshabilitado(Guid clienteId, string motivo)
+        public ClienteDeshabilitado(Guid clienteId, string? motivo, DateTime fecha)
         {
             ClienteId = clienteId;
             Motivo = motivo;
+            Fecha = fecha;
         }
     }
 }

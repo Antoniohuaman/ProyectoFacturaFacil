@@ -6,4 +6,6 @@ namespace GestionClientesBC.Domain.Events
     {
         DateTime OccurredOn { get; }
     }
+    
 }
+    
