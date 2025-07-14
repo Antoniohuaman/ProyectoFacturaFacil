@@ -133,6 +133,46 @@ namespace GestionClientesBC.Domain.Aggregates
             _domainEvents.Add(new ClienteDeshabilitado(ClienteId, motivo, fecha));
         }
 
+        /// <summary>
+        /// Agrega un nuevo contacto secundario al cliente.
+        /// </summary>
+        public void AgregarContacto(ContactoCliente contacto)
+        {
+            if (contacto == null)
+                throw new ArgumentNullException(nameof(contacto));
+            if (_contactos.Any(c => c.Tipo == contacto.Tipo && c.Valor.Equals(contacto.Valor, StringComparison.OrdinalIgnoreCase)))
+                throw new InvalidOperationException("Ya existe un contacto igual para este cliente.");
+            _contactos.Add(contacto);
+        }
+
+        /// <summary>
+        /// Elimina un contacto secundario por su identificador.
+        /// </summary>
+        public void EliminarContacto(Guid contactoId)
+        {
+            var contacto = _contactos.FirstOrDefault(c => c.ContactoId == contactoId);
+            if (contacto == null)
+                throw new InvalidOperationException("Contacto no encontrado.");
+            _contactos.Remove(contacto);
+        }
+
+        /// <summary>
+        /// Edita el valor de un contacto secundario existente.
+        /// </summary>
+        public void EditarContacto(Guid contactoId, string nuevoValor)
+        {
+            var contacto = _contactos.FirstOrDefault(c => c.ContactoId == contactoId);
+            if (contacto == null)
+                throw new InvalidOperationException("Contacto no encontrado.");
+            contacto.ActualizarValor(nuevoValor);
+        }
+        public void RegistrarEvento(IDomainEvent domainEvent)
+        {
+            if (domainEvent == null)
+                throw new ArgumentNullException(nameof(domainEvent));
+            _domainEvents.Add(domainEvent);
+        }
+
         // Métodos de comportamiento (crear, editar, deshabilitar, eliminar, etc.) se agregan aquí
     }
 }

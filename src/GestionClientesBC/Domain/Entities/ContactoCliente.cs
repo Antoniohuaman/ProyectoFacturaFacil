@@ -3,19 +3,65 @@ using System;
 namespace GestionClientesBC.Domain.Entities
 {
     /// <summary>
-    /// Medio de contacto adicional de un cliente.
+    /// Representa un contacto secundario asociado a un cliente (email alterno, teléfono adicional, dirección, etc).
     /// </summary>
     public class ContactoCliente
     {
-        public Guid ContactoId { get; }
-        public string TipoContacto { get; }
-        public string ValorContacto { get; }
+        /// <summary>
+        /// Identificador único del contacto.
+        /// </summary>
+        public Guid ContactoId { get; private set; }
 
-        public ContactoCliente(Guid contactoId, string tipoContacto, string valorContacto)
+        /// <summary>
+        /// Tipo de contacto (EMAIL_SECUNDARIO, TELEFONO_SECUNDARIO, DIRECCION, etc).
+        /// </summary>
+        public TipoContacto Tipo { get; private set; }
+
+        /// <summary>
+        /// Valor del contacto (ejemplo: dirección de email, número telefónico, dirección física).
+        /// </summary>
+        public string Valor { get; private set; }
+
+        /// <summary>
+        /// Fecha de creación del contacto.
+        /// </summary>
+        public DateTime FechaCreacion { get; private set; }
+
+        /// <summary>
+        /// Fecha de última modificación del contacto.
+        /// </summary>
+        public DateTime? FechaModificacion { get; private set; }
+
+        /// <summary>
+        /// Constructor para crear un nuevo contacto.
+        /// </summary>
+        public ContactoCliente(Guid contactoId, TipoContacto tipo, string valor)
         {
             ContactoId = contactoId != Guid.Empty ? contactoId : throw new ArgumentException("El Id no puede ser vacío.", nameof(contactoId));
-            TipoContacto = tipoContacto ?? throw new ArgumentNullException(nameof(tipoContacto));
-            ValorContacto = valorContacto ?? throw new ArgumentNullException(nameof(valorContacto));
+            Tipo = tipo;
+            Valor = !string.IsNullOrWhiteSpace(valor) ? valor : throw new ArgumentNullException(nameof(valor));
+            FechaCreacion = DateTime.UtcNow;
         }
+
+        /// <summary>
+        /// Actualiza el valor del contacto.
+        /// </summary>
+        public void ActualizarValor(string nuevoValor)
+        {
+            if (string.IsNullOrWhiteSpace(nuevoValor))
+                throw new ArgumentNullException(nameof(nuevoValor));
+            Valor = nuevoValor;
+            FechaModificacion = DateTime.UtcNow;
+        }
+    }
+
+    /// <summary>
+    /// Tipos de contacto permitidos.
+    /// </summary>
+    public enum TipoContacto
+    {
+        EMAIL_SECUNDARIO,
+        TELEFONO_SECUNDARIO,
+        DIRECCION
     }
 }
