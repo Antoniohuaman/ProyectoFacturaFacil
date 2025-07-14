@@ -14,8 +14,14 @@ namespace GestionClientesBC.Domain.Entities
         public ReferenciaId ReferenciaId { get; }
         public DateTime FechaOperacion { get; }
         public bool EstaPendiente { get; set; }
+        public bool EsCriticaParaRetencion { get; set; }
 
-        public OperacionCliente(Guid operacionId, TipoOperacion tipoOperacion, MontoOperacion montoOperacion, ReferenciaId referenciaId, DateTime fechaOperacion)
+        public OperacionCliente(
+            Guid operacionId,
+            TipoOperacion tipoOperacion,
+            MontoOperacion montoOperacion,
+            ReferenciaId referenciaId,
+            DateTime fechaOperacion)
         {
             OperacionId = operacionId != Guid.Empty ? operacionId : throw new ArgumentException("El Id no puede ser vacío.", nameof(operacionId));
             TipoOperacion = tipoOperacion;

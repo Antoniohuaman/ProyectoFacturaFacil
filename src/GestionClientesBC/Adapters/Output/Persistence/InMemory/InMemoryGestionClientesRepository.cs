@@ -36,5 +36,15 @@ namespace GestionClientesBC.Adapters.Output.Persistence.InMemory
             _clientes[cliente.DocumentoIdentidad] = cliente;
             return Task.CompletedTask;
         }
+
+        public Task DeleteAsync(Guid clienteId)
+        {
+            var cliente = _clientes.Values.FirstOrDefault(c => c.ClienteId == clienteId);
+            if (cliente != null)
+            {
+                _clientes.TryRemove(cliente.DocumentoIdentidad, out _);
+            }
+            return Task.CompletedTask;
+        }
     }
 }

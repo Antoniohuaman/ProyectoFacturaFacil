@@ -11,6 +11,8 @@ namespace GestionClientesBC.Application.Interfaces
         Task<Cliente?> GetByDocumentoIdentidadAsync(DocumentoIdentidad docId);
         Task AddAsync(Cliente cliente); // <-- Renombra para consistencia
         Task UpdateAsync(Cliente cliente); // <-- Renombra para consistencia
-        // Agrega otros métodos según tus necesidades
+                                           // Agrega otros métodos según tus necesidades
+        // En IGestionClientesRepository.cs
+        Task DeleteAsync(Guid clienteId);
     }
 }
