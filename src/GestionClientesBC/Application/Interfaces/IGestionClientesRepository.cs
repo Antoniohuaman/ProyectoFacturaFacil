@@ -21,12 +21,14 @@ namespace GestionClientesBC.Application.Interfaces
         Task<ICollection<AdjuntoCliente>> ObtenerAdjuntosPorClienteIdAsync(Guid clienteId);
         Task<ICollection<OperacionCliente>> ObtenerOperacionesPorClienteIdAsync(Guid clienteId, DateTime desde);
         Task<ICollection<OperacionCliente>> ObtenerOperacionesPorClienteIdAsync(
-    Guid clienteId,
-    DateTime? fechaDesde,
-    DateTime? fechaHasta,
-    TipoOperacion? tipoOperacion,
-    int? page,
-    int? pageSize
-);
+        Guid clienteId,
+        DateTime? fechaDesde,
+        DateTime? fechaHasta,
+        TipoOperacion? tipoOperacion,
+        int? page,
+        int? pageSize);
+        // Métodos necesarios para RegistrarOperacionClienteUseCase
+        Task RegistrarOperacionClienteAsync(Guid clienteId, OperacionCliente operacion);
+                                                     
     }
 }

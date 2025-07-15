@@ -77,26 +77,37 @@ namespace GestionClientesBC.Adapters.Output.Persistence.InMemory
     TipoOperacion? tipoOperacion,
     int? page,
     int? pageSize)
+        {
+            var cliente = _clientes.Values.FirstOrDefault(c => c.ClienteId == clienteId);
+            if (cliente == null)
+                return Task.FromResult<ICollection<OperacionCliente>>(new List<OperacionCliente>());
+
+            var query = cliente.Operaciones.AsQueryable();
+
+            if (fechaDesde.HasValue)
+                query = query.Where(o => o.FechaOperacion >= fechaDesde.Value);
+            if (fechaHasta.HasValue)
+                query = query.Where(o => o.FechaOperacion <= fechaHasta.Value);
+            if (tipoOperacion.HasValue)
+                query = query.Where(o => o.TipoOperacion == tipoOperacion.Value);
+
+            query = query.OrderByDescending(o => o.FechaOperacion);
+
+            if (page.HasValue && pageSize.HasValue)
+                query = query.Skip((page.Value - 1) * pageSize.Value).Take(pageSize.Value);
+
+            return Task.FromResult<ICollection<OperacionCliente>>(query.ToList());
+        }
+        //registrar operacion
+        public Task RegistrarOperacionClienteAsync(Guid clienteId, OperacionCliente operacion)
 {
     var cliente = _clientes.Values.FirstOrDefault(c => c.ClienteId == clienteId);
     if (cliente == null)
-        return Task.FromResult<ICollection<OperacionCliente>>(new List<OperacionCliente>());
+        throw new InvalidOperationException("Cliente no encontrado.");
 
-    var query = cliente.Operaciones.AsQueryable();
+    cliente.AgregarOperacion(operacion);
+    return Task.CompletedTask;
 
-    if (fechaDesde.HasValue)
-        query = query.Where(o => o.FechaOperacion >= fechaDesde.Value);
-    if (fechaHasta.HasValue)
-        query = query.Where(o => o.FechaOperacion <= fechaHasta.Value);
-    if (tipoOperacion.HasValue)
-        query = query.Where(o => o.TipoOperacion == tipoOperacion.Value);
-
-    query = query.OrderByDescending(o => o.FechaOperacion);
-
-    if (page.HasValue && pageSize.HasValue)
-        query = query.Skip((page.Value - 1) * pageSize.Value).Take(pageSize.Value);
-
-    return Task.FromResult<ICollection<OperacionCliente>>(query.ToList());
 }
     }
 }

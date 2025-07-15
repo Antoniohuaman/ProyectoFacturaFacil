@@ -183,6 +183,14 @@ namespace GestionClientesBC.Domain.Aggregates
             if (adjunto != null)
                 adjunto.MarcarInactivo();
         }
+        public void AgregarOperacion(OperacionCliente operacion)
+{
+    if (operacion == null)
+        throw new ArgumentNullException(nameof(operacion));
+    if (_operaciones.Any(o => o.ReferenciaId.ToString() == operacion.ReferenciaId.ToString()))
+        return; // Evita duplicados
+    _operaciones.Add(operacion);
+}
 
         
 
