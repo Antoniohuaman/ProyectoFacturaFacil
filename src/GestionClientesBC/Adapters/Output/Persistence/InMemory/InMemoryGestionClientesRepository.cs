@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using GestionClientesBC.Application.Interfaces;
 using GestionClientesBC.Domain.Aggregates;
 using GestionClientesBC.Domain.ValueObjects;
+using GestionClientesBC.Domain.Entities;
 
 namespace GestionClientesBC.Adapters.Output.Persistence.InMemory
 {
@@ -46,5 +47,27 @@ namespace GestionClientesBC.Adapters.Output.Persistence.InMemory
             }
             return Task.CompletedTask;
         }
+        public Task<ICollection<ContactoCliente>> ObtenerContactosPorClienteIdAsync(Guid clienteId)
+{
+    var cliente = _clientes.Values.FirstOrDefault(c => c.ClienteId == clienteId);
+    ICollection<ContactoCliente> contactos = cliente?.Contactos.ToList() ?? new List<ContactoCliente>();
+    return Task.FromResult(contactos);
+}
+
+public Task<ICollection<AdjuntoCliente>> ObtenerAdjuntosPorClienteIdAsync(Guid clienteId)
+{
+    var cliente = _clientes.Values.FirstOrDefault(c => c.ClienteId == clienteId);
+    ICollection<AdjuntoCliente> adjuntos = cliente?.Adjuntos.ToList() ?? new List<AdjuntoCliente>();
+    return Task.FromResult(adjuntos);
+}
+
+public Task<ICollection<OperacionCliente>> ObtenerOperacionesPorClienteIdAsync(Guid clienteId, DateTime desde)
+{
+    var cliente = _clientes.Values.FirstOrDefault(c => c.ClienteId == clienteId);
+    ICollection<OperacionCliente> operaciones = cliente != null
+        ? cliente.Operaciones.Where(o => o.FechaOperacion >= desde).ToList()
+        : new List<OperacionCliente>();
+    return Task.FromResult(operaciones);
+}
     }
 }
