@@ -2,24 +2,28 @@ using System;
 
 namespace GestionClientesBC.Domain.Entities
 {
-    /// <summary>
-    /// Documento o imagen asociado a un cliente.
-    /// </summary>
     public class AdjuntoCliente
     {
-        public Guid AdjuntoId { get; }
-        public string TipoAdjunto { get; }
-        public string NombreArchivo { get; }
-        public string Ruta { get; }
-        public DateTime FechaSubida { get; }
+        public Guid AdjuntoId { get; private set; }
+        public string NombreArchivo { get; private set; }
+        public string Ruta { get; private set; }
+        public DateTime FechaSubida { get; private set; }
+        public string? Comentario { get; private set; }
+        public bool Activo { get; private set; }
 
-        public AdjuntoCliente(Guid adjuntoId, string tipoAdjunto, string nombreArchivo, string ruta, DateTime fechaSubida)
+        public AdjuntoCliente(Guid adjuntoId, string nombreArchivo, string ruta, DateTime fechaSubida, string? comentario)
         {
-            AdjuntoId = adjuntoId != Guid.Empty ? adjuntoId : throw new ArgumentException("El Id no puede ser vacío.", nameof(adjuntoId));
-            TipoAdjunto = tipoAdjunto ?? throw new ArgumentNullException(nameof(tipoAdjunto));
-            NombreArchivo = nombreArchivo ?? throw new ArgumentNullException(nameof(nombreArchivo));
-            Ruta = ruta ?? throw new ArgumentNullException(nameof(ruta));
+            AdjuntoId = adjuntoId;
+            NombreArchivo = nombreArchivo;
+            Ruta = ruta;
             FechaSubida = fechaSubida;
+            Comentario = comentario;
+            Activo = true;
+        }
+
+        public void MarcarInactivo()
+        {
+            Activo = false;
         }
     }
 }

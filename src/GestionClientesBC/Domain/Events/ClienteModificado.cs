@@ -6,15 +6,24 @@ namespace GestionClientesBC.Domain.Events
     public class ClienteModificado : IDomainEvent
     {
         public Guid ClienteId { get; }
-        public IDictionary<string, (object? anterior, object? nuevo)> Cambios { get; }
-        public DateTime Fecha { get; }
-        public DateTime OccurredOn => Fecha; // Implementación de la interfaz
+        public IDictionary<string, (object? anterior, object? nuevo)>? Cambios { get; }
+        public DateTime FechaModificacion { get; }
+        public DateTime OccurredOn => FechaModificacion;
 
-        public ClienteModificado(Guid clienteId, IDictionary<string, (object? anterior, object? nuevo)> cambios, DateTime fecha)
+        // Constructor para cambios detallados
+        public ClienteModificado(Guid clienteId, IDictionary<string, (object? anterior, object? nuevo)> cambios, DateTime fechaModificacion)
         {
             ClienteId = clienteId;
             Cambios = cambios;
-            Fecha = fecha;
+            FechaModificacion = fechaModificacion;
+        }
+
+        // Constructor simple (opcional, para otros casos de uso)
+        public ClienteModificado(Guid clienteId, DateTime fechaModificacion)
+        {
+            ClienteId = clienteId;
+            Cambios = null;
+            FechaModificacion = fechaModificacion;
         }
     }
 }

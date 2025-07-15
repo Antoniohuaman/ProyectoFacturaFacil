@@ -172,6 +172,19 @@ namespace GestionClientesBC.Domain.Aggregates
                 throw new ArgumentNullException(nameof(domainEvent));
             _domainEvents.Add(domainEvent);
         }
+        public void AgregarAdjunto(AdjuntoCliente adjunto)
+        {
+            _adjuntos.Add(adjunto);
+        }
+
+        public void EliminarAdjunto(Guid adjuntoId)
+        {
+            var adjunto = _adjuntos.FirstOrDefault(a => a.AdjuntoId == adjuntoId && a.Activo);
+            if (adjunto != null)
+                adjunto.MarcarInactivo();
+        }
+
+        
 
         // Métodos de comportamiento (crear, editar, deshabilitar, eliminar, etc.) se agregan aquí
     }

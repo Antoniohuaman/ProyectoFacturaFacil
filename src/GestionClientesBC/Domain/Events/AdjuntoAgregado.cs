@@ -3,9 +3,6 @@ using GestionClientesBC.Domain.Entities;
 
 namespace GestionClientesBC.Domain.Events
 {
-    /// <summary>
-    /// Evento que se dispara cuando se agrega un adjunto a un cliente.
-    /// </summary>
     public sealed class AdjuntoAgregado : IDomainEvent
     {
         public Guid ClienteId { get; }
