@@ -15,10 +15,18 @@ namespace GestionClientesBC.Application.Interfaces
                                            // Agrega otros métodos según tus necesidades
                                            // En IGestionClientesRepository.cs
         Task DeleteAsync(Guid clienteId);
-        
+
         // Métodos necesarios para ConsultarClienteUseCase
         Task<ICollection<ContactoCliente>> ObtenerContactosPorClienteIdAsync(Guid clienteId);
         Task<ICollection<AdjuntoCliente>> ObtenerAdjuntosPorClienteIdAsync(Guid clienteId);
         Task<ICollection<OperacionCliente>> ObtenerOperacionesPorClienteIdAsync(Guid clienteId, DateTime desde);
+        Task<ICollection<OperacionCliente>> ObtenerOperacionesPorClienteIdAsync(
+    Guid clienteId,
+    DateTime? fechaDesde,
+    DateTime? fechaHasta,
+    TipoOperacion? tipoOperacion,
+    int? page,
+    int? pageSize
+);
     }
 }

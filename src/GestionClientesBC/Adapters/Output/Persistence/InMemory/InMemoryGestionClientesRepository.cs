@@ -48,26 +48,55 @@ namespace GestionClientesBC.Adapters.Output.Persistence.InMemory
             return Task.CompletedTask;
         }
         public Task<ICollection<ContactoCliente>> ObtenerContactosPorClienteIdAsync(Guid clienteId)
-{
-    var cliente = _clientes.Values.FirstOrDefault(c => c.ClienteId == clienteId);
-    ICollection<ContactoCliente> contactos = cliente?.Contactos.ToList() ?? new List<ContactoCliente>();
-    return Task.FromResult(contactos);
-}
+        {
+            var cliente = _clientes.Values.FirstOrDefault(c => c.ClienteId == clienteId);
+            ICollection<ContactoCliente> contactos = cliente?.Contactos.ToList() ?? new List<ContactoCliente>();
+            return Task.FromResult(contactos);
+        }
 
-public Task<ICollection<AdjuntoCliente>> ObtenerAdjuntosPorClienteIdAsync(Guid clienteId)
-{
-    var cliente = _clientes.Values.FirstOrDefault(c => c.ClienteId == clienteId);
-    ICollection<AdjuntoCliente> adjuntos = cliente?.Adjuntos.ToList() ?? new List<AdjuntoCliente>();
-    return Task.FromResult(adjuntos);
-}
+        public Task<ICollection<AdjuntoCliente>> ObtenerAdjuntosPorClienteIdAsync(Guid clienteId)
+        {
+            var cliente = _clientes.Values.FirstOrDefault(c => c.ClienteId == clienteId);
+            ICollection<AdjuntoCliente> adjuntos = cliente?.Adjuntos.ToList() ?? new List<AdjuntoCliente>();
+            return Task.FromResult(adjuntos);
+        }
 
-public Task<ICollection<OperacionCliente>> ObtenerOperacionesPorClienteIdAsync(Guid clienteId, DateTime desde)
+        public Task<ICollection<OperacionCliente>> ObtenerOperacionesPorClienteIdAsync(Guid clienteId, DateTime desde)
+        {
+            var cliente = _clientes.Values.FirstOrDefault(c => c.ClienteId == clienteId);
+            ICollection<OperacionCliente> operaciones = cliente != null
+            ? cliente.Operaciones.Where(o => o.FechaOperacion >= desde).ToList()
+            : new List<OperacionCliente>();
+            return Task.FromResult(operaciones);
+        }
+        //consultar historial 
+        public Task<ICollection<OperacionCliente>> ObtenerOperacionesPorClienteIdAsync(
+    Guid clienteId,
+    DateTime? fechaDesde,
+    DateTime? fechaHasta,
+    TipoOperacion? tipoOperacion,
+    int? page,
+    int? pageSize)
 {
     var cliente = _clientes.Values.FirstOrDefault(c => c.ClienteId == clienteId);
-    ICollection<OperacionCliente> operaciones = cliente != null
-        ? cliente.Operaciones.Where(o => o.FechaOperacion >= desde).ToList()
-        : new List<OperacionCliente>();
-    return Task.FromResult(operaciones);
+    if (cliente == null)
+        return Task.FromResult<ICollection<OperacionCliente>>(new List<OperacionCliente>());
+
+    var query = cliente.Operaciones.AsQueryable();
+
+    if (fechaDesde.HasValue)
+        query = query.Where(o => o.FechaOperacion >= fechaDesde.Value);
+    if (fechaHasta.HasValue)
+        query = query.Where(o => o.FechaOperacion <= fechaHasta.Value);
+    if (tipoOperacion.HasValue)
+        query = query.Where(o => o.TipoOperacion == tipoOperacion.Value);
+
+    query = query.OrderByDescending(o => o.FechaOperacion);
+
+    if (page.HasValue && pageSize.HasValue)
+        query = query.Skip((page.Value - 1) * pageSize.Value).Take(pageSize.Value);
+
+    return Task.FromResult<ICollection<OperacionCliente>>(query.ToList());
 }
     }
 }
