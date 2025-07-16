@@ -27,4 +27,10 @@
    <ProjectReference Include="..\..\src\GestionClientesBC\Adapters\GestionClientesBC.Adapters.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+  <None Update="Resources\clientes.xlsx">
+    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+  </None>
+</ItemGroup>
+
 </Project>
