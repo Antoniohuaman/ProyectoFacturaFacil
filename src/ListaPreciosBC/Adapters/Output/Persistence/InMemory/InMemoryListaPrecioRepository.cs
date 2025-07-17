@@ -12,6 +12,7 @@ namespace ListaPreciosBC.Adapters.Output.Persistence.InMemory
     public class InMemoryListaPrecioRepository : IListaPrecioRepository
     {
         private readonly List<ListaPrecio> _listas = new();
+        private readonly List<HistorialPrecio> _historiales = new();
 
         public Task<ListaPrecio?> GetByIdAsync(Guid listaPrecioId)
             => Task.FromResult(_listas.FirstOrDefault(x => x.ListaPrecioId == listaPrecioId));
@@ -37,6 +38,28 @@ namespace ListaPreciosBC.Adapters.Output.Persistence.InMemory
         public Task UpdateAsync(ListaPrecio listaPrecio)
         {
             // Para InMemory, nada que hacer (referencia ya actualizada)
+            return Task.CompletedTask;
+        }
+
+        // Métodos agregados para cumplir la interfaz
+
+        public Task<PrecioEspecifico?> ObtenerPrecioEspecificoPorIdAsync(Guid precioEspecificoId)
+        {
+            var precio = _listas
+                .SelectMany(l => l.Precios)
+                .FirstOrDefault(p => p.PrecioEspecificoId == precioEspecificoId);
+            return Task.FromResult(precio);
+        }
+
+        public Task AgregarHistorialAsync(HistorialPrecio historial)
+        {
+            _historiales.Add(historial);
+            return Task.CompletedTask;
+        }
+
+        public Task ActualizarPrecioEspecificoAsync(PrecioEspecifico precio)
+        {
+            // En memoria, nada que hacer si ya tienes la referencia actualizada.
             return Task.CompletedTask;
         }
     }

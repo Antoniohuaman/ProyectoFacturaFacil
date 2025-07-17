@@ -7,6 +7,7 @@ namespace ListaPreciosBC.Domain.Events
         Guid PrecioEspecificoId,
         List<(string Campo, object? Anterior, object? Nuevo)> CamposModificados,
         string UsuarioId,
-        DateTime FechaModificacion
+        DateTime FechaModificacion,
+        string Motivo
     );
 }

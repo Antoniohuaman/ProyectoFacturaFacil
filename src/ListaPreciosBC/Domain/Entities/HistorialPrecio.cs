@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace ListaPreciosBC.Domain.Entities
 {
@@ -9,25 +10,22 @@ namespace ListaPreciosBC.Domain.Entities
         public string UsuarioId { get; private set; }
         public DateTime FechaCambio { get; private set; }
         public string Motivo { get; private set; }
-        public decimal ValorAnterior { get; private set; }
-        public decimal ValorNuevo { get; private set; }
+        public List<(string Campo, object? Anterior, object? Nuevo)> Cambios { get; private set; }
 
         public HistorialPrecio(
             Guid historialPrecioId,
             Guid precioEspecificoId,
             string usuarioId,
             DateTime fechaCambio,
-            string motivo,
-            decimal valorAnterior,
-            decimal valorNuevo)
+            List<(string Campo, object? Anterior, object? Nuevo)> cambios,
+            string motivo)
         {
             HistorialPrecioId = historialPrecioId;
             PrecioEspecificoId = precioEspecificoId;
             UsuarioId = usuarioId;
             FechaCambio = fechaCambio;
+            Cambios = cambios;
             Motivo = motivo;
-            ValorAnterior = valorAnterior;
-            ValorNuevo = valorNuevo;
         }
     }
 }

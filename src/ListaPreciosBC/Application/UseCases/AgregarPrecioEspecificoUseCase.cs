@@ -25,6 +25,7 @@ namespace ListaPreciosBC.Application.UseCases
 
             var precio = new PrecioEspecifico(
                 Guid.NewGuid(),
+                dto.ListaPrecioId,
                 dto.Valor,
                 dto.Moneda,
                 dto.Prioridad,
@@ -34,10 +35,6 @@ namespace ListaPreciosBC.Application.UseCases
 
             // Aquí podrías agregar validaciones de negocio adicionales
 
-            // Suponiendo que ListaPrecio tiene un método para agregar precios:
-            // lista.AgregarPrecioEspecifico(precio);
-
-            // Por ahora, accedemos a la colección interna (ajusta según tu modelo)
             lista.AgregarPrecioEspecifico(precio);
 
             await _repo.UpdateAsync(lista);

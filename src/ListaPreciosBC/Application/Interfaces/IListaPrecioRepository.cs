@@ -13,5 +13,8 @@ namespace ListaPreciosBC.Application.Interfaces
         Task AddAsync(ListaPrecio listaPrecio);
         Task UpdateAsync(ListaPrecio listaPrecio);
         // Otros métodos según necesidades (ej: búsqueda por producto, etc.)
+        Task<PrecioEspecifico?> ObtenerPrecioEspecificoPorIdAsync(Guid precioEspecificoId);
+        Task AgregarHistorialAsync(HistorialPrecio historial);
+        Task ActualizarPrecioEspecificoAsync(PrecioEspecifico precioEspecifico);
     }
 }
