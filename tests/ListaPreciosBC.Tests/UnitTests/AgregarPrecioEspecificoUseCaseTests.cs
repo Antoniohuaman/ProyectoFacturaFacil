@@ -28,7 +28,7 @@ namespace ListaPreciosBC.Tests.UnitTests
         TipoLista.CLIENTE,
         new CriterioLista(Guid.NewGuid(), null, null, null),
         Moneda.PEN,
-        new Prioridad(1),
+        new Prioridad("Alta"),
         vigenciaLista,
         fechaInicio
     );
@@ -47,7 +47,7 @@ namespace ListaPreciosBC.Tests.UnitTests
         ListaPrecioId = lista.ListaPrecioId,
         Valor = 100,
         Moneda = Moneda.PEN,
-        Prioridad = new Prioridad(1),
+        Prioridad = new Prioridad("Alta"),
         Vigencia = vigenciaPrecio,
         UsuarioId = "usuario-test"
     };

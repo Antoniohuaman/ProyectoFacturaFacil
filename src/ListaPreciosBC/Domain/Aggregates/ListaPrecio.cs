@@ -51,7 +51,7 @@ namespace ListaPreciosBC.Domain.Aggregates
             // No permitir precios duplicados en el mismo rango/vigencia
             bool existeDuplicado = _precios.Exists(p =>
                 p.Moneda == precio.Moneda &&
-                p.Prioridad.Valor == precio.Prioridad.Valor &&
+                p.Prioridad.Nombre == precio.Prioridad.Nombre &&
                 ((p.RangoVolumen == null && precio.RangoVolumen == null) ||
                  (p.RangoVolumen != null && precio.RangoVolumen != null && p.RangoVolumen.Equals(precio.RangoVolumen))) &&
                 p.Vigencia.FechaInicio == precio.Vigencia.FechaInicio &&

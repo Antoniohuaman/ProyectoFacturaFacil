@@ -25,7 +25,7 @@ namespace ListaPreciosBC.Tests.UnitTests
                 tipoLista,
                 criterio,
                 Moneda.PEN,
-                new Prioridad(1),
+                new Prioridad("Alta"),
                 new PeriodoVigencia(fecha.AddDays(-1), fecha.AddDays(10)),
                 fecha.AddDays(-2)
             );

@@ -30,7 +30,7 @@ namespace ListaPreciosBC.Tests.UnitTests
                     periodoVigencia: null
                 ),
                 Moneda = Moneda.PEN,
-                Prioridad = new Prioridad(1),
+                Prioridad = new Prioridad("Alta"),
                 Vigencia = new PeriodoVigencia(DateTime.UtcNow, DateTime.UtcNow.AddMonths(1)),
                 UsuarioId = "usuario-test"
             };

@@ -25,7 +25,7 @@ namespace ListaPreciosBC.Tests.UnitTests
                 TipoLista.CLIENTE,
                 new CriterioLista(Guid.NewGuid(), null, null, null),
                 Moneda.PEN,
-                new Prioridad(1),
+                new Prioridad("Alta"),
                 new PeriodoVigencia(fechaInicio, fechaFin),
                 fechaInicio
             );
