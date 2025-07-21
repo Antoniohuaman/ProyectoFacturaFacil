@@ -27,4 +27,10 @@
     <ProjectReference Include="..\..\src\ListaPreciosBC\Domain\ListaPreciosBC.Domain.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+  <None Update="Resources\importar_lista_precios.xlsx">
+    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+  </None>
+</ItemGroup>
+
 </Project>

@@ -13,6 +13,7 @@ namespace ListaPreciosBC.Domain.Entities
         public RangoVolumen? RangoVolumen { get; private set; }
         public bool Activo { get; private set; }
         public Guid ListaPrecioId { get; private set; }
+        public DateTime FechaCreacion { get; private set; } // <-- NUEVO
 
         public PrecioEspecifico(
             Guid precioEspecificoId,
@@ -21,7 +22,8 @@ namespace ListaPreciosBC.Domain.Entities
             Moneda moneda,
             Prioridad prioridad,
             PeriodoVigencia vigencia,
-            RangoVolumen? rangoVolumen = null)
+            RangoVolumen? rangoVolumen = null,
+            DateTime? fechaCreacion = null) // <-- NUEVO)
         {
             PrecioEspecificoId = precioEspecificoId;
             ListaPrecioId = listaPrecioId;
@@ -31,6 +33,7 @@ namespace ListaPreciosBC.Domain.Entities
             Vigencia = vigencia;
             RangoVolumen = rangoVolumen;
             Activo = true;
+            FechaCreacion = fechaCreacion ?? DateTime.UtcNow; // <-- NUEVO
         }
 
         /// <summary>

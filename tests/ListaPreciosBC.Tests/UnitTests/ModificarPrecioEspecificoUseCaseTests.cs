@@ -7,6 +7,7 @@ using ListaPreciosBC.Application.UseCases;
 using ListaPreciosBC.Domain.Entities;
 using ListaPreciosBC.Domain.ValueObjects;
 using ListaPreciosBC.Domain.Aggregates;
+using ListaPreciosBC.Domain.Events;
 using Moq;
 using NUnit.Framework;
 
