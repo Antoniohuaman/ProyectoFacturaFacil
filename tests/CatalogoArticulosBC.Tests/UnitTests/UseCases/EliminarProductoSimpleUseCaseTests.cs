@@ -22,7 +22,7 @@ namespace CatalogoArticulosBC.Tests.UnitTests.UseCases
                 new UnidadMedida("UN"),
                 new AfectacionIGV("10%"),
                 new CodigoSUNAT("1000"),
-                new CuentaContable("40.01"),
+                new BaseImponibleVentas(40.01m),
                 new CentroCosto("CC01"),
                 new Presupuesto(50m),
                 new Peso(0.5m),

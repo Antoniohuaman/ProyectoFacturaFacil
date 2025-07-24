@@ -17,7 +17,7 @@ namespace CatalogoArticulosBC.Domain.Aggregates
         public UnidadMedida UnidadMedida { get; }
         public AfectacionIGV AfectacionIgv { get; }
         public CodigoSUNAT CodigoSunat { get; }
-        public CuentaContable CuentaContable { get; }
+        public BaseImponibleVentas BaseImponibleVentas { get; }
         public CentroCosto CentroCosto { get; }
         public Presupuesto Presupuesto { get; }
         public Peso Peso { get; private set; }
@@ -36,7 +36,7 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             UnidadMedida unidadMedida,
             AfectacionIGV afectacionIgv,
             CodigoSUNAT codigoSunat,
-            CuentaContable cuentaContable,
+            BaseImponibleVentas baseImponibleVentas,
             CentroCosto centroCosto,
             Presupuesto presupuesto,
             Peso peso,
@@ -51,7 +51,7 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             UnidadMedida = unidadMedida;
             AfectacionIgv = afectacionIgv;
             CodigoSunat = codigoSunat;
-            CuentaContable = cuentaContable;
+            BaseImponibleVentas = baseImponibleVentas;
             CentroCosto = centroCosto;
             Presupuesto = presupuesto;
             Peso = peso;

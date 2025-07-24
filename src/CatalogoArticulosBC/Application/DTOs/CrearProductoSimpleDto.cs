@@ -1,4 +1,6 @@
 // src/CatalogoArticulosBC/Application/DTOs/CrearProductoSimpleDto.cs
+using CatalogoArticulosBC.Domain.ValueObjects;
+
 namespace CatalogoArticulosBC.Application.DTOs
 {
     public sealed class CrearProductoSimpleDto
@@ -10,11 +12,12 @@ namespace CatalogoArticulosBC.Application.DTOs
             string unidadMedida,
             string afectacionIgv,
             string codigoSunat,
-            string cuentaContable,
+            decimal baseImponibleVentas,
             string centroCosto,
             decimal presupuesto,
             decimal peso,
-            string tipo)
+            string tipo,
+            decimal precio)
         {
             Sku = sku;
             Nombre = nombre;
@@ -22,20 +25,21 @@ namespace CatalogoArticulosBC.Application.DTOs
             UnidadMedida = unidadMedida;
             AfectacionIgv = afectacionIgv;
             CodigoSunat = codigoSunat;
-            CuentaContable = cuentaContable;
+            BaseImponibleVentas = baseImponibleVentas;
             CentroCosto = centroCosto;
             Presupuesto = presupuesto;
             Peso = peso;
             Tipo = tipo;
+            Precio = precio;
         }
 
-        public string Sku { get; }
+        public string Sku { get; set; }
         public string Nombre { get; }
         public string Descripcion { get; }
         public string UnidadMedida { get; }
         public string AfectacionIgv { get; }
         public string CodigoSunat { get; }
-        public string CuentaContable { get; }
+        public decimal BaseImponibleVentas { get; }
         public string CentroCosto { get; }
         public decimal Presupuesto { get; }
         public decimal Peso { get; }

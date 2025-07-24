@@ -1,4 +1,3 @@
-// tests/CatalogoArticulosBC.Tests/UnitTests/UseCases/CrearProductoSimpleUseCaseTests.cs
 using System;
 using System.Threading.Tasks;
 using NUnit.Framework;
@@ -26,11 +25,12 @@ namespace CatalogoArticulosBC.Tests.UnitTests.UseCases
                 unidadMedida: "UN",
                 afectacionIgv: "10%",
                 codigoSunat: "1000",
-                cuentaContable: "40.01",
+                baseImponibleVentas: 100m,
                 centroCosto: "CC01",
                 presupuesto: 100m,
                 peso: 1.5m,
-                tipo: "SERVICIO" // <-- agrega este argumento(incorporado)
+                tipo: "SERVICIO",
+                precio: 10.0m
             );
 
             // Act
@@ -56,11 +56,12 @@ namespace CatalogoArticulosBC.Tests.UnitTests.UseCases
                 unidadMedida: "UN",
                 afectacionIgv: "10%",
                 codigoSunat: "1000",
-                cuentaContable: "40.01",
+                baseImponibleVentas: 50m,
                 centroCosto: "CC01",
                 presupuesto: 50m,
                 peso: 0.5m,
-                tipo: "SERVICIO" // <-- agrega este argumento(incorporado)
+                tipo: "SERVICIO",
+                precio: 10.0m
             );
             // crear primero
             var initUse = new CrearProductoSimpleUseCase(repo, uow);
@@ -71,7 +72,7 @@ namespace CatalogoArticulosBC.Tests.UnitTests.UseCases
             // Act & Assert
             Assert.That(
                 async () => await useCase.HandleAsync(dto),
-                Throws.InvalidOperationException.With.Message.Contain("ya existe")
+                Throws.TypeOf<SKUDuplicadoException>().With.Message.Contain("ya existe")
             );
         }
     }

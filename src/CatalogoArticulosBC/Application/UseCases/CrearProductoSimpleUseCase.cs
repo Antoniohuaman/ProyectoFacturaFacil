@@ -1,11 +1,9 @@
-// src/CatalogoArticulosBC/Application/UseCases/CrearProductoSimpleUseCase.cs
 using System;
 using System.Threading.Tasks;
 using CatalogoArticulosBC.Application.DTOs;
 using CatalogoArticulosBC.Application.Interfaces;
 using CatalogoArticulosBC.Domain.Aggregates;
 using CatalogoArticulosBC.Domain.ValueObjects;
-
 
 namespace CatalogoArticulosBC.Application.UseCases
 {
@@ -27,20 +25,22 @@ namespace CatalogoArticulosBC.Application.UseCases
 
         public async Task<Guid> HandleAsync(CrearProductoSimpleDto dto)
         {
-            // 1. Validar unicidad de SKU
-            if (await _repo.GetProductoSimpleBySkuAsync(new SKU(dto.Sku)) != null)
-                throw new InvalidOperationException($"El SKU {dto.Sku} ya existe.");  // RN-CA-001 :contentReference[oaicite:0]{index=0}
+            // 1. Autogenerar SKU si está vacío
+            if (string.IsNullOrWhiteSpace(dto.Sku))
+                dto.Sku = Guid.NewGuid().ToString("N").Substring(0, 10).ToUpper();
 
-            // 2. Construir VOs y agregado
-            var unidad    = new UnidadMedida(dto.UnidadMedida);
-            var igv       = new AfectacionIGV(dto.AfectacionIgv);
-            var sunat     = new CodigoSUNAT(dto.CodigoSunat);
-            var cuenta    = new CuentaContable(dto.CuentaContable);
-            var centro    = new CentroCosto(dto.CentroCosto);
+            // 2. Validar unicidad de SKU
+            if (await _repo.GetProductoSimpleBySkuAsync(new SKU(dto.Sku)) != null)
+                throw new SKUDuplicadoException($"El SKU {dto.Sku} ya existe.");  // RN-CA-001
+
+            // 3. Construir VOs y agregado
+            var unidad = new UnidadMedida(dto.UnidadMedida);
+            var igv = new AfectacionIGV(dto.AfectacionIgv);
+            var sunat = new CodigoSUNAT(dto.CodigoSunat);
+            var baseImponible = new BaseImponibleVentas(dto.BaseImponibleVentas);
+            var centro = new CentroCosto(dto.CentroCosto);
             var presupuesto = new Presupuesto(dto.Presupuesto);
             var peso = new Peso(dto.Peso);
-            
-            ;
 
             var producto = new ProductoSimple(
                 dto.Sku,
@@ -49,19 +49,24 @@ namespace CatalogoArticulosBC.Application.UseCases
                 unidad,
                 igv,
                 sunat,
-                cuenta,
+                baseImponible,
                 centro,
                 presupuesto,
                 peso,
                 dto.Tipo,
                 dto.Precio
-                );
+            );
 
-            // 3. Persistir y commitear
+            // 4. Persistir y commitear
             await _repo.AddProductoSimpleAsync(producto);
             await _uow.CommitAsync();
 
             return producto.ProductoId;
         }
+    }
+
+    public class SKUDuplicadoException : Exception
+    {
+        public SKUDuplicadoException(string message) : base(message) { }
     }
 }

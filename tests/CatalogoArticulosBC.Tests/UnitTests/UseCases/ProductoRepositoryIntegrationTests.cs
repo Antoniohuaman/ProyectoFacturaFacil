@@ -19,7 +19,7 @@ namespace CatalogoArticulosBC.Tests.IntegrationTests
                 new UnidadMedida("UN"),
                 new AfectacionIGV("10%"),
                 new CodigoSUNAT("3000"),
-                new CuentaContable("40.03"),
+                new BaseImponibleVentas(40.03m),
                 new CentroCosto("CC03"),
                 new Presupuesto(300m),
                 new Peso(3m),
