@@ -1,4 +1,3 @@
-// src/CatalogoArticulosBC/Application/DTOs/CrearProductoVarianteDto.cs
 namespace CatalogoArticulosBC.Application.DTOs
 {
     public sealed class CrearProductoVarianteDto

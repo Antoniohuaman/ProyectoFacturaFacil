@@ -1,4 +1,3 @@
-// src/CatalogoArticulosBC/Domain/Aggregates/ProductoVariante.cs
 using System;
 using System.Collections.Generic;
 using CatalogoArticulosBC.Domain.ValueObjects;
@@ -14,6 +13,7 @@ namespace CatalogoArticulosBC.Domain.Aggregates
         public SKU Sku { get; private set; }
         public IReadOnlyCollection<AtributoVariante> Atributos { get; private set; }
         public bool Activo { get; private set; } = true;
+        public DateTime FechaCreacion { get; }
 
         public ProductoVariante(Guid padreId, string sku, IEnumerable<AtributoVariante> atributos)
         {
@@ -21,8 +21,9 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             ProductoPadreId = padreId;
             Sku = new SKU(sku);
             Atributos = new List<AtributoVariante>(atributos);
+            FechaCreacion = DateTime.UtcNow;
 
-            var ev = new ProductoCreado(ProductoVarianteId, Sku);
+            var ev = new ProductoCreado(ProductoVarianteId, Sku, "VARIANTE");
             // Dispatch(ev);
         }
 
@@ -32,28 +33,27 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             var ev = new ProductoInhabilitado(ProductoVarianteId, motivo);
             // Dispatch(ev);
         }
-        // En ProductoVariante.cs
-      public void Editar(string nuevoSku, IEnumerable<KeyValuePair<string, string>> nuevosAtributos)
-{
-    if (string.IsNullOrWhiteSpace(nuevoSku))
-        throw new ArgumentException("El SKU no puede estar vacío", nameof(nuevoSku));
 
-    if (nuevosAtributos == null)
-        throw new ArgumentNullException(nameof(nuevosAtributos));
+        public void Editar(string nuevoSku, IEnumerable<KeyValuePair<string, string>> nuevosAtributos)
+        {
+            if (string.IsNullOrWhiteSpace(nuevoSku))
+                throw new ArgumentException("El SKU no puede estar vacío", nameof(nuevoSku));
 
-    Sku = new SKU(nuevoSku);
+            if (nuevosAtributos == null)
+                throw new ArgumentNullException(nameof(nuevosAtributos));
 
-    var atributosList = new List<AtributoVariante>();
-    foreach (var kv in nuevosAtributos)
-    {
-        atributosList.Add(new AtributoVariante(kv.Key, kv.Value));
-    }
-    Atributos = atributosList;
+            Sku = new SKU(nuevoSku);
 
-    // Puedes lanzar un evento de dominio si lo necesitas
-    // var ev = new ProductoVarianteEditado(ProductoVarianteId, Sku, atributosList);
-    // Dispatch(ev);
+            var atributosList = new List<AtributoVariante>();
+            foreach (var kv in nuevosAtributos)
+            {
+                atributosList.Add(new AtributoVariante(kv.Key, kv.Value));
+            }
+            Atributos = atributosList;
 
+            // Puedes lanzar un evento de dominio si lo necesitas
+            // var ev = new ProductoVarianteEditado(ProductoVarianteId, Sku, atributosList);
+            // Dispatch(ev);
         }
     }
 }

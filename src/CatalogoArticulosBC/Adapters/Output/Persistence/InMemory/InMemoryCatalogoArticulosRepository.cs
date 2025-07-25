@@ -121,9 +121,28 @@ namespace CatalogoArticulosBC.Adapters.Output.Persistence.InMemory
         public Task<ProductoVariante?> GetProductoVarianteByIdAsync(Guid productoVarianteId)
         {
             var variante = _productos.Values
-            .OfType<ProductoVariante>()
-            .FirstOrDefault(v => v.ProductoVarianteId == productoVarianteId);
+                .OfType<ProductoVariante>()
+                .FirstOrDefault(v => v.ProductoVarianteId == productoVarianteId);
             return Task.FromResult(variante);
+        }
+
+        // --- MÉTODOS FALTANTES PARA SOPORTE DE VARIANTES POR PADRE E ID ---
+
+        public Task<ProductoSimple?> GetProductoSimpleByIdAsync(Guid productoId)
+        {
+            var producto = _productos.Values
+                .OfType<ProductoSimple>()
+                .FirstOrDefault(p => p.ProductoId == productoId);
+            return Task.FromResult(producto);
+        }
+
+        public Task<IEnumerable<ProductoVariante>> GetVariantesByPadreIdAsync(Guid productoPadreId)
+        {
+            var variantes = _productos.Values
+                .OfType<ProductoVariante>()
+                .Where(v => v.ProductoPadreId == productoPadreId)
+                .ToList();
+            return Task.FromResult<IEnumerable<ProductoVariante>>(variantes);
         }
     }
 }

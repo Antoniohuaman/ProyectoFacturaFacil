@@ -1,4 +1,3 @@
-// tests/CatalogoArticulosBC.Tests/UnitTests/UseCases/CrearProductoVarianteUseCaseTests.cs
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -20,7 +19,6 @@ namespace CatalogoArticulosBC.Tests.UnitTests.UseCases
             // Arrange
             var repo = new InMemoryCatalogoArticulosRepository();
             var uow  = new InMemoryUnitOfWork();
-            // agregar producto padre
             var padre = new ProductoSimple(
                 "PADRE01","Padre","Desc",
                 new UnidadMedida("UN"),
@@ -30,8 +28,8 @@ namespace CatalogoArticulosBC.Tests.UnitTests.UseCases
                 new CentroCosto("CC02"),
                 new Presupuesto(200m),
                 new Peso(2m),
-                TipoProducto.Bien, // <-- Enum, no string
-                100.50m// <-- agrega este argumento al final
+                TipoProducto.Bien,
+                100.50m
             );
             await repo.AddProductoSimpleAsync(padre);
             var useCase = new CrearProductoVarianteUseCase(repo, uow);
@@ -63,6 +61,76 @@ namespace CatalogoArticulosBC.Tests.UnitTests.UseCases
             Assert.That(
                 async () => await useCase.HandleAsync(dto),
                 Throws.InvalidOperationException.With.Message.Contain("no existe")
+            );
+        }
+
+        [Test]
+        public async Task HandleAsync_CuandoPadreInactivo_DeberiaLanzar()
+        {
+            // Arrange
+            var repo = new InMemoryCatalogoArticulosRepository();
+            var uow  = new InMemoryUnitOfWork();
+            var padre = new ProductoSimple(
+                "PADRE02","PadreInactivo","Desc",
+                new UnidadMedida("UN"),
+                new AfectacionIGV("10%"),
+                new CodigoSUNAT("2000"),
+                new BaseImponibleVentas(40.02m),
+                new CentroCosto("CC02"),
+                new Presupuesto(200m),
+                new Peso(2m),
+                TipoProducto.Bien,
+                100.50m
+            );
+            padre.Deshabilitar("prueba");
+            await repo.AddProductoSimpleAsync(padre);
+            var useCase = new CrearProductoVarianteUseCase(repo, uow);
+            var atributos = new List<KeyValuePair<string,string>>
+            {
+                new("Color","Azul"), new("Talla","L")
+            };
+            var dto = new CrearProductoVarianteDto("PADRE02-AZUL-L", padre.ProductoId, atributos);
+
+            // Act & Assert
+            Assert.That(
+                async () => await useCase.HandleAsync(dto),
+                Throws.TypeOf<InvalidStateException>()
+            );
+        }
+
+        [Test]
+        public async Task HandleAsync_CuandoVarianteDuplicada_DeberiaLanzar()
+        {
+            // Arrange
+            var repo = new InMemoryCatalogoArticulosRepository();
+            var uow  = new InMemoryUnitOfWork();
+            var padre = new ProductoSimple(
+                "PADRE03","PadreDup","Desc",
+                new UnidadMedida("UN"),
+                new AfectacionIGV("10%"),
+                new CodigoSUNAT("2000"),
+                new BaseImponibleVentas(40.02m),
+                new CentroCosto("CC02"),
+                new Presupuesto(200m),
+                new Peso(2m),
+                TipoProducto.Bien,
+                100.50m
+            );
+            await repo.AddProductoSimpleAsync(padre);
+            var useCase = new CrearProductoVarianteUseCase(repo, uow);
+            var atributos = new List<KeyValuePair<string,string>>
+            {
+                new("Color","Verde"), new("Talla","S")
+            };
+            var dto1 = new CrearProductoVarianteDto("PADRE03-VERDE-S", padre.ProductoId, atributos);
+            await useCase.HandleAsync(dto1);
+
+            var dto2 = new CrearProductoVarianteDto("PADRE03-VERDE-S2", padre.ProductoId, atributos);
+
+            // Act & Assert
+            Assert.That(
+                async () => await useCase.HandleAsync(dto2),
+                Throws.TypeOf<VarianteDuplicadaException>()
             );
         }
     }

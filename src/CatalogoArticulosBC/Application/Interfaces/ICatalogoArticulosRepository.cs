@@ -24,6 +24,10 @@ namespace CatalogoArticulosBC.Application.Interfaces
         Task<IReadOnlyCollection<ProductoSimple>> ListarAsync(int pagina, int tamano, string filtrosJson);
         Task EliminarProductoSimpleAsync(Guid productoId);
         Task<ProductoVariante?> GetProductoVarianteByIdAsync(Guid productoVarianteId);
+
+        // En ICatalogoArticulosRepository.cs
+Task<ProductoSimple?> GetProductoSimpleByIdAsync(Guid productoId);
+Task<IEnumerable<ProductoVariante>> GetVariantesByPadreIdAsync(Guid productoPadreId);
   
     }
 }
