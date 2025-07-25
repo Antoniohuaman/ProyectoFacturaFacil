@@ -62,7 +62,7 @@ namespace CatalogoArticulosBC.Application.UseCases
                 centro,
                 presupuesto,
                 peso,
-                TipoProducto.Bien,    // O "SIMPLE" si es fijo
+                dto.Tipo,
                 dto.Precio
             );
 
