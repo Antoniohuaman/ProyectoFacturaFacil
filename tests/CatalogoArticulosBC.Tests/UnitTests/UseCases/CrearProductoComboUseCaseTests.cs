@@ -31,7 +31,7 @@ namespace CatalogoArticulosBC.Tests.UnitTests.UseCases
                 centroCosto: new CentroCosto("789"),
                 presupuesto: new Presupuesto(100m),
                 peso: new Peso(1m),
-                tipo: "TIPO",
+                tipo: TipoProducto.Bien, // O TipoProducto.Servicio
                 precio: 10
             );
             await repo.AddProductoSimpleAsync(producto);
@@ -79,7 +79,7 @@ namespace CatalogoArticulosBC.Tests.UnitTests.UseCases
                 centroCosto: new CentroCosto("789"),
                 presupuesto: new Presupuesto(100m),
                 peso: new Peso(1m),
-                tipo: "TIPO",
+                tipo: TipoProducto.Bien, // O TipoProducto.Servicio
                 precio: 10
             );
             await repo.AddProductoSimpleAsync(producto);

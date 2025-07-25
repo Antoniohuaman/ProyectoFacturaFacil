@@ -23,7 +23,7 @@ namespace CatalogoArticulosBC.Tests.IntegrationTests
                 new CentroCosto("CC03"),
                 new Presupuesto(300m),
                 new Peso(3m),
-                "SERVICIO",
+                tipo: TipoProducto.Bien, // O TipoProducto.Servicio
                 100.50m
             );
 

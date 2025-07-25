@@ -1,4 +1,6 @@
 // src/CatalogoArticulosBC/Application/DTOs/ProductoDetalleDto.cs
+using CatalogoArticulosBC.Domain.Aggregates;
+
 namespace CatalogoArticulosBC.Application.DTOs
 {
     public sealed class ProductoDetalleDto
@@ -8,7 +10,7 @@ namespace CatalogoArticulosBC.Application.DTOs
             string sku,
             string nombre,
             string descripcion,
-            string tipoProducto,
+            TipoProducto tipoProducto,
             decimal peso)
         {
             ProductoId    = productoId;
@@ -23,7 +25,7 @@ namespace CatalogoArticulosBC.Application.DTOs
         public string Sku          { get; }
         public string Nombre       { get; }
         public string Descripcion  { get; }
-        public string TipoProducto { get; }
+        public TipoProducto TipoProducto { get; }
         public decimal Peso        { get; }
     }
 }

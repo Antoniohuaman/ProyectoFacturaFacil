@@ -30,7 +30,7 @@ namespace CatalogoArticulosBC.Tests.UnitTests.UseCases
                 centroCosto: new CentroCosto("CC01"),
                 presupuesto: new Presupuesto(100m),
                 peso: new Peso(1.5m),
-                tipo: "SERVICIO",
+                tipo: TipoProducto.Bien, // O TipoProducto.Servicio
                 precio: 10.0m
             );
             await repo.AddProductoSimpleAsync(producto);

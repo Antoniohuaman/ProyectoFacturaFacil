@@ -27,8 +27,8 @@ namespace CatalogoArticulosBC.Application.UseCases
                 item.Sku.Value,
                 item.Nombre,
                 item.Descripcion,
-                item.Tipo.ToString(),
-                item.Peso.Valor);
+                item.Tipo,
+                item.Peso?.Valor ?? 0);
         }
     }
 }

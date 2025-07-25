@@ -30,7 +30,7 @@ namespace CatalogoArticulosBC.Tests.UnitTests.UseCases
                 new CentroCosto("CC02"),
                 new Presupuesto(200m),
                 new Peso(2m),
-                "SERVICIO",
+                TipoProducto.Bien, // <-- Enum, no string
                 100.50m// <-- agrega este argumento al final
             );
             await repo.AddProductoSimpleAsync(padre);

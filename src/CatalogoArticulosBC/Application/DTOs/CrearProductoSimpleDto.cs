@@ -1,4 +1,5 @@
 // src/CatalogoArticulosBC/Application/DTOs/CrearProductoSimpleDto.cs
+using CatalogoArticulosBC.Domain.Aggregates;
 using CatalogoArticulosBC.Domain.ValueObjects;
 
 namespace CatalogoArticulosBC.Application.DTOs
@@ -16,7 +17,7 @@ namespace CatalogoArticulosBC.Application.DTOs
             string centroCosto,
             decimal presupuesto,
             decimal peso,
-            string tipo,
+            TipoProducto tipo,
             decimal precio)
         {
             Sku = sku;
@@ -43,7 +44,7 @@ namespace CatalogoArticulosBC.Application.DTOs
         public string CentroCosto { get; }
         public decimal Presupuesto { get; }
         public decimal Peso { get; }
-        public string Tipo { get; }
+        public TipoProducto Tipo { get; }
         public decimal Precio { get; set; }
     }
 }

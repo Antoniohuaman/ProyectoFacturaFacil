@@ -6,6 +6,12 @@ using CatalogoArticulosBC.Domain.Entities;
 
 namespace CatalogoArticulosBC.Domain.Aggregates
 {
+    public enum TipoProducto
+    {
+        Bien,
+        Servicio
+    }
+
     public class ProductoSimple : IProductoConPeso
     {
         private readonly List<MultimediaProducto> _multimedia = new();
@@ -16,18 +22,18 @@ namespace CatalogoArticulosBC.Domain.Aggregates
         public string Descripcion { get; private set; }
         public UnidadMedida UnidadMedida { get; }
         public AfectacionIGV AfectacionIgv { get; }
-        public CodigoSUNAT CodigoSunat { get; }
-        public BaseImponibleVentas BaseImponibleVentas { get; }
-        public CentroCosto CentroCosto { get; }
-        public Presupuesto Presupuesto { get; }
-        public Peso Peso { get; private set; }
+        public CodigoSUNAT? CodigoSunat { get; }
+        public BaseImponibleVentas? BaseImponibleVentas { get; }
+        public CentroCosto? CentroCosto { get; }
+        public Presupuesto? Presupuesto { get; }
+        public Peso? Peso { get; private set; }
         public bool Activo { get; private set; } = true;
-        public string Tipo { get; set; }
+        public TipoProducto Tipo { get; private set; }
         public decimal Precio { get; private set; }
         public IReadOnlyCollection<MultimediaProducto> Multimedia => _multimedia.AsReadOnly();
 
         // Implementación explícita de la interfaz
-        decimal IProductoConPeso.Peso => Peso.Valor;
+        decimal IProductoConPeso.Peso => Peso?.Valor ?? 0;
 
         public ProductoSimple(
             string sku,
@@ -35,28 +41,28 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             string descripcion,
             UnidadMedida unidadMedida,
             AfectacionIGV afectacionIgv,
-            CodigoSUNAT codigoSunat,
-            BaseImponibleVentas baseImponibleVentas,
-            CentroCosto centroCosto,
-            Presupuesto presupuesto,
-            Peso peso,
-            string tipo,
-            decimal precio)
+            CodigoSUNAT? codigoSunat = null,
+            BaseImponibleVentas? baseImponibleVentas = null,
+            CentroCosto? centroCosto = null,
+            Presupuesto? presupuesto = null,
+            Peso? peso = null,
+            TipoProducto tipo = TipoProducto.Bien,
+            decimal precio = 0)
         {
             if (string.IsNullOrWhiteSpace(sku)) throw new ArgumentException("SKU no puede estar vacío.", nameof(sku));
             ProductoId = Guid.NewGuid();
             Sku = new SKU(sku);
             Nombre = nombre ?? throw new ArgumentNullException(nameof(nombre));
             Descripcion = descripcion ?? string.Empty;
-            UnidadMedida = unidadMedida;
-            AfectacionIgv = afectacionIgv;
+            UnidadMedida = unidadMedida ?? throw new ArgumentNullException(nameof(unidadMedida));
+            AfectacionIgv = afectacionIgv ?? throw new ArgumentNullException(nameof(afectacionIgv));
             CodigoSunat = codigoSunat;
             BaseImponibleVentas = baseImponibleVentas;
             CentroCosto = centroCosto;
             Presupuesto = presupuesto;
             Peso = peso;
             Precio = precio;
-            Tipo = tipo ?? throw new ArgumentNullException(nameof(tipo));
+            Tipo = tipo;
 
             var ev = new ProductoCreado(ProductoId, Sku);
             // Dispatch(ev);
@@ -70,7 +76,6 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             return variante;
         }
 
-        // Ajusta este método si tu constructor de ProductoCombo requiere pesoTotal y estado
         public ProductoCombo CrearCombo(
             string skuCombo,
             string nombreCombo,
@@ -94,7 +99,7 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             // Dispatch(ev);
         }
 
-        public void ActualizarPeso(Peso peso)
+        public void ActualizarPeso(Peso? peso)
         {
             Peso = peso;
             var ev = new ProductoModificado(ProductoId);
