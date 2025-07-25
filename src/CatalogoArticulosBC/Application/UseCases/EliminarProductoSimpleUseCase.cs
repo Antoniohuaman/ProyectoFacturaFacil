@@ -3,6 +3,8 @@ using System.Threading.Tasks;
 using CatalogoArticulosBC.Application.Interfaces;
 using CatalogoArticulosBC.Application.DTOs;
 
+
+
 namespace CatalogoArticulosBC.Application.UseCases
 {
     public class EliminarProductoSimpleUseCase

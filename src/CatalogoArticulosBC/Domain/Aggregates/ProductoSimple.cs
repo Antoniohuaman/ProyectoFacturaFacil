@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using CatalogoArticulosBC.Domain.Events;
 using CatalogoArticulosBC.Domain.ValueObjects;
 using CatalogoArticulosBC.Domain.Entities;
+using CatalogoArticulosBC.Domain.Exceptions;
 
 namespace CatalogoArticulosBC.Domain.Aggregates
 {
@@ -113,13 +114,7 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             // Dispatch(ev);
         }
 
-        public void AgregarMultimedia(Guid multimediaId, string tipo, byte[] contenido)
-        {
-            var media = new MultimediaProducto(multimediaId, ProductoId, tipo, contenido);
-            _multimedia.Add(media);
-            // Dispatch(...)
-        }
-
+        
         public void EliminarMultimedia(Guid multimediaId)
         {
             var media = _multimedia.Find(m => m.MultimediaId == multimediaId);
@@ -139,5 +134,47 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             Descripcion = nuevaDescripcion;
             Precio = nuevoPrecio;
         }
+
+        // --- Gestión de multimedia avanzada ---
+        private const int MAX_MULTIMEDIA = 5;
+        private const long MAX_TAMANO = 10 * 1024 * 1024; // 10 MB
+
+        public void AgregarMultimediaAvanzada(
+            Guid multimediaId,
+            string tipoAdjunto,
+            string nombreArchivo,
+            string ruta,
+            string comentario,
+            long tamano)
+        {
+            if (_multimedia.Count >= MAX_MULTIMEDIA)
+                throw new LimiteMultimediaException();
+
+            if (!EsTipoPermitido(tipoAdjunto))
+                throw new MultimediaInvalidaException("Tipo de archivo no permitido.");
+
+            if (tamano > MAX_TAMANO)
+                throw new MultimediaInvalidaException("El archivo excede el tamaño máximo permitido (10 MB).");
+
+            var multimedia = new MultimediaProducto(multimediaId, tipoAdjunto, nombreArchivo, ruta, comentario, tamano);
+            _multimedia.Add(multimedia);
+            // AgregarEvento(new ProductoModificado(this.ProductoId, "MULTIMEDIA_AGREGADA", multimediaId));
+        }
+
+        public void EliminarMultimediaAvanzada(Guid multimediaId)
+        {
+            var multimedia = _multimedia.Find(m => m.MultimediaId == multimediaId)
+                ?? throw new InvalidOperationException("Recurso multimedia no encontrado.");
+
+            _multimedia.Remove(multimedia);
+            // AgregarEvento(new ProductoModificado(this.ProductoId, "MULTIMEDIA_ELIMINADA", multimediaId));
+        }
+
+        private bool EsTipoPermitido(string tipoAdjunto)
+        {
+            var permitidos = new[] { "image/jpeg", "image/png", "application/pdf" };
+            return Array.Exists(permitidos, t => t.Equals(tipoAdjunto, StringComparison.OrdinalIgnoreCase));
+        }
+        // --- Fin gestión de multimedia avanzada ---
     }
 }

@@ -1,4 +1,3 @@
-// src/CatalogoArticulosBC/Application/UseCases/GestionarMultimediaUseCase.cs
 using System;
 using System.Threading.Tasks;
 using CatalogoArticulosBC.Application.Interfaces;
@@ -21,13 +20,20 @@ namespace CatalogoArticulosBC.Application.UseCases
             _uow  = uow;
         }
 
-        public async Task<Guid> AgregarAsync(Guid productoServicioId, string tipoAdjunto, byte[] contenido)
+        // Nuevo método avanzado para agregar multimedia
+        public async Task<Guid> AgregarAsync(
+            Guid productoServicioId,
+            string tipoAdjunto,
+            string nombreArchivo,
+            string ruta,
+            string comentario,
+            long tamano)
         {
             var item = await _repo.GetByIdAsync(productoServicioId)
-                       ?? throw new InvalidOperationException("Ítem no encontrado.");       // :contentReference[oaicite:5]{index=5}
+                       ?? throw new InvalidOperationException("Ítem no encontrado.");
 
             var multimediaId = Guid.NewGuid();
-            item.AgregarMultimedia(multimediaId, tipoAdjunto, contenido);
+            item.AgregarMultimediaAvanzada(multimediaId, tipoAdjunto, nombreArchivo, ruta, comentario, tamano);
 
             await _repo.UpdateAsync(item);
             await _uow.CommitAsync();
@@ -39,7 +45,7 @@ namespace CatalogoArticulosBC.Application.UseCases
             var item = await _repo.GetByIdAsync(productoServicioId)
                        ?? throw new InvalidOperationException("Ítem no encontrado.");
 
-            item.EliminarMultimedia(multimediaId);
+            item.EliminarMultimediaAvanzada(multimediaId);
             await _repo.UpdateAsync(item);
             await _uow.CommitAsync();
         }
