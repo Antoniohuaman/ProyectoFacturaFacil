@@ -15,12 +15,12 @@ namespace CatalogoArticulosBC.Domain.Aggregates
         public decimal Precio { get; private set; }
         public UnidadMedida UnidadMedida { get; }
         public AfectacionIGV AfectacionIgv { get; }
-        public decimal PesoTotal { get; private set; }
+        public decimal? PesoTotal { get; private set; } // Opcional
         public string Estado { get; private set; }
         public bool Activo { get; private set; } = true;
 
         // Implementación explícita de la interfaz
-        decimal IProductoConPeso.Peso => PesoTotal;
+        decimal IProductoConPeso.Peso => PesoTotal ?? 0;
 
         public ProductoCombo(
             string sku,
@@ -29,20 +29,31 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             decimal precio,
             UnidadMedida unidad,
             AfectacionIGV igv,
-            decimal pesoTotal,
+            decimal? pesoTotal,
             string estado)
         {
+            if (string.IsNullOrWhiteSpace(sku))
+                throw new ArgumentException("El SKU del combo es obligatorio.", nameof(sku));
+            if (string.IsNullOrWhiteSpace(nombre))
+                throw new ArgumentException("El nombre del combo es obligatorio.", nameof(nombre));
+            if (componentes == null)
+                throw new ArgumentException("Debe especificar al menos un componente.", nameof(componentes));
+            if (precio < 0)
+                throw new ArgumentException("El precio del combo no puede ser negativo.", nameof(precio));
+            if (string.IsNullOrWhiteSpace(estado))
+                throw new ArgumentException("El estado es obligatorio.", nameof(estado));
+
             ProductoComboId = Guid.NewGuid();
             Sku             = new SKU(sku);
             Nombre          = nombre;
             Componentes     = new List<ComponenteCombo>(componentes);
             Precio          = precio;
-            UnidadMedida    = unidad;
-            AfectacionIgv   = igv;
+            UnidadMedida    = unidad ?? throw new ArgumentNullException(nameof(unidad));
+            AfectacionIgv   = igv ?? throw new ArgumentNullException(nameof(igv));
             PesoTotal       = pesoTotal;
             Estado          = estado;
 
-            var ev = new ProductoCreado(ProductoComboId, Sku);
+            var ev = new ProductoCreado(ProductoComboId, Sku, "COMBO");
             // Dispatch(ev);
         }
 

@@ -14,14 +14,14 @@ namespace CatalogoArticulosBC.Domain.Events
         {
             ProductoId = productoId;
             Sku = sku ?? throw new ArgumentNullException(nameof(sku));
-            TipoProducto = "SIMPLE"; // Valor por defecto si no se especifica
+            TipoProducto = "SIMPLE";
         }
 
         public ProductoCreado(Guid productoId, SKU sku, string tipoProducto)
         {
             ProductoId = productoId;
             Sku = sku ?? throw new ArgumentNullException(nameof(sku));
-            TipoProducto = tipoProducto ?? throw new ArgumentNullException(nameof(tipoProducto));
+            TipoProducto = string.IsNullOrWhiteSpace(tipoProducto) ? "SIMPLE" : tipoProducto;
         }
     }
 }

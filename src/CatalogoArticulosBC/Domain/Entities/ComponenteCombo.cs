@@ -1,4 +1,3 @@
-// src/CatalogoArticulosBC/Domain/Entities/ComponenteCombo.cs
 using System;
 
 namespace CatalogoArticulosBC.Domain.Entities
@@ -10,12 +9,13 @@ namespace CatalogoArticulosBC.Domain.Entities
 
         public ComponenteCombo(Guid productoId, int cantidad)
         {
-            ProductoId = productoId != Guid.Empty
-                ? productoId
-                : throw new ArgumentException("ProductoId inválido.", nameof(productoId));
-            Cantidad = cantidad > 0
-                ? cantidad
-                : throw new ArgumentException("La cantidad debe ser al menos 1.", nameof(cantidad));
+            if (productoId == Guid.Empty)
+                throw new ArgumentException("ProductoId inválido.", nameof(productoId));
+            if (cantidad <= 0)
+                throw new ArgumentException("La cantidad debe ser mayor a cero.", nameof(cantidad));
+
+            ProductoId = productoId;
+            Cantidad = cantidad;
         }
     }
 }
