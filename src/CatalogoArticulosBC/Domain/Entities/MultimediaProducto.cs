@@ -4,7 +4,8 @@ namespace CatalogoArticulosBC.Domain.Entities
 {
     public class MultimediaProducto
     {
-        public Guid MultimediaId { get; }
+        public Guid MultimediaId { get; set; }
+        public string TipoMime { get; set; } = string.Empty;
         public string TipoAdjunto { get; }
         public string NombreArchivo { get; }
         public string Ruta { get; }

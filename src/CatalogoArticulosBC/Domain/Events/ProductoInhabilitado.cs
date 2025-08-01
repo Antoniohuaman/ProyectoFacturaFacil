@@ -1,18 +1,34 @@
-// src/CatalogoArticulosBC/Domain/Events/ProductoInhabilitado.cs
 using System;
 
 namespace CatalogoArticulosBC.Domain.Events
 {
-    public sealed class ProductoInhabilitado : IDomainEvent
+    /// <summary>
+    /// Evento que se dispara cuando un producto se inhabilita (desactiva) en el sistema.
+    /// Contiene el identificador del producto y la razón de la inhabilitación.
+    /// </summary>
+    public sealed class ProductoInhabilitado : DomainEvent
     {
+        /// <summary>
+        /// Identificador único del producto inhabilitado.
+        /// </summary>
         public Guid ProductoId { get; }
-        public string Motivo   { get; }
-        public DateTime OccurredOn { get; } = DateTime.UtcNow;
 
+        /// <summary>
+        /// Motivo o descripción de la inhabilitación.
+        /// </summary>
+        public string Motivo { get; }
+
+        /// <summary>
+        /// Crea un nuevo evento de ProductoInhabilitado.
+        /// </summary>
+        /// <param name="productoId">ID del producto que se inhabilita.</param>
+        /// <param name="motivo">Razón de la inhabilitación. No puede ser nulo ni vacío.</param>
         public ProductoInhabilitado(Guid productoId, string motivo)
         {
             ProductoId = productoId;
-            Motivo = motivo ?? string.Empty;
+            Motivo = string.IsNullOrWhiteSpace(motivo)
+                ? throw new ArgumentException("El motivo de inhabilitación no puede estar vacío.", nameof(motivo))
+                : motivo.Trim();
         }
     }
 }

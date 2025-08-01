@@ -13,21 +13,17 @@ namespace CatalogoArticulosBC.Application.Interfaces
         // …otros métodos CRUD…
         Task<ProductoSimple?> GetProductoSimpleBySkuAsync(SKU sku);
         Task AddProductoSimpleAsync(ProductoSimple producto);
-        Task<ProductoVariante?> GetProductoVarianteBySkuAsync(SKU sku);
-        Task AddProductoVarianteAsync(ProductoVariante producto);
-        Task<ProductoCombo?> GetProductoComboBySkuAsync(SKU sku);
-        Task AddProductoComboAsync(ProductoCombo producto);
         Task UpdateAsync(object producto); // O usa el tipo correcto
         Task<IReadOnlyCollection<ProductoSimple>> ListarProductosSimplesAsync();
         Task<IReadOnlyCollection<object>> ListarAsync(); // Ajusta el tipo según tu modelo
         Task<ProductoSimple?> GetByIdAsync(Guid productoId);
         Task<IReadOnlyCollection<ProductoSimple>> ListarAsync(int pagina, int tamano, string filtrosJson);
         Task EliminarProductoSimpleAsync(Guid productoId);
-        Task<ProductoVariante?> GetProductoVarianteByIdAsync(Guid productoVarianteId);
+        
 
         // En ICatalogoArticulosRepository.cs
 Task<ProductoSimple?> GetProductoSimpleByIdAsync(Guid productoId);
-Task<IEnumerable<ProductoVariante>> GetVariantesByPadreIdAsync(Guid productoPadreId);
+
   
     }
 }

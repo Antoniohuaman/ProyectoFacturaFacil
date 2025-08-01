@@ -1,27 +1,98 @@
 using System;
+using System.Collections.Generic;
+using CatalogoArticulosBC.Domain.Aggregates;
 using CatalogoArticulosBC.Domain.ValueObjects;
 
 namespace CatalogoArticulosBC.Domain.Events
 {
-    public sealed class ProductoCreado : IDomainEvent
+    /// <summary>
+    /// Evento que se dispara cuando se crea un nuevo ProductoSimple.
+    /// Incluye el estado completo del agregado en el momento de la creación.
+    /// </summary>
+    public sealed class ProductoCreado : DomainEvent
     {
+        // Identidad
         public Guid ProductoId { get; }
         public SKU Sku { get; }
-        public string TipoProducto { get; }
-        public DateTime OccurredOn { get; } = DateTime.UtcNow;
+        public TipoProducto TipoProducto { get; }
 
-        public ProductoCreado(Guid productoId, SKU sku)
-        {
-            ProductoId = productoId;
-            Sku = sku ?? throw new ArgumentNullException(nameof(sku));
-            TipoProducto = "SIMPLE";
-        }
+        // Datos básicos
+        public NombreProducto Nombre { get; }
+        public string Descripcion { get; }
+        public UnidadMedida UnidadMedida { get; }
+        public AfectacionIGV AfectacionIgv { get; }
+        public Categoria Categoria { get; }
+        public Marca? Marca { get; }
 
-        public ProductoCreado(Guid productoId, SKU sku, string tipoProducto)
+        // Precios y moneda
+        public Precio? PrecioVenta { get; }
+        public Moneda Moneda { get; }
+
+        // Impuestos especiales
+        public ImpuestoSelectivoConsumo ISC { get; }
+        public bool TieneDetraccion { get; }
+        public CodigoDetraccion? CodigoDetraccion { get; }
+
+        // Códigos adicionales
+        public CodigoSUNAT? CodigoSunat { get; }
+        public BaseImponibleVentas? BaseImponibleVentas { get; }
+        public CentroCosto? CentroCosto { get; }
+        public CodigoBarras? CodigoBarras { get; }
+        public CodigoFabrica? CodigoFabrica { get; }
+        public CodigoLote? CodigoLote { get; }
+
+        // Logística e inventario
+        public Peso? Peso { get; }
+        public Serie? Serie { get; }
+        public TipoExistencia TipoExistencia { get; }
+        public FechaVencimiento? FechaVencimiento { get; }
+        public IReadOnlyCollection<Guid> AlmacenesAsignados { get; }
+        public bool AsignarATodosLosAlmacenes { get; }
+
+        // Multimedia
+        public Guid? ImagenPrincipalId { get; }
+
+        /// <summary>
+        /// Crea un evento de dominio con el estado completo del agregado ProductoSimple.
+        /// </summary>
+        /// <param name="producto">Instancia del agregado recién creado.</param>
+        public ProductoCreado(ProductoSimple producto)
         {
-            ProductoId = productoId;
-            Sku = sku ?? throw new ArgumentNullException(nameof(sku));
-            TipoProducto = string.IsNullOrWhiteSpace(tipoProducto) ? "SIMPLE" : tipoProducto;
+            if (producto == null) throw new ArgumentNullException(nameof(producto));
+
+            ProductoId = producto.ProductoId;
+            Sku = producto.Sku;
+            TipoProducto = producto.Tipo;
+
+            Nombre = producto.Nombre;
+            Descripcion = producto.Descripcion;
+            UnidadMedida = producto.UnidadMedida;
+            AfectacionIgv = producto.AfectacionIgv;
+            Categoria = producto.Categoria;
+            Marca = producto.Marca;
+
+            PrecioVenta = producto.PrecioVenta;
+            Moneda = producto.Moneda;
+
+            ISC = producto.ISC;
+            TieneDetraccion = producto.TieneDetraccion;
+            CodigoDetraccion = producto.CodigoDetraccion;
+
+            CodigoSunat = producto.CodigoSunat;
+            BaseImponibleVentas = producto.BaseImponibleVentas;
+            CentroCosto = producto.CentroCosto;
+            CodigoBarras = producto.CodigoBarras;
+            CodigoFabrica = producto.CodigoFabrica;
+            CodigoLote = producto.CodigoLote;
+
+            Peso = producto.Peso;
+            Serie = producto.Serie;
+            TipoExistencia = producto.TipoExistencia;
+            FechaVencimiento = producto.FechaVencimiento;
+            AlmacenesAsignados = producto.AlmacenesAsignados.AsReadOnly();
+            AsignarATodosLosAlmacenes = producto.AsignarATodosLosAlmacenes;
+
+            ImagenPrincipalId = producto.ImagenPrincipalId;
         }
     }
 }

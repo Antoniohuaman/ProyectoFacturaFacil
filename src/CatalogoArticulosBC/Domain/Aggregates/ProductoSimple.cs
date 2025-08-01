@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using CatalogoArticulosBC.Domain.Events;
 using CatalogoArticulosBC.Domain.ValueObjects;
 using CatalogoArticulosBC.Domain.Entities;
@@ -13,97 +14,201 @@ namespace CatalogoArticulosBC.Domain.Aggregates
         Servicio
     }
 
-    public class ProductoSimple : IProductoConPeso
+    public class ProductoSimple
     {
-        private readonly List<MultimediaProducto> _multimedia = new();
-
-        public Guid ProductoId { get; }
-        public SKU Sku { get; }
-        public string Nombre { get; private set; }
-        public string Descripcion { get; private set; }
-        public UnidadMedida UnidadMedida { get; }
-        public AfectacionIGV AfectacionIgv { get; }
-        public CodigoSUNAT? CodigoSunat { get; }
-        public BaseImponibleVentas? BaseImponibleVentas { get; }
-        public CentroCosto? CentroCosto { get; }
-        public Presupuesto? Presupuesto { get; }
-        public Peso? Peso { get; private set; }
+        // Identidad y estado
+        public Guid ProductoId { get; private set; }
         public bool Activo { get; private set; } = true;
-        public TipoProducto Tipo { get; private set; }
-        public decimal Precio { get; private set; }
+
+        // Clave de negocio
+        public SKU Sku { get; private set; }
+
+        // Datos básicos
+        public NombreProducto Nombre { get; private set; }
+        public string Descripcion { get; private set; }
+        public UnidadMedida UnidadMedida { get; private set; }
+        public AfectacionIGV AfectacionIgv { get; private set; }
+        public Categoria Categoria { get; private set; }
+        public Marca? Marca { get; private set; }
+
+        // Precios y moneda
+        public Precio? PrecioVenta { get; private set; }
+        public Moneda Moneda { get; private set; }
+
+        // Impuestos especiales
+        public ImpuestoSelectivoConsumo ISC { get; private set; }
+        public bool TieneDetraccion { get; private set; }
+        public CodigoDetraccion? CodigoDetraccion { get; private set; }
+
+        // Códigos adicionales
+        public CodigoSUNAT? CodigoSunat { get; private set; }
+        public BaseImponibleVentas? BaseImponibleVentas { get; private set; }
+        public CentroCosto? CentroCosto { get; private set; }
+        public CodigoBarras? CodigoBarras { get; private set; }
+        public CodigoFabrica? CodigoFabrica { get; private set; }
+        public CodigoLote? CodigoLote { get; private set; }
+    
+        // Logística e inventario
+        public Peso? Peso { get; private set; }
+        public Serie? Serie { get; private set; }
+        public TipoExistencia TipoExistencia { get; private set; }
+        public FechaVencimiento? FechaVencimiento { get; private set; }
+        public List<Guid> AlmacenesAsignados { get; private set; }
+        public bool AsignarATodosLosAlmacenes { get; private set; }
+
+        // Multimedia
+        private readonly List<MultimediaProducto> _multimedia = new();
         public IReadOnlyCollection<MultimediaProducto> Multimedia => _multimedia.AsReadOnly();
+        public Guid? ImagenPrincipalId { get; private set; }
 
-        // Implementación explícita de la interfaz
-        decimal IProductoConPeso.Peso => Peso?.Valor ?? 0;
+        // <-- colección para eventos de dominio
+        private readonly List<IDomainEvent> _domainEvents = new();
+        public IReadOnlyCollection<IDomainEvent> DomainEvents => _domainEvents.AsReadOnly();
+        public void ClearDomainEvents() => _domainEvents.Clear();
+        // FIN 
 
+        // Tipo de producto
+        public TipoProducto Tipo { get; private set; }
+
+        // Peso
+        public decimal PesoValor => Peso?.Valor ?? 0m;
+
+        /// <summary>
+        /// Constructor principal para crear un ProductoSimple con todos sus VOs.
+        /// </summary>
         public ProductoSimple(
-            string sku,
-            string nombre,
+            SKU sku,
+            NombreProducto nombre,
             string descripcion,
             UnidadMedida unidadMedida,
             AfectacionIGV afectacionIgv,
+            Categoria categoria,
+            Marca? marca = null,
+            Precio? precioVenta = null,
+            Moneda moneda = Moneda.Soles,
+            ImpuestoSelectivoConsumo? isc = null,
+            bool tieneDetraccion = false,
+            CodigoDetraccion? codigoDetraccion = null,
             CodigoSUNAT? codigoSunat = null,
             BaseImponibleVentas? baseImponibleVentas = null,
             CentroCosto? centroCosto = null,
-            Presupuesto? presupuesto = null,
             Peso? peso = null,
+            Serie? serie = null,
+            CodigoBarras? codigoBarras = null,
+            CodigoFabrica? codigoFabrica = null,
+            CodigoLote? codigoLote = null,
             TipoProducto tipo = TipoProducto.Bien,
-            decimal precio = 0)
+            TipoExistencia tipoExistencia = TipoExistencia.Mercaderias,
+            FechaVencimiento? fechaVencimiento = null,
+            List<Guid>? almacenesAsignados = null,
+            bool asignarATodosLosAlmacenes = false,
+            Guid? imagenPrincipalId = null)
         {
-            if (string.IsNullOrWhiteSpace(sku)) throw new ArgumentException("SKU no puede estar vacío.", nameof(sku));
-            ProductoId = Guid.NewGuid();
-            Sku = new SKU(sku);
+            // Validaciones de parámetros obligatorios
+            Sku = sku ?? throw new ArgumentNullException(nameof(sku));
             Nombre = nombre ?? throw new ArgumentNullException(nameof(nombre));
-            Descripcion = descripcion ?? string.Empty;
+            Descripcion = descripcion?.Trim() ?? string.Empty;
             UnidadMedida = unidadMedida ?? throw new ArgumentNullException(nameof(unidadMedida));
             AfectacionIgv = afectacionIgv ?? throw new ArgumentNullException(nameof(afectacionIgv));
+            Categoria = categoria ?? throw new ArgumentNullException(nameof(categoria));
+
+            if (tieneDetraccion && codigoDetraccion is null)
+                throw new ArgumentException("Si aplica detracción, debe especificarse el código.", nameof(codigoDetraccion));
+
+            // Asignaciones
+            ProductoId = Guid.NewGuid();
+            Activo = true;
+            Marca = marca;
+            PrecioVenta = precioVenta;
+            Moneda = moneda;
+            ISC = isc ?? new ImpuestoSelectivoConsumo(false);
+            TieneDetraccion = tieneDetraccion;
+            CodigoDetraccion = codigoDetraccion;
             CodigoSunat = codigoSunat;
             BaseImponibleVentas = baseImponibleVentas;
             CentroCosto = centroCosto;
-            Presupuesto = presupuesto;
             Peso = peso;
-            Precio = precio;
+            Serie = serie;
+            CodigoBarras = codigoBarras;
+            CodigoFabrica = codigoFabrica;
+            CodigoLote = codigoLote;
             Tipo = tipo;
+            TipoExistencia = tipoExistencia;
+            FechaVencimiento = fechaVencimiento;
+            AlmacenesAsignados = almacenesAsignados ?? new List<Guid>();
+            AsignarATodosLosAlmacenes = asignarATodosLosAlmacenes;
+            ImagenPrincipalId = imagenPrincipalId;
 
-            var ev = new ProductoCreado(ProductoId, Sku);
+            // Evento de dominio
+            var ev = new ProductoCreado(this);
+            AddDomainEvent(ev);
             // Dispatch(ev);
         }
 
-        public ProductoVariante CrearVariante(string skuVariante, IEnumerable<AtributoVariante> atributos)
+        /// <summary>
+        /// Edita los datos básicos y VOs del producto.
+        /// </summary>
+        public void EditarDatos(
+            NombreProducto nombre,
+            string descripcion,
+            UnidadMedida unidadMedida,
+            AfectacionIGV afectacionIgv,
+            Categoria categoria,
+            Marca? marca,
+            Precio? precioVenta,
+            Moneda moneda,
+            ImpuestoSelectivoConsumo isc,
+            bool tieneDetraccion,
+            CodigoDetraccion? codigoDetraccion,
+            CodigoSUNAT? codigoSunat,
+            BaseImponibleVentas? baseImponibleVentas,
+            CentroCosto? centroCosto,
+            Peso? peso,
+            Serie? serie,
+            CodigoBarras? codigoBarras,
+            CodigoFabrica? codigoFabrica,
+            CodigoLote? codigoLote,
+            TipoProducto tipo,
+            TipoExistencia tipoExistencia,
+            FechaVencimiento? fechaVencimiento,
+            List<Guid>? almacenesAsignados = null,
+            bool asignarATodosAlmacenes = false,
+            Guid? imagenPrincipalId = null)
         {
-            if (!Activo) throw new InvalidOperationException("No se puede crear variante de producto inactivo.");
-            var variante = new ProductoVariante(ProductoId, skuVariante, atributos);
-            // Dispatch(...)
-            return variante;
-        }
+            // Validaciones
+            Nombre = nombre ?? throw new ArgumentNullException(nameof(nombre));
+            Descripcion = descripcion?.Trim() ?? string.Empty;
+            UnidadMedida = unidadMedida ?? throw new ArgumentNullException(nameof(unidadMedida));
+            AfectacionIgv = afectacionIgv ?? throw new ArgumentNullException(nameof(afectacionIgv));
+            Categoria = categoria ?? throw new ArgumentNullException(nameof(categoria));
 
-        public ProductoCombo CrearCombo(
-            string skuCombo,
-            string nombreCombo,
-            IEnumerable<ComponenteCombo> componentes,
-            decimal precio,
-            UnidadMedida unidad,
-            AfectacionIGV igv,
-            decimal pesoTotal,
-            string estado)
-        {
-            if (!Activo) throw new InvalidOperationException("No se puede crear combo de producto inactivo.");
-            var combo = new ProductoCombo(skuCombo, nombreCombo, componentes, precio, unidad, igv, pesoTotal, estado);
-            // Dispatch(...)
-            return combo;
-        }
+            if (tieneDetraccion && codigoDetraccion is null)
+                throw new ArgumentException("Si aplica detracción, debe especificarse el código.", nameof(codigoDetraccion));
 
-        public void ActualizarDescripcion(string descripcion)
-        {
-            Descripcion = descripcion ?? throw new ArgumentNullException(nameof(descripcion));
-            var ev = new ProductoModificado(ProductoId);
-            // Dispatch(ev);
-        }
-
-        public void ActualizarPeso(Peso? peso)
-        {
+            // Asignaciones
+            Marca = marca;
+            PrecioVenta = precioVenta;
+            Moneda = moneda;
+            ISC = isc;
+            TieneDetraccion = tieneDetraccion;
+            CodigoDetraccion = codigoDetraccion;
+            CodigoSunat = codigoSunat;
+            BaseImponibleVentas = baseImponibleVentas;
+            CentroCosto = centroCosto;
             Peso = peso;
-            var ev = new ProductoModificado(ProductoId);
+            Serie = serie;
+            CodigoBarras = codigoBarras;
+            CodigoFabrica = codigoFabrica;
+            CodigoLote = codigoLote;
+            Tipo = tipo;
+            TipoExistencia = tipoExistencia;
+            FechaVencimiento = fechaVencimiento;
+            AlmacenesAsignados = almacenesAsignados ?? new List<Guid>();
+            AsignarATodosLosAlmacenes = asignarATodosAlmacenes;
+            ImagenPrincipalId = imagenPrincipalId;
+
+            var ev = new ProductoModificado(this);
+            AddDomainEvent(ev);
             // Dispatch(ev);
         }
 
@@ -111,70 +216,40 @@ namespace CatalogoArticulosBC.Domain.Aggregates
         {
             Activo = false;
             var ev = new ProductoInhabilitado(ProductoId, motivo);
+            AddDomainEvent(ev);
             // Dispatch(ev);
         }
 
-        
+        public void AsignarImagenPrincipal(Guid multimediaId)
+        {
+            if (!_multimedia.Any(m => m.MultimediaId == multimediaId))
+                throw new InvalidOperationException("La imagen principal debe existir en multimedia.");
+            ImagenPrincipalId = multimediaId;
+        }
+
+        public void AgregarMultimedia(MultimediaProducto media)
+        {
+            if (_multimedia.Count >= 5)
+                throw new LimiteMultimediaException();
+            if (!EsTipoPermitido(media.TipoMime))
+                throw new MultimediaInvalidaException("Tipo no permitido.");
+            _multimedia.Add(media);
+        }
+
         public void EliminarMultimedia(Guid multimediaId)
         {
-            var media = _multimedia.Find(m => m.MultimediaId == multimediaId);
-            if (media == null) throw new InvalidOperationException("Multimedia no encontrada.");
+            var media = _multimedia.FirstOrDefault(m => m.MultimediaId == multimediaId)
+                        ?? throw new InvalidOperationException("Multimedia no encontrada.");
             _multimedia.Remove(media);
-            // Dispatch(...)
         }
 
-        public void EditarDatos(string nuevoNombre, string nuevaDescripcion, decimal nuevoPrecio)
+        private void AddDomainEvent(IDomainEvent domainEvent)
         {
-            if (string.IsNullOrWhiteSpace(nuevoNombre))
-                throw new ArgumentException("El nombre no puede estar vacío.");
-            if (nuevoPrecio < 0)
-                throw new ArgumentException("El precio no puede ser negativo.");
-
-            Nombre = nuevoNombre;
-            Descripcion = nuevaDescripcion;
-            Precio = nuevoPrecio;
+        _domainEvents.Add(domainEvent);
         }
 
-        // --- Gestión de multimedia avanzada ---
-        private const int MAX_MULTIMEDIA = 5;
-        private const long MAX_TAMANO = 10 * 1024 * 1024; // 10 MB
-
-        public void AgregarMultimediaAvanzada(
-            Guid multimediaId,
-            string tipoAdjunto,
-            string nombreArchivo,
-            string ruta,
-            string comentario,
-            long tamano)
-        {
-            if (_multimedia.Count >= MAX_MULTIMEDIA)
-                throw new LimiteMultimediaException();
-
-            if (!EsTipoPermitido(tipoAdjunto))
-                throw new MultimediaInvalidaException("Tipo de archivo no permitido.");
-
-            if (tamano > MAX_TAMANO)
-                throw new MultimediaInvalidaException("El archivo excede el tamaño máximo permitido (10 MB).");
-
-            var multimedia = new MultimediaProducto(multimediaId, tipoAdjunto, nombreArchivo, ruta, comentario, tamano);
-            _multimedia.Add(multimedia);
-            // AgregarEvento(new ProductoModificado(this.ProductoId, "MULTIMEDIA_AGREGADA", multimediaId));
-        }
-
-        public void EliminarMultimediaAvanzada(Guid multimediaId)
-        {
-            var multimedia = _multimedia.Find(m => m.MultimediaId == multimediaId)
-                ?? throw new InvalidOperationException("Recurso multimedia no encontrado.");
-
-            _multimedia.Remove(multimedia);
-            // AgregarEvento(new ProductoModificado(this.ProductoId, "MULTIMEDIA_ELIMINADA", multimediaId));
-        }
-
-        private bool EsTipoPermitido(string tipoAdjunto)
-        {
-            var permitidos = new[] { "image/jpeg", "image/png", "application/pdf" };
-            return Array.Exists(permitidos, t => t.Equals(tipoAdjunto, StringComparison.OrdinalIgnoreCase));
-        }
-        // --- Fin gestión de multimedia avanzada ---
+        private bool EsTipoPermitido(string tipo) =>
+            new[] { "image/jpeg", "image/png", "application/pdf" }
+            .Contains(tipo, StringComparer.OrdinalIgnoreCase);
     }
 }
