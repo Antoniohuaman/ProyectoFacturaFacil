@@ -78,11 +78,11 @@ namespace CatalogoArticulosBC.Domain.Aggregates
         /// </summary>
         public ProductoSimple(
             SKU sku,
-            NombreProducto nombre,
-            string descripcion,
+            NombreProducto nombre,        
             UnidadMedida unidadMedida,
             AfectacionIGV afectacionIgv,
             Categoria categoria,
+            string? descripcion = null,
             Marca? marca = null,
             Precio? precioVenta = null,
             Moneda moneda = Moneda.Soles,
@@ -98,7 +98,7 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             CodigoFabrica? codigoFabrica = null,
             CodigoLote? codigoLote = null,
             TipoProducto tipo = TipoProducto.Bien,
-            TipoExistencia tipoExistencia = TipoExistencia.Mercaderias,
+            TipoExistencia tipoExistencia = TipoExistencia.ProductosTerminados,
             FechaVencimiento? fechaVencimiento = null,
             List<Guid>? almacenesAsignados = null,
             bool asignarATodosLosAlmacenes = false,
@@ -150,7 +150,6 @@ namespace CatalogoArticulosBC.Domain.Aggregates
         /// </summary>
         public void EditarDatos(
             NombreProducto nombre,
-            string descripcion,
             UnidadMedida unidadMedida,
             AfectacionIGV afectacionIgv,
             Categoria categoria,
@@ -169,11 +168,12 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             CodigoFabrica? codigoFabrica,
             CodigoLote? codigoLote,
             TipoProducto tipo,
-            TipoExistencia tipoExistencia,
             FechaVencimiento? fechaVencimiento,
             List<Guid>? almacenesAsignados = null,
             bool asignarATodosAlmacenes = false,
-            Guid? imagenPrincipalId = null)
+            Guid? imagenPrincipalId = null,
+            string? descripcion = null,
+            TipoExistencia tipoExistencia = TipoExistencia.ProductosTerminados)
         {
             // Validaciones
             Nombre = nombre ?? throw new ArgumentNullException(nameof(nombre));
