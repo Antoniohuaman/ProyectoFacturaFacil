@@ -6,7 +6,7 @@ namespace CatalogoArticulosBC.Domain.ValueObjects
 {
     /// <summary>
     /// Centro de costo de un producto o servicio.
-    /// <para>Cálido adjunto: opcional; si se proporciona, no puede estar vacío.</para>
+    /// <para>Campo adjunto: opcional; si se proporciona, no puede estar vacío.</para>
     /// </summary>
     public sealed class CentroCosto : IEquatable<CentroCosto>
     {
