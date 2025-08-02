@@ -82,6 +82,7 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             UnidadMedida unidadMedida,
             AfectacionIGV afectacionIgv,
             Categoria categoria,
+            List<Guid>? almacenesAsignados,
             string? descripcion = null,
             Marca? marca = null,
             Precio? precioVenta = null,
@@ -100,7 +101,6 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             TipoProducto tipo = TipoProducto.Bien,
             TipoExistencia tipoExistencia = TipoExistencia.ProductosTerminados,
             FechaVencimiento? fechaVencimiento = null,
-            List<Guid>? almacenesAsignados = null,
             bool asignarATodosLosAlmacenes = false,
             Guid? imagenPrincipalId = null)
         {
@@ -114,6 +114,9 @@ namespace CatalogoArticulosBC.Domain.Aggregates
 
             if (tieneDetraccion && codigoDetraccion is null)
                 throw new ArgumentException("Si aplica detracción, debe especificarse el código.", nameof(codigoDetraccion));
+
+            if (almacenesAsignados == null || !almacenesAsignados.Any())
+                throw new ArgumentException("Debe asignar al menos un almacén.", nameof(almacenesAsignados));    
 
             // Asignaciones
             ProductoId = Guid.NewGuid();
@@ -135,7 +138,7 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             Tipo = tipo;
             TipoExistencia = tipoExistencia;
             FechaVencimiento = fechaVencimiento;
-            AlmacenesAsignados = almacenesAsignados ?? new List<Guid>();
+            AlmacenesAsignados = almacenesAsignados;
             AsignarATodosLosAlmacenes = asignarATodosLosAlmacenes;
             ImagenPrincipalId = imagenPrincipalId;
 
