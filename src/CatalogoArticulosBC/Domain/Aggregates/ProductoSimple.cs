@@ -36,7 +36,7 @@ namespace CatalogoArticulosBC.Domain.Aggregates
         public Moneda Moneda { get; private set; }
 
         // Impuestos especiales
-        public ImpuestoSelectivoConsumo ISC { get; private set; }
+        public ImpuestoSelectivoConsumo? ISC { get; private set; }
         public bool TieneDetraccion { get; private set; }
         public CodigoDetraccion? CodigoDetraccion { get; private set; }
 
