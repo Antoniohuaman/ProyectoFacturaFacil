@@ -16,7 +16,7 @@ namespace CatalogoArticulosBC.Domain.Specifications
         private readonly SkuUnicoSpecification _skuSpec;
 
         public ProductoValidoParaFacturarSpecification(
-            ISkuUniquenessChecker checker)
+            IValidadorUnicidadSku checker)
         {
             _activoSpec = new ProductoActivoSpecification();
             _skuSpec    = new SkuUnicoSpecification(checker);

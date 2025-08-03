@@ -8,9 +8,9 @@ namespace CatalogoArticulosBC.Domain.Specifications
     /// </summary>
     public sealed class SkuUnicoSpecification : Specification<ProductoSimple>
     {
-        private readonly ISkuUniquenessChecker _checker;
+        private readonly IValidadorUnicidadSku _checker;
 
-        public SkuUnicoSpecification(ISkuUniquenessChecker checker)
+        public SkuUnicoSpecification(IValidadorUnicidadSku checker)
         {
             _checker = checker ?? 
                 throw new ArgumentNullException(nameof(checker));

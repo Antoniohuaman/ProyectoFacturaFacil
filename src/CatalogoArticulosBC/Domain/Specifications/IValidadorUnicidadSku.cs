@@ -3,7 +3,7 @@ namespace CatalogoArticulosBC.Domain.Specifications
     /// <summary>
     /// Servicio puente a persistencia para verificar unicidad de SKU.
     /// </summary>
-    public interface ISkuUniquenessChecker
+    public interface IValidadorUnicidadSku
     {
         bool IsUnique(string sku);
     }
