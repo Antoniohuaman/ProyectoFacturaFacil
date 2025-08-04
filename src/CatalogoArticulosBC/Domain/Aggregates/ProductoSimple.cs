@@ -173,7 +173,7 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             TipoProducto tipo,
             FechaVencimiento? fechaVencimiento,
             List<Guid>? almacenesAsignados = null,
-            bool asignarATodosAlmacenes = false,
+            bool asignarATodosLosAlmacenes = false,
             Guid? imagenPrincipalId = null,
             string? descripcion = null,
             TipoExistencia tipoExistencia = TipoExistencia.ProductosTerminados)
@@ -210,7 +210,7 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             TipoExistencia = tipoExistencia;
             FechaVencimiento = fechaVencimiento;
             AlmacenesAsignados = almacenesAsignados;
-            AsignarATodosLosAlmacenes = asignarATodosAlmacenes;
+            AsignarATodosLosAlmacenes = asignarATodosLosAlmacenes;
             ImagenPrincipalId = imagenPrincipalId;
 
             var ev = new ProductoModificado(this);
