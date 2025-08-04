@@ -8,12 +8,11 @@ namespace CatalogoArticulosBC.Domain.Specifications
     /// </summary>
     public sealed class SkuUnicoSpecification : Specification<ProductoSimple>
     {
-        private readonly IValidadorUnicidadSku _checker;
+        private readonly IValidadorUnicidadSku _validador;
 
-        public SkuUnicoSpecification(IValidadorUnicidadSku checker)
+        public SkuUnicoSpecification(IValidadorUnicidadSku validador)
         {
-            _checker = checker ?? 
-                throw new ArgumentNullException(nameof(checker));
+            _validador = validador ?? throw new ArgumentNullException(nameof(validador));
         }
 
         public override SpecificationResult IsSatisfiedBy(ProductoSimple candidate)
@@ -21,7 +20,7 @@ namespace CatalogoArticulosBC.Domain.Specifications
             if (candidate == null)
                 return SpecificationResult.Failure("RN-CA-001", "sku", "El producto es nulo.");
 
-            if (_checker.IsUnique(candidate.Sku.Valor))
+            if (_validador.EsUnico(candidate.Sku.Valor))
                 return SpecificationResult.Success();
 
             return SpecificationResult.Failure("RN-CA-001", "sku", $"El SKU '{candidate.Sku.Valor}' ya existe en el catálogo (debe ser único).");
