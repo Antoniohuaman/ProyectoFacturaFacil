@@ -27,6 +27,9 @@ namespace CatalogoArticulosBC.Domain.Specifications
             if (producto.Categoria == null)
                 return SpecificationResult.Failure("RN-CA-005", "categoria", "La categoría es obligatoria.");
 
+            if (producto.AlmacenesAsignados == null || !producto.AlmacenesAsignados.Any())
+                return SpecificationResult.Failure("RN-CA-006", "almacenesAsignados", "Debe asignar al menos un almacén.");
+
             // No se valida Tipo ni TipoExistencia porque no hay valor "None" en el enum
 
             return SpecificationResult.Success();

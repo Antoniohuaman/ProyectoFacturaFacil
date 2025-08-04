@@ -188,6 +188,9 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             if (tieneDetraccion && codigoDetraccion is null)
                 throw new ArgumentException("Si aplica detracción, debe especificarse el código.", nameof(codigoDetraccion));
 
+            if (almacenesAsignados == null || !almacenesAsignados.Any())
+                throw new ArgumentException("Debe asignar al menos un almacén.", nameof(almacenesAsignados));
+
             // Asignaciones
             Marca = marca;
             PrecioVenta = precioVenta;
@@ -206,7 +209,7 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             Tipo = tipo;
             TipoExistencia = tipoExistencia;
             FechaVencimiento = fechaVencimiento;
-            AlmacenesAsignados = almacenesAsignados ?? new List<Guid>();
+            AlmacenesAsignados = almacenesAsignados;
             AsignarATodosLosAlmacenes = asignarATodosAlmacenes;
             ImagenPrincipalId = imagenPrincipalId;
 
