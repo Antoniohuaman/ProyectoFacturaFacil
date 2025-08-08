@@ -4,8 +4,6 @@
     <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-    <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
   </PropertyGroup>
 
   <ItemGroup>
@@ -19,6 +17,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Remove="Output\Persistence\InMemory\**\*.cs" />
+    <!-- Evita compilar código de proyectos anidados -->
+  <Compile Remove="Output\Persistence\**\*.cs" />
+  <!-- Evita cualquier archivo generado en obj -->
+  <Compile Remove="obj\**\*.cs" />
+  <Compile Remove="$(BaseIntermediateOutputPath)**\*.cs" />
   </ItemGroup>
 </Project>
