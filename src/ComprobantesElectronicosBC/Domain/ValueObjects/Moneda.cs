@@ -13,18 +13,15 @@ namespace ComprobantesElectronicosBC.Domain.ValueObjects
     public sealed record Moneda
     {
         /// <summary>Código ISO 4217 en MAYÚSCULAS, p.ej. "PEN", "USD".</summary>
-        public string Codigo { get; }
 
-        /// <summary>Símbolo recomendado para impresión/PDF, p.ej. "S/." o "US$".</summary>
-        public string Simbolo { get; }
+    public string Codigo { get; init; }
+    public string Simbolo { get; init; }
+    public byte Decimales { get; init; }
+    public string? Nombre { get; init; }
 
-        /// <summary>Número de decimales monetarios (minor units). En PEN/USD: 2.</summary>
-        public byte Decimales { get; }
 
-        /// <summary>Nombre legible opcional (no normativo). Ej.: "Soles", "Dólares".</summary>
-        public string? Nombre { get; }
-
-        private Moneda(string codigo, string simbolo, byte decimales, string? nombre)
+        [System.Text.Json.Serialization.JsonConstructor]
+        public Moneda(string codigo, string simbolo, byte decimales, string? nombre)
         {
             Codigo = codigo;
             Simbolo = simbolo;
