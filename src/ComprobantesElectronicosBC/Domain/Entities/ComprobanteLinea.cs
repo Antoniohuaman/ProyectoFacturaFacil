@@ -1,0 +1,255 @@
+using System;
+using ComprobantesElectronicosBC.Domain.ValueObjects;
+
+namespace ComprobantesElectronicosBC.Domain.Entities
+{
+    /// <summary>
+    /// Entidad de LÍNEA de comprobante (Aggregate: ComprobanteElectronico).
+    ///
+    /// Responsabilidades:
+    /// - Mantener datos “congelados” de la línea (descripción, UM, cantidad, precio, impuesto).
+    /// - Calcular base/IGV/total según afectación (gravado/exonerado/inafecto/exportación).
+    /// - Aplicar descuento de línea (monto o %) respetando reglas de moneda y límites.
+    /// - Respetar redondeos contables (AwayFromZero) y escala por UM.
+    ///
+    /// Mapeo UBL (referencial):
+    /// - <cac:InvoiceLine>
+    ///   - <cbc:ID> = NumeroLinea
+    ///   - <cbc:InvoicedQuantity unitCode=UM.Codigo> = Cantidad
+    ///   - <cac:Item><cbc:Description> = DescripcionProducto.ToUblDescriptions()
+    ///   - <cac:Price><cbc:PriceAmount> = UnitPriceSinIgv (unitario SIN IGV)
+    ///   - <cac:AllowanceCharge> (línea) = descuento (si aplica)
+    ///   - <cac:TaxTotal>/<cac:TaxSubtotal>/<cac:TaxCategory>/<cac:TaxScheme> = desde ImpuestoIGV
+    /// </summary>
+    public sealed class ComprobanteLinea
+    {
+        // --------------------- Identidad ---------------------
+        /// <summary>Número de línea 1..N (UI/UBL &lt;cbc:ID&gt;).</summary>
+        public int NumeroLinea { get; private set; }
+
+        // --------------------- Datos nucleares ----------------
+        public DescripcionProducto Descripcion { get; private set; }
+        public UnidadDeMedida UM { get; private set; }
+        public Cantidad Cantidad { get; private set; }
+
+        /// <summary>Precio unitario declaradio por el usuario (con su Moneda).</summary>
+        public ImporteMonetario PrecioUnitario { get; private set; }
+
+        /// <summary>Si true, el precio ingresado incluye IGV; si false, NO incluye IGV.</summary>
+        public bool PrecioIncluyeIgv { get; private set; }
+
+        /// <summary>Afectación IGV (Cat. 07) + tasa cuando corresponde.</summary>
+        public ImpuestoIGV Impuesto { get; private set; }
+
+        /// <summary>Descuento de línea (monto o %). Por defecto: None.</summary>
+        public DescuentoLinea Descuento { get; private set; }
+
+        /// <summary>Centro de costo opcional por línea.</summary>
+        public CentroDeCosto? CentroDeCosto { get; private set; }
+
+        // --------------------- Montos calculados ----------------
+        /// <summary>Unitario SIN IGV (para UBL &lt;PriceAmount&gt;).</summary>
+
+    public ImporteMonetario UnitPriceSinIgv { get; private set; } = null!;
+
+    /// <summary>Unitario CON IGV (solo para mostrar si el usuario trabaja “con IGV”).</summary>
+    public ImporteMonetario UnitPriceConIgv { get; private set; } = null!;
+
+    /// <summary>Base imponible ANTES de descuento.</summary>
+    public ImporteMonetario BaseAntesDescuento { get; private set; } = null!;
+
+    /// <summary>Monto de descuento aplicado (0 si no hay).</summary>
+    public ImporteMonetario DescuentoMonto { get; private set; } = null!;
+
+    /// <summary>Base imponible DESPUÉS de descuento.</summary>
+    public ImporteMonetario BaseImponible { get; private set; } = null!;
+
+    /// <summary>IGV calculado sobre la base después del descuento (0 si exo/ina/exp).</summary>
+    public ImporteMonetario Igv { get; private set; } = null!;
+
+    /// <summary>Total de la línea (base después de descuento + IGV).</summary>
+    public ImporteMonetario ImporteTotal { get; private set; } = null!;
+
+        /// <summary>Conveniencia: moneda única de la línea.</summary>
+        public Moneda Moneda => PrecioUnitario.Moneda;
+
+        // --------------------- Construcción -------------------
+
+        private ComprobanteLinea(
+            int numeroLinea,
+            DescripcionProducto descripcion,
+            UnidadDeMedida um,
+            Cantidad cantidad,
+            ImporteMonetario precioUnitario,
+            bool precioIncluyeIgv,
+            ImpuestoIGV impuesto,
+            DescuentoLinea? descuento,
+            CentroDeCosto? centroDeCosto)
+        {
+            if (numeroLinea <= 0) throw new ArgumentOutOfRangeException(nameof(numeroLinea));
+
+            NumeroLinea      = numeroLinea;
+            Descripcion      = descripcion ?? throw new ArgumentNullException(nameof(descripcion));
+            UM               = um ?? throw new ArgumentNullException(nameof(um));
+            Cantidad         = cantidad; // validación de escala debajo
+            PrecioUnitario   = precioUnitario ?? throw new ArgumentNullException(nameof(precioUnitario));
+            PrecioIncluyeIgv = precioIncluyeIgv;
+            Impuesto         = impuesto ?? throw new ArgumentNullException(nameof(impuesto));
+            Descuento        = descuento ?? DescuentoLinea.None;
+            CentroDeCosto    = centroDeCosto;
+
+            // Inicializa importes en cero con la moneda del precio (evita CS8618)
+            InicializarMontosEnCero();
+
+            // Enforzar escala por UM y calcular montos
+            EnforcePrecisionPorUM();
+            Recalcular();
+        }
+
+        /// <summary>Fábrica principal.</summary>
+        public static ComprobanteLinea Create(
+            int numeroLinea,
+            DescripcionProducto descripcion,
+            UnidadDeMedida um,
+            Cantidad cantidad,
+            ImporteMonetario precioUnitario,
+            bool precioIncluyeIgv,
+            ImpuestoIGV impuesto,
+            DescuentoLinea? descuento = null,
+            CentroDeCosto? centroDeCosto = null)
+            => new(
+                numeroLinea, descripcion, um, cantidad,
+                precioUnitario, precioIncluyeIgv, impuesto,
+                descuento, centroDeCosto);
+
+        // --------------------- Comandos -----------------------
+
+        public void CambiarDescripcion(DescripcionProducto nueva)
+        {
+            Descripcion = nueva ?? throw new ArgumentNullException(nameof(nueva));
+        }
+
+        public void CambiarUnidad(UnidadDeMedida nueva)
+        {
+            UM = nueva ?? throw new ArgumentNullException(nameof(nueva));
+            EnforcePrecisionPorUM();
+            Recalcular();
+        }
+
+        public void CambiarCantidad(Cantidad nueva)
+        {
+            Cantidad = nueva;
+            EnforcePrecisionPorUM();
+            Recalcular();
+        }
+
+        public void CambiarPrecio(ImporteMonetario nuevo, bool? incluyeIgv = null)
+        {
+            if (nuevo is null) throw new ArgumentNullException(nameof(nuevo));
+            if (!Equals(nuevo.Moneda, Moneda))
+                throw new InvalidOperationException("No se puede cambiar la moneda dentro de la misma línea.");
+
+            PrecioUnitario = nuevo;
+            if (incluyeIgv.HasValue) PrecioIncluyeIgv = incluyeIgv.Value;
+            Recalcular();
+        }
+
+        public void CambiarImpuesto(ImpuestoIGV nuevo)
+        {
+            Impuesto = nuevo ?? throw new ArgumentNullException(nameof(nuevo));
+            Recalcular();
+        }
+
+        public void CambiarDescuento(DescuentoLinea? nuevo)
+        {
+            Descuento = nuevo ?? DescuentoLinea.None;
+            Recalcular();
+        }
+
+        public void CambiarCentroDeCosto(CentroDeCosto? nuevo) => CentroDeCosto = nuevo;
+
+        // --------------------- Cálculo ------------------------
+
+        /// <summary>Calcula unitarios, base/IGV/total y aplica DescuentoLinea (si hay).</summary>
+        private void Recalcular()
+        {
+            var moneda = Moneda;
+
+            // 1) Montos base según afectación y si el precio incluye IGV
+            var m = Impuesto.CalcularMontos(
+                unitPrice: PrecioUnitario.Monto,
+                quantity:  Cantidad.Value,
+                priceIncludesIgv: PrecioIncluyeIgv);
+
+            // Unitarios (sin considerar descuento)
+            UnitPriceSinIgv = new ImporteMonetario(moneda, m.UnitPriceSinIgv);
+            UnitPriceConIgv = new ImporteMonetario(moneda, m.UnitPriceConIgv);
+
+            if (Descuento is null || Descuento.EsNinguno)
+            {
+                BaseAntesDescuento = new ImporteMonetario(moneda, m.BaseImponible);
+                DescuentoMonto     = ImporteMonetario.Zero(moneda);
+                BaseImponible      = new ImporteMonetario(moneda, m.BaseImponible);
+                Igv                = new ImporteMonetario(moneda, m.Igv);
+                ImporteTotal       = new ImporteMonetario(moneda, m.ImporteTotal);
+                return;
+            }
+
+            // 2) Aplicar descuento sobre la base imponible y recalcular IGV/Total
+            var r = Descuento.Aplicar(
+                impuesto: Impuesto,
+                unitPriceEntrada: PrecioUnitario.Monto,
+                cantidad: Cantidad,
+                priceIncludesIgv: PrecioIncluyeIgv);
+
+            BaseAntesDescuento = new ImporteMonetario(moneda, r.BaseAntes);
+            DescuentoMonto     = new ImporteMonetario(moneda, r.Descuento);
+            BaseImponible      = new ImporteMonetario(moneda, r.BaseDespues);
+            Igv                = new ImporteMonetario(moneda, r.Igv);
+            ImporteTotal       = new ImporteMonetario(moneda, r.Total);
+        }
+
+        // --------------------- Validaciones auxiliares --------
+
+        /// <summary>
+        /// Enforcea la escala de <see cref="Cantidad"/> según la UM:
+        /// NIU/E48 → 0; KGM/LTR/MTR → 3; otros → 6.
+        /// </summary>
+        private void EnforcePrecisionPorUM()
+        {
+            var code = UM.Codigo.ToUpperInvariant();
+            var maxScale = code switch
+            {
+                "NIU" or "E48" => 0,
+                "KGM" or "LTR" or "MTR" => 3,
+                _ => 6
+            };
+            Cantidad = Cantidad.EnforceMaxScale(maxScale);
+        }
+
+        private void InicializarMontosEnCero()
+        {
+            var m = PrecioUnitario.Moneda;
+            UnitPriceSinIgv    = ImporteMonetario.Zero(m);
+            UnitPriceConIgv    = ImporteMonetario.Zero(m);
+            BaseAntesDescuento = ImporteMonetario.Zero(m);
+            DescuentoMonto     = ImporteMonetario.Zero(m);
+            BaseImponible      = ImporteMonetario.Zero(m);
+            Igv                = ImporteMonetario.Zero(m);
+            ImporteTotal       = ImporteMonetario.Zero(m);
+        }
+
+        // --------------------- Consultas útiles ---------------
+
+        public bool EsGravado => Impuesto.EsGravado;
+
+        /// <summary>SubTotal sin IGV (ya considerando descuento).</summary>
+        public ImporteMonetario SubtotalSinIgv => BaseImponible;
+
+        /// <summary>Total de línea (para sumatoria de cabecera).</summary>
+        public ImporteMonetario TotalLinea => ImporteTotal;
+
+        public override string ToString()
+            => $"#{NumeroLinea} {Cantidad.Value:0.######} {UM.Codigo} — {Descripcion.Nombre}: {ImporteTotal}";
+    }
+}
