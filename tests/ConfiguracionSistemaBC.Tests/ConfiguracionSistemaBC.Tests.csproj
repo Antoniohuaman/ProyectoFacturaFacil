@@ -19,6 +19,7 @@
     <Using Include="NUnit.Framework" />
   </ItemGroup>
 
+
   <ItemGroup>
     <ProjectReference Include="..\..\src\ConfiguracionSistemaBC\Domain\ConfiguracionSistemaBC.Domain.csproj" />
     <ProjectReference Include="..\..\src\ConfiguracionSistemaBC\Application\ConfiguracionSistemaBC.Application.csproj" />
