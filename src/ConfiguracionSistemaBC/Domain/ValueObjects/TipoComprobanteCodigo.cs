@@ -1,20 +1,15 @@
-// src/ConfiguracionSistemaBC/Domain/ValueObjects/TipoComprobanteCodigo.cs
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 
 namespace ConfiguracionSistemaBC.Domain.ValueObjects
 {
     /// <summary>
     /// VO que representa el <b>Tipo de Comprobante SUNAT</b>.
-    /// - Se serializa como <b>código SUNAT</b> (p. ej., "01", "03").
-    /// - Inmutable, igualdad por valor (basada en Código).
+    /// - Igualdad por valor (basada en Código).
     /// - MVP: Factura (01) y Boleta (03). Fácil de extender (07, 08, 09...).
     /// </summary>
     [DebuggerDisplay("{Codigo} - {NombreCorto}")]
-    [JsonConverter(typeof(TipoComprobanteCodigoJsonConverter))]
     public sealed class TipoComprobanteCodigo : IEquatable<TipoComprobanteCodigo>
     {
         // ---------------------------- Instancias conocidas (MVP) ----------------------------
@@ -53,14 +48,14 @@ namespace ConfiguracionSistemaBC.Domain.ValueObjects
         private static readonly Dictionary<string, string> _aliasesToCode =
             new(StringComparer.OrdinalIgnoreCase)
             {
-                ["01"]             = "01",
-                ["FACTURA"]        = "01",
-                ["F"]              = "01",
+                ["01"]              = "01",
+                ["FACTURA"]         = "01",
+                ["F"]               = "01",
 
-                ["03"]             = "03",
-                ["BOLETA"]         = "03",
-                ["B"]              = "03",
-                ["BOLETA DE VENTA"]= "03"
+                ["03"]              = "03",
+                ["BOLETA"]          = "03",
+                ["B"]               = "03",
+                ["BOLETA DE VENTA"] = "03"
             };
 
         // ---------------------------- CTOR privado (inmutable) ----------------------------
@@ -150,29 +145,5 @@ namespace ConfiguracionSistemaBC.Domain.ValueObjects
 
         /// <summary>Conversión explícita desde string (código o alias). Lanza si no es válido.</summary>
         public static explicit operator TipoComprobanteCodigo(string value) => From(value);
-    }
-
-    // ----------------------------------- JSON Converter -----------------------------------
-    /// <summary>Serializa como "01"/"03". Al deserializar acepta códigos y alias (F/B, FACTURA/BOLETA).</summary>
-    public sealed class TipoComprobanteCodigoJsonConverter : JsonConverter<TipoComprobanteCodigo>
-    {
-        public override TipoComprobanteCodigo? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
-        {
-            if (reader.TokenType == JsonTokenType.Null) return null;
-
-            if (reader.TokenType != JsonTokenType.String)
-                throw new JsonException($"Se esperaba un string JSON para {nameof(TipoComprobanteCodigo)}.");
-
-            var raw = reader.GetString();
-            if (TipoComprobanteCodigo.TryParse(raw, out var value))
-                return value;
-
-            throw new JsonException($"Tipo de comprobante no reconocido: \"{raw}\". Use \"01\" (Factura) o \"03\" (Boleta).");
-        }
-
-        public override void Write(Utf8JsonWriter writer, TipoComprobanteCodigo value, JsonSerializerOptions options)
-        {
-            writer.WriteStringValue(value.Codigo);
-        }
     }
 }

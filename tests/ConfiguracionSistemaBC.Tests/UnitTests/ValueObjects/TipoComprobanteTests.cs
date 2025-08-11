@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Text.Json;
 using NUnit.Framework;
 using ConfiguracionSistemaBC.Domain.ValueObjects;
 
@@ -9,12 +8,6 @@ namespace ConfiguracionSistemaBC.Tests.UnitTests.ValueObjects
     [TestFixture]
     public class TipoComprobanteCodigoTests
     {
-        // Wrapper para probar (de)serialización como propiedad nullable
-        private sealed class Wrapper
-        {
-            public TipoComprobanteCodigo? Tipo { get; set; }
-        }
-
         [Test]
         public void InstanciasConocidas_MVP_DebenEstarDefinidasCorrectamente()
         {
@@ -38,8 +31,7 @@ namespace ConfiguracionSistemaBC.Tests.UnitTests.ValueObjects
         {
             var f = TipoComprobanteCodigo.FromCode("01");
             var b = TipoComprobanteCodigo.FromCode("03");
-
-            Assert.That(f, Is.SameAs(TipoComprobanteCodigo.Factura)); // mismas instancias canónicas
+            Assert.That(f, Is.SameAs(TipoComprobanteCodigo.Factura));
             Assert.That(b, Is.SameAs(TipoComprobanteCodigo.Boleta));
         }
 
@@ -128,62 +120,6 @@ namespace ConfiguracionSistemaBC.Tests.UnitTests.ValueObjects
             Assert.That(TipoComprobanteCodigo.Boleta.SerieSigueConvencion("F999"), Is.False);
             Assert.That(TipoComprobanteCodigo.Boleta.SerieSigueConvencion(null), Is.False);
             Assert.That(TipoComprobanteCodigo.Boleta.SerieSigueConvencion("  "), Is.False);
-        }
-
-        [Test]
-        public void Json_SerializaComoCodigoSunat()
-        {
-            var json1 = JsonSerializer.Serialize(TipoComprobanteCodigo.Factura);
-            var json2 = JsonSerializer.Serialize(TipoComprobanteCodigo.Boleta);
-            Assert.That(json1, Is.EqualTo("\"01\""));
-            Assert.That(json2, Is.EqualTo("\"03\""));
-
-            // En colecciones
-            var list = new List<TipoComprobanteCodigo> { TipoComprobanteCodigo.Factura, TipoComprobanteCodigo.Boleta };
-            var jsonList = JsonSerializer.Serialize(list);
-            Assert.That(jsonList, Is.EqualTo("[\"01\",\"03\"]"));
-
-            // Como propiedad
-            var wrapper = new Wrapper { Tipo = TipoComprobanteCodigo.Boleta };
-            var jsonWrapper = JsonSerializer.Serialize(wrapper);
-            Assert.That(jsonWrapper, Does.Contain("\"Tipo\":\"03\""));
-        }
-
-        [Test]
-        public void Json_DeserializaDesdeCodigoYAlias()
-        {
-            // Código
-            var w1 = JsonSerializer.Deserialize<Wrapper>("{\"Tipo\":\"01\"}");
-            Assert.That(w1, Is.Not.Null);
-            Assert.That(w1!.Tipo, Is.EqualTo(TipoComprobanteCodigo.Factura));
-
-            // Alias
-            var w2 = JsonSerializer.Deserialize<Wrapper>("{\"Tipo\":\"BOLETA\"}");
-            Assert.That(w2, Is.Not.Null);
-            Assert.That(w2!.Tipo, Is.EqualTo(TipoComprobanteCodigo.Boleta));
-
-            // Lista
-            var list = JsonSerializer.Deserialize<List<TipoComprobanteCodigo>>("[\"01\",\"03\"]");
-            Assert.That(list, Is.Not.Null);
-            Assert.That(list!, Is.EquivalentTo(new[] { TipoComprobanteCodigo.Factura, TipoComprobanteCodigo.Boleta }));
-        }
-
-        [Test]
-        public void Json_PropiedadNullable_AceptaNull()
-        {
-            var w = JsonSerializer.Deserialize<Wrapper>("{\"Tipo\":null}");
-            Assert.That(w, Is.Not.Null);
-            Assert.That(w!.Tipo, Is.Null);
-
-            var json = JsonSerializer.Serialize(new Wrapper { Tipo = null });
-            Assert.That(json, Does.Contain("\"Tipo\":null"));
-        }
-
-        [Test]
-        public void Json_ValorInvalido_LanzaJsonException()
-        {
-            Assert.That(() => JsonSerializer.Deserialize<Wrapper>("{\"Tipo\":\"99\"}"), Throws.TypeOf<System.Text.Json.JsonException>());
-            Assert.That(() => JsonSerializer.Deserialize<TipoComprobanteCodigo>("123"), Throws.TypeOf<System.Text.Json.JsonException>()); // tipo JSON no string
         }
     }
 }
