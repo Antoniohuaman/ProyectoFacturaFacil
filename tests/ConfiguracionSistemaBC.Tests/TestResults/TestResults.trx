@@ -1,26 +1,99 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<TestRun id="eb07a133-195d-42f3-9b3d-22317039909d" name="Asus@DESKTOP-GBNCN2L 2025-08-11 16:16:53" runUser="DESKTOP-GBNCN2L\Asus" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
-  <Times creation="2025-08-11T16:16:53.2113951-05:00" queuing="2025-08-11T16:16:53.2113956-05:00" start="2025-08-11T16:16:51.8981042-05:00" finish="2025-08-11T16:16:53.2118570-05:00" />
-  <TestSettings name="default" id="99336e08-dbdd-4f6d-920b-29202f88be5a">
-    <Deployment runDeploymentRoot="Asus_DESKTOP-GBNCN2L_2025-08-11_16_16_53" />
+<TestRun id="9a14d8b7-04da-46b7-ab79-75f1a2965018" name="Asus@DESKTOP-GBNCN2L 2025-08-11 17:40:10" runUser="DESKTOP-GBNCN2L\Asus" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times creation="2025-08-11T17:40:10.8882040-05:00" queuing="2025-08-11T17:40:10.8882066-05:00" start="2025-08-11T17:40:10.0532844-05:00" finish="2025-08-11T17:40:10.9377742-05:00" />
+  <TestSettings name="default" id="0df2e661-3981-4049-b866-c4b1498968fe">
+    <Deployment runDeploymentRoot="Asus_DESKTOP-GBNCN2L_2025-08-11_17_40_10" />
   </TestSettings>
+  <Results>
+    <UnitTestResult executionId="0bb9eb64-e1d7-4758-b304-88ffb2d2e3de" testId="6e88fd2e-6593-6cd7-91d0-055723152a39" testName="FromUpload_Valido_Jpeg_NormalizaExtension" computerName="DESKTOP-GBNCN2L" duration="00:00:00.0012400" startTime="2025-08-11T17:40:10.7625129-05:00" endTime="2025-08-11T17:40:10.7637522-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="0bb9eb64-e1d7-4758-b304-88ffb2d2e3de" />
+    <UnitTestResult executionId="39250cb7-2308-4bc5-9714-f9f9beb80724" testId="413bda31-1cd4-0405-2aa2-2a3cfde7781f" testName="FromUpload_MimeNoPermitido_Lanza" computerName="DESKTOP-GBNCN2L" duration="00:00:00.0022550" startTime="2025-08-11T17:40:10.7563532-05:00" endTime="2025-08-11T17:40:10.7586064-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="39250cb7-2308-4bc5-9714-f9f9beb80724" />
+    <UnitTestResult executionId="8bb5758e-6211-406d-a6f7-14a8f1dd831b" testId="ea58d87d-3658-ba47-e3c0-ae0e2d04dc60" testName="FromUpload_ExtensionNoPermitida_Lanza" computerName="DESKTOP-GBNCN2L" duration="00:00:00.0005650" startTime="2025-08-11T17:40:10.7557688-05:00" endTime="2025-08-11T17:40:10.7563332-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="8bb5758e-6211-406d-a6f7-14a8f1dd831b" />
+    <UnitTestResult executionId="8e4a05bd-850e-4ce3-a92b-fcb7b203e5f6" testId="6e83e562-0531-6ece-62a6-9529c5600c99" testName="FitIn_NoEscalaHaciaArriba_Y_EscalaProporcional" computerName="DESKTOP-GBNCN2L" duration="00:00:00.0002709" startTime="2025-08-11T17:40:10.7384174-05:00" endTime="2025-08-11T17:40:10.7386882-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="8e4a05bd-850e-4ce3-a92b-fcb7b203e5f6" />
+    <UnitTestResult executionId="d257ca71-6f43-415e-a6e2-2036700b01b9" testId="b1eed1bd-55ff-5831-42ab-b41885af2a85" testName="TryFromUpload_ComportamientoEsperado" computerName="DESKTOP-GBNCN2L" duration="00:00:00.0004890" startTime="2025-08-11T17:40:10.7833329-05:00" endTime="2025-08-11T17:40:10.7838218-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="d257ca71-6f43-415e-a6e2-2036700b01b9" />
+    <UnitTestResult executionId="e4279785-d72f-4b88-b808-09335226865f" testId="b8f4826e-2838-9b05-4925-4d2548fa60a4" testName="FromUpload_AspectRatio_Extremo_Lanza" computerName="DESKTOP-GBNCN2L" duration="00:00:00.0157090" startTime="2025-08-11T17:40:10.7387049-05:00" endTime="2025-08-11T17:40:10.7544135-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="e4279785-d72f-4b88-b808-09335226865f" />
+    <UnitTestResult executionId="c5a79bdd-a305-4164-bd57-ba41ed2c590c" testId="b40f54e9-a146-f078-3d2d-43eb260aa904" testName="ToString_E_IgualdadYHash" computerName="DESKTOP-GBNCN2L" duration="00:00:00.0011360" startTime="2025-08-11T17:40:10.7821821-05:00" endTime="2025-08-11T17:40:10.7833181-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="c5a79bdd-a305-4164-bd57-ba41ed2c590c" />
+    <UnitTestResult executionId="55e3221e-1425-42bd-aa32-291a93cbf1d8" testId="626af9f0-fb38-f979-1dab-d001dda68813" testName="SanitizarNombre_TruncaYLimpia" computerName="DESKTOP-GBNCN2L" duration="00:00:00.0004000" startTime="2025-08-11T17:40:10.7817621-05:00" endTime="2025-08-11T17:40:10.7821621-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="55e3221e-1425-42bd-aa32-291a93cbf1d8" />
+    <UnitTestResult executionId="acb20b0e-3fc1-4921-bbc2-5958feb57296" testId="de5a6cd8-a8b2-fe77-b956-17ddf48eff82" testName="FromUpload_TamanoBytes_FueraDeRango_Lanza" computerName="DESKTOP-GBNCN2L" duration="00:00:00.0037910" startTime="2025-08-11T17:40:10.7586703-05:00" endTime="2025-08-11T17:40:10.7624604-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="acb20b0e-3fc1-4921-bbc2-5958feb57296" />
+    <UnitTestResult executionId="d87ca9c7-2da1-428a-aaac-742a356ebe67" testId="43242546-7736-7fcc-8a76-64abb6432ffa" testName="FitCabeceraA4_UsaBound_220x80" computerName="DESKTOP-GBNCN2L" duration="00:00:00.0119170" startTime="2025-08-11T17:40:10.7255397-05:00" endTime="2025-08-11T17:40:10.7374172-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="d87ca9c7-2da1-428a-aaac-742a356ebe67" />
+    <UnitTestResult executionId="50b82ee3-2aa5-4cbc-bbca-5872fe4763bf" testId="c01bf35f-f061-592c-9784-fba56b0fe207" testName="FromUpload_Valido_Png" computerName="DESKTOP-GBNCN2L" duration="00:00:00.0179460" startTime="2025-08-11T17:40:10.7637735-05:00" endTime="2025-08-11T17:40:10.7817188-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="50b82ee3-2aa5-4cbc-bbca-5872fe4763bf" />
+    <UnitTestResult executionId="59c5f758-5975-4436-834a-96a90e96f418" testId="d884fc3c-cab6-86a0-c85a-908c1e22cc73" testName="FromUpload_Dimensiones_FueraDeRango_Lanza" computerName="DESKTOP-GBNCN2L" duration="00:00:00.0012650" startTime="2025-08-11T17:40:10.7544711-05:00" endTime="2025-08-11T17:40:10.7557351-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="59c5f758-5975-4436-834a-96a90e96f418" />
+  </Results>
+  <TestDefinitions>
+    <UnitTest name="FromUpload_TamanoBytes_FueraDeRango_Lanza" storage="c:\users\asus\onedrive - contasis\proyectofacturafacil\tests\configuracionsistemabc.tests\bin\debug\net9.0\configuracionsistemabc.tests.dll" id="de5a6cd8-a8b2-fe77-b956-17ddf48eff82">
+      <Execution id="acb20b0e-3fc1-4921-bbc2-5958feb57296" />
+      <TestMethod codeBase="C:\Users\Asus\OneDrive - CONTASIS\ProyectoFacturaFacil\tests\ConfiguracionSistemaBC.Tests\bin\Debug\net9.0\ConfiguracionSistemaBC.Tests.dll" adapterTypeName="executor://nunit3testexecutor/" className="ConfiguracionSistemaBC.Tests.UnitTests.ValueObjects.LogoImagenTests" name="FromUpload_TamanoBytes_FueraDeRango_Lanza" />
+    </UnitTest>
+    <UnitTest name="FromUpload_AspectRatio_Extremo_Lanza" storage="c:\users\asus\onedrive - contasis\proyectofacturafacil\tests\configuracionsistemabc.tests\bin\debug\net9.0\configuracionsistemabc.tests.dll" id="b8f4826e-2838-9b05-4925-4d2548fa60a4">
+      <Execution id="e4279785-d72f-4b88-b808-09335226865f" />
+      <TestMethod codeBase="C:\Users\Asus\OneDrive - CONTASIS\ProyectoFacturaFacil\tests\ConfiguracionSistemaBC.Tests\bin\Debug\net9.0\ConfiguracionSistemaBC.Tests.dll" adapterTypeName="executor://nunit3testexecutor/" className="ConfiguracionSistemaBC.Tests.UnitTests.ValueObjects.LogoImagenTests" name="FromUpload_AspectRatio_Extremo_Lanza" />
+    </UnitTest>
+    <UnitTest name="FromUpload_ExtensionNoPermitida_Lanza" storage="c:\users\asus\onedrive - contasis\proyectofacturafacil\tests\configuracionsistemabc.tests\bin\debug\net9.0\configuracionsistemabc.tests.dll" id="ea58d87d-3658-ba47-e3c0-ae0e2d04dc60">
+      <Execution id="8bb5758e-6211-406d-a6f7-14a8f1dd831b" />
+      <TestMethod codeBase="C:\Users\Asus\OneDrive - CONTASIS\ProyectoFacturaFacil\tests\ConfiguracionSistemaBC.Tests\bin\Debug\net9.0\ConfiguracionSistemaBC.Tests.dll" adapterTypeName="executor://nunit3testexecutor/" className="ConfiguracionSistemaBC.Tests.UnitTests.ValueObjects.LogoImagenTests" name="FromUpload_ExtensionNoPermitida_Lanza" />
+    </UnitTest>
+    <UnitTest name="ToString_E_IgualdadYHash" storage="c:\users\asus\onedrive - contasis\proyectofacturafacil\tests\configuracionsistemabc.tests\bin\debug\net9.0\configuracionsistemabc.tests.dll" id="b40f54e9-a146-f078-3d2d-43eb260aa904">
+      <Execution id="c5a79bdd-a305-4164-bd57-ba41ed2c590c" />
+      <TestMethod codeBase="C:\Users\Asus\OneDrive - CONTASIS\ProyectoFacturaFacil\tests\ConfiguracionSistemaBC.Tests\bin\Debug\net9.0\ConfiguracionSistemaBC.Tests.dll" adapterTypeName="executor://nunit3testexecutor/" className="ConfiguracionSistemaBC.Tests.UnitTests.ValueObjects.LogoImagenTests" name="ToString_E_IgualdadYHash" />
+    </UnitTest>
+    <UnitTest name="SanitizarNombre_TruncaYLimpia" storage="c:\users\asus\onedrive - contasis\proyectofacturafacil\tests\configuracionsistemabc.tests\bin\debug\net9.0\configuracionsistemabc.tests.dll" id="626af9f0-fb38-f979-1dab-d001dda68813">
+      <Execution id="55e3221e-1425-42bd-aa32-291a93cbf1d8" />
+      <TestMethod codeBase="C:\Users\Asus\OneDrive - CONTASIS\ProyectoFacturaFacil\tests\ConfiguracionSistemaBC.Tests\bin\Debug\net9.0\ConfiguracionSistemaBC.Tests.dll" adapterTypeName="executor://nunit3testexecutor/" className="ConfiguracionSistemaBC.Tests.UnitTests.ValueObjects.LogoImagenTests" name="SanitizarNombre_TruncaYLimpia" />
+    </UnitTest>
+    <UnitTest name="FromUpload_Valido_Jpeg_NormalizaExtension" storage="c:\users\asus\onedrive - contasis\proyectofacturafacil\tests\configuracionsistemabc.tests\bin\debug\net9.0\configuracionsistemabc.tests.dll" id="6e88fd2e-6593-6cd7-91d0-055723152a39">
+      <Execution id="0bb9eb64-e1d7-4758-b304-88ffb2d2e3de" />
+      <TestMethod codeBase="C:\Users\Asus\OneDrive - CONTASIS\ProyectoFacturaFacil\tests\ConfiguracionSistemaBC.Tests\bin\Debug\net9.0\ConfiguracionSistemaBC.Tests.dll" adapterTypeName="executor://nunit3testexecutor/" className="ConfiguracionSistemaBC.Tests.UnitTests.ValueObjects.LogoImagenTests" name="FromUpload_Valido_Jpeg_NormalizaExtension" />
+    </UnitTest>
+    <UnitTest name="FromUpload_Valido_Png" storage="c:\users\asus\onedrive - contasis\proyectofacturafacil\tests\configuracionsistemabc.tests\bin\debug\net9.0\configuracionsistemabc.tests.dll" id="c01bf35f-f061-592c-9784-fba56b0fe207">
+      <Execution id="50b82ee3-2aa5-4cbc-bbca-5872fe4763bf" />
+      <TestMethod codeBase="C:\Users\Asus\OneDrive - CONTASIS\ProyectoFacturaFacil\tests\ConfiguracionSistemaBC.Tests\bin\Debug\net9.0\ConfiguracionSistemaBC.Tests.dll" adapterTypeName="executor://nunit3testexecutor/" className="ConfiguracionSistemaBC.Tests.UnitTests.ValueObjects.LogoImagenTests" name="FromUpload_Valido_Png" />
+    </UnitTest>
+    <UnitTest name="TryFromUpload_ComportamientoEsperado" storage="c:\users\asus\onedrive - contasis\proyectofacturafacil\tests\configuracionsistemabc.tests\bin\debug\net9.0\configuracionsistemabc.tests.dll" id="b1eed1bd-55ff-5831-42ab-b41885af2a85">
+      <Execution id="d257ca71-6f43-415e-a6e2-2036700b01b9" />
+      <TestMethod codeBase="C:\Users\Asus\OneDrive - CONTASIS\ProyectoFacturaFacil\tests\ConfiguracionSistemaBC.Tests\bin\Debug\net9.0\ConfiguracionSistemaBC.Tests.dll" adapterTypeName="executor://nunit3testexecutor/" className="ConfiguracionSistemaBC.Tests.UnitTests.ValueObjects.LogoImagenTests" name="TryFromUpload_ComportamientoEsperado" />
+    </UnitTest>
+    <UnitTest name="FromUpload_MimeNoPermitido_Lanza" storage="c:\users\asus\onedrive - contasis\proyectofacturafacil\tests\configuracionsistemabc.tests\bin\debug\net9.0\configuracionsistemabc.tests.dll" id="413bda31-1cd4-0405-2aa2-2a3cfde7781f">
+      <Execution id="39250cb7-2308-4bc5-9714-f9f9beb80724" />
+      <TestMethod codeBase="C:\Users\Asus\OneDrive - CONTASIS\ProyectoFacturaFacil\tests\ConfiguracionSistemaBC.Tests\bin\Debug\net9.0\ConfiguracionSistemaBC.Tests.dll" adapterTypeName="executor://nunit3testexecutor/" className="ConfiguracionSistemaBC.Tests.UnitTests.ValueObjects.LogoImagenTests" name="FromUpload_MimeNoPermitido_Lanza" />
+    </UnitTest>
+    <UnitTest name="FitIn_NoEscalaHaciaArriba_Y_EscalaProporcional" storage="c:\users\asus\onedrive - contasis\proyectofacturafacil\tests\configuracionsistemabc.tests\bin\debug\net9.0\configuracionsistemabc.tests.dll" id="6e83e562-0531-6ece-62a6-9529c5600c99">
+      <Execution id="8e4a05bd-850e-4ce3-a92b-fcb7b203e5f6" />
+      <TestMethod codeBase="C:\Users\Asus\OneDrive - CONTASIS\ProyectoFacturaFacil\tests\ConfiguracionSistemaBC.Tests\bin\Debug\net9.0\ConfiguracionSistemaBC.Tests.dll" adapterTypeName="executor://nunit3testexecutor/" className="ConfiguracionSistemaBC.Tests.UnitTests.ValueObjects.LogoImagenTests" name="FitIn_NoEscalaHaciaArriba_Y_EscalaProporcional" />
+    </UnitTest>
+    <UnitTest name="FitCabeceraA4_UsaBound_220x80" storage="c:\users\asus\onedrive - contasis\proyectofacturafacil\tests\configuracionsistemabc.tests\bin\debug\net9.0\configuracionsistemabc.tests.dll" id="43242546-7736-7fcc-8a76-64abb6432ffa">
+      <Execution id="d87ca9c7-2da1-428a-aaac-742a356ebe67" />
+      <TestMethod codeBase="C:\Users\Asus\OneDrive - CONTASIS\ProyectoFacturaFacil\tests\ConfiguracionSistemaBC.Tests\bin\Debug\net9.0\ConfiguracionSistemaBC.Tests.dll" adapterTypeName="executor://nunit3testexecutor/" className="ConfiguracionSistemaBC.Tests.UnitTests.ValueObjects.LogoImagenTests" name="FitCabeceraA4_UsaBound_220x80" />
+    </UnitTest>
+    <UnitTest name="FromUpload_Dimensiones_FueraDeRango_Lanza" storage="c:\users\asus\onedrive - contasis\proyectofacturafacil\tests\configuracionsistemabc.tests\bin\debug\net9.0\configuracionsistemabc.tests.dll" id="d884fc3c-cab6-86a0-c85a-908c1e22cc73">
+      <Execution id="59c5f758-5975-4436-834a-96a90e96f418" />
+      <TestMethod codeBase="C:\Users\Asus\OneDrive - CONTASIS\ProyectoFacturaFacil\tests\ConfiguracionSistemaBC.Tests\bin\Debug\net9.0\ConfiguracionSistemaBC.Tests.dll" adapterTypeName="executor://nunit3testexecutor/" className="ConfiguracionSistemaBC.Tests.UnitTests.ValueObjects.LogoImagenTests" name="FromUpload_Dimensiones_FueraDeRango_Lanza" />
+    </UnitTest>
+  </TestDefinitions>
+  <TestEntries>
+    <TestEntry testId="6e88fd2e-6593-6cd7-91d0-055723152a39" executionId="0bb9eb64-e1d7-4758-b304-88ffb2d2e3de" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="413bda31-1cd4-0405-2aa2-2a3cfde7781f" executionId="39250cb7-2308-4bc5-9714-f9f9beb80724" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="ea58d87d-3658-ba47-e3c0-ae0e2d04dc60" executionId="8bb5758e-6211-406d-a6f7-14a8f1dd831b" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="6e83e562-0531-6ece-62a6-9529c5600c99" executionId="8e4a05bd-850e-4ce3-a92b-fcb7b203e5f6" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="b1eed1bd-55ff-5831-42ab-b41885af2a85" executionId="d257ca71-6f43-415e-a6e2-2036700b01b9" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="b8f4826e-2838-9b05-4925-4d2548fa60a4" executionId="e4279785-d72f-4b88-b808-09335226865f" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="b40f54e9-a146-f078-3d2d-43eb260aa904" executionId="c5a79bdd-a305-4164-bd57-ba41ed2c590c" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="626af9f0-fb38-f979-1dab-d001dda68813" executionId="55e3221e-1425-42bd-aa32-291a93cbf1d8" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="de5a6cd8-a8b2-fe77-b956-17ddf48eff82" executionId="acb20b0e-3fc1-4921-bbc2-5958feb57296" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="43242546-7736-7fcc-8a76-64abb6432ffa" executionId="d87ca9c7-2da1-428a-aaac-742a356ebe67" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="c01bf35f-f061-592c-9784-fba56b0fe207" executionId="50b82ee3-2aa5-4cbc-bbca-5872fe4763bf" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="d884fc3c-cab6-86a0-c85a-908c1e22cc73" executionId="59c5f758-5975-4436-834a-96a90e96f418" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+  </TestEntries>
   <TestLists>
     <TestList name="Resultados sin formato de lista" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
     <TestList name="Todos los resultados cargados" id="19431567-8539-422a-85d7-44ee4e166bda" />
   </TestLists>
   <ResultSummary outcome="Completed">
-    <Counters total="0" executed="0" passed="0" failed="0" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
+    <Counters total="12" executed="12" passed="12" failed="0" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
     <Output>
       <StdOut>NUnit Adapter 4.6.0.0: Test execution started&#xD;
 Running selected tests in C:\Users\Asus\OneDrive - CONTASIS\ProyectoFacturaFacil\tests\ConfiguracionSistemaBC.Tests\bin\Debug\net9.0\ConfiguracionSistemaBC.Tests.dll&#xD;
-   NUnit3TestExecutor discovered 0 of 0 NUnit test cases using Current Discovery mode, Explicit run&#xD;
+   NUnit3TestExecutor discovered 12 of 12 NUnit test cases using Current Discovery mode, Non-Explicit run&#xD;
 NUnit Adapter 4.6.0.0: Test execution complete&#xD;
 </StdOut>
     </Output>
-    <RunInfos>
-      <RunInfo computerName="DESKTOP-GBNCN2L" outcome="Warning" timestamp="2025-08-11T16:16:53.0959385-05:00">
-        <Text>Ninguna prueba coincide con el filtro de casos de prueba proporcionado "TestCategory=UnitTests" en C:\Users\Asus\OneDrive - CONTASIS\ProyectoFacturaFacil\tests\ConfiguracionSistemaBC.Tests\bin\Debug\net9.0\ConfiguracionSistemaBC.Tests.dll</Text>
-      </RunInfo>
-    </RunInfos>
   </ResultSummary>
 </TestRun>
