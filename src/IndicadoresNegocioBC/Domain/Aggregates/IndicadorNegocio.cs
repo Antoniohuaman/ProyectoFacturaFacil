@@ -1,0 +1,481 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using IndicadoresNegocioBC.Domain.ValueObjects;
+
+namespace IndicadoresNegocioBC.Domain.Aggregates
+{
+    /// <summary>
+    /// AGGREGATE ROOT: IndicadorNegocio
+    ///
+    /// Clave natural (unicidad lógica): TipoIndicador + Periodo (alineado) + SegmentoIndicador
+    /// Estado de ciclo de vida: EstadoIndicador (CREADO → ACTUALIZADO → CONSOLIDADO).
+    ///
+    /// Este agregado modela la “fotografía” de KPIs para un periodo/segmento específico y
+    /// aplica mutaciones impulsadas por eventos de ventas (aceptadas/anuladas) con idempotencia.
+    ///
+    /// Invariantes clave:
+    /// - El Periodo debe contener todas las ventas aplicadas.
+    /// - La Moneda del Segmento gobierna TODAS las cifras monetarias.
+    /// - Si Estado = CONSOLIDADO no admite mutaciones.
+    /// - Idempotencia por ComprobanteId (no duplicar ni re-anular).
+    ///
+    /// Datos que mantiene (dependiendo del TipoIndicador):
+    /// - VENTA_DIARIA: ventas por fecha (total, IGV, nroComprobantes).
+    /// - RANKING_PRODUCTOS: acumulados por producto (cantidad, total vendido).
+    /// - RANKING_CLIENTES: acumulados por cliente (frecuencia, total).
+    /// - TICKET_PROMEDIO: total y conteo (VO TicketPromedio).
+    /// </summary>
+    public sealed class IndicadorNegocio
+    {
+        // ------------------ Identidad y clave natural ------------------
+        public Guid IndicadorId { get; }
+        public TipoIndicador Tipo { get; }
+        public Periodo Periodo { get; }
+        public SegmentoIndicador Segmento { get; }
+
+        // ------------------ Estado de ciclo de vida --------------------
+        public EstadoIndicador Estado { get; private set; }
+        public DateTimeOffset CreadoEn { get; }
+        public DateTimeOffset? ConsolidadoEn { get; private set; }
+
+        // Concurrencia optimista (si la infraestructura lo requiere)
+        public int Version { get; private set; }
+
+        // ------------------ Métricas acumuladas ------------------------
+        // Ventas diarias
+        private readonly Dictionary<DateOnly, VentaDiaria> _ventasDiarias = new();
+        public IReadOnlyCollection<VentaDiaria> VentasDiarias => _ventasDiarias.Values
+            .OrderBy(v => v.Fecha)
+            .ToList()
+            .AsReadOnly();
+
+        // Ranking productos (por productoId)
+        private readonly Dictionary<string, RankingProductoEntrada> _rankingProductos = new(StringComparer.Ordinal);
+        public IReadOnlyCollection<RankingProductoEntrada> RankingProductos => _rankingProductos.Values.ToList().AsReadOnly();
+
+        // Ranking clientes (por clienteId)
+        private readonly Dictionary<Guid, RankingClienteEntrada> _rankingClientes = new();
+        public IReadOnlyCollection<RankingClienteEntrada> RankingClientes => _rankingClientes.Values.ToList().AsReadOnly();
+
+        // Ticket promedio
+        public TicketPromedio TicketPromedio { get; private set; }
+
+        // Idempotencia: ventas aplicadas por ComprobanteId (y su detalle) para permitir reversión
+        private readonly Dictionary<Guid, VentaRegistrada> _ventasPorComprobante = new();
+
+        // ------------------ Fábrica ------------------
+        private IndicadorNegocio(
+            Guid indicadorId,
+            TipoIndicador tipo,
+            Periodo periodo,
+            SegmentoIndicador segmento,
+            DateTimeOffset creadoEn)
+        {
+            IndicadorId = indicadorId == Guid.Empty ? Guid.NewGuid() : indicadorId;
+            Tipo = tipo ?? throw new ArgumentNullException(nameof(tipo));
+            Periodo = periodo ?? throw new ArgumentNullException(nameof(periodo));
+            Segmento = segmento ?? throw new ArgumentNullException(nameof(segmento));
+            Estado = EstadoIndicador.Creado;
+            CreadoEn = creadoEn;
+
+            // Ticket en cero en la moneda del segmento
+            TicketPromedio = TicketPromedio.Vacio(Segmento.Moneda);
+
+            // Por seguridad (si el periodo es alineado, validamos)
+            Periodo.AsegurarAlineado();
+        }
+
+        public static IndicadorNegocio Crear(
+            TipoIndicador tipo,
+            Periodo periodo,
+            SegmentoIndicador segmento,
+            DateTimeOffset? ahora = null)
+        {
+            return new IndicadorNegocio(
+                indicadorId: Guid.NewGuid(),
+                tipo: tipo,
+                periodo: periodo,
+                segmento: segmento,
+                creadoEn: ahora ?? DateTimeOffset.UtcNow);
+        }
+
+        // ------------------ Mutaciones de dominio ------------------
+
+        /// <summary>
+        /// Aplica una venta aceptada (idempotente). Rechaza si:
+        /// - El agregado está CONSOLIDADO,
+        /// - La fecha está fuera del Periodo,
+        /// - La moneda del comprobante no coincide con Segmento.Moneda.
+        /// </summary>
+        public void RegistrarVentaAceptada(ComprobanteVenta venta)
+        {
+            if (venta is null) throw new ArgumentNullException(nameof(venta));
+            AsegurarPermiteMutaciones();
+
+            // Moneda y periodo
+            AsegurarMismaMoneda(venta.Total);
+            if (!Periodo.Contiene(venta.Fecha))
+                throw new InvalidOperationException("La venta no pertenece al periodo del indicador.");
+
+            // Idempotencia: si ya fue aplicada, no hacer nada.
+            if (_ventasPorComprobante.ContainsKey(venta.ComprobanteId))
+                return;
+
+            // --- Acumular ventas diarias ---
+            var dia = venta.Fecha;
+            if (!_ventasDiarias.TryGetValue(dia, out var vd))
+            {
+                vd = new VentaDiaria(dia, Dinero.Cero(Segmento.Moneda), Dinero.Cero(Segmento.Moneda), 0);
+                _ventasDiarias.Add(dia, vd);
+            }
+            vd.Agregar(venta.Total, venta.Igv);
+
+            // --- Ticket promedio ---
+            TicketPromedio = TicketPromedio.AgregarVenta(venta.Total);
+
+            // --- Ranking productos ---
+            foreach (var it in venta.Items)
+            {
+                if (!_rankingProductos.TryGetValue(it.ProductoId, out var rp))
+                {
+                    rp = new RankingProductoEntrada(it.ProductoId, 0m, Dinero.Cero(Segmento.Moneda));
+                    _rankingProductos.Add(it.ProductoId, rp);
+                }
+                rp.Acumular(it.Cantidad, it.Subtotal);
+            }
+
+            // --- Ranking clientes ---
+            if (venta.ClienteId.HasValue)
+            {
+                var clienteId = venta.ClienteId.Value;
+                if (!_rankingClientes.TryGetValue(clienteId, out var rc))
+                {
+                    rc = new RankingClienteEntrada(clienteId, 0, Dinero.Cero(Segmento.Moneda));
+                    _rankingClientes.Add(clienteId, rc);
+                }
+                rc.Acumular(venta.Total);
+            }
+
+            // Registrar para reversión
+            _ventasPorComprobante.Add(venta.ComprobanteId, new VentaRegistrada(venta));
+
+            // Estado → ACTUALIZADO (si aplica)
+            TransicionarA(EstadoIndicador.Actualizado);
+
+            // bump versión
+            Version++;
+        }
+
+        /// <summary>
+        /// Revierte una venta previamente aplicada (idempotente).
+        /// Si el comprobante no existe o ya fue anulado, no hace nada.
+        /// </summary>
+        public void RegistrarAnulacion(Guid comprobanteId)
+        {
+            AsegurarPermiteMutaciones();
+
+            if (!_ventasPorComprobante.TryGetValue(comprobanteId, out var venta) || venta.Anulada)
+                return; // idempotente: nada que revertir
+
+            // --- Revertir ventas diarias ---
+            var dia = venta.Fecha;
+            if (_ventasDiarias.TryGetValue(dia, out var vd))
+            {
+                vd.Quitar(venta.Total, venta.Igv);
+
+                // si quedó en cero, limpiar el día
+                if (vd.NroComprobantes == 0 && vd.TotalVentas.EsCero && vd.TotalIgv.EsCero)
+                    _ventasDiarias.Remove(dia);
+            }
+
+            // --- Ticket promedio ---
+            TicketPromedio = TicketPromedio.QuitarVenta(venta.Total);
+
+            // --- Ranking productos ---
+            foreach (var it in venta.Items)
+            {
+                if (_rankingProductos.TryGetValue(it.ProductoId, out var rp))
+                {
+                    rp.Revertir(it.Cantidad, it.Subtotal);
+                    if (rp.EsCero)
+                        _rankingProductos.Remove(it.ProductoId);
+                }
+            }
+
+            // --- Ranking clientes ---
+            if (venta.ClienteId.HasValue && _rankingClientes.TryGetValue(venta.ClienteId.Value, out var rc))
+            {
+                rc.Revertir(venta.Total);
+                if (rc.EsCero)
+                    _rankingClientes.Remove(venta.ClienteId.Value);
+            }
+
+            venta.MarcarAnulada();
+            Version++;
+        }
+
+        /// <summary>
+        /// Marca el periodo como CONSOLIDADO (estado final; bloquea mutaciones).
+        /// </summary>
+        public void ConsolidarPeriodo(DateTimeOffset? ahora = null)
+        {
+            AsegurarTransicion(EstadoIndicador.Consolidado);
+            Estado = EstadoIndicador.Consolidado;
+            ConsolidadoEn = ahora ?? DateTimeOffset.UtcNow;
+            Version++;
+        }
+
+        // ------------------ Consultas de apoyo al dashboard ------------------
+
+        public Dinero TotalVentas => TicketPromedio.MontoTotal;
+        public int TotalComprobantes => TicketPromedio.CantidadComprobantes;
+
+        public IReadOnlyList<VentaDiaria> ObtenerVentasDiariasOrdenadas() =>
+            _ventasDiarias.Values.OrderBy(v => v.Fecha).ToList();
+
+        public IReadOnlyList<RankingProductoEntrada> ObtenerTopProductos(LimiteTop limite, RankingCriterio criterio)
+        {
+            IEnumerable<RankingProductoEntrada> q = _rankingProductos.Values;
+            q = criterio == RankingCriterio.PorMonto
+                ? q.OrderByDescending(x => x.TotalVendido.Monto).ThenByDescending(x => x.Cantidad)
+                : q.OrderByDescending(x => x.Cantidad).ThenByDescending(x => x.TotalVendido.Monto);
+
+            return q.Take(limite.Valor).ToList();
+        }
+
+        public IReadOnlyList<RankingClienteEntrada> ObtenerTopClientes(LimiteTop limite)
+        {
+            return _rankingClientes.Values
+                .OrderByDescending(x => x.TotalComprado.Monto)
+                .ThenByDescending(x => x.Frecuencia)
+                .Take(limite.Valor)
+                .ToList();
+        }
+
+        // ------------------ Helpers de dominio ------------------
+
+        private void AsegurarPermiteMutaciones()
+        {
+            if (!Estado.PermiteMutaciones)
+                throw new InvalidOperationException("El indicador está consolidado y no admite cambios.");
+        }
+
+        private void TransicionarA(EstadoIndicador destino)
+        {
+            if (!ReferenceEquals(Estado, destino))
+                EstadoIndicador.AsegurarTransicionValida(Estado, destino);
+            Estado = destino;
+        }
+
+        private void AsegurarTransicion(EstadoIndicador destino) =>
+            EstadoIndicador.AsegurarTransicionValida(Estado, destino);
+
+        private void AsegurarMismaMoneda(Dinero dinero)
+        {
+            if (!Equals(dinero.Moneda, Segmento.Moneda))
+                throw new InvalidOperationException($"Moneda distinta a la del segmento: {dinero.Moneda} ≠ {Segmento.Moneda}.");
+        }
+
+        // ================== Tipos internos del agregado ==================
+
+        /// <summary>Tipo/categoría del indicador (smart-enum).</summary>
+        public sealed record TipoIndicador
+        {
+            public byte Codigo { get; }
+            public string Nombre { get; }
+
+            private TipoIndicador(byte codigo, string nombre)
+            {
+                if (string.IsNullOrWhiteSpace(nombre)) throw new ArgumentException("Nombre requerido.", nameof(nombre));
+                Codigo = codigo;
+                Nombre = nombre.Trim().ToUpperInvariant();
+            }
+
+            public override string ToString() => Nombre;
+
+            // Instancias soportadas
+            public static readonly TipoIndicador VentaDiaria      = new(1, "VENTA_DIARIA");
+            public static readonly TipoIndicador RankingProductos = new(2, "RANKING_PRODUCTOS");
+            public static readonly TipoIndicador RankingClientes  = new(3, "RANKING_CLIENTES");
+            public static readonly TipoIndicador TicketPromedio   = new(4, "TICKET_PROMEDIO");
+        }
+
+        public enum RankingCriterio { PorMonto = 1, PorCantidad = 2 }
+
+        /// <summary>Entrada de ranking de productos.</summary>
+        public sealed class RankingProductoEntrada
+        {
+            public string ProductoId { get; }
+            public decimal Cantidad { get; private set; }
+            public Dinero TotalVendido { get; private set; }
+
+            public bool EsCero => Cantidad == 0m && TotalVendido.EsCero;
+
+            public RankingProductoEntrada(string productoId, decimal cantidad, Dinero totalVendido)
+            {
+                ProductoId = !string.IsNullOrWhiteSpace(productoId) ? productoId : throw new ArgumentException("ProductoId requerido.", nameof(productoId));
+                if (cantidad < 0m) throw new ArgumentOutOfRangeException(nameof(cantidad));
+                TotalVendido = totalVendido ?? throw new ArgumentNullException(nameof(totalVendido));
+                Cantidad = cantidad;
+            }
+
+            public void Acumular(decimal cantidad, Dinero subtotal)
+            {
+                if (cantidad < 0m) throw new ArgumentOutOfRangeException(nameof(cantidad));
+                TotalVendido = TotalVendido.Sumar(subtotal);
+                Cantidad += cantidad;
+            }
+
+            public void Revertir(decimal cantidad, Dinero subtotal)
+            {
+                if (cantidad < 0m) throw new ArgumentOutOfRangeException(nameof(cantidad));
+                TotalVendido = TotalVendido.Restar(subtotal);
+                Cantidad -= cantidad;
+                if (Cantidad < 0m || TotalVendido.Monto < 0m)
+                    throw new InvalidOperationException("Reversión deja valores negativos en ranking de productos.");
+            }
+        }
+
+        /// <summary>Entrada de ranking de clientes.</summary>
+        public sealed class RankingClienteEntrada
+        {
+            public Guid ClienteId { get; }
+            public int Frecuencia { get; private set; }
+            public Dinero TotalComprado { get; private set; }
+
+            public bool EsCero => Frecuencia == 0 && TotalComprado.EsCero;
+
+            public RankingClienteEntrada(Guid clienteId, int frecuencia, Dinero totalComprado)
+            {
+                if (clienteId == Guid.Empty) throw new ArgumentException("ClienteId vacío.", nameof(clienteId));
+                if (frecuencia < 0) throw new ArgumentOutOfRangeException(nameof(frecuencia));
+                ClienteId = clienteId;
+                Frecuencia = frecuencia;
+                TotalComprado = totalComprado ?? throw new ArgumentNullException(nameof(totalComprado));
+            }
+
+            public void Acumular(Dinero total)
+            {
+                TotalComprado = TotalComprado.Sumar(total);
+                Frecuencia++;
+            }
+
+            public void Revertir(Dinero total)
+            {
+                TotalComprado = TotalComprado.Restar(total);
+                Frecuencia--;
+                if (Frecuencia < 0 || TotalComprado.Monto < 0m)
+                    throw new InvalidOperationException("Reversión deja valores negativos en ranking de clientes.");
+            }
+        }
+
+        /// <summary>Resumen de ventas de un día.</summary>
+        public sealed class VentaDiaria
+        {
+            public DateOnly Fecha { get; }
+            public Dinero TotalVentas { get; private set; }
+            public Dinero TotalIgv { get; private set; }
+            public int NroComprobantes { get; private set; }
+
+            internal VentaDiaria(DateOnly fecha, Dinero totalVentas, Dinero totalIgv, int nro)
+            {
+                Fecha = fecha;
+                TotalVentas = totalVentas ?? throw new ArgumentNullException(nameof(totalVentas));
+                TotalIgv = totalIgv ?? throw new ArgumentNullException(nameof(totalIgv));
+                if (nro < 0) throw new ArgumentOutOfRangeException(nameof(nro));
+                NroComprobantes = nro;
+            }
+
+            internal void Agregar(Dinero total, Dinero igv)
+            {
+                TotalVentas = TotalVentas.Sumar(total);
+                TotalIgv = TotalIgv.Sumar(igv);
+                NroComprobantes++;
+            }
+
+            internal void Quitar(Dinero total, Dinero igv)
+            {
+                TotalVentas = TotalVentas.Restar(total);
+                TotalIgv = TotalIgv.Restar(igv);
+                NroComprobantes--;
+                if (NroComprobantes < 0 || TotalVentas.Monto < 0m || TotalIgv.Monto < 0m)
+                    throw new InvalidOperationException("Reversión deja valores negativos en venta diaria.");
+            }
+        }
+
+        /// <summary>Venta registrada para asegurar idempotencia y soportar reversión.</summary>
+        private sealed class VentaRegistrada
+        {
+            public Guid ComprobanteId { get; }
+            public DateOnly Fecha { get; }
+            public Guid? ClienteId { get; }
+            public Dinero Total { get; }
+            public Dinero Igv { get; }
+            public IReadOnlyList<ItemRegistrado> Items { get; }
+            public bool Anulada { get; private set; }
+
+            public VentaRegistrada(ComprobanteVenta v)
+            {
+                ComprobanteId = v.ComprobanteId;
+                Fecha = v.Fecha;
+                ClienteId = v.ClienteId;
+                Total = v.Total;
+                Igv = v.Igv;
+                Items = v.Items.Select(i => new ItemRegistrado(i.ProductoId, i.Cantidad, i.Subtotal)).ToList();
+            }
+
+            public void MarcarAnulada() => Anulada = true;
+        }
+
+        private sealed record ItemRegistrado(string ProductoId, decimal Cantidad, Dinero Subtotal);
+
+        // ------------------ DTO de entrada (desde Application) ------------------
+
+        /// <summary>
+        /// “ComprobanteVenta” es un dato de entrada de la capa de aplicación (evento ya validado)
+        /// con los mínimos necesarios para mutar el agregado. Todos los Dinero deben venir en la
+        /// misma moneda que Segmento.Moneda.
+        /// </summary>
+        public sealed class ComprobanteVenta
+        {
+            public Guid ComprobanteId { get; }
+            public DateOnly Fecha { get; }
+            public Guid? ClienteId { get; }
+            public Dinero Total { get; }
+            public Dinero Igv { get; }
+            public IReadOnlyList<Item> Items { get; }
+
+            public ComprobanteVenta(Guid comprobanteId, DateOnly fecha, Guid? clienteId, Dinero total, Dinero igv, IEnumerable<Item> items)
+            {
+                if (comprobanteId == Guid.Empty) throw new ArgumentException("ComprobanteId vacío.", nameof(comprobanteId));
+                if (items is null) throw new ArgumentNullException(nameof(items));
+                var lista = items.ToList();
+                if (lista.Count == 0) throw new ArgumentException("La venta debe contener al menos un ítem.", nameof(items));
+
+                ComprobanteId = comprobanteId;
+                Fecha = fecha;
+                ClienteId = clienteId;
+                Total = total ?? throw new ArgumentNullException(nameof(total));
+                Igv = igv ?? throw new ArgumentNullException(nameof(igv));
+                Items = lista;
+            }
+
+            public sealed class Item
+            {
+                public string ProductoId { get; }
+                public decimal Cantidad { get; }
+                public Dinero Subtotal { get; }
+
+                public Item(string productoId, decimal cantidad, Dinero subtotal)
+                {
+                    if (string.IsNullOrWhiteSpace(productoId)) throw new ArgumentException("ProductoId requerido.", nameof(productoId));
+                    if (cantidad <= 0m) throw new ArgumentOutOfRangeException(nameof(cantidad), "Cantidad debe ser > 0.");
+                    ProductoId = productoId;
+                    Cantidad = cantidad;
+                    Subtotal = subtotal ?? throw new ArgumentNullException(nameof(subtotal));
+                }
+            }
+        }
+    }
+}
