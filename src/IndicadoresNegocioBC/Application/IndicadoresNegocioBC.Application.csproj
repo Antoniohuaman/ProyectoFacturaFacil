@@ -6,4 +6,9 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+  <ProjectReference Include="..\Domain\IndicadoresNegocioBC.Domain.csproj" />
+  </ItemGroup>
+
+
 </Project>
