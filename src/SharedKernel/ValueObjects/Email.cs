@@ -52,6 +52,27 @@ namespace SharedKernel.ValueObjects
 
             var raw = input.Trim().Trim('<', '>', '"', '\''); // quita envolturas comunes
 
+
+            // Validación básica: debe tener exactamente un '@', partes no vacías y sin espacios
+            if (raw.Count(c => c == '@') != 1)
+                throw new ArgumentException("El email debe contener exactamente un '@'.", nameof(input));
+            if (raw.Contains(" "))
+                throw new ArgumentException("El email no debe contener espacios.", nameof(input));
+            var at = raw.LastIndexOf('@');
+            if (at <= 0 || at == raw.Length - 1)
+                throw new ArgumentException("El email debe contener parte local y dominio.", nameof(input));
+            var local = raw[..at];
+            var domain = raw[(at + 1)..];
+            if (string.IsNullOrWhiteSpace(local))
+                throw new ArgumentException("La parte local no puede estar vacía.", nameof(input));
+            if (string.IsNullOrWhiteSpace(domain))
+                throw new ArgumentException("El dominio no puede estar vacío.", nameof(input));
+            if (local.Contains(" ") || domain.Contains(" "))
+                throw new ArgumentException("La parte local y el dominio no deben contener espacios.", nameof(input));
+            if (local.Contains("@") || domain.Contains("@"))
+                throw new ArgumentException("La parte local y el dominio no deben contener '@'.", nameof(input));
+
+            // Validación con MailAddress para formato general
             MailAddress addr;
             try { addr = new MailAddress(raw); }
             catch (Exception ex)
@@ -62,14 +83,6 @@ namespace SharedKernel.ValueObjects
             // Solo dirección, sin nombre para mostrar
             if (!string.Equals(addr.Address, raw, StringComparison.Ordinal))
                 throw new ArgumentException("Use solo la dirección (sin nombre para mostrar).", nameof(input));
-
-            var address = addr.Address;
-            var at = address.LastIndexOf('@');
-            if (at <= 0 || at == address.Length - 1)
-                throw new ArgumentException("El email debe contener parte local y dominio.", nameof(input));
-
-            var local  = address[..at];
-            var domain = address[(at + 1)..];
 
             // IDN -> ASCII (punycode) + minúsculas
             var idn = new IdnMapping();
@@ -86,6 +99,8 @@ namespace SharedKernel.ValueObjects
                 throw new ArgumentException("El dominio debe tener 1..255 caracteres.", nameof(input));
 
             var labels = asciiDomain.Split('.');
+            if (labels.Length < 2)
+                throw new ArgumentException("El dominio debe contener al menos un punto (ejemplo: dominio.com).", nameof(input));
             foreach (var label in labels)
                 if (!IsValidDnsLabel(label))
                     throw new ArgumentException("El dominio contiene etiquetas inválidas.", nameof(input));
