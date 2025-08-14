@@ -1,5 +1,6 @@
 using System;
 using ComprobantesElectronicosBC.Domain.ValueObjects;
+using SharedKernel.ValueObjects;
 
 namespace ComprobantesElectronicosBC.Domain.Entities
 {
@@ -45,7 +46,7 @@ namespace ComprobantesElectronicosBC.Domain.Entities
         public DescuentoLinea Descuento { get; private set; }
 
         /// <summary>Centro de costo opcional por línea.</summary>
-        public CentroDeCosto? CentroDeCosto { get; private set; }
+    public CentroDeCosto? CentroDeCosto { get; private set; }
 
         // --------------------- Montos calculados ----------------
         /// <summary>Unitario SIN IGV (para UBL &lt;PriceAmount&gt;).</summary>
@@ -166,7 +167,7 @@ namespace ComprobantesElectronicosBC.Domain.Entities
             Recalcular();
         }
 
-        public void CambiarCentroDeCosto(CentroDeCosto? nuevo) => CentroDeCosto = nuevo;
+    public void CambiarCentroDeCosto(CentroDeCosto? nuevo) => CentroDeCosto = nuevo;
 
         // --------------------- Cálculo ------------------------
 

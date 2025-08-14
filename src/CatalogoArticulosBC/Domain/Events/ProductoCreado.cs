@@ -1,3 +1,4 @@
+using SharedKernel.ValueObjects;
 using System;
 using System.Collections.Generic;
 using CatalogoArticulosBC.Domain.Aggregates;
@@ -29,14 +30,13 @@ namespace CatalogoArticulosBC.Domain.Events
         public Moneda Moneda { get; }
 
         // Impuestos especiales
-        public ImpuestoSelectivoConsumo ISC { get; }
-        public bool TieneDetraccion { get; }
-        public CodigoDetraccion? CodigoDetraccion { get; }
+    public bool TieneDetraccion { get; }
+    public CodigoDetraccion? CodigoDetraccion { get; }
 
         // Códigos adicionales
         public CodigoSUNAT? CodigoSunat { get; }
         public BaseImponibleVentas? BaseImponibleVentas { get; }
-        public CentroCosto? CentroCosto { get; }
+    public SharedKernel.ValueObjects.CentroDeCosto? CentroDeCosto { get; }
         public CodigoBarras? CodigoBarras { get; }
         public CodigoFabrica? CodigoFabrica { get; }
         public CodigoLote? CodigoLote { get; }
@@ -74,13 +74,14 @@ namespace CatalogoArticulosBC.Domain.Events
             PrecioVenta = producto.PrecioVenta;
             Moneda = producto.Moneda;
 
-            ISC = producto.ISC;
+            TieneDetraccion = producto.TieneDetraccion;
+            CodigoDetraccion = producto.CodigoDetraccion;
             TieneDetraccion = producto.TieneDetraccion;
             CodigoDetraccion = producto.CodigoDetraccion;
 
             CodigoSunat = producto.CodigoSunat;
             BaseImponibleVentas = producto.BaseImponibleVentas;
-            CentroCosto = producto.CentroCosto;
+            CentroDeCosto = producto.CentroDeCosto;
             CodigoBarras = producto.CodigoBarras;
             CodigoFabrica = producto.CodigoFabrica;
             CodigoLote = producto.CodigoLote;

@@ -1,3 +1,4 @@
+using SharedKernel.ValueObjects;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -67,7 +68,7 @@ namespace CatalogoArticulosBC.Application.UseCases
 
             var sunat = dto.CodigoSunat is null ? null : new CodigoSUNAT(dto.CodigoSunat);
             var baseVenta = dto.BaseImponibleVentas.HasValue ? new BaseImponibleVentas(dto.BaseImponibleVentas.Value) : null;
-            var centro = dto.CentroCosto is null ? null : new CentroCosto(dto.CentroCosto);
+            var centroDeCosto = CentroDeCosto.FromOptional(dto.CentroCosto, dto.CentroCosto);
             var peso = dto.Peso.HasValue ? new Peso(dto.Peso.Value) : null;
             var serie = dto.Serie is null ? null : new Serie(dto.Serie);
             var cb = dto.CodigoBarras is null ? null : new CodigoBarras(dto.CodigoBarras);
@@ -91,12 +92,11 @@ namespace CatalogoArticulosBC.Application.UseCases
                 marca,
                 precio,
                 monedaEnum,
-                isc,
                 dto.TieneDetraccion,
                 codigoDet,
                 sunat,
                 baseVenta,
-                centro,
+                centroDeCosto,
                 peso,
                 serie,
                 cb,

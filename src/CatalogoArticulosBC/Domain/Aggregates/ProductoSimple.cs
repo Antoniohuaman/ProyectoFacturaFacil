@@ -1,3 +1,4 @@
+using SharedKernel.ValueObjects;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -36,14 +37,13 @@ namespace CatalogoArticulosBC.Domain.Aggregates
         public Moneda Moneda { get; private set; }
 
         // Impuestos especiales
-        public ImpuestoSelectivoConsumo? ISC { get; private set; }
         public bool TieneDetraccion { get; private set; }
         public CodigoDetraccion? CodigoDetraccion { get; private set; }
 
         // Códigos adicionales
         public CodigoSUNAT? CodigoSunat { get; private set; }
         public BaseImponibleVentas? BaseImponibleVentas { get; private set; }
-        public CentroCosto? CentroCosto { get; private set; }
+    public SharedKernel.ValueObjects.CentroDeCosto? CentroDeCosto { get; private set; }
         public CodigoBarras? CodigoBarras { get; private set; }
         public CodigoFabrica? CodigoFabrica { get; private set; }
         public CodigoLote? CodigoLote { get; private set; }
@@ -87,12 +87,11 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             Marca? marca = null,
             Precio? precioVenta = null,
             Moneda moneda = Moneda.Soles,
-            ImpuestoSelectivoConsumo? isc = null,
             bool tieneDetraccion = false,
             CodigoDetraccion? codigoDetraccion = null,
             CodigoSUNAT? codigoSunat = null,
             BaseImponibleVentas? baseImponibleVentas = null,
-            CentroCosto? centroCosto = null,
+            SharedKernel.ValueObjects.CentroDeCosto? centroDeCosto = null,
             Peso? peso = null,
             Serie? serie = null,
             CodigoBarras? codigoBarras = null,
@@ -124,12 +123,11 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             Marca = marca;
             PrecioVenta = precioVenta;
             Moneda = moneda;
-            ISC = isc ?? new ImpuestoSelectivoConsumo(false);
             TieneDetraccion = tieneDetraccion;
             CodigoDetraccion = codigoDetraccion;
             CodigoSunat = codigoSunat;
             BaseImponibleVentas = baseImponibleVentas;
-            CentroCosto = centroCosto;
+            CentroDeCosto = centroDeCosto;
             Peso = peso;
             Serie = serie;
             CodigoBarras = codigoBarras;
@@ -159,12 +157,11 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             Marca? marca,
             Precio? precioVenta,
             Moneda moneda,
-            ImpuestoSelectivoConsumo isc,
             bool tieneDetraccion,
             CodigoDetraccion? codigoDetraccion,
             CodigoSUNAT? codigoSunat,
             BaseImponibleVentas? baseImponibleVentas,
-            CentroCosto? centroCosto,
+            SharedKernel.ValueObjects.CentroDeCosto? centroDeCosto,
             Peso? peso,
             Serie? serie,
             CodigoBarras? codigoBarras,
@@ -195,12 +192,11 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             Marca = marca;
             PrecioVenta = precioVenta;
             Moneda = moneda;
-            ISC = isc;
             TieneDetraccion = tieneDetraccion;
             CodigoDetraccion = codigoDetraccion;
             CodigoSunat = codigoSunat;
             BaseImponibleVentas = baseImponibleVentas;
-            CentroCosto = centroCosto;
+            CentroDeCosto = centroDeCosto;
             Peso = peso;
             Serie = serie;
             CodigoBarras = codigoBarras;

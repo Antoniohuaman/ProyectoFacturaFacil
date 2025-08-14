@@ -2,7 +2,7 @@ using System;
 using NUnit.Framework;
 // Necesario para StringAssert
 using NUnit.Framework;
-using ComprobantesElectronicosBC.Domain.ValueObjects;
+using SharedKernel.ValueObjects;
 
 namespace ComprobantesElectronicosBC.Tests.UnitTests.ValueObjects
 {
@@ -16,15 +16,15 @@ namespace ComprobantesElectronicosBC.Tests.UnitTests.ValueObjects
         [Test]
         public void Create_SoloCodigo_Valido_NormalizaTrimYMayusculas()
         {
-            var cc = CentroDeCosto.Create("  cc-ventas / 01  ");
+            var cc = CentroDeCosto.Create("  cc-ventas / 01  ", "Ventas");
 
             Assert.Multiple(() =>
             {
                 Assert.That(cc.Code, Is.EqualTo("CC-VENTAS / 01")); // upper + trim
-                Assert.That(cc.Name, Is.Null);
-                Assert.That(cc.ToString(), Is.EqualTo("CC-VENTAS / 01"));
+                Assert.That(cc.Name, Is.EqualTo("Ventas"));
+                Assert.That(cc.ToString(), Is.EqualTo("CC-VENTAS / 01 - Ventas"));
                 Assert.That(cc.ForUbl_AccountingCostCode(), Is.EqualTo("CC-VENTAS / 01"));
-                Assert.That(cc.ForUbl_AccountingCost(), Is.EqualTo("CC-VENTAS / 01")); // sin nombre → usa Code
+                Assert.That(cc.ForUbl_AccountingCost(), Is.EqualTo("Ventas")); // con nombre → usa Name
             });
         }
 
@@ -46,7 +46,7 @@ namespace ComprobantesElectronicosBC.Tests.UnitTests.ValueObjects
         public void Create_AceptaLongitudMaximaDeCodigo_35()
         {
             var code35 = Repeat('A', 35);
-            var cc = CentroDeCosto.Create(code35);
+            var cc = CentroDeCosto.Create(code35, "Nombre");
 
             Assert.That(cc.Code.Length, Is.EqualTo(35));
         }
@@ -71,7 +71,7 @@ namespace ComprobantesElectronicosBC.Tests.UnitTests.ValueObjects
         public void Create_Falla_SiCodigoExcede35()
         {
             var code36 = Repeat('X', 36);
-            var ex = Assert.Throws<ArgumentException>(() => CentroDeCosto.Create(code36));
+            var ex = Assert.Throws<ArgumentException>(() => CentroDeCosto.Create(code36, "Nombre"));
             Assert.That(ex!.Message, Does.Contain("exceder 35"));
         }
 
@@ -95,8 +95,8 @@ namespace ComprobantesElectronicosBC.Tests.UnitTests.ValueObjects
         [Test]
         public void Create_NombreWhitespace_SeNormalizaANull()
         {
-            var cc = CentroDeCosto.Create("COD", "   ");
-            Assert.That(cc.Name, Is.Null);
+            var ex = Assert.Throws<ArgumentException>(() => CentroDeCosto.Create("COD", "   "));
+            Assert.That(ex!.Message, Does.Contain("obligatoria"));
         }
 
         // -------- FromOptional
