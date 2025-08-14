@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using NUnit.Framework;
 using ComprobantesElectronicosBC.Domain.ValueObjects;
+using SharedKernel.ValueObjects;
 
 namespace ComprobantesElectronicosBC.Tests.UnitTests.ValueObjects
 {

@@ -1,6 +1,7 @@
 // tests/ComprobantesElectronicosBC.Tests/UnitTests/ValueObjects/EmisorSnapshotTests.cs
 using NUnit.Framework;
 using ComprobantesElectronicosBC.Domain.ValueObjects;
+using SharedKernel.ValueObjects;
 
 namespace ComprobantesElectronicosBC.Tests.UnitTests.ValueObjects
 {

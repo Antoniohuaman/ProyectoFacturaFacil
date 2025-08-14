@@ -2,6 +2,7 @@
 using System;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
+using SharedKernel.ValueObjects;
 
 namespace ComprobantesElectronicosBC.Domain.ValueObjects
 {

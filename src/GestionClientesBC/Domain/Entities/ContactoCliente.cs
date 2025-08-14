@@ -1,4 +1,5 @@
 using System;
+using SharedKernel.ValueObjects;
 
 namespace GestionClientesBC.Domain.Entities
 {
@@ -39,7 +40,15 @@ namespace GestionClientesBC.Domain.Entities
         {
             ContactoId = contactoId != Guid.Empty ? contactoId : throw new ArgumentException("El Id no puede ser vacío.", nameof(contactoId));
             Tipo = tipo;
-            Valor = !string.IsNullOrWhiteSpace(valor) ? valor : throw new ArgumentNullException(nameof(valor));
+            if (tipo == TipoContacto.EMAIL_SECUNDARIO)
+            {
+                // Validar y normalizar email usando Email VO compartido
+                Valor = Email.Create(valor).Value;
+            }
+            else
+            {
+                Valor = !string.IsNullOrWhiteSpace(valor) ? valor : throw new ArgumentNullException(nameof(valor));
+            }
             FechaCreacion = DateTime.UtcNow;
         }
 
@@ -50,7 +59,14 @@ namespace GestionClientesBC.Domain.Entities
         {
             if (string.IsNullOrWhiteSpace(nuevoValor))
                 throw new ArgumentNullException(nameof(nuevoValor));
-            Valor = nuevoValor;
+            if (Tipo == TipoContacto.EMAIL_SECUNDARIO)
+            {
+                Valor = Email.Create(nuevoValor).Value;
+            }
+            else
+            {
+                Valor = nuevoValor;
+            }
             FechaModificacion = DateTime.UtcNow;
         }
     }

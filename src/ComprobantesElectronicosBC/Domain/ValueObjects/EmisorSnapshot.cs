@@ -1,12 +1,14 @@
 using System;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
+using SharedKernel.ValueObjects;
 
 namespace ComprobantesElectronicosBC.Domain.ValueObjects
 {
     /// <summary>
     /// Snapshot del Emisor al momento de emitir un CPE (se persiste en el documento).
     /// </summary>
+    // Email proviene de SharedKernel.ValueObjects
     public sealed record EmisorSnapshot
     {
         /// <summary>RUC de 11 dígitos.</summary>
@@ -21,8 +23,8 @@ namespace ComprobantesElectronicosBC.Domain.ValueObjects
         /// <summary>Dirección postal del emisor.</summary>
         public DireccionPostal Direccion { get; init; }
 
-        /// <summary>Email de contacto del emisor (opcional).</summary>
-        public Email? Email { get; init; }
+    /// <summary>Email de contacto del emisor (opcional).</summary>
+    public Email? Email { get; init; }
 
         public const string SunatDocTipoRuc = "6";
 
