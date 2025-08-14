@@ -55,12 +55,6 @@ namespace CatalogoArticulosBC.Application.UseCases
                       incluyeIGV: true)
                 : null;
 
-            // ISC
-            var isc = new ImpuestoSelectivoConsumo(
-                aplica: dto.AplicaIsc,
-                tipo: dto.TipoAplicacionIsc is null ? TipoAplicacionISC.AlValor : Enum.Parse<TipoAplicacionISC>(dto.TipoAplicacionIsc),
-                valorPorcentaje: dto.ValorPorcentajeIsc ?? 0m,
-                montoFijo: dto.MontoFijoIsc ?? 0m);
 
             var codigoDet = dto.TieneDetraccion && dto.CodigoDetraccion is not null
                 ? CodigoDetraccion.FromCodigo(dto.CodigoDetraccion)
