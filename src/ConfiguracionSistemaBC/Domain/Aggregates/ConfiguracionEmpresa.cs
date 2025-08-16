@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using ConfiguracionSistemaBC.Domain.ValueObjects;
+using SharedKernel.ValueObjects;
+using EmailSK = ConfiguracionSistemaBC.Domain.ValueObjects.EmailEmpresa;
 
 namespace ConfiguracionSistemaBC.Domain.Aggregates
 {
@@ -55,12 +57,12 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
         public DireccionPostal DireccionFiscal { get; private set; } = null!;
 
         // Parámetros base
-        public Moneda MonedaBase { get; private set; } = Moneda.PEN;
+    public Moneda MonedaBase { get; private set; } = Moneda.PEN();
         public AmbienteFe Ambiente { get; private set; } = AmbienteFe.PRUEBA;
 
         // Preferencias opcionales
         public Telefono Telefonos { get; private set; } = Telefono.Vacio;
-        public List<Email> Emails { get; private set; } = new();
+    public List<EmailSK> Emails { get; private set; } = new();
         public PieDePagina PieDePagina { get; private set; } = PieDePagina.Vacio;
         public LogoImagen? Logo { get; private set; }
 
@@ -120,7 +122,7 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
                 MonedaBase = monedaBase,
                 Ambiente = AmbienteFe.PRUEBA, // siempre inicia en PRUEBA
                 Telefonos = Telefono.Vacio,
-                Emails = new List<Email>(),
+                Emails = new List<EmailSK>(),
                 PieDePagina = PieDePagina.Vacio,
                 Logo = null
             };
@@ -149,7 +151,7 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
 
         // ========= PREFERENCIAS OPCIONALES =========
 
-        public void ReemplazarEmails(IEnumerable<Email> emails)
+        public void ReemplazarEmails(IEnumerable<EmailSK> emails)
         {
             if (emails is null) throw new ArgumentNullException(nameof(emails));
             Emails = emails.ToList();
@@ -164,7 +166,7 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
 
         public void EstablecerLogo(LogoImagen? logo) => Logo = logo;
 
-        public void CambiarMonedaBase(Moneda monedaBase) => MonedaBase = monedaBase ?? Moneda.PEN;
+    public void CambiarMonedaBase(Moneda monedaBase) => MonedaBase = monedaBase ?? Moneda.PEN();
 
         // ========= ESTABLECIMIENTOS =========
 

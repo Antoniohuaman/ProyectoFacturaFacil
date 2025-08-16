@@ -1,6 +1,7 @@
 using NUnit.Framework;
 using ComprobantesElectronicosBC.Domain.Entities;
 using ComprobantesElectronicosBC.Domain.ValueObjects;
+using SharedKernel.ValueObjects;
 
 namespace ComprobantesElectronicosBC.Tests.UnitTests.Entities
 {
@@ -9,6 +10,7 @@ namespace ComprobantesElectronicosBC.Tests.UnitTests.Entities
     {
         // ---------- Helpers ----------
         private static Moneda PEN => Moneda.PEN();
+    // ...existing code...
         private static UnidadDeMedida NIU => UnidadDeMedida.NIU();
         private static UnidadDeMedida KGM => UnidadDeMedida.KGM();
         private static DescripcionProducto Desc(string n = "Producto X", string? d = null)

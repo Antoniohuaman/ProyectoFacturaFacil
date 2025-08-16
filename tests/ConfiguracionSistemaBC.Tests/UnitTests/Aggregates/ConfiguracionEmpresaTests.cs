@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using NUnit.Framework;
+using SharedKernel.ValueObjects;
 
 using ConfiguracionSistemaBC.Domain.Aggregates;
 using ConfiguracionSistemaBC.Domain.ValueObjects;
@@ -24,7 +25,7 @@ namespace ConfiguracionSistemaBC.Tests.UnitTests.Aggregates
     private static Ruc UnRucPJ() => (Ruc)"20000000001"; // válido según el algoritmo del VO
     private static Ruc OtroRucPJ() => (Ruc)"20100070970"; // otro válido para actualización
 
-        private static Email E(string s, bool visible = true) => Email.From(s, visible);
+        private static EmailEmpresa E(string s, bool visible = true) => EmailEmpresa.From(s, visible);
 
         // ------------------------- Registro y estado inicial -------------------------
         [Test]
@@ -38,21 +39,21 @@ namespace ConfiguracionSistemaBC.Tests.UnitTests.Aggregates
                 ruc: ruc,
                 razonSocial: "ACME S.A.C.",
                 direccionFiscal: dir,
-                monedaBase: Moneda.PEN
+                monedaBase: Moneda.PEN()
             );
 
             Assert.That(agg.Ambiente, Is.EqualTo(AmbienteFe.PRUEBA));
             Assert.That(agg.Ruc, Is.EqualTo(ruc));
             Assert.That(agg.RazonSocial, Is.EqualTo("ACME S.A.C."));
             Assert.That(agg.DireccionFiscal, Is.EqualTo(dir));
-            Assert.That(agg.MonedaBase, Is.EqualTo(Moneda.PEN));
+            Assert.That(agg.MonedaBase, Is.EqualTo(Moneda.PEN()));
         }
 
         // ------------------------- Ambiente PRUEBA/PRODUCCIÓN -------------------------
         [Test]
         public void CambioDeAmbiente_PruebaAProduccion_Permitido_Y_NoReversible()
         {
-            var agg = ConfiguracionEmpresa.RegistrarNueva(Guid.NewGuid(), UnRucPJ(), "ACME S.A.C.", DirPrincipal(), Moneda.PEN);
+            var agg = ConfiguracionEmpresa.RegistrarNueva(Guid.NewGuid(), UnRucPJ(), "ACME S.A.C.", DirPrincipal(), Moneda.PEN());
 
             // PRUEBA -> PRODUCCION
             agg.CambiarAmbiente(AmbienteFe.PRODUCCION);
@@ -68,7 +69,7 @@ namespace ConfiguracionSistemaBC.Tests.UnitTests.Aggregates
         [Test]
         public void ActualizarDatosLegales_ModificaRuc_RazonSocial_Y_Direccion()
         {
-            var agg = ConfiguracionEmpresa.RegistrarNueva(Guid.NewGuid(), UnRucPJ(), "ACME S.A.C.", DirPrincipal(), Moneda.PEN);
+            var agg = ConfiguracionEmpresa.RegistrarNueva(Guid.NewGuid(), UnRucPJ(), "ACME S.A.C.", DirPrincipal(), Moneda.PEN());
 
             var nuevoRuc = OtroRucPJ();
             var nuevaDir = DireccionPostal.From("JR. LIMA 456", "150101", "LIMA", "LIMA", "LIMA");
@@ -84,7 +85,7 @@ namespace ConfiguracionSistemaBC.Tests.UnitTests.Aggregates
         [Test]
         public void Establecimientos_CRUD_Basico_Y_UnicidadCodigo()
         {
-            var agg = ConfiguracionEmpresa.RegistrarNueva(Guid.NewGuid(), UnRucPJ(), "ACME", DirPrincipal(), Moneda.PEN);
+            var agg = ConfiguracionEmpresa.RegistrarNueva(Guid.NewGuid(), UnRucPJ(), "ACME", DirPrincipal(), Moneda.PEN());
 
             var id1 = agg.RegistrarEstablecimiento("001", "TIENDA CENTRAL", DireccionPostal.From("AV. UNO 999", "150101", "LIMA", "LIMA", "LIMA"));
             var id2 = agg.RegistrarEstablecimiento("002", "TIENDA SUR", DireccionPostal.From("AV. DOS 100", "150101", "LIMA", "LIMA", "LIMA"));
@@ -117,7 +118,7 @@ namespace ConfiguracionSistemaBC.Tests.UnitTests.Aggregates
         [Test]
         public void Series_Agregar_Validaciones_Unicidad_Y_DefaultPorTipo()
         {
-            var agg = ConfiguracionEmpresa.RegistrarNueva(Guid.NewGuid(), UnRucPJ(), "ACME", DirPrincipal(), Moneda.PEN);
+            var agg = ConfiguracionEmpresa.RegistrarNueva(Guid.NewGuid(), UnRucPJ(), "ACME", DirPrincipal(), Moneda.PEN());
             var est = agg.RegistrarEstablecimiento("001", "TIENDA", DireccionPostal.From("AV. UNO 1", "150101", "LIMA", "LIMA", "LIMA"));
 
             // Serie válida para FACTURA (Fxxx)
@@ -147,7 +148,7 @@ namespace ConfiguracionSistemaBC.Tests.UnitTests.Aggregates
         [Test]
         public void Series_PrefijoDebeCoincidirConTipo()
         {
-            var agg = ConfiguracionEmpresa.RegistrarNueva(Guid.NewGuid(), UnRucPJ(), "ACME", DirPrincipal(), Moneda.PEN);
+            var agg = ConfiguracionEmpresa.RegistrarNueva(Guid.NewGuid(), UnRucPJ(), "ACME", DirPrincipal(), Moneda.PEN());
             var est = agg.RegistrarEstablecimiento("001", "TIENDA", DireccionPostal.From("AV. UNO 1", "150101", "LIMA", "LIMA", "LIMA"));
 
             // Intentar Boleta con prefijo de Factura
@@ -162,7 +163,7 @@ namespace ConfiguracionSistemaBC.Tests.UnitTests.Aggregates
         [Test]
         public void Series_Actualizar_PuedeCambiarSerie_Establecimiento_TipoOperacion_Y_Default_SiNoBloqueada()
         {
-            var agg = ConfiguracionEmpresa.RegistrarNueva(Guid.NewGuid(), UnRucPJ(), "ACME", DirPrincipal(), Moneda.PEN);
+            var agg = ConfiguracionEmpresa.RegistrarNueva(Guid.NewGuid(), UnRucPJ(), "ACME", DirPrincipal(), Moneda.PEN());
             var est1 = agg.RegistrarEstablecimiento("001", "TIENDA 1", DireccionPostal.From("AV. 1", "150101", "LIMA", "LIMA", "LIMA"));
             var est2 = agg.RegistrarEstablecimiento("002", "TIENDA 2", DireccionPostal.From("AV. 2", "150101", "LIMA", "LIMA", "LIMA"));
 
@@ -185,7 +186,7 @@ namespace ConfiguracionSistemaBC.Tests.UnitTests.Aggregates
         [Test]
         public void Series_Actualizar_NoPermiteDuplicarNiUsarEstablecimientoDeshabilitado()
         {
-            var agg = ConfiguracionEmpresa.RegistrarNueva(Guid.NewGuid(), UnRucPJ(), "ACME", DirPrincipal(), Moneda.PEN);
+            var agg = ConfiguracionEmpresa.RegistrarNueva(Guid.NewGuid(), UnRucPJ(), "ACME", DirPrincipal(), Moneda.PEN());
             var est1 = agg.RegistrarEstablecimiento("001", "TIENDA 1", DireccionPostal.From("AV. 1", "150101", "LIMA", "LIMA", "LIMA"));
             var est2 = agg.RegistrarEstablecimiento("002", "TIENDA 2", DireccionPostal.From("AV. 2", "150101", "LIMA", "LIMA", "LIMA"));
 
@@ -206,7 +207,7 @@ namespace ConfiguracionSistemaBC.Tests.UnitTests.Aggregates
         [Test]
         public void Series_BloqueoPorUso_ImpideActualizarYEliminar()
         {
-            var agg = ConfiguracionEmpresa.RegistrarNueva(Guid.NewGuid(), UnRucPJ(), "ACME", DirPrincipal(), Moneda.PEN);
+            var agg = ConfiguracionEmpresa.RegistrarNueva(Guid.NewGuid(), UnRucPJ(), "ACME", DirPrincipal(), Moneda.PEN());
             var est = agg.RegistrarEstablecimiento("001", "TIENDA", DireccionPostal.From("AV. UNO 1", "150101", "LIMA", "LIMA", "LIMA"));
 
             var id = agg.AgregarSerie(TipoComprobanteCodigo.Factura, SerieCodigo.ForTipo("F001", TipoComprobanteCodigo.Factura), est, Correlativo.From(1));
@@ -224,7 +225,7 @@ namespace ConfiguracionSistemaBC.Tests.UnitTests.Aggregates
         [Test]
         public void Series_Eliminar_PermitidoSiNoBloqueada_QuitaDefaultSiEraDefault()
         {
-            var agg = ConfiguracionEmpresa.RegistrarNueva(Guid.NewGuid(), UnRucPJ(), "ACME", DirPrincipal(), Moneda.PEN);
+            var agg = ConfiguracionEmpresa.RegistrarNueva(Guid.NewGuid(), UnRucPJ(), "ACME", DirPrincipal(), Moneda.PEN());
             var est = agg.RegistrarEstablecimiento("001", "TIENDA", DireccionPostal.From("AV. UNO 1", "150101", "LIMA", "LIMA", "LIMA"));
 
             var id = agg.AgregarSerie(TipoComprobanteCodigo.Factura, SerieCodigo.ForTipo("F001", TipoComprobanteCodigo.Factura), est, Correlativo.From(1), esPorDefecto: true);
@@ -241,19 +242,19 @@ namespace ConfiguracionSistemaBC.Tests.UnitTests.Aggregates
         [Test]
         public void CamposOpcionales_SePuedenActualizarYPersisten()
         {
-            var agg = ConfiguracionEmpresa.RegistrarNueva(Guid.NewGuid(), UnRucPJ(), "ACME", DirPrincipal(), Moneda.PEN);
+            var agg = ConfiguracionEmpresa.RegistrarNueva(Guid.NewGuid(), UnRucPJ(), "ACME", DirPrincipal(), Moneda.PEN());
 
             agg.ReemplazarEmails(new[] { E("ventas@acme.com"), E("info@acme.com", visible: false) });
             agg.ReemplazarTelefonos(Telefono.FromTexto("+51 999 888 777 / (01) 234 5678"));
             agg.ActualizarPieDePagina(PieDePagina.FromTextoPlano("Gracias por su preferencia."));
             agg.EstablecerLogo(LogoImagen.FromUpload("logo.png", "image/png", bytesLength: 50_000, anchoPx: 300, altoPx: 100));
-            agg.CambiarMonedaBase(Moneda.USD);
+            agg.CambiarMonedaBase(Moneda.USD());
 
             Assert.That(agg.Emails.Count, Is.EqualTo(2));
             Assert.That(agg.Telefonos.EsVacio, Is.False);
             Assert.That(agg.PieDePagina.EsVacio, Is.False);
             Assert.That(agg.Logo, Is.Not.Null);
-            Assert.That(agg.MonedaBase, Is.EqualTo(Moneda.USD));
+            Assert.That(agg.MonedaBase, Is.EqualTo(Moneda.USD()));
         }
     }
 }

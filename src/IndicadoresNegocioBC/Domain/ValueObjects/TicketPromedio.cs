@@ -1,4 +1,5 @@
 using System;
+using SharedKernel.ValueObjects;
 
 namespace IndicadoresNegocioBC.Domain.ValueObjects
 {
@@ -34,7 +35,7 @@ namespace IndicadoresNegocioBC.Domain.ValueObjects
         public int CantidadComprobantes { get; }
 
         /// <summary>Moneda del ticket (proviene de MontoTotal).</summary>
-        public Moneda Moneda => MontoTotal.Moneda;
+    public SharedKernel.ValueObjects.Moneda Moneda => MontoTotal.Moneda;
 
         /// <summary>Indica si hay al menos un comprobante.</summary>
         public bool TieneDatos => CantidadComprobantes > 0;
@@ -62,7 +63,7 @@ namespace IndicadoresNegocioBC.Domain.ValueObjects
             new(montoTotal, cantidadComprobantes);
 
         /// <summary>Representa un ticket promedio vacío (sin datos) para la moneda dada.</summary>
-        public static TicketPromedio Vacio(Moneda moneda)
+    public static TicketPromedio Vacio(SharedKernel.ValueObjects.Moneda moneda)
         {
             if (moneda is null) throw new ArgumentNullException(nameof(moneda));
             return new TicketPromedio(Dinero.Cero(moneda), 0);

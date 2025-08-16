@@ -1,8 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using ComprobantesElectronicosBC.Domain.ValueObjects;
 using SharedKernel.ValueObjects;
+using ComprobantesElectronicosBC.Domain.ValueObjects;
+// ...existing code...
 
 namespace ComprobantesElectronicosBC.Domain.Aggregates
 {
@@ -74,7 +75,10 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
         public FechaEmision Emision { get; private set; }
         public FechaVencimiento Vencimiento { get; private set; }
         public FormaDePago FormaDePago { get; private set; }
-        public Moneda Moneda { get; private set; }
+    public Moneda Moneda { get; private set; }
+    // Moneda es el value object del SharedKernel, conforme a ISO-4217
+    // Se recomienda instanciarlo siempre usando Moneda.Create o Moneda.PEN()/Moneda.USD()
+    // Ejemplo: Moneda = Moneda.PEN();
 
         public EmisorSnapshot Emisor { get; }
         public ClienteSnapshot Cliente { get; private set; }

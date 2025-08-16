@@ -1,18 +1,19 @@
 using System;
 using System.Globalization;
+using SharedKernel.ValueObjects;
 
 namespace CatalogoArticulosBC.Domain.ValueObjects
 {
     public sealed class Precio : IEquatable<Precio>
     {
         public decimal Monto { get; }
-        public Moneda Moneda { get; }
+    public SharedKernel.ValueObjects.Moneda Moneda { get; }
         public bool IncluyeIGV { get; }
         public AfectacionIGV AfectacionIgv { get; }
 
         public Precio(
             decimal monto,
-            Moneda moneda,
+            SharedKernel.ValueObjects.Moneda moneda,
             AfectacionIGV afectacionIgv,
             bool incluyeIGV = true)
         {
@@ -49,7 +50,7 @@ namespace CatalogoArticulosBC.Domain.ValueObjects
 
         public override string ToString()
         {
-            var simbolo = Moneda.ObtenerSimbolo();
+            var simbolo = Moneda.Simbolo;
             var sufijo  = IncluyeIGV
                 ? $" (Inc. {AfectacionIgv.Tasa:P0})"
                 : $" (+{AfectacionIgv.Tasa:P0})";

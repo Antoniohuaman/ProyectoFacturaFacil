@@ -4,7 +4,7 @@ using GestionClientesBC.Application.DTOs;
 using GestionClientesBC.Application.UseCases;
 using GestionClientesBC.Adapters.Output.Persistence.InMemory;
 using NUnit.Framework;
-
+using SharedKernel.ValueObjects;
 namespace GestionClientesBC.Tests.UnitTests.UseCases
 {
     public class CrearClienteUseCaseTests

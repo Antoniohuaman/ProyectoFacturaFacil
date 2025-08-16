@@ -3,14 +3,19 @@ using System.Collections.Generic;
 using System.Linq;
 using IndicadoresNegocioBC.Domain.Aggregates;
 using IndicadoresNegocioBC.Domain.ValueObjects;
+using Moneda = SharedKernel.ValueObjects.Moneda;
+using Dinero = SharedKernel.ValueObjects.Dinero;
+using SharedKernel.ValueObjects;
 using NUnit.Framework;
 
 namespace IndicadoresNegocioBC.Tests.UnitTests.Aggregates
 {
     public class IndicadorNegocioTests
     {
-        private static Moneda PEN => new Moneda("PEN");
-        private static Moneda USD => new Moneda("USD");
+    private static Moneda PEN => Moneda.PEN();
+    // ...existing code...
+    private static Moneda USD => Moneda.USD();
+    // ...existing code...
 
         private static SegmentoIndicador Segmento(Guid? empresaId = null)
         {
@@ -39,12 +44,14 @@ namespace IndicadoresNegocioBC.Tests.UnitTests.Aggregates
             var f = fecha ?? new DateOnly(2025, 8, 15);
             var lista = (items ?? new[]
             {
-                ("SKU-1", 2m, Dinero.Crear(60m, PEN)),
-                ("SKU-2", 1m, Dinero.Crear(40m, PEN)),
-            }).Select(x => new IndicadorNegocio.ComprobanteVenta.Item(x.productoId, x.cantidad, x.subtotal)).ToList();
+                ("SKU-1", 2m, Dinero.Create(60m, PEN)),
+                ("SKU-2", 1m, Dinero.Create(40m, PEN)),
+            })
+            .Select(x => new IndicadorNegocio.ComprobanteVenta.Item(x.productoId, x.cantidad, x.subtotal))
+            .ToList();
 
-            var t = total ?? Dinero.Crear(lista.Sum(i => i.Subtotal.Monto), PEN);
-            var i = igv ?? Dinero.Crear(Math.Round(t.Monto * 0.18m, 2, MidpointRounding.AwayFromZero), PEN);
+            var t = total ?? Dinero.Create(lista.Sum(i => i.Subtotal.Monto), PEN);
+            var i = igv ?? Dinero.Create(Math.Round(t.Monto * 0.18m, 2, MidpointRounding.AwayFromZero), PEN);
 
             return new IndicadorNegocio.ComprobanteVenta(
                 id ?? Guid.NewGuid(),
@@ -106,9 +113,9 @@ namespace IndicadoresNegocioBC.Tests.UnitTests.Aggregates
             Assert.Multiple(() =>
             {
                 Assert.That(rp["SKU-1"].Cantidad, Is.EqualTo(2m));
-                Assert.That(rp["SKU-1"].TotalVendido, Is.EqualTo(Dinero.Crear(60m, PEN)));
+                Assert.That(rp["SKU-1"].TotalVendido.ToString(), Is.EqualTo(Dinero.Create(60m, PEN).ToString()));
                 Assert.That(rp["SKU-2"].Cantidad, Is.EqualTo(1m));
-                Assert.That(rp["SKU-2"].TotalVendido, Is.EqualTo(Dinero.Crear(40m, PEN)));
+                Assert.That(rp["SKU-2"].TotalVendido.ToString(), Is.EqualTo(Dinero.Create(40m, PEN).ToString()));
             });
 
             // Ranking clientes
@@ -151,7 +158,7 @@ namespace IndicadoresNegocioBC.Tests.UnitTests.Aggregates
         public void RegistrarVentaAceptada_MonedaDistinta_Lanza()
         {
             var agg = CrearAgregado();
-            var venta = Venta(total: Dinero.Crear(100m, USD), igv: Dinero.Crear(18m, USD));
+            var venta = Venta(total: Dinero.Create(100m, USD), igv: Dinero.Create(18m, USD));
 
             Assert.Throws<InvalidOperationException>(() => agg.RegistrarVentaAceptada(venta));
         }
@@ -249,22 +256,22 @@ namespace IndicadoresNegocioBC.Tests.UnitTests.Aggregates
             // Venta 1: SKU-A (2 x 50), SKU-B (5 x 10)
             var v1 = Venta(items: new[]
             {
-                ("A", 2m, Dinero.Crear(100m, PEN)), // monto alto, qty 2
-                ("B", 5m, Dinero.Crear(50m, PEN)),  // monto menor, qty 5
+                ("A", 2m, Dinero.Create(100m, PEN)), // monto alto, qty 2
+                ("B", 5m, Dinero.Create(50m, PEN)),  // monto menor, qty 5
             });
             agg.RegistrarVentaAceptada(v1);
 
             // Venta 2: SKU-B (5 x 10) adicional => qty B = 10, monto B = 100
             var v2 = Venta(id: Guid.NewGuid(), items: new[]
             {
-                ("B", 5m, Dinero.Crear(50m, PEN)),
+                ("B", 5m, Dinero.Create(50m, PEN)),
             });
             agg.RegistrarVentaAceptada(v2);
 
             // Venta 3: SKU-C (1 x 120) => monto C = 120, qty 1
             var v3 = Venta(id: Guid.NewGuid(), items: new[]
             {
-                ("C", 1m, Dinero.Crear(120m, PEN)),
+                ("C", 1m, Dinero.Create(120m, PEN)),
             });
             agg.RegistrarVentaAceptada(v3);
 
@@ -301,17 +308,17 @@ namespace IndicadoresNegocioBC.Tests.UnitTests.Aggregates
             // X compra 2 veces total 150
             agg.RegistrarVentaAceptada(Venta(clienteId: clienteX, items: new[]
             {
-                ("A", 1m, Dinero.Crear(50m, PEN))
+                ("A", 1m, Dinero.Create(50m, PEN))
             }));
             agg.RegistrarVentaAceptada(Venta(id: Guid.NewGuid(), clienteId: clienteX, items: new[]
             {
-                ("B", 1m, Dinero.Crear(100m, PEN))
+                ("B", 1m, Dinero.Create(100m, PEN))
             }));
 
             // Y compra 1 vez total 120
             agg.RegistrarVentaAceptada(Venta(id: Guid.NewGuid(), clienteId: clienteY, items: new[]
             {
-                ("C", 1m, Dinero.Crear(120m, PEN))
+                ("C", 1m, Dinero.Create(120m, PEN))
             }));
 
             var top = agg.ObtenerTopClientes(LimiteTop.Top10);

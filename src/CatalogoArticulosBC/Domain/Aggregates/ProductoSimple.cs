@@ -77,6 +77,7 @@ namespace CatalogoArticulosBC.Domain.Aggregates
         /// Constructor principal para crear un ProductoSimple con todos sus VOs.
         /// </summary>
         public ProductoSimple(
+            Moneda moneda,
             SKU sku,
             NombreProducto nombre,        
             UnidadMedida unidadMedida,
@@ -86,7 +87,6 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             string? descripcion = null,
             Marca? marca = null,
             Precio? precioVenta = null,
-            Moneda moneda = Moneda.Soles,
             bool tieneDetraccion = false,
             CodigoDetraccion? codigoDetraccion = null,
             CodigoSUNAT? codigoSunat = null,
@@ -122,7 +122,7 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             Activo = true;
             Marca = marca;
             PrecioVenta = precioVenta;
-            Moneda = moneda;
+            Moneda = moneda ?? throw new ArgumentNullException(nameof(moneda), "La moneda debe provenir de la configuración de empresa.");
             TieneDetraccion = tieneDetraccion;
             CodigoDetraccion = codigoDetraccion;
             CodigoSunat = codigoSunat;
@@ -156,7 +156,6 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             Categoria categoria,
             Marca? marca,
             Precio? precioVenta,
-            Moneda moneda,
             bool tieneDetraccion,
             CodigoDetraccion? codigoDetraccion,
             CodigoSUNAT? codigoSunat,
@@ -191,7 +190,6 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             // Asignaciones
             Marca = marca;
             PrecioVenta = precioVenta;
-            Moneda = moneda;
             TieneDetraccion = tieneDetraccion;
             CodigoDetraccion = codigoDetraccion;
             CodigoSunat = codigoSunat;

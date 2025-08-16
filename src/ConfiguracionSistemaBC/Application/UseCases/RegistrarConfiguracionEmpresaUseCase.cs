@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using ConfiguracionSistemaBC.Domain.Aggregates;
 using ConfiguracionSistemaBC.Domain.Repositories;
 using ConfiguracionSistemaBC.Domain.ValueObjects;
+using SharedKernel.ValueObjects;
 
 namespace ConfiguracionSistemaBC.Application.UseCases
 {
@@ -123,7 +124,7 @@ namespace ConfiguracionSistemaBC.Application.UseCases
                 p.DatosLegales.PaisIso,
                 p.DatosLegales.AddressTypeCode
             );
-            var moneda = Moneda.From(p.MonedaBase.CodigoOAlias);
+            var moneda = Moneda.Create(p.MonedaBase.CodigoOAlias);
 
             // 3) Crear agregado (Ambiente=PRUEBA por defecto dentro del aggregate)
             var agg = ConfiguracionEmpresa.RegistrarNueva(
@@ -143,17 +144,17 @@ namespace ConfiguracionSistemaBC.Application.UseCases
                 agg.ReemplazarTelefonos(Telefono.FromTexto(pref.Telefonos));
 
                 // Emails
-                var emails = new List<Email>();
+                var emails = new List<EmailEmpresa>();
                 if (pref.EmailsVisibles is not null)
                 {
                     foreach (var ev in pref.EmailsVisibles)
-                        if (Email.TryFrom(ev, out var em, esVisible: true)) emails.Add(em!);
+                        if (EmailEmpresa.TryFrom(ev, out var em, esVisible: true)) emails.Add(em!);
                         else throw new ArgumentOutOfRangeException(nameof(pref.EmailsVisibles), $"Email inválido: {ev}");
                 }
                 if (pref.EmailsOcultos is not null)
                 {
                     foreach (var eo in pref.EmailsOcultos)
-                        if (Email.TryFrom(eo, out var em, esVisible: false)) emails.Add(em!);
+                        if (EmailEmpresa.TryFrom(eo, out var em, esVisible: false)) emails.Add(em!);
                         else throw new ArgumentOutOfRangeException(nameof(pref.EmailsOcultos), $"Email inválido: {eo}");
                 }
                 agg.ReemplazarEmails(emails);

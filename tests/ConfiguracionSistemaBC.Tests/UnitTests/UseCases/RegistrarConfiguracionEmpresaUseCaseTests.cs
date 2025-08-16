@@ -6,9 +6,10 @@ using System.Threading.Tasks;
 using ConfiguracionSistemaBC.Application.UseCases;
 using ConfiguracionSistemaBC.Domain.Aggregates;
 using ConfiguracionSistemaBC.Domain.Repositories;
-using ConfiguracionSistemaBC.Domain.ValueObjects;
+using SharedKernel.ValueObjects;
 using Moq;
 using NUnit.Framework;
+using ConfiguracionSistemaBC.Domain.ValueObjects;
 
 namespace ConfiguracionSistemaBC.Tests.Application.UseCases
 {
@@ -128,7 +129,8 @@ namespace ConfiguracionSistemaBC.Tests.Application.UseCases
             Assert.That(agregadoCapturado, Is.Not.Null);
             Assert.That(agregadoCapturado!.Ambiente.EsPrueba, Is.True);
             Assert.That(agregadoCapturado.Ruc.Numero, Is.EqualTo("20100070970"));
-            Assert.That(agregadoCapturado.MonedaBase, Is.EqualTo(Moneda.PEN));
+            Assert.That(agregadoCapturado.MonedaBase.Simbolo, Is.EqualTo("S/.") );
+            Assert.That(agregadoCapturado.MonedaBase, Is.EqualTo(Moneda.PEN()));
             Assert.That(agregadoCapturado.ListarEstablecimientos(), Has.Count.EqualTo(1));
 
             repo.Verify(r => r.GetByTenantIdAsync(tenantId, It.IsAny<CancellationToken>()), Times.Once);
@@ -216,7 +218,7 @@ namespace ConfiguracionSistemaBC.Tests.Application.UseCases
                 Ruc.FromString("20100070970"),
                 "YA EXISTE SAC",
                 DireccionPostal.From("X", "150101", "LIMA", "LIMA", "LIMA"),
-                Moneda.PEN
+                Moneda.PEN()
             );
 
             repo.Setup(r => r.GetByTenantIdAsync(tenantId, It.IsAny<CancellationToken>()))

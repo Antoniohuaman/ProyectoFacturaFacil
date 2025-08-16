@@ -17,7 +17,7 @@ namespace ConfiguracionSistemaBC.Domain.ValueObjects
     /// - TLD (último label): solo letras, longitud 2–24
     /// </summary>
     [DebuggerDisplay("{Direccion} (Visible={EsVisible})")]
-    public sealed class Email
+    public sealed class EmailEmpresa
     {
         /// <summary>Dirección canónica (minúsculas, sin espacios).</summary>
         public string Direccion { get; }
@@ -28,7 +28,7 @@ namespace ConfiguracionSistemaBC.Domain.ValueObjects
         /// <summary>Marca si este correo puede mostrarse en documentos/salidas públicas.</summary>
         public bool EsVisible { get; }
 
-        private Email(string direccionCanonica, string dominioCanonico, bool esVisible)
+        private EmailEmpresa(string direccionCanonica, string dominioCanonico, bool esVisible)
         {
             Direccion = direccionCanonica;
             Dominio   = dominioCanonico;
@@ -38,11 +38,11 @@ namespace ConfiguracionSistemaBC.Domain.ValueObjects
         // ------------------------ Fábricas ------------------------
 
         /// <summary>
-        /// Crea un <see cref="Email"/> validando el formato. Normaliza a minúsculas.
+        /// Crea un <see cref="EmailEmpresa"/> validando el formato. Normaliza a minúsculas.
         /// </summary>
         /// <param name="direccion">Texto ingresado por el usuario.</param>
         /// <param name="esVisible">Flag de visibilidad (default: true).</param>
-        public static Email From(string direccion, bool esVisible = true)
+        public static EmailEmpresa From(string direccion, bool esVisible = true)
         {
             if (direccion is null) throw new ArgumentNullException(nameof(direccion));
 
@@ -50,13 +50,13 @@ namespace ConfiguracionSistemaBC.Domain.ValueObjects
             if (!EsCorreoValido(s, out var dominio))
                 throw new ArgumentOutOfRangeException(nameof(direccion), "Correo electrónico inválido.");
 
-            return new Email(s, dominio!, esVisible);
+            return new EmailEmpresa(s, dominio!, esVisible);
         }
 
         /// <summary>
-        /// Intenta crear un <see cref="Email"/>; devuelve false si la dirección no es válida.
+        /// Intenta crear un <see cref="EmailEmpresa"/>; devuelve false si la dirección no es válida.
         /// </summary>
-        public static bool TryFrom(string? direccion, out Email? email, bool esVisible = true)
+        public static bool TryFrom(string? direccion, out EmailEmpresa? email, bool esVisible = true)
         {
             email = null;
             if (string.IsNullOrWhiteSpace(direccion)) return false;
@@ -64,20 +64,20 @@ namespace ConfiguracionSistemaBC.Domain.ValueObjects
             var s = direccion.Trim().ToLowerInvariant();
             if (!EsCorreoValido(s, out var dominio)) return false;
 
-            email = new Email(s, dominio!, esVisible);
+            email = new EmailEmpresa(s, dominio!, esVisible);
             return true;
         }
 
         /// <summary>
         /// Devuelve una nueva instancia con la misma dirección pero distinta visibilidad.
         /// </summary>
-        public Email ConVisibilidad(bool esVisible) => new(Direccion, Dominio, esVisible);
+        public EmailEmpresa ConVisibilidad(bool esVisible) => new(Direccion, Dominio, esVisible);
 
         // ------------------------ Igualdad por valor ------------------------
 
         public override bool Equals(object? obj)
         {
-            if (obj is not Email other) return false;
+            if (obj is not EmailEmpresa other) return false;
             // La identidad del VO incluye dirección y política de visibilidad
             return string.Equals(Direccion, other.Direccion, StringComparison.Ordinal)
                 && EsVisible == other.EsVisible;
@@ -94,18 +94,18 @@ namespace ConfiguracionSistemaBC.Domain.ValueObjects
             }
         }
 
-        public static bool operator ==(Email? left, Email? right)
+        public static bool operator ==(EmailEmpresa? left, EmailEmpresa? right)
             => left is null ? right is null : left.Equals(right);
 
-        public static bool operator !=(Email? left, Email? right) => !(left == right);
+        public static bool operator !=(EmailEmpresa? left, EmailEmpresa? right) => !(left == right);
 
         public override string ToString() => Direccion;
 
         /// <summary>Conversión implícita a string (retorna la dirección).</summary>
-        public static implicit operator string(Email value) => value.Direccion;
+        public static implicit operator string(EmailEmpresa value) => value.Direccion;
 
         /// <summary>Conversión explícita desde string (valida y normaliza). Visibilidad por defecto: true.</summary>
-        public static explicit operator Email(string value) => From(value);
+        public static explicit operator EmailEmpresa(string value) => From(value);
 
         // ------------------------ Validación interna ------------------------
 

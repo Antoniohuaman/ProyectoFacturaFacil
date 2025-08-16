@@ -98,14 +98,14 @@ namespace ConfiguracionSistemaBC.Application.UseCases
             // 3) Emails (visibles/ocultos)
             if (p.Preferencias.EmailsVisibles is not null || p.Preferencias.EmailsOcultos is not null)
             {
-                var list = new List<Email>(capacity: 8);
+                var list = new List<EmailEmpresa>(capacity: 8);
 
                 if (p.Preferencias.EmailsVisibles is not null)
                 {
                     foreach (var s in p.Preferencias.EmailsVisibles)
                     {
                         if (string.IsNullOrWhiteSpace(s)) continue; // ignorar vacíos
-                        list.Add(Email.From(s, esVisible: true));   // valida VO
+                        list.Add(EmailEmpresa.From(s, esVisible: true));   // valida VO
                     }
                 }
 
@@ -114,7 +114,7 @@ namespace ConfiguracionSistemaBC.Application.UseCases
                     foreach (var s in p.Preferencias.EmailsOcultos)
                     {
                         if (string.IsNullOrWhiteSpace(s)) continue;
-                        list.Add(Email.From(s, esVisible: false));
+                        list.Add(EmailEmpresa.From(s, esVisible: false));
                     }
                 }
 

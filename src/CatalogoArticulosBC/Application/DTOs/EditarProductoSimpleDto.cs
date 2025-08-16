@@ -36,7 +36,6 @@ namespace CatalogoArticulosBC.Application.DTOs
         public string? NuevaSerie { get; set; }
         public List<Guid>? NuevosAlmacenesAsignados { get; set; }
         public bool NuevoAsignarATodosLosAlmacenes { get; set; }
-        public Moneda NuevaMoneda { get; set; }
         public DateTime? NuevaFechaVencimiento { get; set; }
         public TipoExistencia NuevoTipoExistencia { get; set; }
         public string UsuarioId { get; set; } = default!;

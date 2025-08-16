@@ -1,3 +1,4 @@
+using ConfiguracionSistemaBC.Domain.Aggregates;
 using SharedKernel.ValueObjects;
 using System;
 using System.Collections.Generic;
@@ -16,18 +17,21 @@ namespace CatalogoArticulosBC.Application.UseCases
     /// </summary>
     public class CrearProductoSimpleUseCase
     {
-        private readonly IProductoRepository _repository;
-        private readonly IValidadorUnicidadSku _skuValidator;
-        private readonly IEventBus _eventBus;
+    private readonly IProductoRepository _repository;
+    private readonly IValidadorUnicidadSku _skuValidator;
+    private readonly IEventBus _eventBus;
+    private readonly ConfiguracionSistemaBC.Domain.Aggregates.ConfiguracionEmpresa _configuracionEmpresa;
 
         public CrearProductoSimpleUseCase(
             IProductoRepository repository,
             IValidadorUnicidadSku skuValidator,
-            IEventBus eventBus)
+            IEventBus eventBus,
+            ConfiguracionSistemaBC.Domain.Aggregates.ConfiguracionEmpresa configuracionEmpresa)
         {
             _repository = repository;
             _skuValidator = skuValidator;
             _eventBus = eventBus;
+            _configuracionEmpresa = configuracionEmpresa;
         }
 
         /// <summary>
@@ -43,16 +47,16 @@ namespace CatalogoArticulosBC.Application.UseCases
             var categoria = new Categoria(dto.Categoria!);
             var marca = dto.Marca is null ? null : new Marca(dto.Marca);
 
-            // Moneda
-            var monedaEnum = Enum.Parse<Moneda>(dto.Moneda!);
 
+            // Obtener moneda desde la configuración de empresa (debe estar disponible en el contexto)
+            var moneda = _configuracionEmpresa.MonedaBase;
             // Precio incluyendo afectación IGV
             var precio = dto.PrecioVenta.HasValue
                 ? new Precio(
-                      dto.PrecioVenta.Value,
-                      monedaEnum,
-                      afectacion,
-                      incluyeIGV: true)
+                    dto.PrecioVenta.Value,
+                    moneda,
+                    afectacion,
+                    incluyeIGV: true)
                 : null;
 
 
@@ -75,7 +79,9 @@ namespace CatalogoArticulosBC.Application.UseCases
             var tipoExistenciaEnum = Enum.Parse<TipoExistencia>(dto.TipoExistencia!);
 
             // Crear agregado
+
             var producto = new ProductoSimple(
+                moneda,
                 sku,
                 nombre,
                 unidad,
@@ -85,7 +91,6 @@ namespace CatalogoArticulosBC.Application.UseCases
                 dto.Descripcion,
                 marca,
                 precio,
-                monedaEnum,
                 dto.TieneDetraccion,
                 codigoDet,
                 sunat,

@@ -2,7 +2,7 @@ using System;
 using NUnit.Framework;
 using SharedKernel.ValueObjects;
 
-namespace SharedKernel.Tests.ValueObjects
+namespace SharedKernel.Tests.UnitTests.ValueObjects
 {
     [TestFixture]
     public class CentroDeCostoTests

@@ -6,7 +6,7 @@ namespace IndicadoresNegocioBC.Tests.UnitTests.ValueObjects
 {
     public class SegmentoIndicadorTests
     {
-        private static Moneda PEN => new Moneda("PEN");
+    private static SharedKernel.ValueObjects.Moneda PEN => SharedKernel.ValueObjects.Moneda.PEN();
 
         private static Establecimiento CrearEst(Guid empresaId, string nombre = "Tienda A")
         {

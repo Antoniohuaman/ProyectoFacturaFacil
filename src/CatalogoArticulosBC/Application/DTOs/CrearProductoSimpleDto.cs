@@ -17,7 +17,6 @@ namespace CatalogoArticulosBC.Application.UseCases
         public string Categoria { get; set; } = null!;
         public string? Marca { get; set; }
         public decimal? PrecioVenta { get; set; }
-        public string Moneda { get; set; } = "Soles";
         public bool AplicaIsc { get; set; }
         public string? TipoAplicacionIsc { get; set; }
         public decimal? ValorPorcentajeIsc { get; set; }

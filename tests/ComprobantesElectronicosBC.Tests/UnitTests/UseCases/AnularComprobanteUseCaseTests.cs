@@ -8,6 +8,7 @@ using ComprobantesElectronicosBC.Adapters.Output.Persistence.InMemory;
 
 using ComprobantesElectronicosBC.Domain.Aggregates;
 using ComprobantesElectronicosBC.Domain.ValueObjects;
+using SharedKernel.ValueObjects;
 
 namespace ComprobantesElectronicosBC.Tests.UnitTests.UseCases
 {

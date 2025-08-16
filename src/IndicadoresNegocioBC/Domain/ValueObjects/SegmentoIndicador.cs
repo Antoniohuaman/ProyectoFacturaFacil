@@ -1,4 +1,5 @@
 using System;
+using SharedKernel.ValueObjects;
 
 namespace IndicadoresNegocioBC.Domain.ValueObjects
 {
@@ -32,12 +33,12 @@ namespace IndicadoresNegocioBC.Domain.ValueObjects
         public Establecimiento? Establecimiento { get; }
 
         /// <summary>Moneda de trabajo (VO Moneda). Obligatoria.</summary>
-        public Moneda Moneda { get; }
+    public SharedKernel.ValueObjects.Moneda Moneda { get; }
 
         /// <summary>Indica si el segmento abarca a toda la empresa (sin establecimiento específico).</summary>
         public bool EsEmpresaCompleta => Establecimiento is null;
 
-        private SegmentoIndicador(Guid empresaId, Establecimiento? establecimiento, Moneda moneda)
+    private SegmentoIndicador(Guid empresaId, Establecimiento? establecimiento, SharedKernel.ValueObjects.Moneda moneda)
         {
             if (empresaId == Guid.Empty)
                 throw new ArgumentException("EmpresaId no puede ser vacío.", nameof(empresaId));
@@ -54,13 +55,13 @@ namespace IndicadoresNegocioBC.Domain.ValueObjects
         /// <summary>
         /// Crea un segmento para TODOS los establecimientos de la empresa en la moneda indicada.
         /// </summary>
-        public static SegmentoIndicador ParaEmpresa(Guid empresaId, Moneda moneda) =>
+        public static SegmentoIndicador ParaEmpresa(Guid empresaId, SharedKernel.ValueObjects.Moneda moneda) =>
             new(empresaId, establecimiento: null, moneda);
 
         /// <summary>
         /// Crea un segmento para un establecimiento específico (usa su EmpresaId) y la moneda indicada.
         /// </summary>
-        public static SegmentoIndicador ParaEstablecimiento(Establecimiento establecimiento, Moneda moneda)
+        public static SegmentoIndicador ParaEstablecimiento(Establecimiento establecimiento, SharedKernel.ValueObjects.Moneda moneda)
         {
             if (establecimiento is null) throw new ArgumentNullException(nameof(establecimiento));
             return new(establecimiento.EmpresaId, establecimiento, moneda);

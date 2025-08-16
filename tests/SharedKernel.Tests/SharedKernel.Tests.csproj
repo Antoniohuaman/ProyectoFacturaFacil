@@ -24,4 +24,7 @@
     <ProjectReference Include="..\..\src\SharedKernel\SharedKernel.csproj" />
   </ItemGroup>
 
+
+
+
 </Project>

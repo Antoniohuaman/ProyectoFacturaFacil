@@ -9,6 +9,7 @@ using GestionClientesBC.Application.Interfaces;
 using GestionClientesBC.Domain.Entities;
 using GestionClientesBC.Domain.ValueObjects;
 using GestionClientesBC.Domain.Aggregates;
+using SharedKernel.ValueObjects;
 
 namespace GestionClientesBC.Tests.UnitTests
 {

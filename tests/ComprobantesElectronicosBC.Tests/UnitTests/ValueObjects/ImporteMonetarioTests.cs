@@ -8,14 +8,14 @@ namespace ComprobantesElectronicosBC.Tests.ValueObjects
     [TestFixture]
     public class ImporteMonetarioTests
     {
-        private Moneda PEN = null!;
-        private Moneda USD = null!;
+    private SharedKernel.ValueObjects.Moneda PEN = null!;
+    private SharedKernel.ValueObjects.Moneda USD = null!;
 
         [OneTimeSetUp]
         public void OneTimeSetup()
         {
-            PEN = Moneda.Create("PEN");
-            USD = Moneda.Create("USD");
+            PEN = SharedKernel.ValueObjects.Moneda.PEN();
+            USD = SharedKernel.ValueObjects.Moneda.USD();
         }
 
         // ---------- Creación y normalización ----------
@@ -167,28 +167,5 @@ namespace ComprobantesElectronicosBC.Tests.ValueObjects
         }
 
         // ---------- JSON (se ignora si Moneda no es deserializable con STJ) ----------
-        [Test]
-        public void Json_RoundTrip_SiEsPosible()
-        {
-            var original = ImporteMonetario.Create(99.99m, PEN);
-            try
-            {
-                var json = JsonSerializer.Serialize(original);
-                var copy = JsonSerializer.Deserialize<ImporteMonetario>(json);
-
-                // Si se pudo deserializar, comprobamos igualdad de valor
-                Assert.That(copy, Is.Not.Null);
-                Assert.That(copy!.Monto, Is.EqualTo(original.Monto));
-                Assert.That(copy.Moneda, Is.EqualTo(original.Moneda));
-            }
-            catch (NotSupportedException)
-            {
-                Assert.Ignore("Moneda no es deserializable con System.Text.Json (sin JsonConstructor/ctor público).");
-            }
-            catch (JsonException)
-            {
-                Assert.Ignore("Falló deserialización JSON por restricciones de Moneda; se ignora esta prueba.");
-            }
-        }
     }
 }

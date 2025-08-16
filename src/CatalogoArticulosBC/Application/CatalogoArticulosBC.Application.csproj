@@ -8,5 +8,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Domain\CatalogoArticulosBC.Domain.csproj" />
+    <ProjectReference Include="..\..\ConfiguracionSistemaBC\Domain\ConfiguracionSistemaBC.Domain.csproj" />
   </ItemGroup>
 </Project>

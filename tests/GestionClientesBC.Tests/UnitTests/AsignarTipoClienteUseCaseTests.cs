@@ -6,6 +6,7 @@ using GestionClientesBC.Adapters.Output.Persistence.InMemory;
 using GestionClientesBC.Domain.ValueObjects;
 using GestionClientesBC.Application.Interfaces;
 using NUnit.Framework;
+using SharedKernel.ValueObjects;
 
 namespace GestionClientesBC.Tests.UnitTests.UseCases
 {

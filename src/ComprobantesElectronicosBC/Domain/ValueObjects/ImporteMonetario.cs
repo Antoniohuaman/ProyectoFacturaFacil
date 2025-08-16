@@ -13,18 +13,18 @@ namespace ComprobantesElectronicosBC.Domain.ValueObjects
     /// </summary>
     public sealed record ImporteMonetario
     {
-    /// <summary>Monto normalizado a <see cref="Moneda.Decimales"/>.</summary>
-    public decimal Monto { get; }
-    // Guarda el monto original sin redondear para operaciones aritméticas
-    private readonly decimal _montoOriginal;
+        /// <summary>Monto normalizado a <see cref="SharedKernel.ValueObjects.Moneda.Decimales"/>.</summary>
+        public decimal Monto { get; }
+        // Guarda el monto original sin redondear para operaciones aritméticas
+        private readonly decimal _montoOriginal;
 
         /// <summary>Moneda del importe (incluye código, símbolo y decimales).</summary>
-        public Moneda Moneda { get; }
+            public SharedKernel.ValueObjects.Moneda Moneda { get; }
 
         // --------------------------- Construcción ---------------------------
 
         // Constructor canónico (privado) que garantiza normalización siempre.
-        private ImporteMonetario(decimal monto, Moneda moneda)
+            private ImporteMonetario(decimal monto, SharedKernel.ValueObjects.Moneda moneda)
         {
             Moneda = moneda ?? throw new ArgumentNullException(nameof(moneda));
             _montoOriginal = monto;
@@ -35,12 +35,12 @@ namespace ComprobantesElectronicosBC.Domain.ValueObjects
         /// Constructor para (de)serialización JSON. Mantiene la normalización.
         /// </summary>
         [JsonConstructor]
-        public ImporteMonetario(Moneda moneda, decimal monto) : this(monto, moneda) { }
+            public ImporteMonetario(SharedKernel.ValueObjects.Moneda moneda, decimal monto) : this(monto, moneda) { }
 
         /// <summary>
         /// Fábrica con regla de no-negativos (útil para importes que no deben ser &lt; 0).
         /// </summary>
-        public static ImporteMonetario Create(decimal monto, Moneda moneda)
+            public static ImporteMonetario Create(decimal monto, SharedKernel.ValueObjects.Moneda moneda)
         {
             if (monto < 0m) throw new ArgumentOutOfRangeException(nameof(monto), "El monto no puede ser negativo.");
             return new(monto, moneda);
@@ -49,10 +49,10 @@ namespace ComprobantesElectronicosBC.Domain.ValueObjects
         /// <summary>
         /// Fábrica sin restricción de signo (útil para notas de crédito/ajustes).
         /// </summary>
-        public static ImporteMonetario CreateLibre(decimal monto, Moneda moneda) => new(monto, moneda);
+            public static ImporteMonetario CreateLibre(decimal monto, SharedKernel.ValueObjects.Moneda moneda) => new(monto, moneda);
 
         /// <summary>Crea un importe cero en la moneda indicada.</summary>
-        public static ImporteMonetario Zero(Moneda moneda) => new(0m, moneda);
+            public static ImporteMonetario Zero(SharedKernel.ValueObjects.Moneda moneda) => new(0m, moneda);
 
         /// <summary>¿El monto es exactamente 0?</summary>
         public bool EsCero => Monto == 0m;
@@ -74,21 +74,21 @@ namespace ComprobantesElectronicosBC.Domain.ValueObjects
         public ImporteMonetario Sumar(ImporteMonetario otro)
         {
             EnsureMismaMoneda(otro);
-            return new(Monto + otro.Monto, Moneda);
+                return new(Monto + otro.Monto, Moneda);
         }
 
         /// <summary>Resta importes de la misma moneda. Lanza si las monedas difieren.</summary>
         public ImporteMonetario Restar(ImporteMonetario otro)
         {
             EnsureMismaMoneda(otro);
-            return new(Monto - otro.Monto, Moneda);
+                return new(Monto - otro.Monto, Moneda);
         }
 
         /// <summary>Intenta sumar sin lanzar cuando la moneda difiere.</summary>
         public bool TrySumar(ImporteMonetario otro, out ImporteMonetario? resultado)
         {
             if (!MismaMoneda(otro)) { resultado = null; return false; }
-            resultado = new(Monto + otro.Monto, Moneda);
+                resultado = new(Monto + otro.Monto, Moneda);
             return true;
         }
 
@@ -96,7 +96,7 @@ namespace ComprobantesElectronicosBC.Domain.ValueObjects
         public bool TryRestar(ImporteMonetario otro, out ImporteMonetario? resultado)
         {
             if (!MismaMoneda(otro)) { resultado = null; return false; }
-            resultado = new(Monto - otro.Monto, Moneda);
+                resultado = new(Monto - otro.Monto, Moneda);
             return true;
         }
 
@@ -113,7 +113,7 @@ namespace ComprobantesElectronicosBC.Domain.ValueObjects
         /// Crea desde “minor units” (centavos) según los decimales de la moneda.
         /// Ej.: 1234 con decimales=2 → 12.34.
         /// </summary>
-        public static ImporteMonetario DesdeMinorUnits(Moneda moneda, long minorUnits)
+        public static ImporteMonetario DesdeMinorUnits(SharedKernel.ValueObjects.Moneda moneda, long minorUnits)
             => new(minorUnits / Pow10(moneda.Decimales), moneda);
 
         // --------------------------- Representación ---------------------------
@@ -122,7 +122,13 @@ namespace ComprobantesElectronicosBC.Domain.ValueObjects
         /// Representación legible e invariante a cultura. Usa el formateo provisto por <see cref="Moneda"/>.
         /// Ej.: "S/. 1,234.56" o "US$ 1,234.56".
         /// </summary>
-        public override string ToString() => Moneda.Formatear(Monto, incluirSeparadores: true);
+        public override string ToString()
+        {
+            // Formatea el monto con separadores y símbolo
+            var montoFormateado = Monto.ToString($"N{Moneda.Decimales}", CultureInfo.InvariantCulture);
+            var simbolo = Moneda.Codigo == "PEN" && !Moneda.Simbolo.Contains(".") ? "S/." : Moneda.Simbolo;
+            return $"{simbolo} {montoFormateado}";
+        }
 
         // Operadores de conveniencia
         public static ImporteMonetario operator +(ImporteMonetario a, ImporteMonetario b) => a.Sumar(b);

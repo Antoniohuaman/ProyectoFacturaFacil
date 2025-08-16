@@ -2,6 +2,7 @@ using System;
 using NUnit.Framework;
 using ComprobantesElectronicosBC.Domain.Aggregates;
 using ComprobantesElectronicosBC.Domain.ValueObjects;
+using SharedKernel.ValueObjects;
 
 namespace ComprobantesElectronicosBC.Tests
 {

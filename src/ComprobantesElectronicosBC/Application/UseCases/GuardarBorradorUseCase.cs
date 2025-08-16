@@ -1,3 +1,4 @@
+using SharedKernel.ValueObjects;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -30,7 +31,7 @@ namespace ComprobantesElectronicosBC.Application.UseCases
         {
             // ---- VOs base ----
             var tipo    = TipoDeComprobante.Create(input.TipoCodigo);
-            var moneda  = Moneda.Create(input.MonedaCodigo);
+            var moneda  = SharedKernel.ValueObjects.Moneda.Create(input.MonedaCodigo);
             var nowUtc  = DateTime.UtcNow;
             var emision = FechaEmision.Create(input.FechaEmision, tipo.Codigo, nowUtc);
 

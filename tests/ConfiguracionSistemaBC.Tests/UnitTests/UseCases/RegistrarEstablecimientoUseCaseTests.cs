@@ -6,6 +6,7 @@ using ConfiguracionSistemaBC.Application.UseCases;
 using ConfiguracionSistemaBC.Domain.Aggregates;
 using ConfiguracionSistemaBC.Domain.Repositories;
 using ConfiguracionSistemaBC.Domain.ValueObjects;
+using SharedKernel.ValueObjects;
 using Moq;
 using NUnit.Framework;
 
@@ -35,7 +36,7 @@ namespace ConfiguracionSistemaBC.Tests.Application.UseCases
                 Ruc.FromString("20100070970"),
                 "ACME S.A.C.",
                 DireccionPostal.From("AV. INDUSTRIAL 123", "150101", "LIMA", "LIMA", "LIMA"),
-                Moneda.PEN
+                Moneda.PEN()
             );
         }
 

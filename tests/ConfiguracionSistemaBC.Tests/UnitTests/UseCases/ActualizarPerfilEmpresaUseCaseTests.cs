@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using ConfiguracionSistemaBC.Application.UseCases;
 using ConfiguracionSistemaBC.Domain.Aggregates;
 using ConfiguracionSistemaBC.Domain.Repositories;
+using SharedKernel.ValueObjects;
 using ConfiguracionSistemaBC.Domain.ValueObjects;
 using Moq;
 using NUnit.Framework;
@@ -30,12 +31,12 @@ namespace ConfiguracionSistemaBC.Tests.UnitTests.UseCases
                     provincia: "LIMA",
                     distrito: "LIMA"
                 ),
-                Moneda.PEN
+                Moneda.PEN()
             );
 
             // Estado inicial “vacío”
             agg.ReemplazarTelefonos(Telefono.Vacio);
-            agg.ReemplazarEmails(Array.Empty<Email>());
+            agg.ReemplazarEmails(Array.Empty<EmailEmpresa>());
             agg.ActualizarPieDePagina(PieDePagina.Vacio);
             agg.EstablecerLogo(null);
 
@@ -135,7 +136,7 @@ namespace ConfiguracionSistemaBC.Tests.UnitTests.UseCases
 
             // Estado inicial con algo para verificar que se mantiene igual
             agg.ReemplazarTelefonos(Telefono.FromTexto("999 111 222"));
-            agg.ReemplazarEmails(new[] { Email.From("ventas@acme.com", true) });
+            agg.ReemplazarEmails(new[] { EmailEmpresa.From("ventas@acme.com", true) });
             agg.ActualizarPieDePagina(PieDePagina.FromTextoPlano("Gracias"));
             agg.EstablecerLogo(LogoImagen.FromUpload("logo.jpg", "image/jpeg", 50_000, 200, 80));
 
@@ -187,8 +188,8 @@ namespace ConfiguracionSistemaBC.Tests.UnitTests.UseCases
             // poner algo inicial para luego limpiar
             agg.ReemplazarTelefonos(Telefono.FromTexto("+51 999 888 777 / 01 2345678"));
             agg.ReemplazarEmails(new[] {
-                Email.From("ventas@acme.com", true),
-                Email.From("soporte@acme.com", false)
+                EmailEmpresa.From("ventas@acme.com", true),
+                EmailEmpresa.From("soporte@acme.com", false)
             });
             agg.ActualizarPieDePagina(PieDePagina.FromHtml("<p>Hola</p>"));
             agg.EstablecerLogo(LogoImagen.FromUpload("logo.png", "image/png", 70_000, 250, 90));

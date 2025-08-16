@@ -7,6 +7,7 @@ using NUnit.Framework;
 using GestionClientesBC.Domain.ValueObjects;
 using GestionClientesBC.Domain.Aggregates;
 using GestionClientesBC.Domain.Entities;
+using SharedKernel.ValueObjects;
 
 namespace GestionClientesBC.Tests.UnitTests
 {
