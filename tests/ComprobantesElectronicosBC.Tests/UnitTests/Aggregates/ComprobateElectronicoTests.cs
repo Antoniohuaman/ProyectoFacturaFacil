@@ -48,7 +48,7 @@ namespace ComprobantesElectronicosBC.Tests
                                                 bool precioIncluyeIgv = false, DescuentoLinea? desc = null)
         {
             var descripcion  = DescripcionProducto.Create("Producto A", "Detalle de prueba");
-            var unidad       = UnidadDeMedida.NIU();
+            var unidad       = UnidadDeMedida.NIU;
             var qty          = Cantidad.Create(cantidad);
             var precio       = ImporteMonetario.Create(precioUnitario, moneda);
             var igv          = ImpuestoIGV.Gravado18(); // 18%
@@ -215,7 +215,7 @@ namespace ComprobantesElectronicosBC.Tests
         {
             var (agg, _, monedaDoc) = CrearBorradorBoletaContado();
             var descripcion  = DescripcionProducto.Create("Servicio X");
-            var unidad       = UnidadDeMedida.E48();
+            var unidad       = UnidadDeMedida.From("E48");
             var qty          = Cantidad.Create(1m);
             var precioUsd    = ImporteMonetario.Create(10m, Moneda.USD());
             var igv          = ImpuestoIGV.Gravado18();

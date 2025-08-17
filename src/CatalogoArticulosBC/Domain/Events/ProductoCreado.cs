@@ -20,7 +20,7 @@ namespace CatalogoArticulosBC.Domain.Events
         // Datos básicos
         public NombreProducto Nombre { get; }
         public string Descripcion { get; }
-        public UnidadMedida UnidadMedida { get; }
+        public UnidadDeMedida UnidadMedida { get; }
         public AfectacionIGV AfectacionIgv { get; }
         public Categoria Categoria { get; }
         public Marca? Marca { get; }

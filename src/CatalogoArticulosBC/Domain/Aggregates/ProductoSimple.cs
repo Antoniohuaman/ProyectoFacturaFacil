@@ -1,4 +1,4 @@
-using SharedKernel.ValueObjects;
+    using SharedKernel.ValueObjects;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -27,7 +27,7 @@ namespace CatalogoArticulosBC.Domain.Aggregates
         // Datos básicos
         public NombreProducto Nombre { get; private set; }
         public string Descripcion { get; private set; }
-        public UnidadMedida UnidadMedida { get; private set; }
+        public UnidadDeMedida UnidadMedida { get; private set; }
         public AfectacionIGV AfectacionIgv { get; private set; }
         public Categoria Categoria { get; private set; }
         public Marca? Marca { get; private set; }
@@ -80,7 +80,7 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             Moneda moneda,
             SKU sku,
             NombreProducto nombre,        
-            UnidadMedida unidadMedida,
+            UnidadDeMedida unidadMedida,
             AfectacionIGV afectacionIgv,
             Categoria categoria,
             List<Guid>? almacenesAsignados,
@@ -151,7 +151,7 @@ namespace CatalogoArticulosBC.Domain.Aggregates
         /// </summary>
         public void EditarDatos(
             NombreProducto nombre,
-            UnidadMedida unidadMedida,
+            UnidadDeMedida unidadMedida,
             AfectacionIGV afectacionIgv,
             Categoria categoria,
             Marca? marca,

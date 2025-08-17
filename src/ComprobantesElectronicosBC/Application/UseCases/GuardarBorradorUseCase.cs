@@ -74,7 +74,7 @@ namespace ComprobantesElectronicosBC.Application.UseCases
             foreach (var l in input.Lineas)
             {
                 var descripcion = DescripcionProducto.Create(l.Nombre, l.Detalle);
-                var um          = UnidadDeMedida.Create(l.UmCodigo, l.UmNombre);
+                var um          = UnidadDeMedida.From(l.UmCodigo);
                 var qty         = Cantidad.Create(l.Cantidad);
                 var precio      = ImporteMonetario.Create(l.PrecioUnitario, moneda);
                 var impuesto    = ImpuestoIGV.Create(l.AfectacionCode, l.IgvRate);

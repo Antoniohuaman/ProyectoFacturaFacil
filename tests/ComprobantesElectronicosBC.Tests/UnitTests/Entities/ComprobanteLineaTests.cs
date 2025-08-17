@@ -11,8 +11,8 @@ namespace ComprobantesElectronicosBC.Tests.UnitTests.Entities
         // ---------- Helpers ----------
         private static Moneda PEN => Moneda.PEN();
     // ...existing code...
-        private static UnidadDeMedida NIU => UnidadDeMedida.NIU();
-        private static UnidadDeMedida KGM => UnidadDeMedida.KGM();
+    private static UnidadDeMedida NIU => UnidadDeMedida.NIU;
+    private static UnidadDeMedida KGM => UnidadDeMedida.KGM;
         private static DescripcionProducto Desc(string n = "Producto X", string? d = null)
             => DescripcionProducto.Create(n, d);
 

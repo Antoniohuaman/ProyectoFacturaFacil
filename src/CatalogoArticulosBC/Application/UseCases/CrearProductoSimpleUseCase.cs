@@ -42,7 +42,7 @@ namespace CatalogoArticulosBC.Application.UseCases
             // Mapear DTO a VOs
             var sku = new SKU(dto.Sku!);
             var nombre = new NombreProducto(dto.Nombre!);
-            var unidad = new UnidadMedida(dto.UnidadMedida!);
+            var unidad = UnidadDeMedida.From(dto.UnidadMedida!);
             var afectacion = AfectacionIGV.FromCodigo(dto.AfectacionIgvCodigo!);
             var categoria = new Categoria(dto.Categoria!);
             var marca = dto.Marca is null ? null : new Marca(dto.Marca);

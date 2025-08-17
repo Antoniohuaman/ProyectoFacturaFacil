@@ -39,7 +39,7 @@ namespace ComprobantesElectronicosBC.Tests.UnitTests.UseCases
 
             // una línea mínima para que tenga montos
             var desc   = DescripcionProducto.Create("Servicio", null);
-            var um     = UnidadDeMedida.NIU();
+            var um     = UnidadDeMedida.NIU;
             var qty    = Cantidad.Create(1m);
             var precio = ImporteMonetario.Create(100m, moneda);
             var igv    = ImpuestoIGV.Gravado18();
