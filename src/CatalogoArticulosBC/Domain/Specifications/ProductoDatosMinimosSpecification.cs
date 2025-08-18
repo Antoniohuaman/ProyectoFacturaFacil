@@ -21,8 +21,8 @@ namespace CatalogoArticulosBC.Domain.Specifications
             if (producto.UnidadMedida == null)
                 return SpecificationResult.Failure("RN-CA-003", "unidadMedida", "La unidad de medida es obligatoria.");
 
-            if (producto.AfectacionIgv == null)
-                return SpecificationResult.Failure("RN-CA-004", "afectacionIGV", "La afectación IGV es obligatoria.");
+            if (producto.AfectacionImpuesto == null)
+                return SpecificationResult.Failure("RN-CA-004", "afectacionImpuesto", "La afectación de impuesto es obligatoria.");
 
             if (producto.Categoria == null)
                 return SpecificationResult.Failure("RN-CA-005", "categoria", "La categoría es obligatoria.");

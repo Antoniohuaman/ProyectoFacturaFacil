@@ -21,7 +21,7 @@ namespace CatalogoArticulosBC.Domain.Events
         public NombreProducto Nombre { get; }
         public string Descripcion { get; }
         public UnidadDeMedida UnidadMedida { get; }
-        public AfectacionIGV AfectacionIgv { get; }
+    public AfectacionImpuesto AfectacionImpuesto { get; }
         public Categoria Categoria { get; }
         public Marca? Marca { get; }
 
@@ -67,7 +67,7 @@ namespace CatalogoArticulosBC.Domain.Events
             Nombre = producto.Nombre;
             Descripcion = producto.Descripcion;
             UnidadMedida = producto.UnidadMedida;
-            AfectacionIgv = producto.AfectacionIgv;
+            AfectacionImpuesto = producto.AfectacionImpuesto;
             Categoria = producto.Categoria;
             Marca = producto.Marca;
 

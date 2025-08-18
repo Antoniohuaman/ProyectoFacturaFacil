@@ -39,8 +39,9 @@ namespace ComprobantesElectronicosBC.Domain.Entities
         /// <summary>Si true, el precio ingresado incluye IGV; si false, NO incluye IGV.</summary>
         public bool PrecioIncluyeIgv { get; private set; }
 
-        /// <summary>Afectación IGV (Cat. 07) + tasa cuando corresponde.</summary>
-        public ImpuestoIGV Impuesto { get; private set; }
+    /// <summary>Afectación de impuesto (Cat. 07) y tasa.</summary>
+    public AfectacionImpuesto AfectacionImpuesto { get; private set; }
+    public TasaImpuesto TasaImpuesto { get; private set; }
 
         /// <summary>Descuento de línea (monto o %). Por defecto: None.</summary>
         public DescuentoLinea Descuento { get; private set; }
@@ -83,7 +84,8 @@ namespace ComprobantesElectronicosBC.Domain.Entities
             Cantidad cantidad,
             ImporteMonetario precioUnitario,
             bool precioIncluyeIgv,
-            ImpuestoIGV impuesto,
+            AfectacionImpuesto afectacionImpuesto,
+            TasaImpuesto tasaImpuesto,
             DescuentoLinea? descuento,
             CentroDeCosto? centroDeCosto)
         {
@@ -95,7 +97,8 @@ namespace ComprobantesElectronicosBC.Domain.Entities
             Cantidad         = cantidad; // validación de escala debajo
             PrecioUnitario   = precioUnitario ?? throw new ArgumentNullException(nameof(precioUnitario));
             PrecioIncluyeIgv = precioIncluyeIgv;
-            Impuesto         = impuesto ?? throw new ArgumentNullException(nameof(impuesto));
+            AfectacionImpuesto = afectacionImpuesto ?? throw new ArgumentNullException(nameof(afectacionImpuesto));
+            TasaImpuesto = tasaImpuesto ?? throw new ArgumentNullException(nameof(tasaImpuesto));
             Descuento        = descuento ?? DescuentoLinea.None;
             CentroDeCosto    = centroDeCosto;
 
@@ -115,12 +118,13 @@ namespace ComprobantesElectronicosBC.Domain.Entities
             Cantidad cantidad,
             ImporteMonetario precioUnitario,
             bool precioIncluyeIgv,
-            ImpuestoIGV impuesto,
+            AfectacionImpuesto afectacionImpuesto,
+            TasaImpuesto tasaImpuesto,
             DescuentoLinea? descuento = null,
             CentroDeCosto? centroDeCosto = null)
             => new(
                 numeroLinea, descripcion, um, cantidad,
-                precioUnitario, precioIncluyeIgv, impuesto,
+                precioUnitario, precioIncluyeIgv, afectacionImpuesto, tasaImpuesto,
                 descuento, centroDeCosto);
 
         // --------------------- Comandos -----------------------
@@ -155,9 +159,10 @@ namespace ComprobantesElectronicosBC.Domain.Entities
             Recalcular();
         }
 
-        public void CambiarImpuesto(ImpuestoIGV nuevo)
+        public void CambiarImpuesto(AfectacionImpuesto nuevaAfectacion, TasaImpuesto nuevaTasa)
         {
-            Impuesto = nuevo ?? throw new ArgumentNullException(nameof(nuevo));
+            AfectacionImpuesto = nuevaAfectacion ?? throw new ArgumentNullException(nameof(nuevaAfectacion));
+            TasaImpuesto = nuevaTasa ?? throw new ArgumentNullException(nameof(nuevaTasa));
             Recalcular();
         }
 
@@ -177,28 +182,9 @@ namespace ComprobantesElectronicosBC.Domain.Entities
             var moneda = Moneda;
 
             // 1) Montos base según afectación y si el precio incluye IGV
-            var m = Impuesto.CalcularMontos(
-                unitPrice: PrecioUnitario.Monto,
-                quantity:  Cantidad.Value,
-                priceIncludesIgv: PrecioIncluyeIgv);
-
-            // Unitarios (sin considerar descuento)
-            UnitPriceSinIgv = new ImporteMonetario(moneda, m.UnitPriceSinIgv);
-            UnitPriceConIgv = new ImporteMonetario(moneda, m.UnitPriceConIgv);
-
-            if (Descuento is null || Descuento.EsNinguno)
-            {
-                BaseAntesDescuento = new ImporteMonetario(moneda, m.BaseImponible);
-                DescuentoMonto     = ImporteMonetario.Zero(moneda);
-                BaseImponible      = new ImporteMonetario(moneda, m.BaseImponible);
-                Igv                = new ImporteMonetario(moneda, m.Igv);
-                ImporteTotal       = new ImporteMonetario(moneda, m.ImporteTotal);
-                return;
-            }
-
-            // 2) Aplicar descuento sobre la base imponible y recalcular IGV/Total
+            // Calcular montos usando el VO DescuentoLinea y AfectacionImpuesto
             var r = Descuento.Aplicar(
-                impuesto: Impuesto,
+                afectacion: AfectacionImpuesto,
                 unitPriceEntrada: PrecioUnitario.Monto,
                 cantidad: Cantidad,
                 priceIncludesIgv: PrecioIncluyeIgv);
@@ -208,6 +194,8 @@ namespace ComprobantesElectronicosBC.Domain.Entities
             BaseImponible      = new ImporteMonetario(moneda, r.BaseDespues);
             Igv                = new ImporteMonetario(moneda, r.Igv);
             ImporteTotal       = new ImporteMonetario(moneda, r.Total);
+            UnitPriceSinIgv    = new ImporteMonetario(moneda, PrecioUnitario.Monto); // Puedes ajustar según lógica de negocio
+            UnitPriceConIgv    = new ImporteMonetario(moneda, PrecioUnitario.Monto); // Puedes ajustar según lógica de negocio
         }
 
         // --------------------- Validaciones auxiliares --------
@@ -242,7 +230,7 @@ namespace ComprobantesElectronicosBC.Domain.Entities
 
         // --------------------- Consultas útiles ---------------
 
-        public bool EsGravado => Impuesto.EsGravado;
+    public bool EsGravado => AfectacionImpuesto.GravaImpuesto;
 
         /// <summary>SubTotal sin IGV (ya considerando descuento).</summary>
         public ImporteMonetario SubtotalSinIgv => BaseImponible;

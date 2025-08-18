@@ -6,35 +6,43 @@ namespace CatalogoArticulosBC.Domain.ValueObjects
 {
     public sealed class Precio : IEquatable<Precio>
     {
-        public decimal Monto { get; }
-    public SharedKernel.ValueObjects.Moneda Moneda { get; }
-        public bool IncluyeIGV { get; }
-        public AfectacionIGV AfectacionIgv { get; }
+    public decimal Monto { get; }
+    public Moneda Moneda { get; }
+    public bool IncluyeIGV { get; }
+    public AfectacionImpuesto AfectacionImpuesto { get; }
 
         public Precio(
             decimal monto,
-            SharedKernel.ValueObjects.Moneda moneda,
-            AfectacionIGV afectacionIgv,
+            Moneda moneda,
+            AfectacionImpuesto afectacionImpuesto,
             bool incluyeIGV = true)
         {
             if (monto < 0m)
                 throw new ArgumentOutOfRangeException(nameof(monto), "El precio no puede ser negativo.");
 
-            Monto         = monto;
-            Moneda        = moneda;
-            AfectacionIgv = afectacionIgv ?? throw new ArgumentNullException(nameof(afectacionIgv));
-            IncluyeIGV    = incluyeIGV;
+            Monto              = monto;
+            Moneda             = moneda;
+            AfectacionImpuesto = afectacionImpuesto ?? throw new ArgumentNullException(nameof(afectacionImpuesto));
+            IncluyeIGV         = incluyeIGV;
         }
 
         public decimal ValorSinIGV =>
             IncluyeIGV
-                ? Monto / (1 + AfectacionIgv.Tasa)
+                ? Monto / (1 + ObtenerTasa())
                 : Monto;
 
         public decimal ValorConIGV =>
             IncluyeIGV
                 ? Monto
-                : Monto * (1 + AfectacionIgv.Tasa);
+                : Monto * (1 + ObtenerTasa());
+
+        private decimal ObtenerTasa()
+        {
+            // Solo grava impuesto si corresponde
+            return AfectacionImpuesto.GravaImpuesto
+                ? TasaImpuesto.IGV18.Fraccion // Puedes parametrizar la tasa si lo necesitas
+                : 0m;
+        }
 
         public override bool Equals(object? obj) => Equals(obj as Precio);
 
@@ -43,17 +51,17 @@ namespace CatalogoArticulosBC.Domain.ValueObjects
             && Monto == other.Monto
             && Moneda == other.Moneda
             && IncluyeIGV == other.IncluyeIGV
-            && AfectacionIgv.Equals(other.AfectacionIgv);
+            && AfectacionImpuesto.Equals(other.AfectacionImpuesto);
 
         public override int GetHashCode() =>
-            HashCode.Combine(Monto, Moneda, IncluyeIGV, AfectacionIgv);
+            HashCode.Combine(Monto, Moneda, IncluyeIGV, AfectacionImpuesto);
 
         public override string ToString()
         {
             var simbolo = Moneda.Simbolo;
             var sufijo  = IncluyeIGV
-                ? $" (Inc. {AfectacionIgv.Tasa:P0})"
-                : $" (+{AfectacionIgv.Tasa:P0})";
+                ? $" (Inc. {ObtenerTasa():P0})"
+                : $" (+{ObtenerTasa():P0})";
             return $"{simbolo} {Monto:F2}{sufijo}";
         }
     }

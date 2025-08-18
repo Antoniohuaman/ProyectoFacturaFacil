@@ -51,8 +51,9 @@ namespace ComprobantesElectronicosBC.Tests
             var unidad       = UnidadDeMedida.NIU;
             var qty          = Cantidad.Create(cantidad);
             var precio       = ImporteMonetario.Create(precioUnitario, moneda);
-            var igv          = ImpuestoIGV.Gravado18(); // 18%
-            return agg.AgregarLinea(descripcion, unidad, qty, precio, igv, precioIncluyeIgv, desc);
+           var afectacion   = AfectacionImpuesto.From("10"); // Gravado
+           var tasa        = TasaImpuesto.FromFraction(0.18m); // 18%
+            return agg.AgregarLinea(descripcion, unidad, qty, precio, afectacion, tasa, precioIncluyeIgv, desc);
         }
 
         // ========= Pruebas =========
@@ -218,12 +219,13 @@ namespace ComprobantesElectronicosBC.Tests
             var unidad       = UnidadDeMedida.From("E48");
             var qty          = Cantidad.Create(1m);
             var precioUsd    = ImporteMonetario.Create(10m, Moneda.USD());
-            var igv          = ImpuestoIGV.Gravado18();
+           var afectacion   = AfectacionImpuesto.From("10"); // Gravado
+           var tasa        = TasaImpuesto.FromFraction(0.18m); // 18%
 
             Assert.That(monedaDoc.Codigo, Is.EqualTo("PEN"));
 
             var ex = Assert.Throws<InvalidOperationException>(() =>
-                agg.AgregarLinea(descripcion, unidad, qty, precioUsd, igv, false));
+                agg.AgregarLinea(descripcion, unidad, qty, precioUsd, afectacion, tasa, false));
             Assert.That(ex!.Message, Does.Contain("moneda de la línea"));
         }
     }

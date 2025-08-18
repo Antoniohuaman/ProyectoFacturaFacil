@@ -1,4 +1,5 @@
 using System;
+using SharedKernel.ValueObjects;
 
 namespace ComprobantesElectronicosBC.Domain.ValueObjects
 {
@@ -80,21 +81,28 @@ namespace ComprobantesElectronicosBC.Domain.ValueObjects
 
         /// <summary>
         /// Recalcula la línea (base/IGV/total) aplicando el descuento.
-        /// Usa el VO ImpuestoIGV para derivar la base antes de descuento.
+        /// Usa el VO AfectacionImpuesto para derivar la base antes de descuento y la tasa de impuesto.
         /// </summary>
-        public Resultado Aplicar(ImpuestoIGV impuesto, decimal unitPriceEntrada, Cantidad cantidad, bool priceIncludesIgv)
+        public Resultado Aplicar(AfectacionImpuesto afectacion, decimal unitPriceEntrada, Cantidad cantidad, bool priceIncludesIgv)
         {
-            // Base/IGV/Total antes del descuento (según impuesto)
-            var montos = impuesto.CalcularMontos(unitPriceEntrada, cantidad.Value, priceIncludesIgv);
-            var baseAntes = montos.BaseImponible;
+            // Calcular base imponible antes de descuento
+            decimal baseAntes;
+            if (priceIncludesIgv && afectacion.GravaImpuesto)
+            {
+                baseAntes = Round2(unitPriceEntrada * cantidad.Value / (1 + TasaImpuesto.IGV18.Fraccion));
+            }
+            else
+            {
+                baseAntes = Round2(unitPriceEntrada * cantidad.Value);
+            }
 
             // Descuento sobre base imponible
             var descuento = CalcularMontoSobreBase(baseAntes);
             var baseDespues = Round2(baseAntes - descuento);
 
             // Recalcular IGV y Total tras descuento
-            decimal igv = impuesto.EsGravado
-                ? Round2(baseDespues * impuesto.IgvRate!.Value)
+            decimal igv = afectacion.GravaImpuesto
+                ? Round2(baseDespues * TasaImpuesto.IGV18.Fraccion) // Puedes parametrizar la tasa si lo necesitas
                 : 0m;
 
             var total = Round2(baseDespues + igv);

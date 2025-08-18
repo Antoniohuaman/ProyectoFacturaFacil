@@ -77,14 +77,15 @@ namespace ComprobantesElectronicosBC.Application.UseCases
                 var um          = UnidadDeMedida.From(l.UmCodigo);
                 var qty         = Cantidad.Create(l.Cantidad);
                 var precio      = ImporteMonetario.Create(l.PrecioUnitario, moneda);
-                var impuesto    = ImpuestoIGV.Create(l.AfectacionCode, l.IgvRate);
+                var afectacion  = AfectacionImpuesto.From(l.AfectacionCode);
+                var tasa        = l.IgvRate is not null ? TasaImpuesto.FromFraction(l.IgvRate.Value) : TasaImpuesto.Cero;
 
                 var descLinea =
                     l.DescuentoPorcentaje is not null ? DescuentoLinea.FromPorcentaje(l.DescuentoPorcentaje.Value) :
                     l.DescuentoMonto      is not null ? DescuentoLinea.FromMonto(l.DescuentoMonto.Value) :
-                                                        DescuentoLinea.None;
+                                                    DescuentoLinea.None;
 
-                agg.AgregarLinea(descripcion, um, qty, precio, impuesto, l.PrecioIncluyeIgv, descLinea);
+                agg.AgregarLinea(descripcion, um, qty, precio, afectacion, tasa, l.PrecioIncluyeIgv, descLinea);
             }
 
             // ---- Descuento global (opcional) ----

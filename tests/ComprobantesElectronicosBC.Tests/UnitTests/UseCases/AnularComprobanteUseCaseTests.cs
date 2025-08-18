@@ -42,9 +42,10 @@ namespace ComprobantesElectronicosBC.Tests.UnitTests.UseCases
             var um     = UnidadDeMedida.NIU;
             var qty    = Cantidad.Create(1m);
             var precio = ImporteMonetario.Create(100m, moneda);
-            var igv    = ImpuestoIGV.Gravado18();
+            var afectacion = SharedKernel.ValueObjects.AfectacionImpuesto.Gravado_10;
+            var tasa      = SharedKernel.ValueObjects.TasaImpuesto.IGV18;
 
-            agg.AgregarLinea(desc, um, qty, precio, igv, precioIncluyeIgv: false, DescuentoLinea.None);
+            agg.AgregarLinea(desc, um, qty, precio, afectacion, tasa, precioIncluyeIgv: false, DescuentoLinea.None);
             return agg;
         }
 

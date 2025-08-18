@@ -28,7 +28,7 @@ namespace CatalogoArticulosBC.Domain.Aggregates
         public NombreProducto Nombre { get; private set; }
         public string Descripcion { get; private set; }
         public UnidadDeMedida UnidadMedida { get; private set; }
-        public AfectacionIGV AfectacionIgv { get; private set; }
+    public AfectacionImpuesto AfectacionImpuesto { get; private set; }
         public Categoria Categoria { get; private set; }
         public Marca? Marca { get; private set; }
 
@@ -81,7 +81,7 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             SKU sku,
             NombreProducto nombre,        
             UnidadDeMedida unidadMedida,
-            AfectacionIGV afectacionIgv,
+            AfectacionImpuesto afectacionImpuesto,
             Categoria categoria,
             List<Guid>? almacenesAsignados,
             string? descripcion = null,
@@ -108,7 +108,7 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             Nombre = nombre ?? throw new ArgumentNullException(nameof(nombre));
             Descripcion = descripcion?.Trim() ?? string.Empty;
             UnidadMedida = unidadMedida ?? throw new ArgumentNullException(nameof(unidadMedida));
-            AfectacionIgv = afectacionIgv ?? throw new ArgumentNullException(nameof(afectacionIgv));
+            AfectacionImpuesto = afectacionImpuesto ?? throw new ArgumentNullException(nameof(afectacionImpuesto));
             Categoria = categoria ?? throw new ArgumentNullException(nameof(categoria));
 
             if (tieneDetraccion && codigoDetraccion is null)
@@ -152,7 +152,7 @@ namespace CatalogoArticulosBC.Domain.Aggregates
         public void EditarDatos(
             NombreProducto nombre,
             UnidadDeMedida unidadMedida,
-            AfectacionIGV afectacionIgv,
+            AfectacionImpuesto afectacionImpuesto,
             Categoria categoria,
             Marca? marca,
             Precio? precioVenta,
@@ -178,7 +178,7 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             Nombre = nombre ?? throw new ArgumentNullException(nameof(nombre));
             Descripcion = descripcion?.Trim() ?? string.Empty;
             UnidadMedida = unidadMedida ?? throw new ArgumentNullException(nameof(unidadMedida));
-            AfectacionIgv = afectacionIgv ?? throw new ArgumentNullException(nameof(afectacionIgv));
+            AfectacionImpuesto = afectacionImpuesto ?? throw new ArgumentNullException(nameof(afectacionImpuesto));
             Categoria = categoria ?? throw new ArgumentNullException(nameof(categoria));
 
             if (tieneDetraccion && codigoDetraccion is null)

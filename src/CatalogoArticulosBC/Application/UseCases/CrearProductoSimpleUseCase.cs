@@ -43,7 +43,7 @@ namespace CatalogoArticulosBC.Application.UseCases
             var sku = new SKU(dto.Sku!);
             var nombre = new NombreProducto(dto.Nombre!);
             var unidad = UnidadDeMedida.From(dto.UnidadMedida!);
-            var afectacion = AfectacionIGV.FromCodigo(dto.AfectacionIgvCodigo!);
+            var afectacion = AfectacionImpuesto.From(dto.AfectacionIgvCodigo!);
             var categoria = new Categoria(dto.Categoria!);
             var marca = dto.Marca is null ? null : new Marca(dto.Marca);
 

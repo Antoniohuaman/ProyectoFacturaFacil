@@ -237,13 +237,15 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
             UnidadDeMedida unidad,
             Cantidad cantidad,
             ImporteMonetario precioUnitario,
-            ImpuestoIGV impuesto,
+            AfectacionImpuesto afectacion,
+            TasaImpuesto tasa,
             bool precioIncluyeIgv,
             DescuentoLinea? descuento = null)
         {
             if (descripcion is null) throw new ArgumentNullException(nameof(descripcion));
             if (unidad is null) throw new ArgumentNullException(nameof(unidad));
-            if (impuesto is null) throw new ArgumentNullException(nameof(impuesto));
+            if (afectacion is null) throw new ArgumentNullException(nameof(afectacion));
+            if (tasa is null) throw new ArgumentNullException(nameof(tasa));
             if (!precioUnitario.Moneda.Equals(Moneda))
                 throw new InvalidOperationException($"La moneda de la línea ({precioUnitario.Moneda.Codigo}) debe coincidir con la del documento ({Moneda.Codigo}).");
 
@@ -253,7 +255,8 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
                 unidad: unidad,
                 cantidad: cantidad,
                 precioUnitario: precioUnitario,
-                impuesto: impuesto,
+                afectacion: afectacion,
+                tasa: tasa,
                 precioIncluyeIgv: precioIncluyeIgv,
                 descuento: descuento ?? DescuentoLinea.None
             );
@@ -269,7 +272,8 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
             UnidadDeMedida? unidad = null,
             Cantidad? cantidad = null,
             ImporteMonetario? precioUnitario = null,
-            ImpuestoIGV? impuesto = null,
+            AfectacionImpuesto? afectacion = null,
+            TasaImpuesto? tasa = null,
             bool? precioIncluyeIgv = null,
             DescuentoLinea? descuento = null)
         {
@@ -279,7 +283,7 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
             if (precioUnitario is not null && !precioUnitario.Moneda.Equals(Moneda))
                 throw new InvalidOperationException($"La moneda de la línea ({precioUnitario.Moneda.Codigo}) debe coincidir con la del documento ({Moneda.Codigo}).");
 
-            ln.Editar(descripcion, unidad, cantidad, precioUnitario, impuesto, precioIncluyeIgv, descuento);
+            ln.Editar(descripcion, unidad, cantidad, precioUnitario, afectacion, tasa, precioIncluyeIgv, descuento);
             RecalcularTotales();
         }
 
@@ -344,8 +348,8 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
                     };
 
                     var baseLineaTrasGlobal = Round2(m.BaseDespues - share);
-                    var igvLinea = linea.Impuesto.EsGravado
-                        ? Round2(baseLineaTrasGlobal * linea.Impuesto.IgvRate!.Value)
+                    var igvLinea = linea.Afectacion.GravaImpuesto
+                        ? Round2(baseLineaTrasGlobal * linea.Tasa.Fraccion)
                         : 0m;
 
                     igvTotal += igvLinea;
@@ -448,7 +452,8 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
             public Cantidad Cantidad { get; private set; }
             public ImporteMonetario PrecioUnitario { get; private set; }
             public bool PrecioIncluyeIgv { get; private set; }
-            public ImpuestoIGV Impuesto { get; private set; }
+            public AfectacionImpuesto Afectacion { get; private set; }
+            public TasaImpuesto Tasa { get; private set; }
             public DescuentoLinea Descuento { get; private set; }
 
             internal LineaDetalle(
@@ -457,7 +462,8 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
                 UnidadDeMedida unidad,
                 Cantidad cantidad,
                 ImporteMonetario precioUnitario,
-                ImpuestoIGV impuesto,
+                AfectacionImpuesto afectacion,
+                TasaImpuesto tasa,
                 bool precioIncluyeIgv,
                 DescuentoLinea descuento)
             {
@@ -466,7 +472,8 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
                 Unidad = unidad ?? throw new ArgumentNullException(nameof(unidad));
                 Cantidad = cantidad;
                 PrecioUnitario = precioUnitario ?? throw new ArgumentNullException(nameof(precioUnitario));
-                Impuesto = impuesto ?? throw new ArgumentNullException(nameof(impuesto));
+                Afectacion = afectacion ?? throw new ArgumentNullException(nameof(afectacion));
+                Tasa = tasa ?? throw new ArgumentNullException(nameof(tasa));
                 PrecioIncluyeIgv = precioIncluyeIgv;
                 Descuento = descuento ?? DescuentoLinea.None;
             }
@@ -476,7 +483,8 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
                 UnidadDeMedida? unidad,
                 Cantidad? cantidad,
                 ImporteMonetario? precioUnitario,
-                ImpuestoIGV? impuesto,
+                AfectacionImpuesto? afectacion,
+                TasaImpuesto? tasa,
                 bool? precioIncluyeIgv,
                 DescuentoLinea? descuento)
             {
@@ -484,14 +492,15 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
                 if (unidad is not null) Unidad = unidad;
                 if (cantidad is not null) Cantidad = cantidad.Value;
                 if (precioUnitario is not null) PrecioUnitario = precioUnitario;
-                if (impuesto is not null) Impuesto = impuesto;
+                if (afectacion is not null) Afectacion = afectacion;
+                if (tasa is not null) Tasa = tasa;
                 if (precioIncluyeIgv.HasValue) PrecioIncluyeIgv = precioIncluyeIgv.Value;
                 if (descuento is not null) Descuento = descuento;
             }
 
             /// <summary>Montos de la línea después de aplicar el descuento de línea.</summary>
             internal DescuentoLinea.Resultado CalcularMontos()
-                => Descuento.Aplicar(Impuesto, PrecioUnitario.Monto, Cantidad, PrecioIncluyeIgv);
+                => Descuento.Aplicar(Afectacion, PrecioUnitario.Monto, Cantidad, PrecioIncluyeIgv);
         }
     }
 }
