@@ -4,14 +4,14 @@ using SharedKernel.ValueObjects;
 
 namespace CatalogoArticulosBC.Domain.ValueObjects
 {
-    public sealed class Precio : IEquatable<Precio>
+    public sealed class PrecioVenta : IEquatable<PrecioVenta>
     {
     public decimal Monto { get; }
     public Moneda Moneda { get; }
     public bool IncluyeIGV { get; }
     public AfectacionImpuesto AfectacionImpuesto { get; }
 
-        public Precio(
+        public PrecioVenta(
             decimal monto,
             Moneda moneda,
             AfectacionImpuesto afectacionImpuesto,
@@ -44,9 +44,9 @@ namespace CatalogoArticulosBC.Domain.ValueObjects
                 : 0m;
         }
 
-        public override bool Equals(object? obj) => Equals(obj as Precio);
+        public override bool Equals(object? obj) => Equals(obj as PrecioVenta);
 
-        public bool Equals(Precio? other) =>
+        public bool Equals(PrecioVenta? other) =>
             other is not null
             && Monto == other.Monto
             && Moneda == other.Moneda

@@ -26,7 +26,7 @@ namespace CatalogoArticulosBC.Domain.Events
         public Marca? Marca { get; }
 
         // Precios y moneda
-        public Precio? PrecioVenta { get; }
+    public PrecioVenta? PrecioVenta { get; }
         public Moneda Moneda { get; }
 
         // Impuestos especiales
@@ -35,7 +35,7 @@ namespace CatalogoArticulosBC.Domain.Events
 
         // Códigos adicionales
         public CodigoSUNAT? CodigoSunat { get; }
-        public BaseImponibleVentas? BaseImponibleVentas { get; }
+    // BaseImponibleVentas eliminado
     public SharedKernel.ValueObjects.CentroDeCosto? CentroDeCosto { get; }
         public CodigoBarras? CodigoBarras { get; }
         public CodigoFabrica? CodigoFabrica { get; }
@@ -80,7 +80,7 @@ namespace CatalogoArticulosBC.Domain.Events
             CodigoDetraccion = producto.CodigoDetraccion;
 
             CodigoSunat = producto.CodigoSunat;
-            BaseImponibleVentas = producto.BaseImponibleVentas;
+            // BaseImponibleVentas eliminado
             CentroDeCosto = producto.CentroDeCosto;
             CodigoBarras = producto.CodigoBarras;
             CodigoFabrica = producto.CodigoFabrica;

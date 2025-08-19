@@ -33,7 +33,7 @@ namespace CatalogoArticulosBC.Domain.Aggregates
         public Marca? Marca { get; private set; }
 
         // Precios y moneda
-        public Precio? PrecioVenta { get; private set; }
+    public PrecioVenta? PrecioVenta { get; private set; }
         public Moneda Moneda { get; private set; }
 
         // Impuestos especiales
@@ -41,8 +41,7 @@ namespace CatalogoArticulosBC.Domain.Aggregates
         public CodigoDetraccion? CodigoDetraccion { get; private set; }
 
         // Códigos adicionales
-        public CodigoSUNAT? CodigoSunat { get; private set; }
-        public BaseImponibleVentas? BaseImponibleVentas { get; private set; }
+    public CodigoSUNAT? CodigoSunat { get; private set; }
     public SharedKernel.ValueObjects.CentroDeCosto? CentroDeCosto { get; private set; }
         public CodigoBarras? CodigoBarras { get; private set; }
         public CodigoFabrica? CodigoFabrica { get; private set; }
@@ -86,11 +85,10 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             List<Guid>? almacenesAsignados,
             string? descripcion = null,
             Marca? marca = null,
-            Precio? precioVenta = null,
+            PrecioVenta? precioVenta = null,
             bool tieneDetraccion = false,
             CodigoDetraccion? codigoDetraccion = null,
             CodigoSUNAT? codigoSunat = null,
-            BaseImponibleVentas? baseImponibleVentas = null,
             SharedKernel.ValueObjects.CentroDeCosto? centroDeCosto = null,
             Peso? peso = null,
             Serie? serie = null,
@@ -126,7 +124,7 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             TieneDetraccion = tieneDetraccion;
             CodigoDetraccion = codigoDetraccion;
             CodigoSunat = codigoSunat;
-            BaseImponibleVentas = baseImponibleVentas;
+            // BaseImponibleVentas eliminado
             CentroDeCosto = centroDeCosto;
             Peso = peso;
             Serie = serie;
@@ -155,11 +153,10 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             AfectacionImpuesto afectacionImpuesto,
             Categoria categoria,
             Marca? marca,
-            Precio? precioVenta,
+            PrecioVenta? precioVenta,
             bool tieneDetraccion,
             CodigoDetraccion? codigoDetraccion,
             CodigoSUNAT? codigoSunat,
-            BaseImponibleVentas? baseImponibleVentas,
             SharedKernel.ValueObjects.CentroDeCosto? centroDeCosto,
             Peso? peso,
             Serie? serie,
@@ -193,7 +190,7 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             TieneDetraccion = tieneDetraccion;
             CodigoDetraccion = codigoDetraccion;
             CodigoSunat = codigoSunat;
-            BaseImponibleVentas = baseImponibleVentas;
+            // BaseImponibleVentas eliminado
             CentroDeCosto = centroDeCosto;
             Peso = peso;
             Serie = serie;

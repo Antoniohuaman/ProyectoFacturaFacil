@@ -52,7 +52,7 @@ namespace CatalogoArticulosBC.Application.UseCases
             var moneda = _configuracionEmpresa.MonedaBase;
             // Precio incluyendo afectación IGV
             var precio = dto.PrecioVenta.HasValue
-                ? new Precio(
+                ? new PrecioVenta(
                     dto.PrecioVenta.Value,
                     moneda,
                     afectacion,
@@ -65,7 +65,7 @@ namespace CatalogoArticulosBC.Application.UseCases
                 : null;
 
             var sunat = dto.CodigoSunat is null ? null : new CodigoSUNAT(dto.CodigoSunat);
-            var baseVenta = dto.BaseImponibleVentas.HasValue ? new BaseImponibleVentas(dto.BaseImponibleVentas.Value) : null;
+            // var baseVenta = dto.BaseImponibleVentas.HasValue ? new BaseImponibleVentas(dto.BaseImponibleVentas.Value) : null;
             var centroDeCosto = CentroDeCosto.FromOptional(dto.CentroCosto, dto.CentroCosto);
             var peso = dto.Peso.HasValue ? new Peso(dto.Peso.Value) : null;
             var serie = dto.Serie is null ? null : new Serie(dto.Serie);
@@ -94,7 +94,7 @@ namespace CatalogoArticulosBC.Application.UseCases
                 dto.TieneDetraccion,
                 codigoDet,
                 sunat,
-                baseVenta,
+                // baseVenta eliminado,
                 centroDeCosto,
                 peso,
                 serie,
