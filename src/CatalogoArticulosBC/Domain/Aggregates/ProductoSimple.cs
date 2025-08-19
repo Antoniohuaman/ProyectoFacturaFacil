@@ -45,7 +45,7 @@ namespace CatalogoArticulosBC.Domain.Aggregates
     public SharedKernel.ValueObjects.CentroDeCosto? CentroDeCosto { get; private set; }
         public CodigoBarras? CodigoBarras { get; private set; }
         public CodigoFabrica? CodigoFabrica { get; private set; }
-        public CodigoLote? CodigoLote { get; private set; }
+    // ...existing code...
     
         // Logística e inventario
         public Peso? Peso { get; private set; }
@@ -94,7 +94,7 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             Serie? serie = null,
             CodigoBarras? codigoBarras = null,
             CodigoFabrica? codigoFabrica = null,
-            CodigoLote? codigoLote = null,
+            // ...existing code...
             TipoProducto tipo = TipoProducto.Bien,
             TipoExistencia tipoExistencia = TipoExistencia.ProductosTerminados,
             FechaVencimiento? fechaVencimiento = null,
@@ -130,7 +130,7 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             Serie = serie;
             CodigoBarras = codigoBarras;
             CodigoFabrica = codigoFabrica;
-            CodigoLote = codigoLote;
+            // ...existing code...
             Tipo = tipo;
             TipoExistencia = tipoExistencia;
             FechaVencimiento = fechaVencimiento;
@@ -162,7 +162,7 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             Serie? serie,
             CodigoBarras? codigoBarras,
             CodigoFabrica? codigoFabrica,
-            CodigoLote? codigoLote,
+            // ...existing code...
             TipoProducto tipo,
             FechaVencimiento? fechaVencimiento,
             List<Guid>? almacenesAsignados = null,
@@ -196,7 +196,7 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             Serie = serie;
             CodigoBarras = codigoBarras;
             CodigoFabrica = codigoFabrica;
-            CodigoLote = codigoLote;
+            // ...existing code...
             Tipo = tipo;
             TipoExistencia = tipoExistencia;
             FechaVencimiento = fechaVencimiento;

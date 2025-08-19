@@ -40,7 +40,7 @@ namespace CatalogoArticulosBC.Domain.Events
     public SharedKernel.ValueObjects.CentroDeCosto? CentroDeCosto { get; }
         public CodigoBarras? CodigoBarras { get; }
         public CodigoFabrica? CodigoFabrica { get; }
-        public CodigoLote? CodigoLote { get; }
+    // ...existing code...
 
         // Logística e inventario
         public Peso? Peso { get; }
@@ -87,7 +87,7 @@ namespace CatalogoArticulosBC.Domain.Events
             CentroDeCosto = producto.CentroDeCosto;
             CodigoBarras = producto.CodigoBarras;
             CodigoFabrica = producto.CodigoFabrica;
-            CodigoLote = producto.CodigoLote;
+            // ...existing code...
 
             // Logística e inventario
             Peso = producto.Peso;

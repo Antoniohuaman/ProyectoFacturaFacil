@@ -71,7 +71,7 @@ namespace CatalogoArticulosBC.Application.UseCases
             var serie = dto.Serie is null ? null : new Serie(dto.Serie);
             var cb = dto.CodigoBarras is null ? null : new CodigoBarras(dto.CodigoBarras);
             var cf = dto.CodigoFabrica is null ? null : new CodigoFabrica(dto.CodigoFabrica);
-            var cl = dto.CodigoLote is null ? null : new CodigoLote(dto.CodigoLote);
+            // ...existing code...
             var fechaVen = dto.FechaVencimiento.HasValue ? new FechaVencimiento(dto.FechaVencimiento.Value) : null;
 
             // Tipos
@@ -100,7 +100,7 @@ namespace CatalogoArticulosBC.Application.UseCases
                 serie,
                 cb,
                 cf,
-                cl,
+                // ...existing code...
                 tipoProductoEnum,
                 tipoExistenciaEnum,
                 fechaVen,
