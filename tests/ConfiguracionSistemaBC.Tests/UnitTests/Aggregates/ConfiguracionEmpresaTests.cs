@@ -48,6 +48,17 @@ namespace ConfiguracionSistemaBC.Tests.UnitTests.Aggregates
             Assert.That(agg.DireccionFiscal, Is.EqualTo(dir));
             Assert.That(agg.MonedaBase, Is.EqualTo(Moneda.PEN()));
         }
+        // ------------------------- Mostrar Imagen en Comprobante Impresa -------------------------
+        [Test]
+        public void MostrarImagenEnComprobanteImpresa_SePuedeConfigurar()
+        {
+            var agg = ConfiguracionEmpresa.RegistrarNueva(Guid.NewGuid(), UnRucPJ(), "ACME S.A.C.", DirPrincipal(), Moneda.PEN());
+            Assert.That(agg.MostrarImagenEnComprobanteImpresa, Is.False, "Por defecto debe ser falso");
+            agg.ConfigurarMostrarImagenEnComprobanteImpresa(true);
+            Assert.That(agg.MostrarImagenEnComprobanteImpresa, Is.True);
+            agg.ConfigurarMostrarImagenEnComprobanteImpresa(false);
+            Assert.That(agg.MostrarImagenEnComprobanteImpresa, Is.False);
+        }
 
         // ------------------------- Ambiente PRUEBA/PRODUCCIÓN -------------------------
         [Test]

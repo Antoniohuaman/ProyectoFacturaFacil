@@ -65,6 +65,8 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
     public List<EmailSK> Emails { get; private set; } = new();
         public PieDePagina PieDePagina { get; private set; } = PieDePagina.Vacio;
         public LogoImagen? Logo { get; private set; }
+        // Preferencia: mostrar imágenes en comprobantes impresos
+        public bool MostrarImagenEnComprobanteImpresa { get; private set; } = false;
 
         // ----- Establecimientos -----
         private sealed class EstablecimientoState
@@ -167,6 +169,14 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
         public void EstablecerLogo(LogoImagen? logo) => Logo = logo;
 
     public void CambiarMonedaBase(Moneda monedaBase) => MonedaBase = monedaBase ?? Moneda.PEN();
+
+            /// <summary>
+            /// Configura si se mostrarán imágenes de productos en la representación impresa de comprobantes.
+            /// </summary>
+            public void ConfigurarMostrarImagenEnComprobanteImpresa(bool mostrar)
+            {
+                MostrarImagenEnComprobanteImpresa = mostrar;
+            }
 
         // ========= ESTABLECIMIENTOS =========
 
