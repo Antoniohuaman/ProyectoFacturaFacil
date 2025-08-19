@@ -204,7 +204,7 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             AsignarATodosLosAlmacenes = asignarATodosLosAlmacenes;
             ImagenPrincipalId = imagenPrincipalId;
 
-            var ev = new ProductoModificado(this);
+            var ev = new ProductoActualizado(this);
             AddDomainEvent(ev);
             // Dispatch(ev);
         }

@@ -10,7 +10,7 @@ namespace CatalogoArticulosBC.Domain.Events
     /// Evento que se dispara cuando un ProductoSimple es modificado.
     /// Incluye el estado completo del agregado tras la modificación.
     /// </summary>
-    public sealed class ProductoModificado : DomainEvent
+    public sealed class ProductoActualizado : DomainEvent
     {
         // Identidad
         public Guid ProductoId { get; }
@@ -57,7 +57,7 @@ namespace CatalogoArticulosBC.Domain.Events
         /// Crea un evento de dominio con el estado completo del agregado positivo tras su modificación.
         /// </summary>
         /// <param name="producto">Instancia del agregado modificado.</param>
-        public ProductoModificado(ProductoSimple producto)
+    public ProductoActualizado(ProductoSimple producto)
         {
             if (producto == null) throw new ArgumentNullException(nameof(producto));
 
