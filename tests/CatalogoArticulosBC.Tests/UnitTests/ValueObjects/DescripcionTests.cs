@@ -2,7 +2,7 @@ using NUnit.Framework;
 using CatalogoArticulosBC.Domain.ValueObjects;
 using System;
 
-namespace CatalogoArticulosBC.Tests.ValueObjects
+namespace CatalogoArticulosBC.Tests.UnitTests.ValueObjects
 {
     [TestFixture]
     public class DescripcionTests
