@@ -42,9 +42,9 @@ namespace CatalogoArticulosBC.Domain.Events
     // ...existing code...
 
         // Logística e inventario
-        public Peso? Peso { get; }
-        public Serie? Serie { get; }
-        public TipoExistencia TipoExistencia { get; }
+    public Peso? Peso { get; }
+    // ...existing code...
+    public TipoExistencia TipoExistencia { get; }
         public FechaVencimiento? FechaVencimiento { get; }
         public IReadOnlyCollection<Guid> AlmacenesAsignados { get; }
         public bool AsignarATodosLosAlmacenes { get; }
@@ -87,7 +87,7 @@ namespace CatalogoArticulosBC.Domain.Events
             // ...existing code...
 
             Peso = producto.Peso;
-            Serie = producto.Serie;
+            // ...existing code...
             TipoExistencia = producto.TipoExistencia;
             FechaVencimiento = producto.FechaVencimiento;
             AlmacenesAsignados = producto.AlmacenesAsignados.AsReadOnly();

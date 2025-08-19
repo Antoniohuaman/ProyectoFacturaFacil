@@ -48,9 +48,9 @@ namespace CatalogoArticulosBC.Domain.Aggregates
     // ...existing code...
     
         // Logística e inventario
-        public Peso? Peso { get; private set; }
-        public Serie? Serie { get; private set; }
-        public TipoExistencia TipoExistencia { get; private set; }
+    public Peso? Peso { get; private set; }
+    // ...existing code...
+    public TipoExistencia TipoExistencia { get; private set; }
         public FechaVencimiento? FechaVencimiento { get; private set; }
         public List<Guid> AlmacenesAsignados { get; private set; }
         public bool AsignarATodosLosAlmacenes { get; private set; }
@@ -91,7 +91,7 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             CodigoSUNAT? codigoSunat = null,
             SharedKernel.ValueObjects.CentroDeCosto? centroDeCosto = null,
             Peso? peso = null,
-            Serie? serie = null,
+            // ...existing code...
             CodigoBarras? codigoBarras = null,
             CodigoFabrica? codigoFabrica = null,
             // ...existing code...
@@ -127,7 +127,7 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             // BaseImponibleVentas eliminado
             CentroDeCosto = centroDeCosto;
             Peso = peso;
-            Serie = serie;
+            // ...existing code...
             CodigoBarras = codigoBarras;
             CodigoFabrica = codigoFabrica;
             // ...existing code...
@@ -159,7 +159,7 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             CodigoSUNAT? codigoSunat,
             SharedKernel.ValueObjects.CentroDeCosto? centroDeCosto,
             Peso? peso,
-            Serie? serie,
+            // ...existing code...
             CodigoBarras? codigoBarras,
             CodigoFabrica? codigoFabrica,
             // ...existing code...
@@ -193,7 +193,7 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             // BaseImponibleVentas eliminado
             CentroDeCosto = centroDeCosto;
             Peso = peso;
-            Serie = serie;
+            // ...existing code...
             CodigoBarras = codigoBarras;
             CodigoFabrica = codigoFabrica;
             // ...existing code...

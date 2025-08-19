@@ -68,7 +68,7 @@ namespace CatalogoArticulosBC.Application.UseCases
             // var baseVenta = dto.BaseImponibleVentas.HasValue ? new BaseImponibleVentas(dto.BaseImponibleVentas.Value) : null;
             var centroDeCosto = CentroDeCosto.FromOptional(dto.CentroCosto, dto.CentroCosto);
             var peso = dto.Peso.HasValue ? new Peso(dto.Peso.Value) : null;
-            var serie = dto.Serie is null ? null : new Serie(dto.Serie);
+            // ...existing code...
             var cb = dto.CodigoBarras is null ? null : new CodigoBarras(dto.CodigoBarras);
             var cf = dto.CodigoFabrica is null ? null : new CodigoFabrica(dto.CodigoFabrica);
             // ...existing code...
@@ -97,7 +97,7 @@ namespace CatalogoArticulosBC.Application.UseCases
                 // baseVenta eliminado,
                 centroDeCosto,
                 peso,
-                serie,
+                // ...existing code...
                 cb,
                 cf,
                 // ...existing code...
