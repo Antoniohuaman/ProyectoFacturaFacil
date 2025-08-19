@@ -72,7 +72,6 @@ namespace CatalogoArticulosBC.Application.UseCases
             var cb = dto.CodigoBarras is null ? null : new CodigoBarras(dto.CodigoBarras);
             var cf = dto.CodigoFabrica is null ? null : new CodigoFabrica(dto.CodigoFabrica);
             // ...existing code...
-            var fechaVen = dto.FechaVencimiento.HasValue ? new FechaVencimiento(dto.FechaVencimiento.Value) : null;
 
             // Tipos
             var tipoProductoEnum = Enum.Parse<TipoProducto>(dto.TipoProducto!);
@@ -103,7 +102,6 @@ namespace CatalogoArticulosBC.Application.UseCases
                 // ...existing code...
                 tipoProductoEnum,
                 tipoExistenciaEnum,
-                fechaVen,
                 dto.AsignarATodosLosAlmacenes,
                 dto.ImagenPrincipalId);
 

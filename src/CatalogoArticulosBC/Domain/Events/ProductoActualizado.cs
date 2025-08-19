@@ -46,7 +46,6 @@ namespace CatalogoArticulosBC.Domain.Events
     public Peso? Peso { get; }
     // ...existing code...
     public TipoExistencia TipoExistencia { get; }
-        public FechaVencimiento? FechaVencimiento { get; }
         public IReadOnlyCollection<Guid> AlmacenesAsignados { get; }
         public bool AsignarATodosLosAlmacenes { get; }
 
@@ -93,7 +92,6 @@ namespace CatalogoArticulosBC.Domain.Events
             Peso = producto.Peso;
             // ...existing code...
             TipoExistencia = producto.TipoExistencia;
-            FechaVencimiento = producto.FechaVencimiento;
             AlmacenesAsignados = producto.AlmacenesAsignados.AsReadOnly();
             AsignarATodosLosAlmacenes = producto.AsignarATodosLosAlmacenes;
 

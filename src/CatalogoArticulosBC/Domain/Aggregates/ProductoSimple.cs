@@ -51,7 +51,7 @@ namespace CatalogoArticulosBC.Domain.Aggregates
     public Peso? Peso { get; private set; }
     // ...existing code...
     public TipoExistencia TipoExistencia { get; private set; }
-        public FechaVencimiento? FechaVencimiento { get; private set; }
+    // ...existing code...
         public List<Guid> AlmacenesAsignados { get; private set; }
         public bool AsignarATodosLosAlmacenes { get; private set; }
 
@@ -97,7 +97,7 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             // ...existing code...
             TipoProducto tipo = TipoProducto.Bien,
             TipoExistencia tipoExistencia = TipoExistencia.ProductosTerminados,
-            FechaVencimiento? fechaVencimiento = null,
+            // ...existing code...
             bool asignarATodosLosAlmacenes = false,
             Guid? imagenPrincipalId = null)
         {
@@ -133,7 +133,7 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             // ...existing code...
             Tipo = tipo;
             TipoExistencia = tipoExistencia;
-            FechaVencimiento = fechaVencimiento;
+            // ...existing code...
             AlmacenesAsignados = almacenesAsignados;
             AsignarATodosLosAlmacenes = asignarATodosLosAlmacenes;
             ImagenPrincipalId = imagenPrincipalId;
@@ -164,7 +164,7 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             CodigoFabrica? codigoFabrica,
             // ...existing code...
             TipoProducto tipo,
-            FechaVencimiento? fechaVencimiento,
+            // ...existing code...
             List<Guid>? almacenesAsignados = null,
             bool asignarATodosLosAlmacenes = false,
             Guid? imagenPrincipalId = null,
@@ -199,7 +199,7 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             // ...existing code...
             Tipo = tipo;
             TipoExistencia = tipoExistencia;
-            FechaVencimiento = fechaVencimiento;
+            // ...existing code...
             AlmacenesAsignados = almacenesAsignados;
             AsignarATodosLosAlmacenes = asignarATodosLosAlmacenes;
             ImagenPrincipalId = imagenPrincipalId;
