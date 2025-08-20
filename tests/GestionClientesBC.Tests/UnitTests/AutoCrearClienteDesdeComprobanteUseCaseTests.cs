@@ -47,7 +47,8 @@ namespace GestionClientesBC.Tests.UnitTests.UseCases
             {
                 TipoDocumento = "DNI",
                 NumeroDocumento = "12345678",
-                RazonSocialONombres = "Cliente Existente"
+                RazonSocialONombres = "Cliente Existente",
+                DireccionPostal = "Av. Prueba 123"
             };
             var idExistente = await useCase.HandleAsync(dto);
 
@@ -85,7 +86,8 @@ namespace GestionClientesBC.Tests.UnitTests.UseCases
             var dto = new AutoCrearClienteDesdeComprobanteDto
             {
                 TipoDocumento = "DNI",
-                NumeroDocumento = "87654321"
+                NumeroDocumento = "87654321",
+                DireccionPostal = "Av. Prueba 123"
                 // Sin nombre
             };
 

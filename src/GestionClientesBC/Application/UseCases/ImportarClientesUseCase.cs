@@ -6,8 +6,10 @@ using GestionClientesBC.Application.DTOs;
 using GestionClientesBC.Application.Interfaces;
 using GestionClientesBC.Domain.Entities;
 using GestionClientesBC.Domain.ValueObjects;
-using ExcelDataReader;
 using GestionClientesBC.Domain.Aggregates;
+using SharedKernel.ValueObjects;
+using ExcelDataReader;
+
 
 
 
@@ -69,7 +71,8 @@ namespace GestionClientesBC.Application.UseCases
                     {
                         // Actualizar cliente
                         clienteExistente.ActualizarDatosContacto(fila.Email, fila.Celular);
-                        clienteExistente.ActualizarDireccion(fila.Direccion);
+                        var direccionVO = SharedKernel.ValueObjects.DireccionPostal.FromPeru(fila.Direccion);
+                        clienteExistente.ActualizarDireccion(direccionVO);
                         clienteExistente.ActualizarNombre(fila.Nombre);
                         await _repo.UpdateAsync(clienteExistente);
                         resultado.Actualizados++;
@@ -78,13 +81,14 @@ namespace GestionClientesBC.Application.UseCases
                     else
                     {
                         // Crear cliente
+                        var direccionVO = SharedKernel.ValueObjects.DireccionPostal.FromPeru(fila.Direccion);
                         var nuevoCliente = new Cliente(
                             Guid.NewGuid(),
                             docId,
                             fila.Nombre,
                             fila.Email,
                             fila.Celular,
-                            fila.Direccion,
+                            direccionVO,
                             TipoCliente.SinDefinir, // O según lógica
                             EstadoCliente.Activo
                         );

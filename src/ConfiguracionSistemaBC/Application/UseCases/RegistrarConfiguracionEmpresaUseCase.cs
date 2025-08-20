@@ -116,12 +116,12 @@ namespace ConfiguracionSistemaBC.Application.UseCases
             // 2) Construcción de VOs requeridos
             var ruc = Ruc.FromString(p.DatosLegales.Ruc);
             var direccionFiscal = DireccionPostal.From(
+                p.DatosLegales.PaisIso,
                 p.DatosLegales.DireccionLinea,
                 p.DatosLegales.Ubigeo,
                 p.DatosLegales.Departamento,
                 p.DatosLegales.Provincia,
                 p.DatosLegales.Distrito,
-                p.DatosLegales.PaisIso,
                 p.DatosLegales.AddressTypeCode
             );
             var moneda = Moneda.Create(p.MonedaBase.CodigoOAlias);
@@ -175,7 +175,13 @@ namespace ConfiguracionSistemaBC.Application.UseCases
             // 5) Establecimiento principal (requerido en registro)
             var e = p.EstablecimientoPrincipal;
             var dirEst = DireccionPostal.From(
-                e.DireccionLinea, e.Ubigeo, e.Departamento, e.Provincia, e.Distrito, e.PaisIso, e.AddressTypeCode
+                e.PaisIso,
+                e.DireccionLinea,
+                e.Ubigeo,
+                e.Departamento,
+                e.Provincia,
+                e.Distrito,
+                e.AddressTypeCode
             );
             var estId = agg.RegistrarEstablecimiento(e.Codigo, e.Nombre, dirEst);
 

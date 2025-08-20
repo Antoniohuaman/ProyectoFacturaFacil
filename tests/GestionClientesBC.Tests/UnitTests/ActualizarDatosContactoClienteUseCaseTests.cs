@@ -20,16 +20,16 @@ namespace GestionClientesBC.Tests.UnitTests
             var repo = new InMemoryGestionClientesRepository();
             var uow = new InMemoryUnitOfWork();
 
+            var direccionVO = DireccionPostal.FromPeru("Av. Siempre Viva 123");
             var cliente = new GestionClientesBC.Domain.Aggregates.Cliente(
                 Guid.NewGuid(), // <-- Este es el clienteId
                 new DocumentoIdentidad(TipoDocumento.DNI, "12345678"),
                 "Juan Perez",
                 "juan@correo.com",
                 "999999999",
-                "Av. Siempre Viva 123",
+                direccionVO,
                 TipoCliente.Mayorista,
                 EstadoCliente.Activo
-                
             );
             await repo.AddAsync(cliente);
 

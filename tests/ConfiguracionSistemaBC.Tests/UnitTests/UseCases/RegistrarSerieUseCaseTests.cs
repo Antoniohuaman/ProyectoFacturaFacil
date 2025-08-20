@@ -22,12 +22,12 @@ namespace ConfiguracionSistemaBC.Tests.Application.UseCases
                 tenantId,
                 Ruc.FromString("20100070970"),
                 "ACME S.A.C.",
-                DireccionPostal.From("AV. INDUSTRIAL 123", "150101", "LIMA", "LIMA", "LIMA"),
+                DireccionPostal.From("PE", "AV. INDUSTRIAL 123", "150101", "LIMA", "LIMA", "LIMA", "0000"),
                 Moneda.PEN()
             );
 
             agg.RegistrarEstablecimiento(estCodigo, "PRINCIPAL",
-                DireccionPostal.From("AV. INDUSTRIAL 123", "150101", "LIMA", "LIMA", "LIMA"));
+                DireccionPostal.From("PE", "AV. INDUSTRIAL 123", "150101", "LIMA", "LIMA", "LIMA", "0000"));
 
             return agg;
         }

@@ -28,7 +28,15 @@ namespace GestionClientesBC.Tests.UnitTests
                 "Empresa S.A.",
                 "correo@empresa.com",
                 "999999999",
-                "Calle Falsa 123",
+                DireccionPostal.From(
+                    paisCodigoIso: "PE",
+                    linea: "Calle Falsa 123",
+                    ubigeo: "150101",
+                    departamento: "LIMA",
+                    provincia: "LIMA",
+                    distrito: "LIMA",
+                    addressTypeCode: "0000"
+                ),
                 TipoCliente.Mayorista,
                 EstadoCliente.Activo
             );

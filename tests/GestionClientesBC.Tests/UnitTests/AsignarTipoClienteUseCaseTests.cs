@@ -29,13 +29,14 @@ namespace GestionClientesBC.Tests.UnitTests.UseCases
             var uow = new InMemoryUnitOfWork();
             var useCase = new AsignarTipoClienteUseCase(repo, uow);
 
+            var direccionVO = DireccionPostal.FromPeru("Calle 1");
             var cliente = new GestionClientesBC.Domain.Aggregates.Cliente(
                 Guid.NewGuid(),
                 new DocumentoIdentidad(TipoDocumento.DNI, "12345678"),
                 "Cliente Test",
                 "cliente@mail.com",
                 "999999999",
-                "Calle 1",
+                direccionVO,
                 TipoCliente.Minorista,
                 EstadoCliente.Activo
             );
@@ -56,13 +57,14 @@ namespace GestionClientesBC.Tests.UnitTests.UseCases
             var uow = new InMemoryUnitOfWork();
             var useCase = new AsignarTipoClienteUseCase(repo, uow);
 
+            var direccionVO2 = DireccionPostal.FromPeru("Calle 1");
             var cliente = new GestionClientesBC.Domain.Aggregates.Cliente(
                 Guid.NewGuid(),
                 new DocumentoIdentidad(TipoDocumento.DNI, "12345678"),
                 "Cliente Test",
                 "cliente@mail.com",
                 "999999999",
-                "Calle 1",
+                direccionVO2,
                 TipoCliente.Minorista,
                 EstadoCliente.Activo
             );
@@ -90,13 +92,14 @@ namespace GestionClientesBC.Tests.UnitTests.UseCases
             var uow = new InMemoryUnitOfWork();
             var useCase = new AsignarTipoClienteUseCase(repo, uow);
 
+            var direccionVO3 = DireccionPostal.FromPeru("Calle 1");
             var cliente = new GestionClientesBC.Domain.Aggregates.Cliente(
                 Guid.NewGuid(),
                 new DocumentoIdentidad(TipoDocumento.DNI, "12345678"),
                 "Cliente Test",
                 "cliente@mail.com",
                 "999999999",
-                "Calle 1",
+                direccionVO3,
                 TipoCliente.Minorista,
                 EstadoCliente.Activo
             );
@@ -113,13 +116,14 @@ namespace GestionClientesBC.Tests.UnitTests.UseCases
             var uow = new InMemoryUnitOfWork();
             var useCase = new AsignarTipoClienteUseCase(repo, uow);
 
+            var direccionVO4 = DireccionPostal.FromPeru("Calle 1");
             var cliente = new GestionClientesBC.Domain.Aggregates.Cliente(
                 Guid.NewGuid(),
                 new DocumentoIdentidad(TipoDocumento.DNI, "12345678"),
                 "Cliente Test",
                 "cliente@mail.com",
                 "999999999",
-                "Calle 1",
+                direccionVO4,
                 TipoCliente.Minorista,
                 EstadoCliente.Activo
             );

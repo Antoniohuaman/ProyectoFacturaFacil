@@ -25,11 +25,13 @@ namespace ConfiguracionSistemaBC.Tests.UnitTests.UseCases
                 Ruc.FromString("20100070970"),
                 "ACME S.A.C.",
                 DireccionPostal.From(
+                    paisCodigoIso: "PE",
                     linea: "AV. INDUSTRIAL 123",
                     ubigeo: "150101",
                     departamento: "LIMA",
                     provincia: "LIMA",
-                    distrito: "LIMA"
+                    distrito: "LIMA",
+                    addressTypeCode: "0000"
                 ),
                 Moneda.PEN()
             );

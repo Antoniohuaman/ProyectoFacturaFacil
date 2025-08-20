@@ -15,11 +15,13 @@ namespace ConfiguracionSistemaBC.Tests.UnitTests.Aggregates
         // ------------------------- Helpers -------------------------
         private static DireccionPostal DirPrincipal() =>
             DireccionPostal.From(
+                paisCodigoIso: "PE",
                 linea: "AV. PRINCIPAL 123",
                 ubigeo: "150101",
                 departamento: "LIMA",
                 provincia: "LIMA",
-                distrito: "LIMA"
+                distrito: "LIMA",
+                addressTypeCode: "0000"
             );
 
     private static Ruc UnRucPJ() => (Ruc)"20000000001"; // válido según el algoritmo del VO
@@ -83,7 +85,15 @@ namespace ConfiguracionSistemaBC.Tests.UnitTests.Aggregates
             var agg = ConfiguracionEmpresa.RegistrarNueva(Guid.NewGuid(), UnRucPJ(), "ACME S.A.C.", DirPrincipal(), Moneda.PEN());
 
             var nuevoRuc = OtroRucPJ();
-            var nuevaDir = DireccionPostal.From("JR. LIMA 456", "150101", "LIMA", "LIMA", "LIMA");
+            var nuevaDir = DireccionPostal.From(
+                paisCodigoIso: "PE",
+                linea: "JR. LIMA 456",
+                ubigeo: "150101",
+                departamento: "LIMA",
+                provincia: "LIMA",
+                distrito: "LIMA",
+                addressTypeCode: "0000"
+            );
             agg.ActualizarDatosLegales(nuevoRuc, "ACME RENOVADA S.A.C.", nuevaDir, nombreComercial: "ACME");
 
             Assert.That(agg.Ruc, Is.EqualTo(nuevoRuc));
@@ -98,12 +108,12 @@ namespace ConfiguracionSistemaBC.Tests.UnitTests.Aggregates
         {
             var agg = ConfiguracionEmpresa.RegistrarNueva(Guid.NewGuid(), UnRucPJ(), "ACME", DirPrincipal(), Moneda.PEN());
 
-            var id1 = agg.RegistrarEstablecimiento("001", "TIENDA CENTRAL", DireccionPostal.From("AV. UNO 999", "150101", "LIMA", "LIMA", "LIMA"));
-            var id2 = agg.RegistrarEstablecimiento("002", "TIENDA SUR", DireccionPostal.From("AV. DOS 100", "150101", "LIMA", "LIMA", "LIMA"));
+            var id1 = agg.RegistrarEstablecimiento("001", "TIENDA CENTRAL", DireccionPostal.From("PE", "AV. UNO 999", "150101", "LIMA", "LIMA", "LIMA", "0000"));
+            var id2 = agg.RegistrarEstablecimiento("002", "TIENDA SUR", DireccionPostal.From("PE", "AV. DOS 100", "150101", "LIMA", "LIMA", "LIMA", "0000"));
 
             // Unicidad por código
             Assert.Throws<InvalidOperationException>(() =>
-                agg.RegistrarEstablecimiento("001", "DUPLICADO", DireccionPostal.From("CALLE X", "150101", "LIMA", "LIMA", "LIMA")));
+                agg.RegistrarEstablecimiento("001", "DUPLICADO", DireccionPostal.From("PE", "CALLE X", "150101", "LIMA", "LIMA", "LIMA", "0000")));
 
             // Lectura
             var e1 = agg.BuscarEstablecimientoPorCodigo("001");
@@ -111,7 +121,7 @@ namespace ConfiguracionSistemaBC.Tests.UnitTests.Aggregates
             Assert.That(e1!.Nombre, Is.EqualTo("TIENDA CENTRAL"));
 
             // Actualizar
-            agg.ActualizarEstablecimiento(id1, "TIENDA CENTRAL - EDIT", DireccionPostal.From("AV. UNO EDIT 1000", "150101", "LIMA", "LIMA", "LIMA"));
+            agg.ActualizarEstablecimiento(id1, "TIENDA CENTRAL - EDIT", DireccionPostal.From("PE", "AV. UNO EDIT 1000", "150101", "LIMA", "LIMA", "LIMA", "0000"));
             var e1b = agg.BuscarEstablecimientoPorCodigo("001");
             Assert.That(e1b!.Nombre, Is.EqualTo("TIENDA CENTRAL - EDIT"));
 
@@ -130,7 +140,7 @@ namespace ConfiguracionSistemaBC.Tests.UnitTests.Aggregates
         public void Series_Agregar_Validaciones_Unicidad_Y_DefaultPorTipo()
         {
             var agg = ConfiguracionEmpresa.RegistrarNueva(Guid.NewGuid(), UnRucPJ(), "ACME", DirPrincipal(), Moneda.PEN());
-            var est = agg.RegistrarEstablecimiento("001", "TIENDA", DireccionPostal.From("AV. UNO 1", "150101", "LIMA", "LIMA", "LIMA"));
+            var est = agg.RegistrarEstablecimiento("001", "TIENDA", DireccionPostal.From("PE", "AV. UNO 1", "150101", "LIMA", "LIMA", "LIMA", "0000"));
 
             // Serie válida para FACTURA (Fxxx)
             var serieF1 = SerieCodigo.ForTipo("F001", TipoComprobanteCodigo.Factura);
@@ -160,7 +170,7 @@ namespace ConfiguracionSistemaBC.Tests.UnitTests.Aggregates
         public void Series_PrefijoDebeCoincidirConTipo()
         {
             var agg = ConfiguracionEmpresa.RegistrarNueva(Guid.NewGuid(), UnRucPJ(), "ACME", DirPrincipal(), Moneda.PEN());
-            var est = agg.RegistrarEstablecimiento("001", "TIENDA", DireccionPostal.From("AV. UNO 1", "150101", "LIMA", "LIMA", "LIMA"));
+            var est = agg.RegistrarEstablecimiento("001", "TIENDA", DireccionPostal.From("PE", "AV. UNO 1", "150101", "LIMA", "LIMA", "LIMA", "0000"));
 
             // Intentar Boleta con prefijo de Factura
             Assert.Throws<ArgumentException>(() =>
@@ -175,8 +185,8 @@ namespace ConfiguracionSistemaBC.Tests.UnitTests.Aggregates
         public void Series_Actualizar_PuedeCambiarSerie_Establecimiento_TipoOperacion_Y_Default_SiNoBloqueada()
         {
             var agg = ConfiguracionEmpresa.RegistrarNueva(Guid.NewGuid(), UnRucPJ(), "ACME", DirPrincipal(), Moneda.PEN());
-            var est1 = agg.RegistrarEstablecimiento("001", "TIENDA 1", DireccionPostal.From("AV. 1", "150101", "LIMA", "LIMA", "LIMA"));
-            var est2 = agg.RegistrarEstablecimiento("002", "TIENDA 2", DireccionPostal.From("AV. 2", "150101", "LIMA", "LIMA", "LIMA"));
+            var est1 = agg.RegistrarEstablecimiento("001", "TIENDA 1", DireccionPostal.From("PE", "AV. 1", "150101", "LIMA", "LIMA", "LIMA", "0000"));
+            var est2 = agg.RegistrarEstablecimiento("002", "TIENDA 2", DireccionPostal.From("PE", "AV. 2", "150101", "LIMA", "LIMA", "LIMA", "0000"));
 
             var id = agg.AgregarSerie(TipoComprobanteCodigo.Factura, SerieCodigo.ForTipo("F001", TipoComprobanteCodigo.Factura), est1, Correlativo.From(1), esPorDefecto: true);
 
@@ -198,8 +208,8 @@ namespace ConfiguracionSistemaBC.Tests.UnitTests.Aggregates
         public void Series_Actualizar_NoPermiteDuplicarNiUsarEstablecimientoDeshabilitado()
         {
             var agg = ConfiguracionEmpresa.RegistrarNueva(Guid.NewGuid(), UnRucPJ(), "ACME", DirPrincipal(), Moneda.PEN());
-            var est1 = agg.RegistrarEstablecimiento("001", "TIENDA 1", DireccionPostal.From("AV. 1", "150101", "LIMA", "LIMA", "LIMA"));
-            var est2 = agg.RegistrarEstablecimiento("002", "TIENDA 2", DireccionPostal.From("AV. 2", "150101", "LIMA", "LIMA", "LIMA"));
+            var est1 = agg.RegistrarEstablecimiento("001", "TIENDA 1", DireccionPostal.From("PE", "AV. 1", "150101", "LIMA", "LIMA", "LIMA", "0000"));
+            var est2 = agg.RegistrarEstablecimiento("002", "TIENDA 2", DireccionPostal.From("PE", "AV. 2", "150101", "LIMA", "LIMA", "LIMA", "0000"));
 
             var a = agg.AgregarSerie(TipoComprobanteCodigo.Factura, SerieCodigo.ForTipo("F001", TipoComprobanteCodigo.Factura), est1, Correlativo.From(1));
             var b = agg.AgregarSerie(TipoComprobanteCodigo.Factura, SerieCodigo.ForTipo("F002", TipoComprobanteCodigo.Factura), est1, Correlativo.From(1));
@@ -219,7 +229,7 @@ namespace ConfiguracionSistemaBC.Tests.UnitTests.Aggregates
         public void Series_BloqueoPorUso_ImpideActualizarYEliminar()
         {
             var agg = ConfiguracionEmpresa.RegistrarNueva(Guid.NewGuid(), UnRucPJ(), "ACME", DirPrincipal(), Moneda.PEN());
-            var est = agg.RegistrarEstablecimiento("001", "TIENDA", DireccionPostal.From("AV. UNO 1", "150101", "LIMA", "LIMA", "LIMA"));
+            var est = agg.RegistrarEstablecimiento("001", "TIENDA", DireccionPostal.From("PE", "AV. UNO 1", "150101", "LIMA", "LIMA", "LIMA", "0000"));
 
             var id = agg.AgregarSerie(TipoComprobanteCodigo.Factura, SerieCodigo.ForTipo("F001", TipoComprobanteCodigo.Factura), est, Correlativo.From(1));
 
@@ -237,7 +247,7 @@ namespace ConfiguracionSistemaBC.Tests.UnitTests.Aggregates
         public void Series_Eliminar_PermitidoSiNoBloqueada_QuitaDefaultSiEraDefault()
         {
             var agg = ConfiguracionEmpresa.RegistrarNueva(Guid.NewGuid(), UnRucPJ(), "ACME", DirPrincipal(), Moneda.PEN());
-            var est = agg.RegistrarEstablecimiento("001", "TIENDA", DireccionPostal.From("AV. UNO 1", "150101", "LIMA", "LIMA", "LIMA"));
+            var est = agg.RegistrarEstablecimiento("001", "TIENDA", DireccionPostal.From("PE", "AV. UNO 1", "150101", "LIMA", "LIMA", "LIMA", "0000"));
 
             var id = agg.AgregarSerie(TipoComprobanteCodigo.Factura, SerieCodigo.ForTipo("F001", TipoComprobanteCodigo.Factura), est, Correlativo.From(1), esPorDefecto: true);
 

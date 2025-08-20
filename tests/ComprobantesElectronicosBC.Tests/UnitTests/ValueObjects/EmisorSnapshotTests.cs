@@ -15,8 +15,14 @@ namespace ComprobantesElectronicosBC.Tests.UnitTests.ValueObjects
             string provincia = "LIMA",
             string departamento = "LIMA")
         {
-            // Firma real: DireccionPostal.Create(String ubigeo, String direccion, String departamento, String provincia, String distrito)
-            return DireccionPostal.Create(ubigeo, linea1, departamento, provincia, distrito);
+            return DireccionPostal.FromPeru(
+                linea: linea1,
+                ubigeo: ubigeo,
+                departamento: departamento,
+                provincia: provincia,
+                distrito: distrito,
+                addressTypeCode: "0000"
+            );
         }
 
         private static Email Mail(string s) => Email.Create(s);

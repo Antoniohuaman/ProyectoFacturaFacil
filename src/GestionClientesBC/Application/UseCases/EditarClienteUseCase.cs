@@ -5,6 +5,7 @@ using GestionClientesBC.Application.DTOs;
 using GestionClientesBC.Application.Interfaces;
 using GestionClientesBC.Domain.Aggregates;
 using GestionClientesBC.Domain.ValueObjects;
+using SharedKernel.ValueObjects;
 
 namespace GestionClientesBC.Application.UseCases
 {
@@ -56,10 +57,15 @@ namespace GestionClientesBC.Application.UseCases
             if (contactoModificado)
                 cliente.ActualizarDatosContacto(nuevoCorreo, nuevoCelular);
 
-            if (!string.IsNullOrWhiteSpace(dto.DireccionPostal) && dto.DireccionPostal != cliente.DireccionPostal)
+            if (!string.IsNullOrWhiteSpace(dto.DireccionPostal))
             {
-                camposModificados["DireccionPostal"] = (cliente.DireccionPostal, dto.DireccionPostal);
-                cliente.ActualizarDireccion(dto.DireccionPostal);
+                // Construir el nuevo value object DireccionPostal usando solo la línea y país Perú
+                var nuevaDireccion = DireccionPostal.FromPeru(dto.DireccionPostal);
+                if (cliente.DireccionPostal == null || cliente.DireccionPostal.ToString() != nuevaDireccion.ToString())
+                {
+                    camposModificados["DireccionPostal"] = (cliente.DireccionPostal, nuevaDireccion);
+                    cliente.ActualizarDireccion(nuevaDireccion);
+                }
             }
 
             if (!string.IsNullOrWhiteSpace(dto.RazonSocialONombres) && dto.RazonSocialONombres != cliente.RazonSocialONombres)

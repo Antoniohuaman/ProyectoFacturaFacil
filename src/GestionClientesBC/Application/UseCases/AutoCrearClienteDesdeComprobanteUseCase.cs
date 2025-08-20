@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using GestionClientesBC.Application.DTOs;
 using GestionClientesBC.Application.Interfaces;
 using GestionClientesBC.Domain.Aggregates;
+using SharedKernel.ValueObjects;
 using GestionClientesBC.Domain.ValueObjects;
 
 namespace GestionClientesBC.Application.UseCases
@@ -44,13 +45,23 @@ namespace GestionClientesBC.Application.UseCases
                 return existente.ClienteId;
 
             // Crear cliente mínimo
+            var direccionPostal = DireccionPostal.From(
+                paisCodigoIso: "PE",
+                linea: dto.DireccionPostal ?? string.Empty,
+                ubigeo: string.Empty,
+                departamento: string.Empty,
+                provincia: string.Empty,
+                distrito: string.Empty,
+                addressTypeCode: "0000"
+            );
+
             var cliente = new Cliente(
                 Guid.NewGuid(),
                 docId,
                 string.IsNullOrWhiteSpace(dto.RazonSocialONombres) ? "Cliente sin nombre" : dto.RazonSocialONombres,
                 null, // correo
                 null, // celular
-                dto.DireccionPostal,
+                direccionPostal,
                 TipoCliente.SinDefinir,
                 EstadoCliente.Activo
             );

@@ -16,14 +16,28 @@ namespace ComprobantesElectronicosBC.Tests
 
         private static EmisorSnapshot EmisorDefault()
         {
-            var dir = DireccionPostal.Create("150101", "Av. Principal 123", "Lima", "Lima", "Lima");
+            var dir = DireccionPostal.FromPeru(
+                linea: "Av. Principal 123",
+                ubigeo: "150101",
+                departamento: "LIMA",
+                provincia: "LIMA",
+                distrito: "LIMA",
+                addressTypeCode: "0000"
+            );
             return EmisorSnapshot.Create("20123456789", "Mi Empresa SAC", dir);
         }
 
         private static ClienteSnapshot ClienteBoletaDni()
         {
             var doc = DocumentoIdentidad.CreateDni("12345678");
-            var dir = DireccionPostal.FromCliente(doc, "150101", "Calle Cliente 456", "Lima", "Lima", "Lima");
+            var dir = DireccionPostal.FromPeru(
+                linea: "Calle Cliente 456",
+                ubigeo: "150101",
+                departamento: "LIMA",
+                provincia: "LIMA",
+                distrito: "LIMA",
+                addressTypeCode: "0000"
+            );
             return ClienteSnapshot.Create(doc, "Juan Perez", dir);
         }
 

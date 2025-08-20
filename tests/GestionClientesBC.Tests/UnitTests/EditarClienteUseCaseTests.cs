@@ -32,7 +32,15 @@ namespace GestionClientesBC.Tests.UnitTests.UseCases
                 "Cliente Original",
                 "original@mail.com",
                 "999999999",
-                "Calle 1",
+                DireccionPostal.From(
+                    paisCodigoIso: "PE",
+                    linea: "Calle 1",
+                    ubigeo: "150101",
+                    departamento: "LIMA",
+                    provincia: "LIMA",
+                    distrito: "LIMA",
+                    addressTypeCode: "0000"
+                ),
                 TipoCliente.Minorista,
                 EstadoCliente.Activo
             );
@@ -53,7 +61,8 @@ namespace GestionClientesBC.Tests.UnitTests.UseCases
             var actualizado = await repo.GetByIdAsync(cliente.ClienteId);
             Assert.That(actualizado, Is.Not.Null);
             Assert.That(actualizado.Correo, Is.EqualTo("nuevo@mail.com"));
-            Assert.That(actualizado.DireccionPostal, Is.EqualTo("Nueva Calle 2"));
+            Assert.That(actualizado.DireccionPostal, Is.Not.Null);
+            Assert.That(actualizado.DireccionPostal!.Linea, Is.EqualTo("Nueva Calle 2"));
             Assert.That(actualizado.TipoCliente, Is.EqualTo(TipoCliente.Mayorista));
             Assert.That(actualizado.RazonSocialONombres, Is.EqualTo("Cliente Original")); // No cambió
             Assert.That(actualizado.Celular, Is.EqualTo("999999999")); // No cambió

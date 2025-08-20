@@ -23,9 +23,15 @@ namespace GestionClientesBC.Tests.UnitTests.UseCases
                 RazonSocialONombres = "Juan Perez",
                 Correo = "juan@mail.com",
                 Celular = "999888777",
-                DireccionPostal = "Av. Siempre Viva 123",
+                    DireccionPostal = new DireccionPostalDto
+                    {
+                        PaisCodigoIso = "PE",
+                        Linea = "Av. Prueba 123",
+                        AddressTypeCode = "0000"
+                    },
                 TipoCliente = "Mayorista"
             };
+            // ...el resto del test permanece igual...
 
             var clienteId = await useCase.HandleAsync(dto);
 
@@ -94,13 +100,19 @@ namespace GestionClientesBC.Tests.UnitTests.UseCases
             var uow = new InMemoryUnitOfWork();
             var useCase = new CrearClienteUseCase(repo, uow);
 
-            var dto = new ClienteDto
-            {
-                TipoDocumento = "DNI",
-                NumeroDocumento = "12345678",
-                RazonSocialONombres = "Juan Perez",
-                TipoCliente = "Mayorista",
-            };
+                var dto = new ClienteDto
+                {
+                    TipoDocumento = "DNI",
+                    NumeroDocumento = "12345678",
+                    RazonSocialONombres = "Juan Perez",
+                    TipoCliente = "Mayorista",
+                    DireccionPostal = new DireccionPostalDto
+                    {
+                        PaisCodigoIso = "PE",
+                        Linea = "Av. Prueba 123",
+                        AddressTypeCode = "0000"
+                    }
+                };
 
             await useCase.HandleAsync(dto);
 

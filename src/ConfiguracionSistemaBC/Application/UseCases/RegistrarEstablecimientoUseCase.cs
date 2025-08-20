@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using ConfiguracionSistemaBC.Domain.Aggregates;
 using ConfiguracionSistemaBC.Domain.Repositories;
 using ConfiguracionSistemaBC.Domain.ValueObjects;
+using SharedKernel.ValueObjects;
 
 namespace ConfiguracionSistemaBC.Application.UseCases
 {
@@ -87,14 +88,13 @@ namespace ConfiguracionSistemaBC.Application.UseCases
             if (agg is null)
                 throw new InvalidOperationException("La configuración de empresa para este tenant aún no existe.");
 
-            // 2) Construir VO de dirección (valida formato/longitudes sin alterar espaciado)
-            var direccion = DireccionPostal.From(
+            // 2) Construir VO de dirección (solo Perú soportado)
+            var direccion = DireccionPostal.FromPeru(
                 linea: e.DireccionLinea,
                 ubigeo: e.Ubigeo,
                 departamento: e.Departamento,
                 provincia: e.Provincia,
                 distrito: e.Distrito,
-                paisCodigoIso: e.PaisIso ?? "PE",
                 addressTypeCode: e.AddressTypeCode ?? "0000"
             );
 

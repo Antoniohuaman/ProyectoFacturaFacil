@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using GestionClientesBC.Application.DTOs;
 using GestionClientesBC.Application.Interfaces;
 using GestionClientesBC.Domain.Aggregates;
+using SharedKernel.ValueObjects;
 using GestionClientesBC.Domain.ValueObjects;
 
 namespace GestionClientesBC.Application.UseCases
@@ -44,14 +45,43 @@ namespace GestionClientesBC.Application.UseCases
             if (existente != null)
                 throw new InvalidOperationException("Cliente ya existe.");
 
+            // Construir value object DireccionPostal desde el DTO estructurado
+            DireccionPostal direccionPostal;
+            if (dto.DireccionPostal != null)
+            {
+                direccionPostal = DireccionPostal.From(
+                    paisCodigoIso: dto.DireccionPostal.PaisCodigoIso ?? "PE",
+                    linea: dto.DireccionPostal.Linea ?? string.Empty,
+                    ubigeo: dto.DireccionPostal.Ubigeo ?? string.Empty,
+                    departamento: dto.DireccionPostal.Departamento ?? string.Empty,
+                    provincia: dto.DireccionPostal.Provincia ?? string.Empty,
+                    distrito: dto.DireccionPostal.Distrito ?? string.Empty,
+                    addressTypeCode: dto.DireccionPostal.AddressTypeCode ?? "0000",
+                    urbanizacion: dto.DireccionPostal.Urbanizacion,
+                    referencia: dto.DireccionPostal.Referencia
+                );
+            }
+            else
+            {
+                direccionPostal = DireccionPostal.From(
+                    paisCodigoIso: "PE",
+                    linea: string.Empty,
+                    ubigeo: string.Empty,
+                    departamento: string.Empty,
+                    provincia: string.Empty,
+                    distrito: string.Empty,
+                    addressTypeCode: "0000"
+                );
+            }
+
             var cliente = new Cliente(
                 Guid.NewGuid(),
                 docId,
                 dto.RazonSocialONombres!,
                 dto.Correo,
                 dto.Celular,
-                dto.DireccionPostal,
-                Enum.Parse<TipoCliente>(dto.TipoCliente!), // El ! es seguro porque ya validaste arriba
+                direccionPostal,
+                Enum.Parse<TipoCliente>(dto.TipoCliente!),
                 EstadoCliente.Activo
             );
 

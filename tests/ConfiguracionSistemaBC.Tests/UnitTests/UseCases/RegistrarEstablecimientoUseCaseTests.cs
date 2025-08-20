@@ -35,7 +35,7 @@ namespace ConfiguracionSistemaBC.Tests.Application.UseCases
                 tenantId,
                 Ruc.FromString("20100070970"),
                 "ACME S.A.C.",
-                DireccionPostal.From("AV. INDUSTRIAL 123", "150101", "LIMA", "LIMA", "LIMA"),
+                DireccionPostal.From("PE", "AV. INDUSTRIAL 123", "150101", "LIMA", "LIMA", "LIMA", "0000"),
                 Moneda.PEN()
             );
         }
@@ -267,7 +267,7 @@ namespace ConfiguracionSistemaBC.Tests.Application.UseCases
             var idExistente = agg.RegistrarEstablecimiento(
                 codigo: "PRIN",
                 nombre: "Principal",
-                direccion: DireccionPostal.From("AV. 1", "150101", "LIMA", "LIMA", "LIMA")
+                direccion: DireccionPostal.From("PE", "AV. 1", "150101", "LIMA", "LIMA", "LIMA", "0000")
             );
             Assert.That(idExistente, Is.Not.EqualTo(Guid.Empty));
 

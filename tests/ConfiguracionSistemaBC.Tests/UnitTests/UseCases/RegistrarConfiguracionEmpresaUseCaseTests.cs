@@ -217,7 +217,7 @@ namespace ConfiguracionSistemaBC.Tests.Application.UseCases
                 tenantId,
                 Ruc.FromString("20100070970"),
                 "YA EXISTE SAC",
-                DireccionPostal.From("X", "150101", "LIMA", "LIMA", "LIMA"),
+                DireccionPostal.From("PE", "AV. INDUSTRIAL 123", "150101", "LIMA", "LIMA", "LIMA", "0000"),
                 Moneda.PEN()
             );
 
@@ -260,10 +260,31 @@ namespace ConfiguracionSistemaBC.Tests.Application.UseCases
 
             var baseParams = new RegistrarConfiguracionEmpresaUseCase.Params(
                 TenantId: tenantId,
-                DatosLegales: DatosLegalesOk(),
+                DatosLegales: new RegistrarConfiguracionEmpresaUseCase.DatosLegalesParams(
+                    Ruc: "20100070970",
+                    RazonSocial: "ACME S.A.C.",
+                    DireccionLinea: "AV. INDUSTRIAL 123",
+                    Ubigeo: "150101",
+                    Departamento: "LIMA",
+                    Provincia: "LIMA",
+                    Distrito: "LIMA",
+                    NombreComercial: "ACME",
+                    PaisIso: "PE",
+                    AddressTypeCode: "0000"
+                ),
                 MonedaBase: MonedaPen(),
                 Preferencias: null,
-                EstablecimientoPrincipal: EstPrincipalOk("PRIN"),
+                EstablecimientoPrincipal: new RegistrarConfiguracionEmpresaUseCase.EstablecimientoParams(
+                    Codigo: "PRIN",
+                    Nombre: "PRINCIPAL",
+                    DireccionLinea: "AV. INDUSTRIAL 123",
+                    Ubigeo: "150101",
+                    Departamento: "LIMA",
+                    Provincia: "LIMA",
+                    Distrito: "LIMA",
+                    PaisIso: "PE",
+                    AddressTypeCode: "0000"
+                ),
                 SeriesIniciales: new[]
                 {
                     // Serie apunta a "OTRO", distinto al "PRIN" que se registra en el UC
@@ -309,10 +330,31 @@ namespace ConfiguracionSistemaBC.Tests.Application.UseCases
 
             var p = new RegistrarConfiguracionEmpresaUseCase.Params(
                 TenantId: tenantId,
-                DatosLegales: DatosLegalesOk(),
+                DatosLegales: new RegistrarConfiguracionEmpresaUseCase.DatosLegalesParams(
+                    Ruc: "20100070970",
+                    RazonSocial: "ACME S.A.C.",
+                    DireccionLinea: "AV. INDUSTRIAL 123",
+                    Ubigeo: "150101",
+                    Departamento: "LIMA",
+                    Provincia: "LIMA",
+                    Distrito: "LIMA",
+                    NombreComercial: "ACME",
+                    PaisIso: "PE",
+                    AddressTypeCode: "0000"
+                ),
                 MonedaBase: MonedaPen(),
                 Preferencias: prefs,
-                EstablecimientoPrincipal: EstPrincipalOk(),
+                EstablecimientoPrincipal: new RegistrarConfiguracionEmpresaUseCase.EstablecimientoParams(
+                    Codigo: "PRIN",
+                    Nombre: "PRINCIPAL",
+                    DireccionLinea: "AV. INDUSTRIAL 123",
+                    Ubigeo: "150101",
+                    Departamento: "LIMA",
+                    Provincia: "LIMA",
+                    Distrito: "LIMA",
+                    PaisIso: "PE",
+                    AddressTypeCode: "0000"
+                ),
                 SeriesIniciales: null
             );
 

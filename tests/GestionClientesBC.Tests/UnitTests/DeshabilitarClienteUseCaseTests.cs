@@ -30,7 +30,15 @@ namespace GestionClientesBC.Tests.UnitTests.UseCases
                 "Cliente Test",
                 "cliente@mail.com",
                 "999999999",
-                "Calle 1",
+                DireccionPostal.From(
+                    paisCodigoIso: "PE",
+                    linea: "Calle 1",
+                    ubigeo: "150101",
+                    departamento: "LIMA",
+                    provincia: "LIMA",
+                    distrito: "LIMA",
+                    addressTypeCode: "0000"
+                ),
                 TipoCliente.Minorista,
                 EstadoCliente.Activo
             );
@@ -58,7 +66,15 @@ namespace GestionClientesBC.Tests.UnitTests.UseCases
                 "Cliente Test",
                 "cliente@mail.com",
                 "999999999",
-                "Calle 1",
+                DireccionPostal.From(
+                    paisCodigoIso: "PE",
+                    linea: "Calle 1",
+                    ubigeo: "150101",
+                    departamento: "LIMA",
+                    provincia: "LIMA",
+                    distrito: "LIMA",
+                    addressTypeCode: "0000"
+                ),
                 TipoCliente.Minorista,
                 EstadoCliente.Inactivo
             );

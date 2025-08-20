@@ -4,6 +4,7 @@ using System.Linq;
 using GestionClientesBC.Domain.Entities;
 using GestionClientesBC.Domain.Events;
 using GestionClientesBC.Domain.ValueObjects;
+using SharedKernel.ValueObjects;
 
 namespace GestionClientesBC.Domain.Aggregates
 {
@@ -21,7 +22,7 @@ namespace GestionClientesBC.Domain.Aggregates
         public string RazonSocialONombres { get; private set; }
         public string Correo { get; private set; }
         public string Celular { get; private set; }
-        public string DireccionPostal { get; private set; }
+    public DireccionPostal? DireccionPostal { get; private set; }
         public TipoCliente TipoCliente { get; private set; }
         public EstadoCliente Estado { get; private set; }
         public DateTime FechaRegistro { get; private set; }
@@ -43,7 +44,7 @@ namespace GestionClientesBC.Domain.Aggregates
             string razonSocialONombres,
             string? correo,
             string? celular,
-            string? direccionPostal,
+            DireccionPostal? direccionPostal,
             TipoCliente tipoCliente,
             EstadoCliente estado)
         {
@@ -54,7 +55,7 @@ namespace GestionClientesBC.Domain.Aggregates
             RazonSocialONombres = !string.IsNullOrWhiteSpace(razonSocialONombres) ? razonSocialONombres : throw new ArgumentNullException(nameof(razonSocialONombres));
             Correo = correo ?? string.Empty;
             Celular = celular ?? string.Empty;
-            DireccionPostal = direccionPostal ?? string.Empty;
+            DireccionPostal = direccionPostal;
             TipoCliente = tipoCliente;
             Estado = estado;
             FechaRegistro = DateTime.UtcNow;
@@ -66,7 +67,7 @@ namespace GestionClientesBC.Domain.Aggregates
                 RazonSocialONombres,
                 Correo,
                 Celular,
-                DireccionPostal,
+                DireccionPostal?.ToString() ?? string.Empty,
                 TipoCliente,
                 Estado,
                 FechaRegistro
@@ -86,7 +87,7 @@ namespace GestionClientesBC.Domain.Aggregates
 
         // --- Métodos de edición para el caso de uso EditarCliente ---
 
-        public void ActualizarDireccion(string nuevaDireccion)
+        public void ActualizarDireccion(DireccionPostal nuevaDireccion)
         {
             if (nuevaDireccion == null)
                 throw new ArgumentNullException(nameof(nuevaDireccion));

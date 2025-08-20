@@ -114,6 +114,10 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
         {
             if (tenantId == Guid.Empty) throw new ArgumentException("TenantId inválido.", nameof(tenantId));
             if (string.IsNullOrWhiteSpace(razonSocial)) throw new ArgumentNullException(nameof(razonSocial));
+            if (direccionFiscal is null) throw new ArgumentNullException(nameof(direccionFiscal));
+            // Validación estricta de dirección fiscal (solo Perú soportado)
+            if (!direccionFiscal.EsPeru)
+                throw new ArgumentException("Solo se soporta dirección fiscal de Perú (PE).", nameof(direccionFiscal));
 
             return new ConfiguracionEmpresa
             {
@@ -145,6 +149,9 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
         public void ActualizarDatosLegales(Ruc ruc, string razonSocial, DireccionPostal direccionFiscal, string? nombreComercial = null)
         {
             if (string.IsNullOrWhiteSpace(razonSocial)) throw new ArgumentNullException(nameof(razonSocial));
+            if (direccionFiscal is null) throw new ArgumentNullException(nameof(direccionFiscal));
+            if (!direccionFiscal.EsPeru)
+                throw new ArgumentException("Solo se soporta dirección fiscal de Perú (PE).", nameof(direccionFiscal));
             Ruc = ruc;
             RazonSocial = razonSocial.Trim();
             NombreComercial = string.IsNullOrWhiteSpace(nombreComercial) ? null : nombreComercial.Trim();
@@ -184,6 +191,9 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
         {
             if (string.IsNullOrWhiteSpace(codigo)) throw new ArgumentNullException(nameof(codigo));
             if (string.IsNullOrWhiteSpace(nombre)) throw new ArgumentNullException(nameof(nombre));
+            if (direccion is null) throw new ArgumentNullException(nameof(direccion));
+            if (!direccion.EsPeru)
+                throw new ArgumentException("Solo se soporta dirección de Perú (PE) para establecimientos.", nameof(direccion));
             if (_estByCodigo.ContainsKey(codigo))
                 throw new InvalidOperationException($"Ya existe un establecimiento con código \"{codigo}\".");
 
@@ -206,9 +216,10 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
         {
             if (!_estById.TryGetValue(id, out var st))
                 throw new KeyNotFoundException("Establecimiento no encontrado.");
-
             if (string.IsNullOrWhiteSpace(nombre)) throw new ArgumentNullException(nameof(nombre));
-
+            if (direccion is null) throw new ArgumentNullException(nameof(direccion));
+            if (!direccion.EsPeru)
+                throw new ArgumentException("Solo se soporta dirección de Perú (PE) para establecimientos.", nameof(direccion));
             st.Nombre = nombre.Trim();
             st.Direccion = direccion;
         }
