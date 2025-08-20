@@ -27,16 +27,14 @@ namespace CatalogoArticulosBC.Application.DTOs
         public Guid? NuevaImagenPrincipalId { get; set; }
         public decimal NuevoPrecioVentaSinIGV { get; set; }
         public decimal NuevoPrecioVentaConIGV { get; set; }
-        public bool NuevoEsAfectoICBPER { get; set; }
-        public bool NuevoTieneDetraccion { get; set; }
-        public string? NuevoCodigoDetraccion { get; set; }
+    // ICBPER y Detracción eliminados
         public string? NuevoCodigoBarras { get; set; }
         public string? NuevoCodigoFabrica { get; set; }
-        public string? NuevoCodigoLote { get; set; }
-        public string? NuevaSerie { get; set; }
+    // CodigoLote eliminado
+    // Serie eliminada
         public List<Guid>? NuevosAlmacenesAsignados { get; set; }
         public bool NuevoAsignarATodosLosAlmacenes { get; set; }
-        public DateTime? NuevaFechaVencimiento { get; set; }
+    // FechaVencimiento eliminada
         public TipoExistencia NuevoTipoExistencia { get; set; }
         public string UsuarioId { get; set; } = default!;
     }

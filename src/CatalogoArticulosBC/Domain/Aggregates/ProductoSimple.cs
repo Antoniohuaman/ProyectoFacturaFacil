@@ -37,8 +37,7 @@ namespace CatalogoArticulosBC.Domain.Aggregates
         public Moneda Moneda { get; private set; }
 
         // Impuestos especiales
-        public bool TieneDetraccion { get; private set; }
-        public CodigoDetraccion? CodigoDetraccion { get; private set; }
+    // Propiedad TieneDetraccion eliminada
 
         // Códigos adicionales
     public CodigoSUNAT? CodigoSunat { get; private set; }
@@ -86,8 +85,7 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             string? descripcion = null,
             Marca? marca = null,
             PrecioVenta? precioVenta = null,
-            bool tieneDetraccion = false,
-            CodigoDetraccion? codigoDetraccion = null,
+            // bool tieneDetraccion eliminado
             CodigoSUNAT? codigoSunat = null,
             SharedKernel.ValueObjects.CentroDeCosto? centroDeCosto = null,
             Peso? peso = null,
@@ -109,8 +107,7 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             AfectacionImpuesto = afectacionImpuesto ?? throw new ArgumentNullException(nameof(afectacionImpuesto));
             Categoria = categoria ?? throw new ArgumentNullException(nameof(categoria));
 
-            if (tieneDetraccion && codigoDetraccion is null)
-                throw new ArgumentException("Si aplica detracción, debe especificarse el código.", nameof(codigoDetraccion));
+            // Si aplica detracción, ya no se requiere código
 
             if (almacenesAsignados == null || !almacenesAsignados.Any())
                 throw new ArgumentException("Debe asignar al menos un almacén.", nameof(almacenesAsignados));    
@@ -121,8 +118,8 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             Marca = marca;
             PrecioVenta = precioVenta;
             Moneda = moneda ?? throw new ArgumentNullException(nameof(moneda), "La moneda debe provenir de la configuración de empresa.");
-            TieneDetraccion = tieneDetraccion;
-            CodigoDetraccion = codigoDetraccion;
+            // TieneDetraccion eliminado
+            // CodigoDetraccion eliminado
             CodigoSunat = codigoSunat;
             // BaseImponibleVentas eliminado
             CentroDeCosto = centroDeCosto;
@@ -154,8 +151,7 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             Categoria categoria,
             Marca? marca,
             PrecioVenta? precioVenta,
-            bool tieneDetraccion,
-            CodigoDetraccion? codigoDetraccion,
+            // bool tieneDetraccion eliminado
             CodigoSUNAT? codigoSunat,
             SharedKernel.ValueObjects.CentroDeCosto? centroDeCosto,
             Peso? peso,
@@ -178,8 +174,7 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             AfectacionImpuesto = afectacionImpuesto ?? throw new ArgumentNullException(nameof(afectacionImpuesto));
             Categoria = categoria ?? throw new ArgumentNullException(nameof(categoria));
 
-            if (tieneDetraccion && codigoDetraccion is null)
-                throw new ArgumentException("Si aplica detracción, debe especificarse el código.", nameof(codigoDetraccion));
+            // Si aplica detracción, ya no se requiere código
 
             if (almacenesAsignados == null || !almacenesAsignados.Any())
                 throw new ArgumentException("Debe asignar al menos un almacén.", nameof(almacenesAsignados));
@@ -187,8 +182,8 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             // Asignaciones
             Marca = marca;
             PrecioVenta = precioVenta;
-            TieneDetraccion = tieneDetraccion;
-            CodigoDetraccion = codigoDetraccion;
+            // TieneDetraccion eliminado
+            // CodigoDetraccion eliminado
             CodigoSunat = codigoSunat;
             // BaseImponibleVentas eliminado
             CentroDeCosto = centroDeCosto;

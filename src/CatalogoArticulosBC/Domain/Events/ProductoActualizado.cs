@@ -31,8 +31,7 @@ namespace CatalogoArticulosBC.Domain.Events
         public Moneda Moneda { get; }
 
         // Impuestos especiales
-    public bool TieneDetraccion { get; }
-    public CodigoDetraccion? CodigoDetraccion { get; }
+    // Propiedad TieneDetraccion eliminada
 
         // Códigos adicionales
         public CodigoSUNAT? CodigoSunat { get; }
@@ -77,8 +76,8 @@ namespace CatalogoArticulosBC.Domain.Events
             Moneda = producto.Moneda;
 
             // Impuestos especiales
-            TieneDetraccion = producto.TieneDetraccion;
-            CodigoDetraccion = producto.CodigoDetraccion;
+            // TieneDetraccion eliminado
+            // CodigoDetraccion eliminado
 
             // Códigos adicionales
             CodigoSunat = producto.CodigoSunat;
