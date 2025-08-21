@@ -4,6 +4,8 @@ using System.Diagnostics;
 using System.Linq;
 using ListaPreciosBC.Domain.ValueObjects;
 using ListaPreciosBC.Domain.Events;
+using SharedKernel.Events;
+
 
 namespace ListaPreciosBC.Domain.Aggregates
 {

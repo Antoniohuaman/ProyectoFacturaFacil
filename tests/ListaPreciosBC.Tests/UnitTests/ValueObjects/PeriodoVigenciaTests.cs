@@ -185,5 +185,19 @@ namespace ListaPreciosBC.Tests.ValueObjects
             Assert.That(a.ToString(), Is.EqualTo("2025-01-01..2025-01-10"));
             Assert.That(b.ToString(), Is.EqualTo("2025-01-01..∞"));
         }
+
+            [Test]
+            public void Contiene_funciona_para_DateTime_y_DateTimeOffset()
+            {
+                var p = PeriodoVigencia.Crear(new DateTime(2025, 1, 10), new DateTime(2025, 1, 20));
+                // DateTime
+                Assert.That(p.Contiene(new DateTime(2025, 1, 10)), Is.True);
+                Assert.That(p.Contiene(new DateTime(2025, 1, 21)), Is.False);
+                // DateTimeOffset
+                var dtoDentro = new DateTimeOffset(2025, 1, 15, 0, 0, 0, TimeSpan.Zero);
+                var dtoFuera = new DateTimeOffset(2025, 1, 25, 0, 0, 0, TimeSpan.Zero);
+                Assert.That(p.Contiene(dtoDentro), Is.True);
+                Assert.That(p.Contiene(dtoFuera), Is.False);
+            }
     }
 }

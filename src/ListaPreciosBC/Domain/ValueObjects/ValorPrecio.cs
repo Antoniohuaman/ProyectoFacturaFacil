@@ -106,5 +106,14 @@ namespace ListaPreciosBC.Domain.ValueObjects
 
         public override string ToString()
             => $"{Importe} {(IncluyeImpuesto ? "(Inc. Impuesto)" : "(Sin impuesto)")}";
+            
+            // 1) Propiedad de conveniencia para que los tests puedan leer .Monto directamente
+public decimal Monto => Importe.Monto;
+
+// 2) Sobrecarga de conveniencia para que los tests/aggregate puedan usar DesdeMonto(monto)
+//    sin especificar moneda (elige tu default; asumo PEN).
+public static ValorPrecio DesdeMonto(decimal monto, bool incluyeImpuesto = true)
+    => new ValorPrecio(new Dinero(monto, Moneda.PEN()), incluyeImpuesto);
+
     }
 }
