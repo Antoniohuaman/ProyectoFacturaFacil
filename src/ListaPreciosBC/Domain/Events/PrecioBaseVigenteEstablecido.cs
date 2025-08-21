@@ -1,18 +1,19 @@
 using System;
 using SharedKernel.Events;
+using SharedKernel.ValueObjects;
 using ListaPreciosBC.Domain.ValueObjects;
 
 namespace ListaPreciosBC.Domain.Events
 {
     public sealed class PrecioBaseVigenteEstablecido : DomainEvent
     {
-        public string Sku { get; }
+        public Sku Sku { get; }
         public IdentificadorColumnaPrecio ColumnaBase { get; }
         public PrecioResuelto Precio { get; }
         public DateTimeOffset OcurrioEn { get; }
 
         public PrecioBaseVigenteEstablecido(
-            string sku,
+            Sku sku,
             IdentificadorColumnaPrecio columnaBase,
             PrecioResuelto precio,
             DateTimeOffset ocurrioEn)

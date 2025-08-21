@@ -77,13 +77,13 @@ namespace ListaPreciosBC.Domain.Aggregates
             _preciosFijos[key] = new PrecioFijo(valor, vigencia);
 
             Versionar(usuario, cuando);
-            _domainEvents.Add(new PrecioColumnaActualizada(Sku.Valor, columna, UltimaActualizacion!.Value));
+            _domainEvents.Add(new PrecioColumnaActualizada(Sku, columna, UltimaActualizacion!.Value));
 
             // Si es Base (P1) y está vigente a "cuando", publicar evento específico
             if (key == 1 && vigencia.Contiene(UltimaActualizacion!.Value))
             {
                 _domainEvents.Add(new PrecioBaseVigenteEstablecido(
-                    Sku.Valor,
+                    Sku,
                     columna,
                     new PrecioResuelto(valor, PrecioResueltoOrigen.Fijo, Math.Max(1, cantidadReferenciaParaEventoBase)),
                     UltimaActualizacion!.Value));
@@ -99,7 +99,7 @@ namespace ListaPreciosBC.Domain.Aggregates
             if (_preciosFijos.Remove(key))
             {
                 Versionar(usuario, cuando);
-                _domainEvents.Add(new PrecioColumnaActualizada(Sku.Valor, columna, UltimaActualizacion!.Value));
+                _domainEvents.Add(new PrecioColumnaActualizada(Sku, columna, UltimaActualizacion!.Value));
             }
         }
 
@@ -123,7 +123,7 @@ namespace ListaPreciosBC.Domain.Aggregates
             _matricesVolumen[key] = matriz;
 
             Versionar(usuario, cuando);
-            _domainEvents.Add(new MatrizVolumenActualizada(Sku.Valor, columna, UltimaActualizacion!.Value));
+            _domainEvents.Add(new MatrizVolumenActualizada(Sku, columna, UltimaActualizacion!.Value));
 
             // Si es Base (P1), publicar evento con el tramo para la cantidad de referencia (si existe)
             if (key == 1)
@@ -133,7 +133,7 @@ namespace ListaPreciosBC.Domain.Aggregates
                 if (tramo is not null)
                 {
                     _domainEvents.Add(new PrecioBaseVigenteEstablecido(
-                        Sku.Valor,
+                        Sku,
                         columna,
                         new PrecioResuelto(tramo.Precio, PrecioResueltoOrigen.PorVolumen, cant),
                         UltimaActualizacion!.Value));
@@ -150,7 +150,7 @@ namespace ListaPreciosBC.Domain.Aggregates
             if (_matricesVolumen.Remove(key))
             {
                 Versionar(usuario, cuando);
-                _domainEvents.Add(new MatrizVolumenActualizada(Sku.Valor, columna, UltimaActualizacion!.Value));
+                _domainEvents.Add(new MatrizVolumenActualizada(Sku, columna, UltimaActualizacion!.Value));
             }
         }
 
