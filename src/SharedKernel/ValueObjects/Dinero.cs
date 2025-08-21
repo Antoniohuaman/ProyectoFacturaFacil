@@ -19,7 +19,7 @@ namespace SharedKernel.ValueObjects
         /// <summary>Moneda ISO-4217 (PEN, USD, ...).</summary>
         public Moneda Moneda { get; init; }
 
-        private Dinero(decimal monto, Moneda moneda)
+    public Dinero(decimal monto, Moneda moneda)
         {
             Moneda = moneda ?? throw new ArgumentNullException(nameof(moneda));
             Monto  = Round(monto, Moneda.Decimales);
