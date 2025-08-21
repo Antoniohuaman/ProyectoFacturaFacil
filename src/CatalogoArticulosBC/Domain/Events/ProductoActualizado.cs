@@ -15,8 +15,8 @@ namespace CatalogoArticulosBC.Domain.Events
         // Identidad
         public Guid ProductoId { get; }
 
-        // Clave de negocio (puede cambiar si se permite)
-        public SKU Sku { get; }
+    // Clave de negocio (puede cambiar si se permite)
+    public Sku Sku { get; }
 
         // Datos básicos
         public NombreProducto Nombre { get; }

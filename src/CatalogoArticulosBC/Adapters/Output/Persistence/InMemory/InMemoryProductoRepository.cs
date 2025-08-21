@@ -6,12 +6,13 @@ using System.Threading.Tasks;
 using CatalogoArticulosBC.Domain.Aggregates;
 using CatalogoArticulosBC.Domain.ValueObjects;
 using CatalogoArticulosBC.Domain.Repositories;
+using SharedKernel.ValueObjects;
 
 namespace CatalogoArticulosBC.Adapters.Output.Persistence.InMemory
 {
     public class InMemoryCatalogoArticulosRepository : IProductoRepository
     {
-        private readonly ConcurrentDictionary<SKU, ProductoSimple> _productos = new();
+    private readonly ConcurrentDictionary<Sku, ProductoSimple> _productos = new();
 
         public Task<ProductoSimple?> GetByIdAsync(Guid id)
         {
@@ -19,7 +20,7 @@ namespace CatalogoArticulosBC.Adapters.Output.Persistence.InMemory
             return Task.FromResult(producto);
         }
 
-        public Task<ProductoSimple?> GetBySkuAsync(SKU sku)
+        public Task<ProductoSimple?> GetBySkuAsync(Sku sku)
         {
             _productos.TryGetValue(sku, out var producto);
             return Task.FromResult(producto);

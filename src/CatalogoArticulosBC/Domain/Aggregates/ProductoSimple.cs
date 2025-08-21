@@ -22,7 +22,7 @@ namespace CatalogoArticulosBC.Domain.Aggregates
         public bool Activo { get; private set; } = true;
 
         // Clave de negocio
-        public SKU Sku { get; private set; }
+    public Sku Sku { get; private set; }
 
         // Datos básicos
         public NombreProducto Nombre { get; private set; }
@@ -76,7 +76,7 @@ namespace CatalogoArticulosBC.Domain.Aggregates
         /// </summary>
         public ProductoSimple(
             Moneda moneda,
-            SKU sku,
+            Sku sku,
             NombreProducto nombre,        
             UnidadDeMedida unidadMedida,
             AfectacionImpuesto afectacionImpuesto,

@@ -13,8 +13,8 @@ namespace CatalogoArticulosBC.Domain.Events
     public sealed class ProductoCreado : DomainEvent
     {
         // Identidad
-        public Guid ProductoId { get; }
-        public SKU Sku { get; }
+    public Guid ProductoId { get; }
+    public Sku Sku { get; }
         public TipoProducto TipoProducto { get; }
 
         // Datos básicos

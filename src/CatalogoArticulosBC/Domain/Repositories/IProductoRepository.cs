@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using CatalogoArticulosBC.Domain.Aggregates;
 using CatalogoArticulosBC.Domain.ValueObjects;
+using SharedKernel.ValueObjects;
 
 namespace CatalogoArticulosBC.Domain.Repositories
 {
@@ -20,12 +21,12 @@ namespace CatalogoArticulosBC.Domain.Repositories
         /// <returns>El producto o null si no existe.</returns>
         Task<ProductoSimple?> GetByIdAsync(Guid id);
 
-        /// <summary>
-        /// Obtiene un <see cref="ProductoSimple"/> por su SKU.
-        /// </summary>
-        /// <param name="sku">El SKU del producto.</param>
-        /// <returns>El producto o null si no existe.</returns>
-        Task<ProductoSimple?> GetBySkuAsync(SKU sku);
+    /// <summary>
+    /// Obtiene un <see cref="ProductoSimple"/> por su SKU.
+    /// </summary>
+    /// <param name="sku">El SKU del producto.</param>
+    /// <returns>El producto o null si no existe.</returns>
+    Task<ProductoSimple?> GetBySkuAsync(Sku sku);
 
         /// <summary>
         /// Devuelve todos los productos del catálogo.
