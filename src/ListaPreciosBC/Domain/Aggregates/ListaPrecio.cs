@@ -26,6 +26,12 @@ namespace ListaPreciosBC.Domain.Aggregates
         // -------- Estado gobernado por el agregado --------
         public PlantillaColumnasPrecio Plantilla { get; private set; }
 
+    /// <summary>Id de la columna marcada como Base en la plantilla.</summary>
+    public IdentificadorColumnaPrecio IdColumnaBase => Plantilla.IdColumnaBase;
+
+    /// <summary>Número (1..10) de la columna Base.</summary>
+    public byte NumeroColumnaBase => Plantilla.NumeroColumnaBase;
+
         // -------- Domain events (patrón simple) --------
         private readonly List<IDomainEvent> _domainEvents = new();
         public IReadOnlyCollection<IDomainEvent> DomainEvents => _domainEvents.AsReadOnly();

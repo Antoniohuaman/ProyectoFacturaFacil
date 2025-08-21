@@ -43,7 +43,7 @@ namespace ListaPreciosBC.Tests.UnitTests.Aggregates
             var agg = ListaPrecio.CrearConPlantillaPorDefecto(Guid.NewGuid(), "sys", cuando);
 
             Assert.That(agg.Version, Is.EqualTo(1)); // creación ya emite un evento
-            Assert.That(agg.Plantilla.Base.Id.Numero, Is.EqualTo(1));
+            Assert.That(agg.IdColumnaBase.Numero, Is.EqualTo(1));
             Assert.That(agg.DomainEvents.Count, Is.EqualTo(1));
 
             var ev = UltimoEvento(agg);
@@ -90,7 +90,7 @@ namespace ListaPreciosBC.Tests.UnitTests.Aggregates
             // Marcar base
             var t2 = t1.AddHours(1);
             agg.MarcarColumnaComoBase(P(2), "u2", t2);
-            Assert.That(agg.Plantilla.Base.Id.Numero, Is.EqualTo(2));
+            Assert.That(agg.IdColumnaBase.Numero, Is.EqualTo(2));
             Assert.That(agg.Version, Is.EqualTo(v0 + 2));
             Assert.That(agg.DomainEvents.Count, Is.EqualTo(2));
 

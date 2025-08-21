@@ -44,7 +44,7 @@ namespace ListaPreciosBC.Domain.Services
             if (cantidad < 1) return null;
 
             // 1) Determinar columna objetivo
-            var baseNum = ObtenerNumeroColumnaBase(plantillaOpcional);
+            var baseNum = plantillaOpcional?.NumeroColumnaBase ?? 1;
             var objetivo = columnaSolicitada ?? IdentificadorColumnaPrecio.DesdeNumero(baseNum);
 
             // 2) Intentar resolver en la columna objetivo
@@ -98,19 +98,8 @@ namespace ListaPreciosBC.Domain.Services
 
         private static byte ObtenerNumeroColumnaBase(PlantillaColumnasPrecio? plantilla)
         {
-            // Si tu Plantilla expone un método o propiedad para base, úsalo aquí.
-            // Ejemplos posibles (ajusta a tu implementación real):
-            //  - return plantilla!.IdColumnaBase.Numero;
-            //  - return plantilla!.Base().Id.Numero;
-            // Aquí, por defecto, asumimos P1 si no hay plantilla.
-            if (plantilla is null) return 1;
-
-            // Fallbacks comunes (descomenta el que tengas):
-            // return plantilla.IdColumnaBase.Numero;
-            // return plantilla.ObtenerColumnaBase().Numero;
-
-            // Si aún no tienes API pública, por ahora:
-            return 1; // ← AJUSTA cuando expongas la columna Base desde PlantillaColumnasPrecio
+            // Ya no se usa, la lógica está en el método principal.
+            throw new NotImplementedException();
         }
     }
 

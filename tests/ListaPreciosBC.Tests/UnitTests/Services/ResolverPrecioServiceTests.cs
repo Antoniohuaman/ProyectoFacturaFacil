@@ -37,6 +37,7 @@ namespace ListaPreciosBC.Tests.UnitTests.Services
             prod.UpsertPrecioFijo(P(1), VP(10m), Vig(hoy.AddDays(-1), null));
 
             // Afectación null => no grava, neto = bruto = 10
+            // Caso 1: Sin plantilla, debe usar P1
             var dto = svc.Resolver(prod, columnaSolicitada: null, cantidad: 3, fecha: hoy,
                                    afectacion: null, tasaImpuestoFraccion: 0.18m,
                                    plantillaOpcional: null, // fallback P1
@@ -51,6 +52,19 @@ namespace ListaPreciosBC.Tests.UnitTests.Services
             Assert.That(dto.Origen, Is.EqualTo(PrecioResueltoOrigen.Fijo));
             Assert.That(dto.TramoDesde, Is.Null);
             Assert.That(dto.TramoHasta, Is.Null);
+
+            // Caso 2: Con plantilla, base marcada en P2
+            var plantillaBaseP2 = PlantillaColumnasPrecio.Crear(new[] {
+                ConfiguracionColumnaPrecio.Crear(P(2), NombreColumnaPrecio.Crear("Base P2"), ModoValorizacionColumna.Fijo, esBase: true, visible: true, orden: 1)
+            });
+            prod.UpsertPrecioFijo(P(2), VP(15m), Vig(hoy.AddDays(-1), null));
+            var dto2 = svc.Resolver(prod, columnaSolicitada: null, cantidad: 2, fecha: hoy,
+                                   afectacion: null, tasaImpuestoFraccion: 0.18m,
+                                   plantillaOpcional: plantillaBaseP2,
+                                   mostrarConImpuestos: true);
+            Assert.That(dto2, Is.Not.Null);
+            Assert.That(dto2!.ColumnaAplicada.Numero, Is.EqualTo(2));
+            Assert.That(dto2.ValorOriginal.Monto, Is.EqualTo(15m));
         }
 
         [Test]

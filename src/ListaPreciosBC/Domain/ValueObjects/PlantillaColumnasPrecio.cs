@@ -55,9 +55,7 @@ namespace ListaPreciosBC.Domain.ValueObjects
             return new PlantillaColumnasPrecio(lista);
         }
 
-        /// <summary>
-        /// Intenta crear sin lanzar excepciones.
-        /// </summary>
+        /// <summary>Intenta crear sin lanzar excepciones.</summary>
         public static bool TryCrear(IEnumerable<ConfiguracionColumnaPrecio>? columnas, out PlantillaColumnasPrecio? plantilla)
         {
             plantilla = null;
@@ -79,7 +77,14 @@ namespace ListaPreciosBC.Domain.ValueObjects
             return cfg;
         }
 
+        /// <summary>Configuración marcada como Base (invariante: existe exactamente una).</summary>
         public ConfiguracionColumnaPrecio Base => _columnas.First(c => c.EsBase);
+
+        /// <summary>Id de la columna Base (atajo para el resolver/UX).</summary>
+        public IdentificadorColumnaPrecio IdColumnaBase => Base.Id;
+
+        /// <summary>Número (1..10) de la columna Base (atajo para el resolver/UX).</summary>
+        public byte NumeroColumnaBase => Base.Id.Numero;
 
         public bool Existe(IdentificadorColumnaPrecio id) => _columnas.Any(c => c.Id.Equals(id));
 
@@ -113,18 +118,14 @@ namespace ListaPreciosBC.Domain.ValueObjects
             return new PlantillaColumnasPrecio(nuevas);
         }
 
-        /// <summary>
-        /// Muestra una columna (Visible=true).
-        /// </summary>
+        /// <summary>Muestra una columna (Visible=true).</summary>
         public PlantillaColumnasPrecio Mostrar(IdentificadorColumnaPrecio id)
         {
             var nuevo = Obtener(id).Mostrar();
             return Reemplazar(nuevo);
         }
 
-        /// <summary>
-        /// Oculta una columna. No permite dejar la plantilla sin columnas visibles.
-        /// </summary>
+        /// <summary>Oculta una columna. No permite dejar la plantilla sin columnas visibles.</summary>
         public PlantillaColumnasPrecio Ocultar(IdentificadorColumnaPrecio id)
         {
             var objetivo = Obtener(id);

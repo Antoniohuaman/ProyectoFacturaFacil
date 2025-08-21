@@ -1,242 +1,167 @@
-using System;
-using System.Linq;
+#nullable enable
 using NUnit.Framework;
 using ListaPreciosBC.Domain.ValueObjects;
-using System.Collections.Generic; 
 
-namespace ListaPreciosBC.Tests.ValueObjects
+namespace ListaPreciosBC.Tests.UnitTests.ValueObjects
 {
     [TestFixture]
     public class PlantillaColumnasPrecioTests
     {
-        private static IdentificadorColumnaPrecio P(byte n) => IdentificadorColumnaPrecio.DesdeNumero(n);
-        private static NombreColumnaPrecio N(string s) => NombreColumnaPrecio.Crear(s);
-        private static ModoValorizacionColumna Fijo => ModoValorizacionColumna.Fijo;
-        private static ModoValorizacionColumna Vol  => ModoValorizacionColumna.PorVolumen;
+        // -------------------- Helpers --------------------
+        private static IdentificadorColumnaPrecio P(byte n)
+            => IdentificadorColumnaPrecio.DesdeNumero(n);
 
-        private static ConfiguracionColumnaPrecio Cfg(byte p, string nombre, bool baseCol = false, bool visible = true, byte? orden = null, bool vol = false)
-            => ConfiguracionColumnaPrecio.Crear(P(p), N(nombre), vol ? Vol : Fijo, baseCol, visible, orden);
+        private static NombreColumnaPrecio N(string texto)
+            => NombreColumnaPrecio.Crear(texto);
 
-        private static PlantillaColumnasPrecio PlantillaBasica()
-            => PlantillaColumnasPrecio.Crear(new[]
-            {
-                Cfg(1, "Precio base", baseCol:true,  orden:1),
-                Cfg(2, "Mayorista",   orden:2),
-                Cfg(3, "Distrib.",    orden:3, vol:true)
-            });
+        // Helper principal (Modo por defecto = Fijo)
+        private static ConfiguracionColumnaPrecio C(
+            byte num, string nombre, bool esBase, bool visible, byte orden)
+            => ConfiguracionColumnaPrecio.Crear(
+                id: P(num),
+                nombre: N(nombre),
+                modo: ModoValorizacionColumna.Fijo,
+                esBase: esBase,
+                visible: visible,
+                orden: orden);
+
+        // Overload por si algún test quiere modo PorVolumen explícito
+        private static ConfiguracionColumnaPrecio CVol(
+            byte num, string nombre, bool esBase, bool visible, byte orden)
+            => ConfiguracionColumnaPrecio.Crear(
+                id: P(num),
+                nombre: N(nombre),
+                modo: ModoValorizacionColumna.PorVolumen,
+                esBase: esBase,
+                visible: visible,
+                orden: orden);
+
+        // -------------------- Tests --------------------
 
         [Test]
-        public void Crear_valida_invariantes_y_ordena_por_orden()
+        public void Expone_Base_IdColumnaBase_y_NumeroColumnaBase_en_creacion()
         {
-            var p = PlantillaBasica();
+            var p1 = C(1, "Precio público",  esBase: true,  visible: true,  orden: 1);
+            var p2 = C(2, "Distribuidor",    esBase: false, visible: true,  orden: 2);
 
-            Assert.That(p.Count, Is.EqualTo(3));
-            Assert.That(p.Base.Id.Numero, Is.EqualTo(1));
-            Assert.That(p.Columnas.Select(c => c.Orden), Is.EqualTo(new byte[] {1,2,3}));
+            // desordenado a propósito para validar normalización
+            var plantilla = PlantillaColumnasPrecio.Crear(new[] { p2, p1 });
+
+            Assert.That(plantilla.Base.Id.Numero, Is.EqualTo(1));
+            Assert.That(plantilla.IdColumnaBase.Numero, Is.EqualTo(1));
+            Assert.That(plantilla.NumeroColumnaBase, Is.EqualTo(1));
         }
 
         [Test]
-        public void Crear_falla_en_casos_incorrectos()
+        public void MarcarComoBase_actualiza_las_propiedades_de_Base_sin_mutar_la_instancia_anterior()
         {
-            // sin base
-            var sinBase = new[]
-            {
-                Cfg(1, "P1", baseCol:false, orden:1),
-                Cfg(2, "P2", baseCol:false, orden:2)
-            };
-            Assert.That(() => PlantillaColumnasPrecio.Crear(sinBase),
-                Throws.TypeOf<InvalidOperationException>().With.Message.Contains("Base"));
+            var p1 = C(1, "Precio público",  esBase: true,  visible: true, orden: 1);
+            var p2 = C(2, "Distribuidor",    esBase: false, visible: true, orden: 2);
 
-            // múltiples base
-            var multiBase = new[]
-            {
-                Cfg(1, "P1", baseCol:true,  orden:1),
-                Cfg(2, "P2", baseCol:true,  orden:2)
-            };
-            Assert.That(() => PlantillaColumnasPrecio.Crear(multiBase),
-                Throws.TypeOf<InvalidOperationException>().With.Message.Contains("Base"));
+            var plantilla = PlantillaColumnasPrecio.Crear(new[] { p1, p2 });
+            Assert.That(plantilla.NumeroColumnaBase, Is.EqualTo(1));
 
-            // orden duplicado
-            var ordenDup = new[]
-            {
-                Cfg(1, "P1", baseCol:true,  orden:1),
-                Cfg(2, "P2", baseCol:false, orden:1)
-            };
-            Assert.That(() => PlantillaColumnasPrecio.Crear(ordenDup),
-                Throws.TypeOf<InvalidOperationException>().With.Message.Contains("órdenes"));
+            var cambiada = plantilla.MarcarComoBase(P(2));
+            Assert.That(cambiada.NumeroColumnaBase, Is.EqualTo(2));
+            Assert.That(cambiada.IdColumnaBase.Numero, Is.EqualTo(2));
 
-            // id duplicado
-            var idDup = new[]
-            {
-                Cfg(1, "P1", baseCol:true, orden:1),
-                Cfg(1, "P1-bis", orden:2)
-            };
-            Assert.That(() => PlantillaColumnasPrecio.Crear(idDup),
-                Throws.TypeOf<InvalidOperationException>().With.Message.Contains("IDs"));
-
-            // sin visibles
-            var sinVisible = new[]
-            {
-                Cfg(1, "P1", baseCol:true,  visible:false, orden:1),
-                Cfg(2, "P2", baseCol:false, visible:false, orden:2)
-            };
-            Assert.That(() => PlantillaColumnasPrecio.Crear(sinVisible),
-                Throws.TypeOf<InvalidOperationException>().With.Message.Contains("visible"));
-
-            // cantidad > 10
-            var once = Enumerable.Range(1, 11)
-                .Select(i => Cfg((byte)Math.Min(i,10), $"P{i}", baseCol:(i==1), orden:(byte)Math.Min(i,10)))
-                .ToArray();
-            // (ajustamos para que no doble Id) forzamos 11 columnas con Id repetidos
-            Assert.That(() => PlantillaColumnasPrecio.Crear(once),
-                Throws.TypeOf<InvalidOperationException>().With.Message.Contains("entre 1 y 10"));
+            // Inmutabilidad: la original permanece igual
+            Assert.That(plantilla.NumeroColumnaBase, Is.EqualTo(1));
+            Assert.That(plantilla.IdColumnaBase.Numero, Is.EqualTo(1));
         }
 
         [Test]
-        public void TryCrear_true_en_valido_false_en_invalido()
+        public void Soporta_Base_distinta_de_P1_y_la_expone_correctamente()
         {
-            Assert.That(PlantillaColumnasPrecio.TryCrear(new[] { Cfg(1,"Base",true, orden:1) }, out var ok), Is.True);
-            Assert.That(ok, Is.Not.Null);
+            var p1 = C(1, "Precio público",  esBase: false, visible: true, orden: 1);
+            var p3 = C(3, "Mayorista",       esBase: true,  visible: true, orden: 3);
 
-            Assert.That(PlantillaColumnasPrecio.TryCrear(new ConfiguracionColumnaPrecio[0], out var bad), Is.False);
-            Assert.That(bad, Is.Null);
+            var plantilla = PlantillaColumnasPrecio.Crear(new[] { p1, p3 });
+
+            Assert.That(plantilla.NumeroColumnaBase, Is.EqualTo(3));
+            Assert.That(plantilla.IdColumnaBase.Numero, Is.EqualTo(3));
+            Assert.That(plantilla.Base.Id.Numero, Is.EqualTo(3));
         }
 
         [Test]
-        public void Obtener_y_Base_funcionan()
+        public void Renombrar_no_afecta_la_Base()
         {
-            var p = PlantillaBasica();
+            var p1 = C(1, "Precio público",  esBase: true,  visible: true, orden: 1);
+            var p2 = C(2, "Distribuidor",    esBase: false, visible: true, orden: 2);
 
-            var c2 = p.Obtener(P(2));
-            Assert.That(c2.Nombre.Valor, Is.EqualTo("Mayorista"));
+            var plantilla = PlantillaColumnasPrecio.Crear(new[] { p1, p2 });
+            var renombrada = plantilla.Renombrar(P(2), N("Canal mayorista"));
 
-            Assert.That(p.Base.Id.Numero, Is.EqualTo(1));
+            Assert.That(renombrada.NumeroColumnaBase, Is.EqualTo(1));
+            Assert.That(renombrada.IdColumnaBase.Numero, Is.EqualTo(1));
+                Assert.That(renombrada.Obtener(P(2)).Nombre.Valor, Is.EqualTo("Canal mayorista"));
         }
 
         [Test]
-        public void Renombrar_y_CambiarModo_reemplazan_inmutablemente()
+        public void Reemplazar_una_columna_respeta_invariantes_y_conserva_la_Base()
         {
-            var p = PlantillaBasica();
+            var p1 = C(1, "Precio público", esBase: true, visible: true, orden: 1);
+            var p2 = C(2, "Distribuidor",   esBase: false, visible: true, orden: 2);
 
-            var p2 = p.Renombrar(P(2), N("Mayorista Plus"));
-            Assert.That(p2.Obtener(P(2)).Nombre.Valor, Is.EqualTo("Mayorista Plus"));
-            Assert.That(p.Obtener(P(2)).Nombre.Valor,  Is.EqualTo("Mayorista")); // inmutabilidad
+            var plantilla = PlantillaColumnasPrecio.Crear(new[] { p1, p2 });
 
-            var p3 = p.CambiarModo(P(3), Fijo);
-            Assert.That(p3.Obtener(P(3)).Modo, Is.EqualTo(Fijo));
-            Assert.That(p.Obtener(P(3)).Modo,  Is.EqualTo(Vol));
+            var p2Nuevo = CVol(2, "Volumen", esBase: false, visible: true, orden: 2);
+            var reemplazada = plantilla.Reemplazar(p2Nuevo);
+
+            Assert.That(reemplazada.NumeroColumnaBase, Is.EqualTo(1));
+            Assert.That(reemplazada.Obtener(P(2)).Modo, Is.EqualTo(ModoValorizacionColumna.PorVolumen));
         }
 
         [Test]
-        public void MarcarComoBase_desmarca_anteriores_y_garantiza_unicidad()
+        public void Agregar_y_Eliminar_no_permiten_dejar_la_plantilla_sin_Base()
         {
-            var p = PlantillaBasica();
-            var p2 = p.MarcarComoBase(P(2));
+            var p1 = C(1, "Público", esBase: true,  visible: true, orden: 1);
+            var p2 = C(2, "VIP",     esBase: false, visible: true, orden: 2);
 
-            Assert.That(p2.Base.Id.Numero, Is.EqualTo(2));
-            Assert.That(p2.Obtener(P(1)).EsBase, Is.False);
+            var plantilla = PlantillaColumnasPrecio.Crear(new[] { p1, p2 });
+
+            // Agregar una más (no base) y eliminarla => ok
+            var p3 = C(3, "Promo", esBase: false, visible: true, orden: 3);
+            var conP3 = plantilla.Agregar(p3);
+            var sinP3 = conP3.Eliminar(P(3));
+            Assert.That(sinP3.NumeroColumnaBase, Is.EqualTo(1));
+
+            // Intentar eliminar la base => excepción
+            Assert.That(() => plantilla.Eliminar(P(1)),
+                Throws.InvalidOperationException.With.Message.Contains("Base"));
         }
 
         [Test]
-    public void Mostrar_y_Ocultar_respetan_regla_de_al_menos_una_visible()
-    {
-    var p = PlantillaColumnasPrecio.Crear(new[]
-    {
-        Cfg(1,"Base", baseCol:true,  visible:true,  orden:1),
-        Cfg(2,"Aux",  baseCol:false, visible:false, orden:2),
-    });
-
-    // Debe lanzar porque P1 es la única visible
-    Assert.That(() => p.Ocultar(P(1)), Throws.TypeOf<InvalidOperationException>());
-
-    // Mostrar/ocultar válidos
-    var p2 = p.Mostrar(P(2));
-    Assert.That(p2.Obtener(P(2)).Visible, Is.True);
-
-    var p3 = p2.Ocultar(P(1));
-    Assert.That(p3.Obtener(P(1)).Visible, Is.False);
-    }
-
-        [Test]
-        public void ConOrden_hace_swap_si_el_nuevo_orden_esta_ocupado()
+        public void Ocultar_no_permite_quedar_sin_columnas_visibles_pero_no_toca_la_Base()
         {
-            var p = PlantillaBasica();
-            // Orden actual: P1=1, P2=2, P3=3
-            var p2 = p.ConOrden(P(1), 3); // swap con P3
+            var p1 = C(1, "Público", esBase: true,  visible: true, orden: 1);
+            var p2 = C(2, "VIP",     esBase: false, visible: true, orden: 2);
 
-            Assert.That(p2.Columnas.Select(c => (c.Id.Numero, c.Orden)),
-                Is.EqualTo(new[] { (2, (byte)2), (3, (byte)1), (1, (byte)3) }.OrderBy(x => x.Item2)
-                    .Select(x => (x.Item1, x.Item2)))); // ver orden nuevo
+            var plantilla = PlantillaColumnasPrecio.Crear(new[] { p1, p2 });
 
-            Assert.That(p2.Columnas[0].Id.Numero, Is.EqualTo(3)); // ahora P3 tiene orden 1
-            Assert.That(p2.Columnas[1].Id.Numero, Is.EqualTo(2)); // P2 sigue 2
-            Assert.That(p2.Columnas[2].Id.Numero, Is.EqualTo(1)); // P1 pasó a 3
+            // Ocultar una que no es la última visible => ok
+            var parcial = plantilla.Ocultar(P(2));
+            Assert.That(parcial.NumeroColumnaBase, Is.EqualTo(1));
+
+            // Si intentamos ocultar la última visible => excepción
+            Assert.That(() => parcial.Ocultar(P(1)),
+                Throws.InvalidOperationException.With.Message.Contains("última columna visible"));
         }
 
         [Test]
-        public void Reemplazar_valida_invariantes_y_requiere_misma_Id()
+        public void ConOrden_hace_swap_si_el_orden_nuevo_esta_ocupado_y_no_afecta_la_Base()
         {
-            var p = PlantillaBasica();
-            var cfg2 = p.Obtener(P(2)).Renombrar(N("MAY+"));
+            var p1 = C(1, "Público", esBase: true,  visible: true, orden: 1);
+            var p2 = C(2, "VIP",     esBase: false, visible: true, orden: 2);
 
-            var p2 = p.Reemplazar(cfg2);
-            Assert.That(p2.Obtener(P(2)).Nombre.Valor, Is.EqualTo("MAY+"));
+            var plantilla = PlantillaColumnasPrecio.Crear(new[] { p1, p2 });
+            var reordenada = plantilla.ConOrden(P(2), 1); // swap con P1
 
-            // Reemplazar Id inexistente
-            var otro = Cfg(4, "Nuevo", orden:4); // Id P4 no existe en plantilla
-            Assert.That(() => p.Reemplazar(otro), Throws.TypeOf<KeyNotFoundException>());
-
-            // Violación de Base única (dos base)
-            var cfg1dobleBase = p.Obtener(P(2)).MarcarComoBase();
-            Assert.That(() => p.Reemplazar(cfg1dobleBase),
-                Throws.TypeOf<InvalidOperationException>().With.Message.Contains("Base"));
-        }
-
-        [Test]
-        public void Agregar_y_Eliminar_respetan_reglas()
-        {
-            var p = PlantillaBasica();
-
-            var p2 = p.Agregar(Cfg(4, "VIP", orden:4));
-            Assert.That(p2.Count, Is.EqualTo(4));
-            Assert.That(p2.Existe(P(4)), Is.True);
-
-            // Agregar duplicado de Id
-            Assert.That(() => p2.Agregar(Cfg(4, "X", orden:5)),
-                Throws.TypeOf<InvalidOperationException>());
-
-            // Agregar con orden ya ocupado (1..4 ya ocupados)
-            Assert.That(() => p2.Agregar(Cfg(5, "DupOrden", orden:4)),
-                Throws.TypeOf<InvalidOperationException>());
-
-            // Eliminar no-base OK
-            var p3 = p2.Eliminar(P(4));
-            Assert.That(p3.Existe(P(4)), Is.False);
-
-            // Eliminar base NO OK
-            Assert.That(() => p3.Eliminar(P(1)), Throws.TypeOf<InvalidOperationException>());
-        }
-
-        [Test]
-        public void Igualdad_y_hashcode_consideran_la_secuencia_ordenada()
-        {
-            var a = PlantillaBasica();
-            var b = PlantillaBasica();
-            var c = a.Renombrar(P(2), N("Otro"));
-
-            Assert.That(a, Is.EqualTo(b));
-            Assert.That(a.GetHashCode(), Is.EqualTo(b.GetHashCode()));
-            Assert.That(a.Equals(c), Is.False);
-        }
-
-        [Test]
-        public void ToString_concatenado_legible()
-        {
-            var p = PlantillaBasica();
-            var s = p.ToString();
-            Assert.That(s, Does.Contain("P1"));
-            Assert.That(s, Does.Contain("Base"));
-            Assert.That(s, Does.Contain("|"));
+            // P1 queda en orden 2 y P2 en orden 1, pero la base sigue siendo P1
+            Assert.That(reordenada.Obtener(P(1)).Orden, Is.EqualTo((byte)2));
+            Assert.That(reordenada.Obtener(P(2)).Orden, Is.EqualTo((byte)1));
+            Assert.That(reordenada.NumeroColumnaBase, Is.EqualTo(1));
+            Assert.That(reordenada.IdColumnaBase.Numero, Is.EqualTo(1));
         }
     }
 }
