@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using ListaPreciosBC.Domain.ValueObjects;
 using ListaPreciosBC.Domain.Events;
+using ListaPreciosBC.Domain.Specifications;
 using SharedKernel.Events;
 
 
@@ -140,7 +141,15 @@ namespace ListaPreciosBC.Domain.Aggregates
         public void EliminarColumna(IdentificadorColumnaPrecio idColumna,
             string? usuario = null, DateTimeOffset? cuando = null)
         {
-            Plantilla = Plantilla.Eliminar(idColumna); // no permite eliminar la Base
+            var columna = Plantilla.Columnas.FirstOrDefault(c => c.Id == idColumna);
+            if (columna == null)
+                throw new ArgumentException("No existe la columna especificada.", nameof(idColumna));
+
+            var puedeEliminarSpec = new Specifications.ColumnaPuedeSerEliminadaSpecification();
+            if (!puedeEliminarSpec.IsSatisfiedBy(columna))
+                throw new InvalidOperationException("No se puede eliminar la columna base.");
+
+            Plantilla = Plantilla.Eliminar(idColumna);
             EmitirEventoActualizacion(usuario, cuando);
         }
 
