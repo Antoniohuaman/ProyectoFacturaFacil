@@ -145,7 +145,7 @@ namespace ListaPreciosBC.Domain.Aggregates
             if (columna == null)
                 throw new ArgumentException("No existe la columna especificada.", nameof(idColumna));
 
-            var puedeEliminarSpec = new Specifications.ColumnaPuedeSerEliminadaSpecification();
+            var puedeEliminarSpec = new ColumnaPuedeSerEliminadaSpecification();
             if (!puedeEliminarSpec.IsSatisfiedBy(columna))
                 throw new InvalidOperationException("No se puede eliminar la columna base.");
 
