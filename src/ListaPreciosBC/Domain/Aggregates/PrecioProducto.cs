@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using ListaPreciosBC.Domain.Policies;
+using ListaPreciosBC.Domain.Specifications;
 using ListaPreciosBC.Domain.Events;
 using ListaPreciosBC.Domain.ValueObjects;
 using SharedKernel.Events;
@@ -64,6 +65,59 @@ namespace ListaPreciosBC.Domain.Aggregates
             if (!PuedeEliminarColumnaPolicy.Validar(columnaAEliminar, columnas))
                 throw new InvalidOperationException("No se puede eliminar la columna: debe quedar al menos una visible y una base.");
         }
+            /// <summary>
+            /// Determina si una columna cumple con la especificación ColumnaPuedeSerBaseSpecification.
+            /// Una columna puede ser base si es visible y no es ya base.
+            /// </summary>
+            private bool EsColumnaQuePuedeSerBase(ConfiguracionColumnaPrecio columna)
+            {
+                var especificacion = new ColumnaPuedeSerBaseSpecification();
+                return especificacion.IsSatisfiedBy(columna);
+            }
+                /// <summary>
+                /// Determina si una columna cumple con la especificación ColumnaPuedeSerEliminadaSpecification.
+                /// Una columna puede ser eliminada si no es base.
+                /// </summary>
+                private bool EsColumnaQuePuedeSerEliminada(ConfiguracionColumnaPrecio columna)
+                {
+                    var especificacion = new ColumnaPuedeSerEliminadaSpecification();
+                    return especificacion.IsSatisfiedBy(columna);
+                }
+                    /// <summary>
+                    /// Determina si una colección de columnas cumple con la especificación PlantillaTieneColumnaBaseSpecification.
+                    /// Retorna true si al menos una columna es base.
+                    /// </summary>
+                    private bool PlantillaTieneColumnaBase(IEnumerable<ConfiguracionColumnaPrecio> columnas)
+                    {
+                        var especificacion = new PlantillaTieneColumnaBaseSpecification();
+                        return especificacion.IsSatisfiedBy(columnas);
+                    }
+                        /// <summary>
+                        /// Determina si una colección de columnas cumple con la especificación PlantillaColumnasUnicasSpecification.
+                        /// Retorna true si todas las columnas son únicas por identificador.
+                        /// </summary>
+                        private bool PlantillaColumnasSonUnicas(IEnumerable<ConfiguracionColumnaPrecio> columnas)
+                        {
+                            var especificacion = new PlantillaColumnasUnicasSpecification();
+                            return especificacion.IsSatisfiedBy(columnas);
+                        }
+            /// <summary>
+            /// Determina si una columna de precio es la columna base usando la especificación ColumnaBaseSpecification.
+            /// </summary>
+            private bool EsColumnaBase(ConfiguracionColumnaPrecio columna)
+            {
+                var spec = new ColumnaBaseSpecification();
+                return spec.IsSatisfiedBy(columna);
+            }
+
+            /// <summary>
+            /// Determina si una columna de precio tiene modo fijo usando la especificación ColumnaModoFijoSpecification.
+            /// </summary>
+            private bool EsColumnaModoFijo(ConfiguracionColumnaPrecio columna)
+            {
+                var spec = new ColumnaModoFijoSpecification();
+                return spec.IsSatisfiedBy(columna);
+            }
         // =========================
         // Fábrica
         // =========================
