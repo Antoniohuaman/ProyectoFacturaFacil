@@ -6,6 +6,7 @@ using ListaPreciosBC.Domain.ValueObjects;
 using ListaPreciosBC.Domain.Events;
 using ListaPreciosBC.Domain.Specifications;
 using SharedKernel.Events;
+using ListaPreciosBC.Domain.Policies;
 
 
 namespace ListaPreciosBC.Domain.Aggregates
@@ -18,6 +19,13 @@ namespace ListaPreciosBC.Domain.Aggregates
     [DebuggerDisplay("{Id} v{Version} - {Plantilla}")]
     public sealed class ListaPrecio
     {
+        /// <summary>
+        /// Valida si se puede establecer el periodo de vigencia usando la Policy correspondiente.
+        /// </summary>
+        public bool ValidarPeriodoVigencia(DateTime desde, DateTime? hasta)
+        {
+            return PuedeEstablecerPeriodoVigenciaPolicy.Validar(desde, hasta);
+        }
         // -------- Identidad / Concurrencia / Auditoría --------
         public Guid Id { get; }
         public int Version { get; private set; }

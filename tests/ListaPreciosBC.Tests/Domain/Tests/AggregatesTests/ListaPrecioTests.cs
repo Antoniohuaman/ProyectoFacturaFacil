@@ -10,6 +10,23 @@ namespace ListaPreciosBC.Tests.UnitTests.Aggregates
     [TestFixture]
     public class ListaPrecioTests
     {
+        [Test]
+        public void ValidarPeriodoVigencia_retorna_true_para_periodo_valido_y_false_para_invalido()
+        {
+            var agg = NuevaLista();
+            var desde = new DateTime(2025, 8, 1);
+            var hastaValido = new DateTime(2025, 8, 31);
+            var hastaInvalido = new DateTime(2025, 7, 31);
+
+            // Caso válido: desde <= hasta
+            Assert.That(agg.ValidarPeriodoVigencia(desde, hastaValido), Is.True);
+
+            // Caso válido: hasta nulo (sin fin)
+            Assert.That(agg.ValidarPeriodoVigencia(desde, null), Is.True);
+
+            // Caso inválido: desde > hasta
+            Assert.That(agg.ValidarPeriodoVigencia(desde, hastaInvalido), Is.False);
+    }
         // -------------------- Helpers --------------------
         private static IdentificadorColumnaPrecio P(byte n) => IdentificadorColumnaPrecio.DesdeNumero(n);
         private static NombreColumnaPrecio N(string s)      => NombreColumnaPrecio.Crear(s);
