@@ -50,6 +50,20 @@ namespace ListaPreciosBC.Domain.Aggregates
             if (!PuedeEstablecerPeriodoVigenciaPolicy.Validar(desde, hasta))
                 throw new InvalidOperationException("El periodo de vigencia no es válido.");
         }
+
+        // Ejemplo de uso de la policy PuedeCambiarModoColumnaPolicy
+        private void ValidarModoColumna(string nuevoModo)
+        {
+            if (!PuedeCambiarModoColumnaPolicy.Validar(nuevoModo))
+                throw new InvalidOperationException("El modo de valorización no es válido.");
+        }
+
+        // Ejemplo de uso de la policy PuedeEliminarColumnaPolicy
+        private void ValidarEliminacionColumna(IdentificadorColumnaPrecio columnaAEliminar, IEnumerable<ConfiguracionColumnaPrecio> columnas)
+        {
+            if (!PuedeEliminarColumnaPolicy.Validar(columnaAEliminar, columnas))
+                throw new InvalidOperationException("No se puede eliminar la columna: debe quedar al menos una visible y una base.");
+        }
         // =========================
         // Fábrica
         // =========================
