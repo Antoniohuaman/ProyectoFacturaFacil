@@ -7,6 +7,6 @@ namespace ListaPreciosBC.Application.Interfaces
     /// </summary>
     public interface IUnitOfWork
     {
-        Task SaveChangesAsync();
+    Task SaveChangesAsync(System.Threading.CancellationToken ct = default);
     }
 }
