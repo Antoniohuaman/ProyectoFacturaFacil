@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using ListaPreciosBC.Domain.Policies;
 using ListaPreciosBC.Domain.Events;
 using ListaPreciosBC.Domain.ValueObjects;
 using SharedKernel.Events;
@@ -43,6 +44,12 @@ namespace ListaPreciosBC.Domain.Aggregates
             Sku = sku ?? throw new ArgumentNullException(nameof(sku));
         }
 
+        // Ejemplo de uso de la policy en un método relevante
+        private void ValidarPeriodoVigencia(DateTime desde, DateTime? hasta)
+        {
+            if (!PuedeEstablecerPeriodoVigenciaPolicy.Validar(desde, hasta))
+                throw new InvalidOperationException("El periodo de vigencia no es válido.");
+        }
         // =========================
         // Fábrica
         // =========================
@@ -70,6 +77,10 @@ namespace ListaPreciosBC.Domain.Aggregates
             if (columna is null) throw new ArgumentNullException(nameof(columna));
             if (valor   is null) throw new ArgumentNullException(nameof(valor));
             if (vigencia is null) throw new ArgumentNullException(nameof(vigencia));
+
+            // Validación de periodo de vigencia usando la policy
+            if (!PuedeEstablecerPeriodoVigenciaPolicy.Validar(vigencia.Desde, vigencia.Hasta))
+                throw new InvalidOperationException("El periodo de vigencia no es válido.");
 
             var key = columna.Numero;
 
