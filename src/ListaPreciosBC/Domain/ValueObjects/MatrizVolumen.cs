@@ -254,7 +254,7 @@ namespace ListaPreciosBC.Domain.ValueObjects
                 var curr = ordenados[i];
 
                 if (prev.SeSuperponeCon(curr))
-                    throw new InvalidOperationException($"Solape entre tramos {prev} y {curr}.");
+                    throw new SharedKernel.Exceptions.BusinessRuleException($"Solape entre tramos {prev} y {curr}.");
 
                 // No hace falta exigir contigüidad: puede haber huecos
             }

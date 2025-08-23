@@ -3,6 +3,7 @@ using System.Linq;
 using NUnit.Framework;
 using ListaPreciosBC.Domain.ValueObjects;
 using SharedKernel.ValueObjects; // Dinero, Moneda
+using SharedKernel.Exceptions;
 using System.Collections.Generic;
 
 namespace ListaPreciosBC.Tests.ValueObjects
@@ -45,7 +46,7 @@ namespace ListaPreciosBC.Tests.ValueObjects
             // Solape: 1..10 y 10..20 (solape en 10 si el 2º empieza en 10)
             var solape = new[] { T(1, 10, 10m), T(10, 20, 9m) };
             Assert.That(() => MatrizVolumen.Crear(solape),
-                Throws.TypeOf<InvalidOperationException>().With.Message.Contains("Solape"));
+                Throws.TypeOf<BusinessRuleException>().With.Message.Contains("Solape"));
 
             // Moneda inconsistente
             var otroMon = ValorPrecio.DesdeMonto(9m, Moneda.USD(), true);
@@ -75,7 +76,7 @@ namespace ListaPreciosBC.Tests.ValueObjects
             // Abierto en mitad + tramos posteriores no permitido
             var c = new[] { T(1, 10, 10m), T(11, null, 8m), T(100, null, 7m) };
             Assert.That(() => MatrizVolumen.Crear(c, exigirContinuidadDesdeUno: true),
-                Throws.TypeOf<InvalidOperationException>().With.Message.Contains("Solape"));
+                Throws.TypeOf<BusinessRuleException>().With.Message.Contains("Solape"));
         }
 
         [Test]
@@ -128,7 +129,7 @@ namespace ListaPreciosBC.Tests.ValueObjects
 
             // Solape con 1..10
             Assert.That(() => m.Insertar(T(10, 15, 9m)),
-                Throws.TypeOf<InvalidOperationException>().With.Message.Contains("Solape"));
+                Throws.TypeOf<BusinessRuleException>().With.Message.Contains("Solape"));
 
             // Moneda inconsistente
             var otroMon = TramoVolumen.Crear(11, 20, ValorPrecio.DesdeMonto(9m, Moneda.USD(), true));
@@ -156,7 +157,7 @@ namespace ListaPreciosBC.Tests.ValueObjects
             // Reemplazar a un rango que cause solape
             var malo = T(9, 22, 9m);
             Assert.That(() => m.Reemplazar(existente, malo),
-                Throws.TypeOf<InvalidOperationException>().With.Message.Contains("Solape"));
+                Throws.TypeOf<BusinessRuleException>().With.Message.Contains("Solape"));
 
             // Rango inexistente
             var inexistente = T(5, 9, 10m);
