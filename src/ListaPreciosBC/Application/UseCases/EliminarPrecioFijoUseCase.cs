@@ -1,0 +1,102 @@
+using System;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using ListaPreciosBC.Application.Interfaces; // IUnitOfWork
+using ListaPreciosBC.Domain.Repositories;    // IListaPrecioRepository, IPrecioProductoRepository
+using ListaPreciosBC.Domain.Aggregates;      // PrecioProducto, ListaPrecio
+using ListaPreciosBC.Domain.ValueObjects;    // Sku, IdentificadorColumnaPrecio, ModoValorizacionColumna
+using SharedKernel.Exceptions;               // NotFoundException, BusinessRuleException
+using SharedKernel.ValueObjects;
+
+namespace ListaPreciosBC.Application.UseCases
+{
+    /// <summary>
+    /// Caso de uso: Eliminar precio FIJO de un SKU en la columna indicada dentro de la lista activa.
+    /// Reglas:
+    ///  - Debe existir lista activa.
+    ///  - La columna debe existir y ser de modo FIJO.
+    ///  - Si el PrecioProducto no existe:
+    ///      * LanzarSiNoExiste = true -> NotFoundException.
+    ///      * LanzarSiNoExiste = false -> idempotente (retorna versión 0).
+    ///  - Concurrencia optimista con expectedVersion.
+    /// </summary>
+    public sealed class EliminarPrecioFijoUseCase
+    {
+        public readonly record struct Request(
+            string Sku,
+            byte ColumnaNumero,
+            bool LanzarSiNoExiste = true,
+            string? Usuario = null,
+            DateTimeOffset? Cuando = null
+        );
+
+        public readonly record struct Response(
+            string Sku,
+            byte ColumnaNumero,
+            int Version
+        );
+
+        private readonly IPrecioProductoRepository _precioRepo;
+        private readonly IListaPrecioRepository _listaRepo;
+        private readonly IUnitOfWork _uow;
+
+        public EliminarPrecioFijoUseCase(
+            IPrecioProductoRepository precioRepo,
+            IListaPrecioRepository listaRepo,
+            IUnitOfWork uow)
+        {
+            _precioRepo = precioRepo ?? throw new ArgumentNullException(nameof(precioRepo));
+            _listaRepo  = listaRepo  ?? throw new ArgumentNullException(nameof(listaRepo));
+            _uow        = uow        ?? throw new ArgumentNullException(nameof(uow));
+        }
+
+        public async Task<Response> Handle(Request req, CancellationToken ct)
+        {
+            // 1) Lista activa
+            var lista = await _listaRepo.ObtenerActivaAsync(ct);
+            if (lista is null)
+                throw new NotFoundException("No existe lista de precios activa.");
+
+            // 2) Columna existente y modo FIJO
+            var colId = IdentificadorColumnaPrecio.DesdeNumero(req.ColumnaNumero);
+            var columnaCfg = lista.Plantilla
+                                   .Columnas
+                                   .SingleOrDefault(c => c.Id.Equals(colId));
+            if (columnaCfg is null)
+                throw new NotFoundException($"La columna #{req.ColumnaNumero} no existe en la plantilla activa.");
+
+            if (!columnaCfg.Modo.Equals(ModoValorizacionColumna.Fijo))
+                throw new BusinessRuleException($"La columna #{req.ColumnaNumero} no es de modo FIJO; operación no permitida.");
+
+            // 3) Recuperar agregado PrecioProducto
+            var sku = Sku.Crear(req.Sku);
+            var agregado = await _precioRepo.ObtenerPorSkuAsync(sku, ct);
+            if (agregado is null)
+            {
+                if (req.LanzarSiNoExiste)
+                    throw new NotFoundException($"No existe PrecioProducto para el SKU {req.Sku}.");
+
+                // Idempotente: nada que eliminar
+                return new Response(req.Sku, req.ColumnaNumero, Version: 0);
+            }
+
+            var expectedVersion = agregado.Version; // captura antes de mutar
+
+            // 4) Mutación del agregado (nombre del método según tu dominio)
+            var cuando = req.Cuando ?? DateTimeOffset.UtcNow;
+                agregado.EliminarPrecioFijo(colId, req.Usuario, cuando);
+
+            // 5) Persistencia + UoW
+            await _precioRepo.GuardarAsync(agregado, expectedVersion, ct);
+            await _uow.SaveChangesAsync(ct);
+
+            // 6) Respuesta
+            return new Response(
+                Sku: sku.Valor,
+                ColumnaNumero: req.ColumnaNumero,
+                Version: agregado.Version
+            );
+        }
+    }
+}
