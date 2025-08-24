@@ -10,32 +10,25 @@ namespace CatalogoArticulosBC.Application.DTOs
 {
     public class EditarProductoSimpleDto
     {
-        public Guid ProductoId { get; set; }
-        public string NuevoNombre { get; set; } = default!;
-        public string NuevaDescripcion { get; set; } = default!;
-        public string NuevaUnidadMedida { get; set; } = default!;
-        public string NuevaAfectacionIGV { get; set; } = default!;
-        public string NuevaCategoria { get; set; } = default!;         // Obligatorio
-        public string? NuevaMarca { get; set; }                        // Opcional
-        public string? NuevoCodigoSunat { get; set; }
-        public decimal? NuevaBaseImponibleVentas { get; set; }
-        public string? NuevoCentroCosto { get; set; }
-        public decimal? NuevoPresupuesto { get; set; }
-        public decimal? NuevoPeso { get; set; }
-        public TipoProducto NuevoTipoProducto { get; set; }
-        public decimal NuevoPrecio { get; set; }
-        public Guid? NuevaImagenPrincipalId { get; set; }
-        public decimal NuevoPrecioVentaSinIGV { get; set; }
-        public decimal NuevoPrecioVentaConIGV { get; set; }
-    // ICBPER y Detracción eliminados
-        public string? NuevoCodigoBarras { get; set; }
-        public string? NuevoCodigoFabrica { get; set; }
-    // CodigoLote eliminado
-    // Serie eliminada
-        public List<Guid>? NuevosAlmacenesAsignados { get; set; }
-        public bool NuevoAsignarATodosLosAlmacenes { get; set; }
-    // FechaVencimiento eliminada
-        public TipoExistencia NuevoTipoExistencia { get; set; }
-        public string UsuarioId { get; set; } = default!;
+    public Guid ProductoId { get; set; }
+    public string Nombre { get; set; } = null!;
+    public string? Descripcion { get; set; }
+    public string UnidadMedida { get; set; } = null!;
+    public string AfectacionImpuesto { get; set; } = null!;
+    public string Categoria { get; set; } = null!;
+    public string Moneda { get; set; } = null!;
+    public string? Marca { get; set; }
+    public string? CodigoSunat { get; set; }
+    public string? CentroCosto { get; set; }
+    public decimal? Peso { get; set; }
+    public string? CodigoBarras { get; set; }
+    public string? CodigoFabrica { get; set; }
+    public TipoProducto TipoProducto { get; set; }
+    public TipoExistencia TipoExistencia { get; set; }
+    public decimal? PrecioVenta { get; set; }
+    public List<Guid> AlmacenesAsignados { get; set; } = new();
+    public bool AsignarATodosLosAlmacenes { get; set; }
+    public Guid? ImagenPrincipalId { get; set; }
+    public string UsuarioId { get; set; } = null!;
     }
 }
