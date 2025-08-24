@@ -32,9 +32,9 @@ namespace CatalogoArticulosBC.Domain.ValueObjects
                     nameof(valor));
 
             var trimmed = valor.Trim();
-            if (trimmed.Length > 200)
+            if (trimmed.Length > 250)
                 throw new ArgumentException(
-                    "El nombre del producto no puede exceder 200 caracteres.",
+                    "El nombre del producto no puede exceder 250 caracteres.",
                     nameof(valor));
 
             foreach (var c in trimmed)
