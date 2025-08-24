@@ -34,8 +34,20 @@ namespace ListaPreciosBC.Domain.ValueObjects
             => new(importe, incluyeImpuesto);
 
         /// <summary>Crea un valor a partir de un monto y una moneda.</summary>
+        /// <summary>
+        /// Crea un valor a partir de un monto y una moneda.
+        /// El monto se normaliza según la moneda:
+        /// - Para PEN, se redondea a 2 decimales con MidpointRounding.AwayFromZero.
+        /// - Para otras monedas, se respeta la escala definida en Moneda.
+        /// </summary>
         public static ValorPrecio DesdeMonto(decimal monto, Moneda moneda, bool incluyeImpuesto = true)
-            => new(new Dinero(monto, moneda ?? throw new ArgumentNullException(nameof(moneda))), incluyeImpuesto);
+        {
+            if (moneda == null) throw new ArgumentNullException(nameof(moneda));
+            decimal normalizado = monto;
+            if (moneda.Codigo == "PEN")
+                normalizado = Math.Round(monto, 2, MidpointRounding.AwayFromZero);
+            return new ValorPrecio(new Dinero(normalizado, moneda), incluyeImpuesto);
+        }
 
         /// <summary>Devuelve una nueva instancia marcando <see cref="IncluyeImpuesto"/> = true.</summary>
         public ValorPrecio ConImpuesto()  => new ValorPrecio(Importe, true);
@@ -113,7 +125,7 @@ public decimal Monto => Importe.Monto;
 // 2) Sobrecarga de conveniencia para que los tests/aggregate puedan usar DesdeMonto(monto)
 //    sin especificar moneda (elige tu default; asumo PEN).
 public static ValorPrecio DesdeMonto(decimal monto, bool incluyeImpuesto = true)
-    => new ValorPrecio(new Dinero(monto, Moneda.PEN()), incluyeImpuesto);
+    => DesdeMonto(monto, Moneda.PEN(), incluyeImpuesto);
 
     }
 }

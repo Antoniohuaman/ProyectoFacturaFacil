@@ -5,10 +5,23 @@ using SharedKernel.ValueObjects; // Dinero, Moneda
 
 namespace ListaPreciosBC.Tests.ValueObjects
 {
-    [TestFixture]
-    public class ValorPrecioTests
-    {
-    private static readonly Moneda PEN = Moneda.PEN(); // Asumiendo método fábrica en tu SK
+        [TestFixture]
+        public class ValorPrecioTests
+        {
+            private static readonly Moneda PEN = Moneda.PEN(); // Asumiendo método fábrica en tu SK
+
+            [Test]
+            public void DesdeMonto_redondea_PEN_a_2_decimales_MidpointAwayFromZero()
+            {
+                var vp1 = ValorPrecio.DesdeMonto(10.015m, PEN);
+                Assert.That(vp1.Importe.Monto, Is.EqualTo(10.02m));
+                var vp2 = ValorPrecio.DesdeMonto(10.014m, PEN);
+                Assert.That(vp2.Importe.Monto, Is.EqualTo(10.01m));
+                var vp3 = ValorPrecio.DesdeMonto(10.005m, PEN);
+                Assert.That(vp3.Importe.Monto, Is.EqualTo(10.01m));
+                var vp4 = ValorPrecio.DesdeMonto(10.025m, PEN);
+                Assert.That(vp4.Importe.Monto, Is.EqualTo(10.03m));
+            }
 
         [Test]
         public void Crear_desde_dinero_valido_queda_con_incluye_impuesto_true_por_defecto()

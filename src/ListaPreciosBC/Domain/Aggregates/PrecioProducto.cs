@@ -157,6 +157,7 @@ namespace ListaPreciosBC.Domain.Aggregates
 
             Versionar(usuario, cuando);
             _domainEvents.Add(new PrecioColumnaActualizada(Sku, columna, UltimaActualizacion!.Value));
+            _domainEvents.Add(new PrecioFijoActualizado(Sku, columna, UltimaActualizacion!.Value));
 
             // Si es Base (P1) y está vigente a "cuando", publicar evento específico
             if (key == 1 && vigencia.Contiene(UltimaActualizacion!.Value))
