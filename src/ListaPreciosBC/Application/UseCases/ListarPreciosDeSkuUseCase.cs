@@ -1,0 +1,118 @@
+using System;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using ListaPreciosBC.Domain.Repositories;    // IListaPrecioRepository, IPrecioProductoRepository
+using ListaPreciosBC.Domain.Aggregates;      // ListaPrecio, PrecioProducto
+using ListaPreciosBC.Domain.ValueObjects;    // IdentificadorColumnaPrecio
+using SharedKernel.ValueObjects;             // Sku
+using SharedKernel.Exceptions;               // NotFoundException
+
+namespace ListaPreciosBC.Application.UseCases
+{
+    /// <summary>
+    /// Consulta: Lista el PRECIO VIGENTE (si existe) para cada columna de la Lista de Precios ACTIVA,
+    /// para un SKU, fecha y cantidad dados. No hay mutaciones (no requiere UoW).
+    /// </summary>
+    public sealed class ListarPreciosDeSkuUseCase
+    {
+        public readonly record struct Request(
+            string Sku,
+            int Cantidad,
+            DateTimeOffset? Fecha = null,
+            bool SoloVisibles = false
+        );
+
+        public readonly record struct ItemPrecio(
+            byte ColumnaNumero,
+            string NombreColumna,
+            string ModoColumna,   // "Fijo" | "PorVolumen"
+            bool EsBase,
+            bool Visible,
+            decimal? Monto,       // null si no hay precio vigente
+            bool? IncluyeImpuesto,
+            string? Moneda
+        );
+
+        public readonly record struct Response(
+            string Sku,
+            DateTimeOffset FechaConsulta,
+            int Cantidad,
+            ItemPrecio[] PreciosPorColumna,
+            int VersionAgregado // versión del PrecioProducto consultado
+        );
+
+        private readonly IListaPrecioRepository _listaRepo;
+        private readonly IPrecioProductoRepository _precioRepo;
+
+        public ListarPreciosDeSkuUseCase(
+            IListaPrecioRepository listaRepo,
+            IPrecioProductoRepository precioRepo)
+        {
+            _listaRepo = listaRepo ?? throw new ArgumentNullException(nameof(listaRepo));
+            _precioRepo = precioRepo ?? throw new ArgumentNullException(nameof(precioRepo));
+        }
+
+        public async Task<Response> Handle(Request req, CancellationToken ct)
+        {
+            // 1) Lista activa
+            var lista = await _listaRepo.ObtenerActivaAsync(ct);
+            if (lista is null)
+                throw new NotFoundException("No existe lista de precios activa.");
+
+            // 2) SKU -> agregado PrecioProducto
+            var sku = Sku.Crear(req.Sku);
+            var agregado = await _precioRepo.ObtenerPorSkuAsync(sku, ct);
+            if (agregado is null)
+                throw new NotFoundException($"No existe PrecioProducto para el SKU {req.Sku}.");
+
+            // 3) Fecha de consulta
+            var fecha = req.Fecha ?? DateTimeOffset.UtcNow;
+
+            // 4) Iterar columnas (opcionalmente solo visibles) y resolver precio vigente
+            var columnas = lista.Plantilla.Columnas
+                                   .Where(c => !req.SoloVisibles || c.Visible)
+                                   .OrderBy(c => c.Orden)
+                                   .ToArray();
+
+            var items = columnas.Select(col =>
+            {
+                var resuelto = agregado.ObtenerPrecioVigente(col.Id, fecha, req.Cantidad);
+                if (resuelto is null)
+                {
+                    return new ItemPrecio(
+                        ColumnaNumero: col.Id.Numero,  // asumiendo que el Identificador expone Numero
+                        NombreColumna: col.Nombre.Valor,
+                        ModoColumna: col.Modo.ToString(),
+                        EsBase: col.EsBase,
+                        Visible: col.Visible,
+                        Monto: null,
+                        IncluyeImpuesto: null,
+                        Moneda: null
+                    );
+                }
+
+                var valor = resuelto.Valor; // asumiendo ValorPrecio (Monto, Moneda, IncluyeImpuesto)
+                return new ItemPrecio(
+                    ColumnaNumero: col.Id.Numero,
+                    NombreColumna: col.Nombre.Valor,
+                    ModoColumna: col.Modo.ToString(),
+                    EsBase: col.EsBase,
+                    Visible: col.Visible,
+                    Monto: valor.Monto,
+                    IncluyeImpuesto: valor.IncluyeImpuesto,
+                    Moneda: valor.Importe.Moneda.Codigo // ADAPTA si tu Moneda expone otro nombre (p.ej., CodigoIso)
+                );
+            }).ToArray();
+
+            // 5) Respuesta
+            return new Response(
+                Sku: sku.Valor,
+                FechaConsulta: fecha,
+                Cantidad: req.Cantidad,
+                PreciosPorColumna: items,
+                VersionAgregado: agregado.Version
+            );
+        }
+    }
+}
