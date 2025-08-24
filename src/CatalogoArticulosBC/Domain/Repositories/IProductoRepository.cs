@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using CatalogoArticulosBC.Domain.Aggregates;
 using CatalogoArticulosBC.Domain.ValueObjects;
 using SharedKernel.ValueObjects;
+using CatalogoArticulosBC.Domain.Entities;
 
 namespace CatalogoArticulosBC.Domain.Repositories
 {
@@ -51,5 +52,25 @@ namespace CatalogoArticulosBC.Domain.Repositories
         /// </summary>
         /// <param name="producto">La entidad a eliminar.</param>
         Task DeleteAsync(ProductoSimple producto);
+
+    // Consultas especializadas
+    Task<ProductoSimple?> GetByCodigoBarrasAsync(string codigoBarras);
+    Task<ProductoSimple?> GetByCodigoFabricaAsync(string codigoFabrica);
+    Task<ProductoSimple?> GetByNombreAsync(string nombre);
+    Task<IEnumerable<ProductoSimple>> ListarPorCategoriaAsync(Guid categoriaId);
+    Task<IEnumerable<ProductoSimple>> ListarHabilitadosAsync();
+    Task<IEnumerable<ProductoSimple>> ListarDeshabilitadosAsync();
+    Task<IEnumerable<ProductoSimple>> BuscarPorFiltroAsync(FiltroProducto filtro);
+
+    // Verificaciones
+    Task<bool> ExistsByCodigoAsync(string codigo);
+    Task<bool> ExistsByNombreAsync(string nombre);
+
+    // Operaciones de importación/exportación
+    Task ImportarProductosAsync(IEnumerable<ProductoSimple> productos);
+    Task<IEnumerable<ProductoSimple>> ExportarProductosAsync(FiltroExportacion filtro);
+
+    // Multimedia asociada
+    Task<IEnumerable<MultimediaProducto>> GetMultimediaByProductoIdAsync(Guid productoId);
     }
 }
