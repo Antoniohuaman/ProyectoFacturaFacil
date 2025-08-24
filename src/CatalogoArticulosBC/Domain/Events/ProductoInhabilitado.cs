@@ -1,4 +1,5 @@
 using System;
+using SharedKernel.Events;
 
 namespace CatalogoArticulosBC.Domain.Events
 {

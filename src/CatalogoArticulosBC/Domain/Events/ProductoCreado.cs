@@ -1,4 +1,5 @@
 using SharedKernel.ValueObjects;
+using SharedKernel.Events;
 using System;
 using System.Collections.Generic;
 using CatalogoArticulosBC.Domain.Aggregates;

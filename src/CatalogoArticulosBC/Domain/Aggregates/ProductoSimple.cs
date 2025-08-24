@@ -1,4 +1,4 @@
-    using SharedKernel.ValueObjects;
+using SharedKernel.ValueObjects;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -6,6 +6,8 @@ using CatalogoArticulosBC.Domain.Events;
 using CatalogoArticulosBC.Domain.ValueObjects;
 using CatalogoArticulosBC.Domain.Entities;
 using CatalogoArticulosBC.Domain.Exceptions;
+using CatalogoArticulosBC.Domain.Services;
+
 
 namespace CatalogoArticulosBC.Domain.Aggregates
 {
@@ -22,35 +24,35 @@ namespace CatalogoArticulosBC.Domain.Aggregates
         public bool Activo { get; private set; } = true;
 
         // Clave de negocio
-    public Sku Sku { get; private set; }
+        public Sku Sku { get; private set; }
 
         // Datos básicos
         public NombreProducto Nombre { get; private set; }
         public string Descripcion { get; private set; }
         public UnidadDeMedida UnidadMedida { get; private set; }
-    public AfectacionImpuesto AfectacionImpuesto { get; private set; }
+        public AfectacionImpuesto AfectacionImpuesto { get; private set; }
         public Categoria Categoria { get; private set; }
         public Marca? Marca { get; private set; }
 
         // Precios y moneda
-    public PrecioVenta? PrecioVenta { get; private set; }
+        public PrecioVenta? PrecioVenta { get; private set; }
         public Moneda Moneda { get; private set; }
 
         // Impuestos especiales
-    // Propiedad TieneDetraccion eliminada
+        // Propiedad TieneDetraccion eliminada
 
         // Códigos adicionales
-    public CodigoSUNAT? CodigoSunat { get; private set; }
-    public SharedKernel.ValueObjects.CentroDeCosto? CentroDeCosto { get; private set; }
+        public CodigoSUNAT? CodigoSunat { get; private set; }
+        public CentroDeCosto? CentroDeCosto { get; private set; }
         public CodigoBarras? CodigoBarras { get; private set; }
         public CodigoFabrica? CodigoFabrica { get; private set; }
-    // ...existing code...
-    
+        // ...existing code...
+
         // Logística e inventario
-    public Peso? Peso { get; private set; }
-    // ...existing code...
-    public TipoExistencia TipoExistencia { get; private set; }
-    // ...existing code...
+        public Peso? Peso { get; private set; }
+        // ...existing code...
+        public TipoExistencia TipoExistencia { get; private set; }
+        // ...existing code...
         public List<Guid> AlmacenesAsignados { get; private set; }
         public bool AsignarATodosLosAlmacenes { get; private set; }
 
@@ -60,8 +62,8 @@ namespace CatalogoArticulosBC.Domain.Aggregates
         public Guid? ImagenPrincipalId { get; private set; }
 
         // <-- colección para eventos de dominio
-        private readonly List<IDomainEvent> _domainEvents = new();
-        public IReadOnlyCollection<IDomainEvent> DomainEvents => _domainEvents.AsReadOnly();
+        private readonly List<SharedKernel.Events.IDomainEvent> _domainEvents = new();
+        public IReadOnlyCollection<SharedKernel.Events.IDomainEvent> DomainEvents => _domainEvents.AsReadOnly();
         public void ClearDomainEvents() => _domainEvents.Clear();
         // FIN 
 
@@ -77,7 +79,7 @@ namespace CatalogoArticulosBC.Domain.Aggregates
         public ProductoSimple(
             Moneda moneda,
             Sku sku,
-            NombreProducto nombre,        
+            NombreProducto nombre,
             UnidadDeMedida unidadMedida,
             AfectacionImpuesto afectacionImpuesto,
             Categoria categoria,
@@ -107,10 +109,10 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             AfectacionImpuesto = afectacionImpuesto ?? throw new ArgumentNullException(nameof(afectacionImpuesto));
             Categoria = categoria ?? throw new ArgumentNullException(nameof(categoria));
 
-            // Si aplica detracción, ya no se requiere código
+            
 
             if (almacenesAsignados == null || !almacenesAsignados.Any())
-                throw new ArgumentException("Debe asignar al menos un almacén.", nameof(almacenesAsignados));    
+                throw new ArgumentException("Debe asignar al menos un almacén.", nameof(almacenesAsignados));
 
             // Asignaciones
             ProductoId = Guid.NewGuid();
@@ -182,19 +184,13 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             // Asignaciones
             Marca = marca;
             PrecioVenta = precioVenta;
-            // TieneDetraccion eliminado
-            // CodigoDetraccion eliminado
             CodigoSunat = codigoSunat;
-            // BaseImponibleVentas eliminado
             CentroDeCosto = centroDeCosto;
             Peso = peso;
-            // ...existing code...
             CodigoBarras = codigoBarras;
             CodigoFabrica = codigoFabrica;
-            // ...existing code...
             Tipo = tipo;
             TipoExistencia = tipoExistencia;
-            // ...existing code...
             AlmacenesAsignados = almacenesAsignados;
             AsignarATodosLosAlmacenes = asignarATodosLosAlmacenes;
             ImagenPrincipalId = imagenPrincipalId;
@@ -208,6 +204,25 @@ namespace CatalogoArticulosBC.Domain.Aggregates
         {
             Activo = false;
             var ev = new ProductoInhabilitado(ProductoId, motivo);
+            AddDomainEvent(ev);
+            // Dispatch(ev);
+        }
+
+        public void Habilitar(string usuario, string? motivo = null)
+        {
+            Activo = true;
+            var ev = new ProductoHabilitado(ProductoId, usuario, motivo);
+            AddDomainEvent(ev);
+            // Dispatch(ev);
+        }
+
+        public void CambiarCategoria(Categoria nuevaCategoria, string usuario)
+        {
+            if (nuevaCategoria == null) throw new ArgumentNullException(nameof(nuevaCategoria));
+            var categoriaAnterior = Categoria?.Nombre ?? string.Empty;
+            var categoriaNueva = nuevaCategoria.Nombre;
+            Categoria = nuevaCategoria;
+            var ev = new ProductoCategoriaCambiada(ProductoId, categoriaAnterior, categoriaNueva, usuario);
             AddDomainEvent(ev);
             // Dispatch(ev);
         }
@@ -226,6 +241,9 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             if (!EsTipoPermitido(media.TipoMime))
                 throw new MultimediaInvalidaException("Tipo no permitido.");
             _multimedia.Add(media);
+            // Emitir evento de dominio
+            var ev = new CatalogoArticulosBC.Domain.Events.MultimediaAgregada(ProductoId, media.MultimediaId);
+            AddDomainEvent(ev);
         }
 
         public void EliminarMultimedia(Guid multimediaId)
@@ -233,15 +251,53 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             var media = _multimedia.FirstOrDefault(m => m.MultimediaId == multimediaId)
                         ?? throw new InvalidOperationException("Multimedia no encontrada.");
             _multimedia.Remove(media);
+            // Emitir evento de dominio
+            var ev = new CatalogoArticulosBC.Domain.Events.MultimediaEliminada(ProductoId, multimediaId);
+            AddDomainEvent(ev);
         }
 
-        private void AddDomainEvent(IDomainEvent domainEvent)
+        private void AddDomainEvent(SharedKernel.Events.IDomainEvent domainEvent)
         {
-        _domainEvents.Add(domainEvent);
+            _domainEvents.Add(domainEvent);
         }
 
         private bool EsTipoPermitido(string tipo) =>
             new[] { "image/jpeg", "image/png", "application/pdf" }
             .Contains(tipo, StringComparer.OrdinalIgnoreCase);
+
+        /// <summary>
+        /// Asigna el SKU manualmente (por el usuario).
+        /// </summary>
+        public void AsignarSku(Sku sku)
+        {
+            if (sku == null) throw new ArgumentNullException(nameof(sku));
+            this.Sku = sku;
+            // Emitir evento de dominio
+            var ev = new CatalogoArticulosBC.Domain.Events.SkuCambiado(ProductoId, sku);
+            AddDomainEvent(ev);
+        }
+
+        /// <summary>
+        /// Genera y asigna el SKU automáticamente usando un generador externo.
+        /// </summary>
+        public void GenerarSku(ISkuGenerator generator)
+        {
+            if (generator == null) throw new ArgumentNullException(nameof(generator));
+            var nuevoSku = generator.Generar();
+            this.Sku = nuevoSku;
+            // Emitir evento de dominio
+            var ev = new CatalogoArticulosBC.Domain.Events.SkuCambiado(ProductoId, nuevoSku);
+            AddDomainEvent(ev);
+        }
+        /// <summary>
+        /// Elimina toda la multimedia asociada al producto.
+        /// </summary>
+        public void LimpiarMultimedia()
+        {
+            foreach (var media in _multimedia.ToList())
+            {
+                EliminarMultimedia(media.MultimediaId);
+            }
+        }
     }
 }
