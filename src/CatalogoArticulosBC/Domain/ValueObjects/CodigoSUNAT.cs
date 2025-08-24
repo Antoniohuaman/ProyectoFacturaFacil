@@ -34,10 +34,11 @@ namespace CatalogoArticulosBC.Domain.ValueObjects
             }
 
             var trimmed = valor.Trim();
-            if (trimmed.Length < 4 || trimmed.Length > 8)
+
+            if (trimmed.Length != 8)
             {
                 throw new ArgumentException(
-                    "El Código SUNAT debe tener entre 4 y 8 dígitos.",
+                    "El Código SUNAT debe tener exactamente 8 dígitos.",
                     nameof(valor));
             }
 
