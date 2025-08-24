@@ -21,7 +21,7 @@ namespace CatalogoArticulosBC.Domain.Aggregates
     {
         // Identidad y estado
         public Guid ProductoId { get; private set; }
-        public bool Activo { get; private set; } = true;
+    public bool Habilitado { get; private set; } = true;
 
         // Clave de negocio
         public Sku Sku { get; private set; }
@@ -116,7 +116,7 @@ namespace CatalogoArticulosBC.Domain.Aggregates
 
             // Asignaciones
             ProductoId = Guid.NewGuid();
-            Activo = true;
+            Habilitado = true;
             Marca = marca;
             PrecioVenta = precioVenta;
             Moneda = moneda ?? throw new ArgumentNullException(nameof(moneda), "La moneda debe provenir de la configuración de empresa.");
@@ -125,7 +125,7 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             CodigoSunat = codigoSunat;
             // BaseImponibleVentas eliminado
             CentroDeCosto = centroDeCosto;
-            Peso = peso;
+                Habilitado = true;
             // ...existing code...
             CodigoBarras = codigoBarras;
             CodigoFabrica = codigoFabrica;
@@ -153,16 +153,12 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             Categoria categoria,
             Marca? marca,
             PrecioVenta? precioVenta,
-            // bool tieneDetraccion eliminado
-            CodigoSUNAT? codigoSunat,
-            SharedKernel.ValueObjects.CentroDeCosto? centroDeCosto,
+            CentroDeCosto? centroDeCosto,
             Peso? peso,
-            // ...existing code...
             CodigoBarras? codigoBarras,
             CodigoFabrica? codigoFabrica,
-            // ...existing code...
             TipoProducto tipo,
-            // ...existing code...
+            CodigoSUNAT? codigoSunat = null,
             List<Guid>? almacenesAsignados = null,
             bool asignarATodosLosAlmacenes = false,
             Guid? imagenPrincipalId = null,
@@ -202,7 +198,7 @@ namespace CatalogoArticulosBC.Domain.Aggregates
 
         public void Deshabilitar(string motivo)
         {
-            Activo = false;
+            Habilitado = false;
             var ev = new ProductoInhabilitado(ProductoId, motivo);
             AddDomainEvent(ev);
             // Dispatch(ev);
@@ -210,7 +206,7 @@ namespace CatalogoArticulosBC.Domain.Aggregates
 
         public void Habilitar(string usuario, string? motivo = null)
         {
-            Activo = true;
+            Habilitado = true;
             var ev = new ProductoHabilitado(ProductoId, usuario, motivo);
             AddDomainEvent(ev);
             // Dispatch(ev);
@@ -242,7 +238,7 @@ namespace CatalogoArticulosBC.Domain.Aggregates
                 throw new MultimediaInvalidaException("Tipo no permitido.");
             _multimedia.Add(media);
             // Emitir evento de dominio
-            var ev = new CatalogoArticulosBC.Domain.Events.MultimediaAgregada(ProductoId, media.MultimediaId);
+            var ev = new MultimediaAgregada(ProductoId, media.MultimediaId);
             AddDomainEvent(ev);
         }
 
@@ -252,7 +248,7 @@ namespace CatalogoArticulosBC.Domain.Aggregates
                         ?? throw new InvalidOperationException("Multimedia no encontrada.");
             _multimedia.Remove(media);
             // Emitir evento de dominio
-            var ev = new CatalogoArticulosBC.Domain.Events.MultimediaEliminada(ProductoId, multimediaId);
+            var ev = new MultimediaEliminada(ProductoId, multimediaId);
             AddDomainEvent(ev);
         }
 
@@ -273,7 +269,7 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             if (sku == null) throw new ArgumentNullException(nameof(sku));
             this.Sku = sku;
             // Emitir evento de dominio
-            var ev = new CatalogoArticulosBC.Domain.Events.SkuCambiado(ProductoId, sku);
+            var ev = new SkuCambiado(ProductoId, sku);
             AddDomainEvent(ev);
         }
 
@@ -286,7 +282,7 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             var nuevoSku = generator.Generar();
             this.Sku = nuevoSku;
             // Emitir evento de dominio
-            var ev = new CatalogoArticulosBC.Domain.Events.SkuCambiado(ProductoId, nuevoSku);
+            var ev = new SkuCambiado(ProductoId, nuevoSku);
             AddDomainEvent(ev);
         }
         /// <summary>

@@ -6,7 +6,7 @@ namespace CatalogoArticulosBC.Domain.Specifications
     {
         public override SpecificationResult IsSatisfiedBy(ProductoSimple producto)
         {
-            if (!producto.Activo)
+            if (!producto.Habilitado)
                 return SpecificationResult.Failure("RN-CA-002", "activo", "El producto está inhabilitado.");
             return SpecificationResult.Success();
         }
