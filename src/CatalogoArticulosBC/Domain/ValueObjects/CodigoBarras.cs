@@ -1,64 +1,74 @@
 using System;
+using System.Linq;
 
 namespace CatalogoArticulosBC.Domain.ValueObjects
 {
     /// <summary>
-    /// Código de barras de un producto (opcional).
-    /// Valida longitud (8–20) y normaliza el valor (trim).
+    /// Código de barras estándar GS1 (GTIN-8/12/13/14 o UPC-E impreso con 8 dígitos).
+    /// Opcional para el artículo.
     /// </summary>
     public sealed class CodigoBarras : IEquatable<CodigoBarras>
     {
         /// <summary>
-        /// El valor del código de barras, o null si no se proporcionó.
+        /// Valor normalizado (solo dígitos), o null si no aplica.
         /// </summary>
         public string? Valor { get; }
 
-        /// <summary>
-        /// Crea un nuevo <see cref="CodigoBarras"/>.
-        /// </summary>
-        /// <param name="valor">
-        /// El valor del código de barras. Puede ser null o vacío para indicar “no aplica”.
-        /// Si no es null/espacio, debe tener entre 8 y 20 caracteres (sin espacios al inicio/fin).
-        /// </param>
-        /// <exception cref="ArgumentException">
-        /// Si <paramref name="valor"/> no es null/espacio y su longitud tras trim queda
-        /// fuera del rango [8,20].
-        /// </exception>
         public CodigoBarras(string? valor)
         {
-            if (!string.IsNullOrWhiteSpace(valor))
+            if (string.IsNullOrWhiteSpace(valor))
             {
-                var trimmed = valor.Trim();
-                if (trimmed.Length < 8 || trimmed.Length > 20)
-                    throw new ArgumentException(
-                        "El código de barras debe tener entre 8 y 20 caracteres tras eliminar espacios.",
-                        nameof(valor));
+                Valor = null; // opcional
+                return;
+            }
 
-                Valor = trimmed;
-            }
-            else
-            {
-                // Opcional: el usuario no proporcionó código de barras
-                Valor = null;
-            }
+            // Normalización ligera: quitamos espacios y guiones comunes en entrada manual
+            var normalized = valor.Trim()
+                                  .Replace(" ", string.Empty)
+                                  .Replace("-", string.Empty);
+
+            if (normalized.Length is not (8 or 12 or 13 or 14))
+                throw new ArgumentException("La longitud debe ser 8, 12, 13 o 14 dígitos.", nameof(valor));
+
+            if (!normalized.All(char.IsDigit))
+                throw new ArgumentException("El código debe contener solo dígitos (0-9).", nameof(valor));
+
+            if (!TieneCheckDigitValido(normalized))
+                throw new ArgumentException("Dígito verificador inválido.", nameof(valor));
+
+            Valor = normalized;
         }
 
-        /// <inheritdoc/>
         public override string? ToString() => Valor;
 
-        /// <inheritdoc/>
-        public override bool Equals(object? obj) =>
-            Equals(obj as CodigoBarras);
+        public override bool Equals(object? obj) => Equals(obj as CodigoBarras);
 
-        /// <inheritdoc/>
         public bool Equals(CodigoBarras? other) =>
-            other is not null
-            && string.Equals(Valor, other.Valor, StringComparison.Ordinal);
+            other is not null && string.Equals(Valor, other.Valor, StringComparison.Ordinal);
 
-        /// <inheritdoc/>
-        public override int GetHashCode() =>
-            Valor is null
-                ? 0
-                : Valor.GetHashCode(StringComparison.Ordinal);
+        public override int GetHashCode() => Valor is null ? 0 : Valor.GetHashCode(StringComparison.Ordinal);
+
+        private static bool TieneCheckDigitValido(string digits)
+        {
+            // Algoritmo GS1 (mod 10). Último dígito es el check.
+            var sinCheck = digits[..^1];
+            var esperado = CalcularCheckDigit(sinCheck);
+            return digits[^1] == esperado;
+        }
+
+        private static char CalcularCheckDigit(string sinCheck)
+        {
+            int suma = 0;
+            bool triple = true; // empezando desde la derecha
+            for (int i = sinCheck.Length - 1; i >= 0; i--)
+            {
+                int d = sinCheck[i] - '0';
+                suma += triple ? d * 3 : d;
+                triple = !triple;
+            }
+            int mod = suma % 10;
+            int check = (10 - mod) % 10;
+            return (char)('0' + check);
+        }
     }
 }
