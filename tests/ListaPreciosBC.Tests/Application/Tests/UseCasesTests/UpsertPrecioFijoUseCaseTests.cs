@@ -11,6 +11,7 @@ using ListaPreciosBC.Domain.ValueObjects;
 using NUnit.Framework;
 using SharedKernel.Exceptions;
 using SharedKernel.ValueObjects;
+using ListaPreciosBC.Domain.Events;
 
 namespace ListaPreciosBC.Tests.Application.UseCases
 {
@@ -56,7 +57,12 @@ namespace ListaPreciosBC.Tests.Application.UseCases
 
             public Task<PrecioProducto?> ObtenerPorSkuAsync(Sku sku, CancellationToken ct = default)
             {
-                // Dummy para cumplir interfaz
+                var key = sku.Valor;
+                if (_store.TryGetValue(key, out var agg))
+                {
+                    _loadedVersion[key] = agg.Version;
+                    return Task.FromResult<PrecioProducto?>(agg);
+                }
                 return Task.FromResult<PrecioProducto?>(null);
             }
 
@@ -186,6 +192,11 @@ namespace ListaPreciosBC.Tests.Application.UseCases
             Assert.That(res.Monto, Is.EqualTo(10.50m));
             Assert.That(res.Moneda, Is.EqualTo("PEN"));
             Assert.That(res.Version, Is.GreaterThanOrEqualTo(0));
+
+            // Assert de evento de dominio
+            var agg = await precioRepo.ObtenerPorSkuAsync(Sku.Crear("SKU-001"));
+            Assert.That(agg, Is.Not.Null);
+            Assert.That(agg!.DomainEvents.OfType<PrecioFijoActualizado>().Any(), Is.True);
         }
 
         [Test]
