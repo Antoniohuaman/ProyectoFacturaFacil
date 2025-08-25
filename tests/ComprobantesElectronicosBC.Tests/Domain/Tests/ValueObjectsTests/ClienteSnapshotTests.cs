@@ -1,4 +1,4 @@
-// tests/ComprobantesElectronicosBC.Tests/UnitTests/ValueObjects/ClienteSnapshotTests.cs
+using System;
 using NUnit.Framework;
 using ComprobantesElectronicosBC.Domain.ValueObjects;
 using SharedKernel.ValueObjects;
@@ -8,8 +8,22 @@ namespace ComprobantesElectronicosBC.Tests.UnitTests.ValueObjects
     public class ClienteSnapshotTests
     {
         // ===== Helpers (ajusta si tus VOs tienen otra firma) =====
-        private static DocumentoIdentidad Doc(string tipo, string numero)
-            => DocumentoIdentidad.Create(tipo, numero);
+        private static DocumentoIdentidad Doc(string schemeId, string numero)
+        {
+            var tipo = schemeId switch
+            {
+                "6" => TipoDocumento.Ruc,
+                "1" => TipoDocumento.Dni,
+                "4" => TipoDocumento.CarnetExtranjeria,
+                "7" => TipoDocumento.Pasaporte,
+                "A" => TipoDocumento.CedulaDiplomatica,
+                "B" => TipoDocumento.DocIdentidadPaisResidenciaNoDomiciliado,
+                "C" => TipoDocumento.TinPersonaNatural,
+                "D" => TipoDocumento.InPersonaJuridica,
+                _   => throw new ArgumentException($"Tipo de documento no soportado: {schemeId}")
+            };
+            return DocumentoIdentidad.Crear(tipo, numero);
+        }
 
         private static DireccionPostal Dir(
             string linea1 = "Av. Los Olivos 123",
@@ -117,7 +131,8 @@ namespace ComprobantesElectronicosBC.Tests.UnitTests.ValueObjects
             var snap = ClienteSnapshot.Create(Doc("6", "20100070970"), "CLIENTE S.A.C.");
             var s = snap.ToString();
 
-            Assert.That(s, Does.Contain("6-20100070970"));
+            // Nuevo formato esperado: "RUC 20100070970 - CLIENTE S.A.C."
+            Assert.That(s, Does.Contain("RUC 20100070970"));
             Assert.That(s, Does.Contain("CLIENTE S.A.C."));
         }
     }

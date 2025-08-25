@@ -2,6 +2,7 @@
 using System;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
+using ComprobantesElectronicosBC.Domain.ValueObjects;
 using SharedKernel.ValueObjects;
 
 namespace ComprobantesElectronicosBC.Domain.ValueObjects
@@ -39,8 +40,8 @@ namespace ComprobantesElectronicosBC.Domain.ValueObjects
         /// <summary>Código Cat.06 para RUC (útil en consultas rápidas).</summary>
         public const string SunatDocTipoRuc = "6";
 
-        /// <summary>Conveniencia: ¿el documento del cliente es RUC?</summary>
-        public bool EsRuc => string.Equals(Documento.Tipo, SunatDocTipoRuc, StringComparison.Ordinal);
+    /// <summary>Conveniencia: ¿el documento del cliente es RUC?</summary>
+    public bool EsRuc => Documento.EsRuc;
 
         // --------------------- Construcción ---------------------
 
@@ -75,17 +76,17 @@ namespace ComprobantesElectronicosBC.Domain.ValueObjects
 
         // --------------------- Helpers de negocio / UBL ---------------------
 
-        /// <summary>Valor para UBL &lt;cbc:CompanyID/@schemeID&gt; (código Cat.06).</summary>
-        public string UblCompanyId_SchemeId => Documento.Tipo;
+    /// <summary>Valor para UBL &lt;cbc:CompanyID/@schemeID&gt; (código Cat.06).</summary>
+    public string UblCompanyId_SchemeId => Documento.SchemeId;
 
-        /// <summary>Valor para UBL &lt;cbc:CompanyID&gt; (número del documento).</summary>
-        public string UblCompanyId_Value => Documento.Numero;
+    /// <summary>Valor para UBL &lt;cbc:CompanyID&gt; (número del documento).</summary>
+    public string UblCompanyId_Value => Documento.Numero;
 
         /// <summary>Valor para UBL &lt;cbc:RegistrationName&gt;.</summary>
         public string UblRegistrationName => Nombre;
 
         public override string ToString()
-            => $"{Documento.Tipo}-{Documento.Numero} - {Nombre}";
+            => $"{Documento} - {Nombre}";
 
         // --------------------- Normalización interna ---------------------
 

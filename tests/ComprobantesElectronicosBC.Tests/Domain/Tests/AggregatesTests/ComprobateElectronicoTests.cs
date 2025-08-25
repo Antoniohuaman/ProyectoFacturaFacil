@@ -91,7 +91,7 @@ namespace ComprobantesElectronicosBC.Tests
 
         private static ClienteSnapshot ClienteBoletaDni()
         {
-            var doc = DocumentoIdentidad.CreateDni("12345678");
+            var doc = DocumentoIdentidad.Crear(TipoDocumento.Dni, "12345678");
             var dir = DireccionPostal.FromPeru(
                 linea: "Calle Cliente 456",
                 ubigeo: "150101",

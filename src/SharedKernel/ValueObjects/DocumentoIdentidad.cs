@@ -1,7 +1,7 @@
 using System.Text.RegularExpressions;
 using SharedKernel.Exceptions;
 
-namespace SharedKernel.Domain.ValueObjects;
+namespace SharedKernel.ValueObjects;
 
 /// <summary>
 /// Documento de identidad para clientes/proveedores, alineado a SUNAT/UBL.
@@ -11,19 +11,7 @@ namespace SharedKernel.Domain.ValueObjects;
 /// </summary>
 public sealed record DocumentoIdentidad
 {
-    // ===== Catálogo 06 + caso interno =====
-    public enum TipoDocumento
-    {
-        Ruc,                                   // schemeID "6"
-        Dni,                                   // schemeID "1"
-        CarnetExtranjeria,                     // schemeID "4"
-        Pasaporte,                             // schemeID "7"
-        CedulaDiplomatica,                     // schemeID "A"
-        DocIdentidadPaisResidenciaNoDomiciliado, // schemeID "B"
-        TinPersonaNatural,                     // schemeID "C"
-        InPersonaJuridica,                     // schemeID "D"
-        SinDocumento                           // SOLO interno (no UBL)
-    }
+    // TipoDocumento ahora se importa desde SharedKernel.ValueObjects.TipoDocumento
 
     /// <summary>Tipo normativo de documento.</summary>
     public TipoDocumento Tipo { get; }

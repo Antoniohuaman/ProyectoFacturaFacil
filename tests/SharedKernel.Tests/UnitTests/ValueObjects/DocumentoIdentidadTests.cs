@@ -1,9 +1,9 @@
 using NUnit.Framework;
-using SharedKernel.Domain.ValueObjects;
+using SharedKernel.ValueObjects;
 using SharedKernel.Exceptions;
-using static SharedKernel.Domain.ValueObjects.DocumentoIdentidad;
 
-namespace SharedKernel.Tests.ValueObjects;
+
+namespace SharedKernel.Tests.UnitTests.ValueObjects;
 
 [TestFixture]
 public class DocumentoIdentidadTests

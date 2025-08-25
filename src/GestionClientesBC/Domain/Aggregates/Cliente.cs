@@ -1,10 +1,12 @@
 using System;
+using GestionClientesBC.Domain.ValueObjects;
 using System.Collections.Generic;
 using System.Linq;
 using GestionClientesBC.Domain.Entities;
 using GestionClientesBC.Domain.Events;
-using GestionClientesBC.Domain.ValueObjects;
+using SharedKernel.Events;
 using SharedKernel.ValueObjects;
+using ClienteActualizado = GestionClientesBC.Domain.Events.ClienteActualizado;
 
 namespace GestionClientesBC.Domain.Aggregates
 {
@@ -18,9 +20,9 @@ namespace GestionClientesBC.Domain.Aggregates
         private readonly List<OperacionCliente> _operaciones = new();
 
         public Guid ClienteId { get; }
-        public DocumentoIdentidad DocumentoIdentidad { get; private set; }
+    public DocumentoIdentidad DocumentoIdentidad { get; private set; } // Usando SharedKernel.ValueObjects
         public string RazonSocialONombres { get; private set; }
-        public string Correo { get; private set; }
+    public Email Correo { get; private set; }
         public string Celular { get; private set; }
     public DireccionPostal? DireccionPostal { get; private set; }
         public TipoCliente TipoCliente { get; private set; }
@@ -42,7 +44,7 @@ namespace GestionClientesBC.Domain.Aggregates
             Guid clienteId,
             DocumentoIdentidad documentoIdentidad,
             string razonSocialONombres,
-            string? correo,
+            Email correo,
             string? celular,
             DireccionPostal? direccionPostal,
             TipoCliente tipoCliente,
@@ -53,7 +55,7 @@ namespace GestionClientesBC.Domain.Aggregates
             ClienteId = clienteId;
             DocumentoIdentidad = documentoIdentidad ?? throw new ArgumentNullException(nameof(documentoIdentidad));
             RazonSocialONombres = !string.IsNullOrWhiteSpace(razonSocialONombres) ? razonSocialONombres : throw new ArgumentNullException(nameof(razonSocialONombres));
-            Correo = correo ?? string.Empty;
+            Correo = correo ?? throw new ArgumentNullException(nameof(correo));
             Celular = celular ?? string.Empty;
             DireccionPostal = direccionPostal;
             TipoCliente = tipoCliente;
@@ -65,7 +67,7 @@ namespace GestionClientesBC.Domain.Aggregates
                 ClienteId,
                 DocumentoIdentidad,
                 RazonSocialONombres,
-                Correo,
+                Correo.Value,
                 Celular,
                 DireccionPostal?.ToString() ?? string.Empty,
                 TipoCliente,
@@ -74,10 +76,10 @@ namespace GestionClientesBC.Domain.Aggregates
             ));
         }
 
-        public void ActualizarDatosContacto(string nuevoCorreo, string nuevoCelular)
+        public void ActualizarDatosContacto(Email nuevoCorreo, string nuevoCelular)
         {
-            if (string.IsNullOrWhiteSpace(nuevoCorreo))
-                throw new ArgumentException("El correo no puede estar vacío.");
+            if (nuevoCorreo == null)
+                throw new ArgumentNullException(nameof(nuevoCorreo));
             if (string.IsNullOrWhiteSpace(nuevoCelular))
                 throw new ArgumentException("El celular no puede estar vacío.");
 
@@ -114,10 +116,16 @@ namespace GestionClientesBC.Domain.Aggregates
 
         public void RegistrarModificacion(IDictionary<string, (object? anterior, object? nuevo)> cambios)
         {
-            // Evento de dominio: ClienteModificado
-            _domainEvents.Add(new ClienteModificado(
+            // Evento de dominio: ClienteActualizado
+            _domainEvents.Add(new ClienteActualizado(
                 ClienteId,
-                cambios,
+                DocumentoIdentidad,
+                RazonSocialONombres,
+                Correo,
+                Celular,
+                DireccionPostal,
+                TipoCliente,
+                Estado,
                 DateTime.UtcNow
             ));
         }

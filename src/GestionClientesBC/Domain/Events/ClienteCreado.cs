@@ -1,5 +1,7 @@
 using System;
+using SharedKernel.ValueObjects;
 using GestionClientesBC.Domain.ValueObjects;
+using SharedKernel.Events;
 
 namespace GestionClientesBC.Domain.Events
 {

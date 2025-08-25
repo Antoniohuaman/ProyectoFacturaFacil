@@ -1,29 +1,15 @@
 using System;
-using System.Collections.Generic;
+using SharedKernel.Events;
+using SharedKernel.ValueObjects;
 
 namespace GestionClientesBC.Domain.Events
 {
-    public class ClienteModificado : IDomainEvent
-    {
-        public Guid ClienteId { get; }
-        public IDictionary<string, (object? anterior, object? nuevo)>? Cambios { get; }
-        public DateTime FechaModificacion { get; }
-        public DateTime OccurredOn => FechaModificacion;
-
-        // Constructor para cambios detallados
-        public ClienteModificado(Guid clienteId, IDictionary<string, (object? anterior, object? nuevo)> cambios, DateTime fechaModificacion)
-        {
-            ClienteId = clienteId;
-            Cambios = cambios;
-            FechaModificacion = fechaModificacion;
-        }
-
-        // Constructor simple (opcional, para otros casos de uso)
-        public ClienteModificado(Guid clienteId, DateTime fechaModificacion)
-        {
-            ClienteId = clienteId;
-            Cambios = null;
-            FechaModificacion = fechaModificacion;
-        }
-    }
+    /// <summary>
+    /// Evento de dominio que indica que un cliente ha sido modificado.
+    /// </summary>
+    public sealed record ClienteModificado(
+        Guid ClienteId,
+        IDictionary<string, (object? anterior, object? nuevo)> Cambios,
+        DateTime FechaModificacion
+    ) : IDomainEvent;
 }
