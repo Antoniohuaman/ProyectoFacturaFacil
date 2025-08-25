@@ -1,19 +1,10 @@
 using System;
 using System.Text.RegularExpressions;
-using SharedKernel.Exceptions; // Usa tu BusinessRuleException e IDomainEvent si ya existen
+using SharedKernel.Exceptions; 
 
 namespace ConfiguracionSistemaBC.Domain.ValueObjects
 {
     // Multi-tenant
-    public sealed record EmpresaId(string Valor)
-    {
-        public static EmpresaId Desde(string v) =>
-            string.IsNullOrWhiteSpace(v)
-                ? throw new BusinessRuleException("EmpresaId es obligatorio.")
-                : new(v.Trim());
-
-        public override string ToString() => Valor;
-    }
 
     public sealed record SucursalId(string Valor)
     {

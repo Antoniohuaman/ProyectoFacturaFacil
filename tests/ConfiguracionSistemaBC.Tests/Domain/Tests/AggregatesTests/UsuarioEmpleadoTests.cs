@@ -21,7 +21,7 @@ namespace ConfiguracionSistemaBC.Tests.Domain
             _actividad = new ActividadServiceFake(hasActivity: false);
         }
 
-        private static EmpresaId Emp(string v = "EMP01") => new EmpresaId(v);
+    private static EmpresaId Emp(string v = "EMP01") => EmpresaId.Desde(v);
         private static SucursalId Suc(string v = "SUC01") => new SucursalId(v);
         private static CorreoElectronico Mail(string v = "vendedor@demo.com") => new CorreoElectronico(v);
         private static NombrePersona Nom(string n = "Juan", string a = "Pérez") => new NombrePersona(n, a);

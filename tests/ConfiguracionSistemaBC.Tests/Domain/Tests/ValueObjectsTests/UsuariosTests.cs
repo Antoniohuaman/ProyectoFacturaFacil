@@ -33,7 +33,7 @@ namespace ConfiguracionSistemaBC.Tests.UnitTests.Domain.ValueObjects
         public void EmpresaId_es_record_value_equality()
         {
             var a = EmpresaId.Desde("EMP01");
-            var b = new EmpresaId("EMP01");
+            var b = EmpresaId.Desde("EMP01");
             var c = EmpresaId.Desde("EMP02");
 
             Assert.That(a, Is.EqualTo(b));
