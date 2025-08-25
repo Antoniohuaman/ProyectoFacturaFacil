@@ -1,0 +1,19 @@
+using System;
+using SharedKernel.Events;
+using ConfiguracionSistemaBC.Domain.ValueObjects;
+using SharedKernel.ValueObjects;
+
+namespace ConfiguracionSistemaBC.Domain.Events
+{
+    /// <summary>
+    /// Evento de dominio: se registra una nueva empresa/tenant en el sistema.
+    /// </summary>
+    public sealed record ConfiguracionEmpresaRegistrada(
+        Guid TenantId,
+        Ruc Ruc,
+        string RazonSocial,
+        DireccionPostal DireccionFiscal,
+        Moneda MonedaBase,
+        DateTime OccurredOn
+    ) : IDomainEvent;
+}

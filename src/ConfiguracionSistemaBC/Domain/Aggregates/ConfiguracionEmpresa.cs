@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using ConfiguracionSistemaBC.Domain.Events;
 using ConfiguracionSistemaBC.Domain.ValueObjects;
 using SharedKernel.ValueObjects;
 using EmailSK = ConfiguracionSistemaBC.Domain.ValueObjects.EmailEmpresa;
@@ -119,7 +120,7 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
             if (!direccionFiscal.EsPeru)
                 throw new ArgumentException("Solo se soporta dirección fiscal de Perú (PE).", nameof(direccionFiscal));
 
-            return new ConfiguracionEmpresa
+            var empresa = new ConfiguracionEmpresa
             {
                 TenantId = tenantId,
                 Ruc = ruc,
@@ -132,6 +133,15 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
                 PieDePagina = PieDePagina.Vacio,
                 Logo = null
             };
+            empresa.AddDomainEvent(new ConfiguracionEmpresaRegistrada(
+                tenantId,
+                ruc,
+                razonSocial.Trim(),
+                direccionFiscal,
+                monedaBase,
+                DateTime.UtcNow
+            ));
+            return empresa;
         }
 
         // ========= CAMBIOS DE AMBIENTE =========
@@ -156,6 +166,16 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
             RazonSocial = razonSocial.Trim();
             NombreComercial = string.IsNullOrWhiteSpace(nombreComercial) ? null : nombreComercial.Trim();
             DireccionFiscal = direccionFiscal;
+            AddDomainEvent(new ConfiguracionEmpresaActualizada(
+                TenantId,
+                Ruc,
+                RazonSocial,
+                DireccionFiscal,
+                NombreComercial,
+                MonedaBase,
+                Ambiente,
+                DateTime.UtcNow
+            ));
         }
 
         // ========= PREFERENCIAS OPCIONALES =========
@@ -419,5 +439,11 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
                 st.EsPorDefecto,
                 st.Bloqueada
             );
+
+        // ========= DOMAIN EVENTS =========
+        private readonly List<SharedKernel.Events.IDomainEvent> _domainEvents = new();
+        public IReadOnlyCollection<SharedKernel.Events.IDomainEvent> DomainEvents => _domainEvents;
+        private void AddDomainEvent(SharedKernel.Events.IDomainEvent evt) => _domainEvents.Add(evt);
+        public void ClearDomainEvents() => _domainEvents.Clear();
     }
 }
