@@ -5,6 +5,7 @@ using CatalogoArticulosBC.Domain.Aggregates;
 using CatalogoArticulosBC.Domain.ValueObjects;
 using SharedKernel.ValueObjects;
 using CatalogoArticulosBC.Domain.Entities;
+using CatalogoArticulosBC.Domain.Filters;
 
 namespace CatalogoArticulosBC.Domain.Repositories
 {
@@ -57,7 +58,7 @@ namespace CatalogoArticulosBC.Domain.Repositories
     Task<ProductoSimple?> GetByCodigoBarrasAsync(string codigoBarras);
     Task<ProductoSimple?> GetByCodigoFabricaAsync(string codigoFabrica);
     Task<ProductoSimple?> GetByNombreAsync(string nombre);
-    Task<IEnumerable<ProductoSimple>> ListarPorCategoriaAsync(Guid categoriaId);
+    Task<IEnumerable<ProductoSimple>> ListarPorCategoriaAsync(Categoria categoria);
     Task<IEnumerable<ProductoSimple>> ListarHabilitadosAsync();
     Task<IEnumerable<ProductoSimple>> ListarDeshabilitadosAsync();
     Task<IEnumerable<ProductoSimple>> BuscarPorFiltroAsync(FiltroProducto filtro);

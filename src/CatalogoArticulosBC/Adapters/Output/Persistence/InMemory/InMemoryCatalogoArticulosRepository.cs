@@ -6,8 +6,10 @@ using System.Threading.Tasks;
 using CatalogoArticulosBC.Domain.Aggregates;
 using CatalogoArticulosBC.Domain.ValueObjects;
 using CatalogoArticulosBC.Domain.Repositories;
+using CatalogoArticulosBC.Domain.Filters;
 using SharedKernel.ValueObjects;
 using CatalogoArticulosBC.Domain.Entities;
+
 
 namespace CatalogoArticulosBC.Adapters.Output.Persistence.InMemory
 {
@@ -69,9 +71,8 @@ namespace CatalogoArticulosBC.Adapters.Output.Persistence.InMemory
             return Task.FromResult(producto);
         }
 
-        public Task<IEnumerable<ProductoSimple>> ListarPorCategoriaAsync(Guid categoriaId)
+        public Task<IEnumerable<ProductoSimple>> ListarPorCategoriaAsync(Categoria categoria)
         {
-            var categoria = new Categoria(categoriaId.ToString());
             var productos = _productos.Values.Where(p => p.Categoria != null && p.Categoria.Equals(categoria));
             return Task.FromResult(productos);
         }
@@ -93,11 +94,8 @@ namespace CatalogoArticulosBC.Adapters.Output.Persistence.InMemory
             var query = _productos.Values.AsQueryable();
             if (!string.IsNullOrEmpty(filtro.Nombre))
                 query = query.Where(p => p.Nombre != null && p.Nombre.Valor.Contains(filtro.Nombre));
-            if (filtro.CategoriaId.HasValue)
-            {
-                var categoriaFiltro = new Categoria(filtro.CategoriaId.Value.ToString());
-                query = query.Where(p => p.Categoria != null && p.Categoria.Equals(categoriaFiltro));
-            }
+            if (filtro.Categoria != null)
+                query = query.Where(p => p.Categoria != null && p.Categoria.Equals(filtro.Categoria));
             if (filtro.Habilitado.HasValue)
                 query = query.Where(p => p.Habilitado == filtro.Habilitado.Value);
             if (filtro.PrecioMin.HasValue)
@@ -131,11 +129,8 @@ namespace CatalogoArticulosBC.Adapters.Output.Persistence.InMemory
         public Task<IEnumerable<ProductoSimple>> ExportarProductosAsync(FiltroExportacion filtro)
         {
             var query = _productos.Values.AsQueryable();
-            if (filtro.CategoriaId.HasValue)
-            {
-                var categoriaFiltro = new Categoria(filtro.CategoriaId.Value.ToString());
-                query = query.Where(p => p.Categoria != null && p.Categoria.Equals(categoriaFiltro));
-            }
+            if (filtro.Categoria != null)
+                query = query.Where(p => p.Categoria != null && p.Categoria.Equals(filtro.Categoria));
             if (filtro.SoloHabilitados.HasValue && filtro.SoloHabilitados.Value)
                 query = query.Where(p => p.Habilitado);
             return Task.FromResult(query.AsEnumerable());
