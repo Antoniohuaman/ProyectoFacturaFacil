@@ -83,7 +83,7 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
         public EmisorSnapshot Emisor { get; }
         public ClienteSnapshot Cliente { get; private set; }
 
-    public CentroDeCosto? CentroDeCosto { get; private set; }
+        public CentroDeCosto? CentroDeCosto { get; private set; }
         public Observaciones? Observaciones { get; private set; }
         public NumeroGuiaRemision? NumeroGuiaRemision { get; private set; }
         public NumeroOrdenCompra? NumeroOrdenCompra { get; private set; }
@@ -214,7 +214,7 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
         }
 
         public void CambiarObservaciones(Observaciones? obs) => Observaciones = obs;
-    public void CambiarCentroDeCosto(CentroDeCosto? cc) => CentroDeCosto = cc;
+        public void CambiarCentroDeCosto(CentroDeCosto? cc) => CentroDeCosto = cc;
         public void CambiarNumeroGuia(NumeroGuiaRemision? guia) => NumeroGuiaRemision = guia;
         public void CambiarNumeroOrdenCompra(NumeroOrdenCompra? oc) => NumeroOrdenCompra = oc;
 
