@@ -80,7 +80,13 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
     // Se recomienda instanciarlo siempre usando Moneda.Create o Moneda.PEN()/Moneda.USD()
     // Ejemplo: Moneda = Moneda.PEN();
 
-        public EmisorSnapshot Emisor { get; }
+    public EmisorSnapshot Emisor { get; }
+
+    /// <summary>
+    /// Snapshot del usuario emisor (vendedor/cajero) al momento de la emisión del comprobante.
+    /// Permite auditar quién emitió el comprobante, desacoplado del usuario actual.
+    /// </summary>
+    public UsuarioSnapshot UsuarioEmisor { get; }
         public ClienteSnapshot Cliente { get; private set; }
 
         public CentroDeCosto? CentroDeCosto { get; private set; }
@@ -145,6 +151,7 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
             FechaEmision emision,
             FormaDePago formaDePago,
             FechaVencimiento vencimiento,
+            UsuarioSnapshot usuarioEmisor,
             DateTimeOffset creadoUtc)
         {
             ComprobanteId = id == Guid.Empty ? Guid.NewGuid() : id;
@@ -156,6 +163,7 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
             Emision = emision ?? throw new ArgumentNullException(nameof(emision));
             FormaDePago = formaDePago ?? throw new ArgumentNullException(nameof(formaDePago));
             Vencimiento = vencimiento ?? throw new ArgumentNullException(nameof(vencimiento));
+            UsuarioEmisor = usuarioEmisor ?? throw new ArgumentNullException(nameof(usuarioEmisor));
 
             // Regla mínima: en CONTADO, Vencimiento == Emision
             if (FormaDePago.EsContado && !Vencimiento.EsMismoDiaQue(Emision.Fecha))
@@ -173,10 +181,11 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
             FechaEmision emision,
             FormaDePago formaDePago,
             FechaVencimiento vencimiento,
+            UsuarioSnapshot usuarioEmisor,
             DateTimeOffset? ahoraUtc = null)
         {
             var now = ahoraUtc ?? DateTimeOffset.UtcNow;
-            return new ComprobanteElectronico(Guid.NewGuid(), tipo, emisor, cliente, moneda, emision, formaDePago, vencimiento, now);
+            return new ComprobanteElectronico(Guid.NewGuid(), tipo, emisor, cliente, moneda, emision, formaDePago, vencimiento, usuarioEmisor, now);
         }
         #endregion
 

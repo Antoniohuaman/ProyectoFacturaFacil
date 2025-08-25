@@ -50,11 +50,18 @@ namespace ComprobantesElectronicosBC.Tests
             var emision  = FechaEmision.Create(DateOnly.FromDateTime(Now), tipo.Codigo, Now);
             var forma    = FormaDePago.ContadoEfectivo();
             var vence    = FechaVencimiento.ParaFormaDePago(forma, emision.Fecha);
+            var usuarioEmisor = UsuarioEmisorDefault();
 
             var agg = ComprobanteElectronico.CrearBorrador(
-                tipo, emisor, cliente, moneda, emision, forma, vence, Now);
+                tipo, emisor, cliente, moneda, emision, forma, vence, usuarioEmisor, Now);
 
             return (agg, emision.Fecha, moneda);
+        }
+
+        // Helper para snapshot de usuario emisor
+        private static UsuarioSnapshot UsuarioEmisorDefault()
+        {
+            return new UsuarioSnapshot("u001", "Vendedor Prueba", "Vendedor");
         }
 
         private static Guid AgregarLineaDefault(ComprobanteElectronico agg, Moneda moneda,
