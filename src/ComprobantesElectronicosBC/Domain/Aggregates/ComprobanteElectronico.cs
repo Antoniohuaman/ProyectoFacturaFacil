@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using SharedKernel.Events;
+using ComprobantesElectronicosBC.Domain.Events;
 using SharedKernel.ValueObjects;
 using ComprobantesElectronicosBC.Domain.ValueObjects;
 // ...existing code...
@@ -9,29 +11,66 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
 {
     /// <summary>
     /// Ciclo de vida del CPE dentro de ComprobantesElectronicosBC.
+    /// 
+    /// Este enum modela los seis estados principales de un comprobante electrónico (Factura/Boleta) en Factura Fácil.
+    /// La gestión de estados es responsabilidad de este aggregate; la firma digital y el envío a SUNAT se delegan a un API externo.
+    /// Los estados reflejan el proceso real del usuario y la interacción con el API Service de Facturación.
     /// </summary>
     public enum EstadoComprobante : short
     {
-        /// <summary>Fase de preparación. Editable. Sin envío ni correlativo obligatorio.</summary>
+    /// <summary>
+    /// Borrador: Fase de preparación inmediata.
+    /// - Se crea al abrir el formulario.
+    /// - Permite editar, eliminar y generar vista previa (PDF/HTML).
+    /// - No tiene correlativo ni XML/ZIP.
+    /// </summary>
         Borrador = 0,
 
-        /// <summary>Enviado al API Service (JSON construido y correlativo asignado); esperando CDR.</summary>
+    /// <summary>
+    /// Enviado: Comprobante enviado al API Service.
+    /// - Al hacer clic en “Emitir”, cambia a PendingValidation.
+    /// - Se construye el JSON, se asigna correlativo y se invoca al API Service.
+    /// - El sistema muestra “Enviado” mientras espera respuesta técnica (CDR o error).
+    /// </summary>
         Enviado = 1,
 
-        /// <summary>Requiere corrección por error técnico o de validación. Editable para reenviar.</summary>
+    /// <summary>
+    /// Corregir: Requiere intervención por errores de validación.
+    /// - Rechazo del API Service por formato o reglas de negocio.
+    /// - Excepción de SUNAT (códigos 0100–0199) o fallo de comunicación.
+    /// - Permite “Editar y Reenviar”.
+    /// </summary>
         Corregir = 2,
 
-        /// <summary>SUNAT acepta (CDR OK). Estado final; no editable.</summary>
+    /// <summary>
+    /// Aceptado: SUNAT confirma con CDR de aceptación (código 98).
+    /// - Estado final, no editable.
+    /// - Permite descargar el CDR y visualizar el comprobante con sello.
+    /// </summary>
         Aceptado = 3,
 
-        /// <summary>SUNAT rechaza (CDR 2000–3999). Estado final; no editable.</summary>
+    /// <summary>
+    /// Rechazado: SUNAT emite CDR de rechazo (códigos 2000–3999).
+    /// - Estado final, no editable.
+    /// - Se registra motivo y deja de ser editable.
+    /// - No permite nota de crédito ni baja.
+    /// </summary>
         Rechazado = 4,
 
-        /// <summary>Baja confirmada por SUNAT (CDR de baja/RA). Estado final.</summary>
+    /// <summary>
+    /// Anulado: Baja homologada por SUNAT (CDR de baja).
+    /// - Se envía la comunicación de baja (RA) al API Service.
+    /// - Al confirmar el CDR de baja, cambia a Cancelled.
+    /// - Estado final; conserva histórico pero marca el comprobante como anulado.
+    /// </summary>
         Anulado = 5
     }
 
-    /// <summary>Utilidades de reglas/etiquetas/códigos para persistencia y UI.</summary>
+    /// <summary>
+    /// Utilidades de reglas/etiquetas/códigos para persistencia y UI.
+    /// 
+    /// Métodos de ayuda para mapear los estados a códigos canónicos, reglas de edición/emisión y detección de estados finales.
+    /// </summary>
     public static class EstadoComprobanteInfo
     {
         // Códigos canónicos (útiles si prefieres guardar texto estable)
@@ -59,10 +98,16 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
 
     /// <summary>
     /// Aggregate raíz del Bounded Context ComprobantesElectronicosBC.
-    /// Modela la preparación del CPE (Factura/Boleta) listo para firmar/enviar por el servicio externo.
+    /// 
+    /// Este aggregate modela la preparación, validación y gestión de estados de un comprobante electrónico (Factura/Boleta).
+    /// La firma digital y el envío a SUNAT se delegan a un API externo; aquí solo se gestiona el ciclo de vida y la lógica de negocio para el usuario.
+    /// Los métodos de transición de estado (Emitir, MarcarCorregir, MarcarAceptado, etc.) reflejan el proceso real y pueden emitir eventos de dominio para integración y auditoría.
     /// </summary>
     public sealed partial class ComprobanteElectronico
     {
+        // Domain events emitted by this aggregate
+        private readonly List<IDomainEvent> _domainEvents = new();
+        public IReadOnlyCollection<IDomainEvent> DomainEvents => _domainEvents.AsReadOnly();
         #region Identidad y estado
         public Guid ComprobanteId { get; }
         public EstadoComprobante Estado { get; private set; } = EstadoComprobante.Borrador;
@@ -388,6 +433,8 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
             UltimoErrorTecnico = null;
             UltimoCdrCodigo = null;
             UltimoCdrDescripcion = null;
+            // Emit domain event
+            _domainEvents.Add(new ComprobanteEmitidoDomainEvent(ComprobanteId, DateTime.UtcNow));
         }
 
         /// <summary>Pasa de Enviado → Corregir (error recuperable).</summary>
@@ -397,6 +444,8 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
                 throw new InvalidOperationException("Solo un comprobante ENVIADO puede pasar a CORREGIR.");
             UltimoErrorTecnico = string.IsNullOrWhiteSpace(detalleError) ? "Error no especificado" : detalleError.Trim();
             Estado = EstadoComprobante.Corregir;
+            // Emit domain event
+            _domainEvents.Add(new ComprobanteObservadoDomainEvent(ComprobanteId, detalleError, DateTime.UtcNow));
         }
 
         /// <summary>Pasa de Enviado → Aceptado.</summary>
@@ -405,6 +454,8 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
             EnsurePuedeAceptar();
             Estado = EstadoComprobante.Aceptado;
             AceptadoEnUtc = DateTimeOffset.UtcNow;
+            // Emit domain event
+            _domainEvents.Add(new ComprobanteEnviadoDomainEvent(ComprobanteId, DateTime.UtcNow));
         }
 
         /// <summary>Pasa de Enviado → Aceptado con fecha específica (wrapper de compatibilidad).</summary>
@@ -413,6 +464,8 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
             EnsurePuedeAceptar();
             Estado = EstadoComprobante.Aceptado;
             AceptadoEnUtc = aceptadoEnUtc;
+            // Emit domain event
+            _domainEvents.Add(new ComprobanteEnviadoDomainEvent(ComprobanteId, aceptadoEnUtc.UtcDateTime));
         }
 
         /// <summary>Pasa de Enviado → Rechazado (CDR 2000–3999).</summary>
@@ -423,6 +476,8 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
             UltimoCdrCodigo = string.IsNullOrWhiteSpace(codigoCdr) ? null : codigoCdr.Trim();
             UltimoCdrDescripcion = string.IsNullOrWhiteSpace(descripcion) ? null : descripcion.Trim();
             Estado = EstadoComprobante.Rechazado;
+            // Emit domain event
+            _domainEvents.Add(new ComprobanteRechazadoDomainEvent(ComprobanteId, codigoCdr, descripcion, DateTime.UtcNow));
         }
 
         /// <summary>Pasa de Aceptado → Anulado (RA aceptada).</summary>
@@ -432,6 +487,8 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
                 throw new InvalidOperationException("Solo un comprobante ACEPTADO puede anularse por baja.");
             Estado = EstadoComprobante.Anulado;
             AnuladoEnUtc = cdrBajaEnUtc;
+            // Emit domain event
+            _domainEvents.Add(new ComprobanteAnuladoDomainEvent(ComprobanteId, cdrBajaEnUtc.UtcDateTime));
         }
 
         private void EnsurePuedeAceptar()

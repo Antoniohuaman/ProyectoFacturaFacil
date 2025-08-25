@@ -3,12 +3,74 @@ using NUnit.Framework;
 using ComprobantesElectronicosBC.Domain.Aggregates;
 using ComprobantesElectronicosBC.Domain.ValueObjects;
 using SharedKernel.ValueObjects;
+using ComprobantesElectronicosBC.Domain.Events;
+using System.Linq;
 
 namespace ComprobantesElectronicosBC.Tests
 {
     [TestFixture]
     public class ComprobanteElectronicoTests
     {
+        [Test]
+        public void Emitir_AgregaEvento_ComprobanteEmitidoDomainEvent()
+        {
+            var (agg, _, moneda) = CrearBorradorBoletaContado();
+            AgregarLineaDefault(agg, moneda);
+            agg.AsignarSerieYNumero("B001", 1);
+            agg.Emitir();
+            var evento = agg.DomainEvents.OfType<ComprobantesElectronicosBC.Domain.Events.ComprobanteEmitidoDomainEvent>().FirstOrDefault();
+            Assert.That(evento, Is.Not.Null);
+        }
+
+        [Test]
+        public void MarcarAceptado_AgregaEvento_ComprobanteEnviadoDomainEvent()
+        {
+            var (agg, _, moneda) = CrearBorradorBoletaContado();
+            AgregarLineaDefault(agg, moneda);
+            agg.AsignarSerieYNumero("B001", 1);
+            agg.Emitir();
+            agg.MarcarAceptado();
+            var evento = agg.DomainEvents.OfType<ComprobantesElectronicosBC.Domain.Events.ComprobanteEnviadoDomainEvent>().FirstOrDefault();
+            Assert.That(evento, Is.Not.Null);
+        }
+
+        [Test]
+        public void MarcarCorregir_AgregaEvento_ComprobanteObservadoDomainEvent()
+        {
+            var (agg, _, moneda) = CrearBorradorBoletaContado();
+            AgregarLineaDefault(agg, moneda);
+            agg.AsignarSerieYNumero("B001", 1);
+            agg.Emitir();
+            agg.MarcarCorregir("Error técnico");
+            var evento = agg.DomainEvents.OfType<ComprobantesElectronicosBC.Domain.Events.ComprobanteObservadoDomainEvent>().FirstOrDefault();
+            Assert.That(evento, Is.Not.Null);
+        }
+
+        [Test]
+        public void MarcarRechazado_AgregaEvento_ComprobanteRechazadoDomainEvent()
+        {
+            var (agg, _, moneda) = CrearBorradorBoletaContado();
+            AgregarLineaDefault(agg, moneda);
+            agg.AsignarSerieYNumero("B001", 1);
+            agg.Emitir();
+            agg.MarcarRechazado("2001", "Error en estructura XML");
+            var evento = agg.DomainEvents.OfType<ComprobantesElectronicosBC.Domain.Events.ComprobanteRechazadoDomainEvent>().FirstOrDefault();
+            Assert.That(evento, Is.Not.Null);
+        }
+
+        [Test]
+        public void MarcarAnulado_AgregaEvento_ComprobanteAnuladoDomainEvent()
+        {
+            var (agg, _, moneda) = CrearBorradorBoletaContado();
+            AgregarLineaDefault(agg, moneda);
+            agg.AsignarSerieYNumero("B001", 1);
+            agg.Emitir();
+            agg.MarcarAceptado();
+            var tsBaja = new DateTimeOffset(Now).AddDays(1);
+            agg.MarcarAnulado(tsBaja);
+            var evento = agg.DomainEvents.OfType<ComprobantesElectronicosBC.Domain.Events.ComprobanteAnuladoDomainEvent>().FirstOrDefault();
+            Assert.That(evento, Is.Not.Null);
+        }
         // Fecha/hora fija para pruebas determinísticas
         private static readonly DateTime Now = new(2025, 8, 10, 12, 0, 0);
 
