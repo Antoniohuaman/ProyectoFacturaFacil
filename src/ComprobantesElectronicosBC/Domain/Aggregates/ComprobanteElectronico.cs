@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using SharedKernel.Events;
 using ComprobantesElectronicosBC.Domain.Events;
+using ProyectoFacturaFacil.ComprobantesElectronicosBC.Domain.Events;
 using SharedKernel.ValueObjects;
 using ComprobantesElectronicosBC.Domain.ValueObjects;
 // ...existing code...
@@ -444,8 +445,13 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
                 throw new InvalidOperationException("Solo un comprobante ENVIADO puede pasar a CORREGIR.");
             UltimoErrorTecnico = string.IsNullOrWhiteSpace(detalleError) ? "Error no especificado" : detalleError.Trim();
             Estado = EstadoComprobante.Corregir;
-            // Emit domain event
+            // Emit domain events
             _domainEvents.Add(new ComprobanteObservadoDomainEvent(ComprobanteId, detalleError, DateTime.UtcNow));
+            _domainEvents.Add(new ComprobanteCorregidoDomainEvent(
+                ComprobanteId,
+                DateTime.UtcNow,
+                detalleError
+            ));
         }
 
         /// <summary>Pasa de Enviado → Aceptado.</summary>
@@ -454,8 +460,12 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
             EnsurePuedeAceptar();
             Estado = EstadoComprobante.Aceptado;
             AceptadoEnUtc = DateTimeOffset.UtcNow;
-            // Emit domain event
+            // Emit domain events
             _domainEvents.Add(new ComprobanteEnviadoDomainEvent(ComprobanteId, DateTime.UtcNow));
+            _domainEvents.Add(new ProyectoFacturaFacil.ComprobantesElectronicosBC.Domain.Events.ComprobanteAceptadoDomainEvent(
+                ComprobanteId,
+                DateTime.UtcNow
+            ));
         }
 
         /// <summary>Pasa de Enviado → Aceptado con fecha específica (wrapper de compatibilidad).</summary>
@@ -464,8 +474,12 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
             EnsurePuedeAceptar();
             Estado = EstadoComprobante.Aceptado;
             AceptadoEnUtc = aceptadoEnUtc;
-            // Emit domain event
+            // Emit domain events
             _domainEvents.Add(new ComprobanteEnviadoDomainEvent(ComprobanteId, aceptadoEnUtc.UtcDateTime));
+            _domainEvents.Add(new ProyectoFacturaFacil.ComprobantesElectronicosBC.Domain.Events.ComprobanteAceptadoDomainEvent(
+                ComprobanteId,
+                aceptadoEnUtc.UtcDateTime
+            ));
         }
 
         /// <summary>Pasa de Enviado → Rechazado (CDR 2000–3999).</summary>
