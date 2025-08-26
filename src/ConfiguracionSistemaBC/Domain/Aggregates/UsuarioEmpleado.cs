@@ -4,6 +4,7 @@ using ConfiguracionSistemaBC.Domain.Interfaces;
 using ConfiguracionSistemaBC.Domain.ValueObjects;
 using SharedKernel.Events;
 using SharedKernel.Exceptions;
+using SharedKernel.ValueObjects;
 using ConfiguracionSistemaBC.Domain.Events;
 
 namespace ConfiguracionSistemaBC.Domain.Aggregates
@@ -37,10 +38,10 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
 
         // Multi-tenant (obligatorios)
         public EmpresaId EmpresaId { get; private set; } = default!;
-        public SucursalId SucursalId { get; private set; } = default!;
+    public IReadOnlyCollection<EstablecimientoId> Establecimientos { get; private set; } = Array.Empty<EstablecimientoId>();
 
         // Datos (obligatorios)
-        public CorreoElectronico Email { get; private set; } = default!;
+    public Email Email { get; private set; } = default!;
         public NombrePersona Nombre { get; private set; } = default!;
         public RolUsuario Rol { get; private set; }
 
@@ -66,8 +67,8 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
         private UsuarioEmpleado(
             Guid id,
             EmpresaId empresaId,
-            SucursalId sucursalId,
-            CorreoElectronico email,
+            IEnumerable<EstablecimientoId> establecimientos,
+            Email email,
             NombrePersona nombre,
             RolUsuario rol,
             PasswordHash passwordHash,
@@ -75,23 +76,25 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
         {
             Id = id;
             EmpresaId = empresaId ?? throw new ArgumentNullException(nameof(empresaId));
-            SucursalId = sucursalId ?? throw new ArgumentNullException(nameof(sucursalId));
+            // SucursalId eliminado: multiestablecimiento
             Email = email ?? throw new ArgumentNullException(nameof(email));
             Nombre = nombre ?? throw new ArgumentNullException(nameof(nombre));
             Rol = rol;
             PasswordHash = passwordHash ?? throw new ArgumentNullException(nameof(passwordHash));
             NombrePerfilPersonalizado = nombrePerfilPersonalizado;
 
+            Establecimientos = (establecimientos ?? throw new ArgumentNullException(nameof(establecimientos))).ToArray();
+
             Estado = EstadoUsuarioEmpleado.Inhabilitado;
 
-            _domainEvents.Add(new UsuarioEmpleadoCreado(Id, EmpresaId, SucursalId, Email, Nombre, Rol));
+            _domainEvents.Add(new UsuarioEmpleadoCreado(Id, EmpresaId, Establecimientos, Email, Nombre, Rol));
         }
 
         /// <summary>Fábrica DDD: valida invariantes y crea el agregado inhabilitado.</summary>
         public static UsuarioEmpleado Crear(
             EmpresaId empresaId,
-            SucursalId sucursalId,
-            CorreoElectronico email,
+            IEnumerable<EstablecimientoId> establecimientos,
+            Email email,
             NombrePersona nombre,
             RolUsuario rol,
             PasswordHash passwordHash,
@@ -100,13 +103,15 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
         {
             if (unicidad is null) throw new ArgumentNullException(nameof(unicidad));
             if (!unicidad.EsEmailUnicoPorEmpresa(empresaId, email))
-                throw new BusinessRuleException($"El email {email.Valor} ya existe en la empresa.");
+                throw new BusinessRuleException($"El email {email.Value} ya existe en la empresa.");
+            if (establecimientos == null || !establecimientos.Any())
+                throw new BusinessRuleException("Debe asignar al menos un establecimiento al usuario.");
 
-            return new UsuarioEmpleado(Guid.NewGuid(), empresaId, sucursalId, email, nombre, rol, passwordHash, nombrePerfilPersonalizado);
+            return new UsuarioEmpleado(Guid.NewGuid(), empresaId, establecimientos, email, nombre, rol, passwordHash, nombrePerfilPersonalizado);
         }
 
         /// <summary>Genera invitación (token/expiración) y emite evento para enviar correo.</summary>
-        public void GenerarInvitacion(string token, DateTime expiraElUtc, DateTime ahoraUtc)
+    public void GenerarInvitacion(string token, DateTime expiraElUtc, DateTime ahoraUtc)
         {
             EnsureNoEliminado();
             if (Estado == EstadoUsuarioEmpleado.Habilitado)
@@ -208,21 +213,21 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
 
         // ===== Eventos de dominio (lenguaje del dominio, sin detalles de infraestructura) =====
         public sealed record UsuarioEmpleadoCreado(
-            Guid UsuarioEmpleadoId, EmpresaId EmpresaId, SucursalId SucursalId,
-            CorreoElectronico Email, NombrePersona Nombre, RolUsuario Rol) : IDomainEvent;
+            Guid UsuarioEmpleadoId, EmpresaId EmpresaId, IReadOnlyCollection<EstablecimientoId> Establecimientos,
+            Email Email, NombrePersona Nombre, RolUsuario Rol) : IDomainEvent;
 
         public sealed record UsuarioEmpleadoEliminado(
             Guid UsuarioEmpleadoId, EmpresaId EmpresaId, string Razon) : IDomainEvent;
 
         public sealed record InvitacionUsuarioEmpleadoEnviada(
-            Guid UsuarioEmpleadoId, EmpresaId EmpresaId, CorreoElectronico Email,
+            Guid UsuarioEmpleadoId, EmpresaId EmpresaId, Email Email,
             string Token, DateTime ExpiraElUtc) : IDomainEvent;
 
         public sealed record InvitacionUsuarioEmpleadoAceptada(
-            Guid UsuarioEmpleadoId, EmpresaId EmpresaId, CorreoElectronico Email) : IDomainEvent;
+            Guid UsuarioEmpleadoId, EmpresaId EmpresaId, Email Email) : IDomainEvent;
 
         public sealed record SolicitarProvisionEnIdentidad(
-            Guid UsuarioEmpleadoId, EmpresaId EmpresaId, CorreoElectronico Email,
+            Guid UsuarioEmpleadoId, EmpresaId EmpresaId, Email Email,
             PasswordHash PasswordHash, RolUsuario Rol) : IDomainEvent;
 
         public sealed record UsuarioEmpleadoHabilitado(

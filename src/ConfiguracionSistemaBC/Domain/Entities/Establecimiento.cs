@@ -9,24 +9,28 @@ namespace ConfiguracionSistemaBC.Domain.Entities
 	/// </summary>
 	public class Establecimiento
 	{
-		public Guid Id { get; private set; }
+	public EstablecimientoId Id { get; private set; }
+	public EmpresaId EmpresaId { get; private set; }
 		public string Nombre { get; private set; } = string.Empty;
 		public string Codigo { get; private set; } = string.Empty;
 		public DireccionPostal Direccion { get; private set; } = null!;
 		public Telefono Telefono { get; private set; } = null!;
 		public EmailEmpresa? Email { get; private set; }
 
-		// Relación con empresa (opcional, si se requiere)
-		// public Guid EmpresaId { get; private set; }
+	// Relación con empresa: cada establecimiento pertenece a una empresa
 
 		// Constructor para EF/Core y para creación
-		private Establecimiento() { }
+		private Establecimiento() {
+			Id = null!;
+			EmpresaId = null!;
+		}
 
-		public Establecimiento(Guid id, string nombre, string codigo, DireccionPostal direccion, Telefono telefono, EmailEmpresa? email)
+		public Establecimiento(EstablecimientoId id, EmpresaId empresaId, string nombre, string codigo, DireccionPostal direccion, Telefono telefono, EmailEmpresa? email)
 		{
 			if (string.IsNullOrWhiteSpace(nombre)) throw new ArgumentException("El nombre es obligatorio.", nameof(nombre));
 			if (string.IsNullOrWhiteSpace(codigo)) throw new ArgumentException("El código es obligatorio.", nameof(codigo));
-			Id = id == Guid.Empty ? Guid.NewGuid() : id;
+			Id = id ?? throw new ArgumentNullException(nameof(id));
+			EmpresaId = empresaId ?? throw new ArgumentNullException(nameof(empresaId));
 			Nombre = nombre;
 			Codigo = codigo;
 			Direccion = direccion ?? throw new ArgumentNullException(nameof(direccion));

@@ -7,11 +7,12 @@ namespace ConfiguracionSistemaBC.Domain.Events
 {
     /// <summary>
     /// Evento de dominio que representa la creación de un UsuarioEmpleado.
+    /// Ahora se asocia a uno o varios establecimientos, no sucursales.
     /// </summary>
     public sealed record UsuarioEmpleadoCreado(
         Guid UsuarioEmpleadoId,
         EmpresaId EmpresaId,
-        SucursalId SucursalId,
+        IReadOnlyCollection<EstablecimientoId> Establecimientos,
         CorreoElectronico Email,
         NombrePersona Nombre,
         RolUsuario Rol

@@ -9,6 +9,7 @@ namespace ConfiguracionSistemaBC.Domain.Events
         EmpresaId EmpresaId,
         CorreoElectronico Email,
         string Token,
-        DateTime ExpiraElUtc
+        DateTime ExpiraElUtc,
+        IReadOnlyCollection<EstablecimientoId> Establecimientos
     ) : IDomainEvent;
 }

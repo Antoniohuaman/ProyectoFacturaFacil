@@ -6,6 +6,7 @@ namespace ConfiguracionSistemaBC.Domain.Events
 {
     public sealed record UsuarioEmpleadoHabilitado(
         Guid UsuarioEmpleadoId,
-        EmpresaId EmpresaId
+        EmpresaId EmpresaId,
+        IReadOnlyCollection<EstablecimientoId> Establecimientos
     ) : IDomainEvent;
 }

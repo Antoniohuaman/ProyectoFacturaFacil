@@ -4,17 +4,6 @@ using SharedKernel.Exceptions;
 
 namespace ConfiguracionSistemaBC.Domain.ValueObjects
 {
-    // Multi-tenant
-
-    public sealed record SucursalId(string Valor)
-    {
-        public static SucursalId Desde(string v) =>
-            string.IsNullOrWhiteSpace(v)
-                ? throw new BusinessRuleException("SucursalId es obligatorio.")
-                : new(v.Trim());
-
-        public override string ToString() => Valor;
-    }
 
     // Datos personales
     public sealed record CorreoElectronico(string Valor)
@@ -75,6 +64,6 @@ namespace ConfiguracionSistemaBC.Domain.ValueObjects
 
     public interface IUnicidadUsuarioEmpleadoService
     {
-        bool EsEmailUnicoPorEmpresa(EmpresaId empresaId, CorreoElectronico email);
+    bool EsEmailUnicoPorEmpresa(EmpresaId empresaId, SharedKernel.ValueObjects.Email email);
     }
 }

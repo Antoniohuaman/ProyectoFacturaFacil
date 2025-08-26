@@ -22,8 +22,8 @@ namespace ConfiguracionSistemaBC.Tests.Domain
         }
 
     private static EmpresaId Emp(string v = "EMP01") => EmpresaId.Desde(v);
-        private static SucursalId Suc(string v = "SUC01") => new SucursalId(v);
-        private static CorreoElectronico Mail(string v = "vendedor@demo.com") => new CorreoElectronico(v);
+    private static EstablecimientoId Est(string v = "EST01") => EstablecimientoId.Desde(v);
+    private static SharedKernel.ValueObjects.Email Mail(string v = "vendedor@demo.com") => SharedKernel.ValueObjects.Email.Create(v);
         private static NombrePersona Nom(string n = "Juan", string a = "Pérez") => new NombrePersona(n, a);
         private static PasswordHash Hash(string v = "hash-1") => new PasswordHash(v);
 
@@ -31,7 +31,7 @@ namespace ConfiguracionSistemaBC.Tests.Domain
         {
             return UsuarioEmpleado.Crear(
                 empresaId: Emp(),
-                sucursalId: Suc(),
+                establecimientos: new[] { Est() },
                 email: Mail(),
                 nombre: Nom(),
                 rol: rol,
@@ -48,8 +48,8 @@ namespace ConfiguracionSistemaBC.Tests.Domain
 
             Assert.That(agg.Estado, Is.EqualTo(EstadoUsuarioEmpleado.Inhabilitado));
             Assert.That(agg.EmpresaId.Valor, Is.EqualTo("EMP01"));
-            Assert.That(agg.SucursalId.Valor, Is.EqualTo("SUC01"));
-            Assert.That(agg.Email.Valor, Is.EqualTo("vendedor@demo.com"));
+            Assert.That(agg.Establecimientos.Single().Valor, Is.EqualTo("EST01"));
+            Assert.That(agg.Email.Value, Is.EqualTo("vendedor@demo.com"));
             Assert.That(agg.Rol, Is.EqualTo(RolUsuario.Cajero));
 
             Assert.That(agg.DomainEvents.Any(e => e is UsuarioEmpleado.UsuarioEmpleadoCreado), Is.True);
@@ -62,7 +62,7 @@ namespace ConfiguracionSistemaBC.Tests.Domain
 
             Assert.That(() =>
             {
-                _ = UsuarioEmpleado.Crear(Emp(), Suc(), Mail(), Nom(), RolUsuario.Cajero, Hash(), null, _unicidad);
+                _ = UsuarioEmpleado.Crear(Emp(), new[] { Est() }, Mail(), Nom(), RolUsuario.Cajero, Hash(), null, _unicidad);
             }, Throws.TypeOf<BusinessRuleException>().With.Message.Contains("ya existe"));
         }
 
@@ -232,7 +232,7 @@ namespace ConfiguracionSistemaBC.Tests.Domain
         {
             private readonly bool _isUnique;
             public UnicidadServiceFake(bool isUnique) => _isUnique = isUnique;
-            public bool EsEmailUnicoPorEmpresa(EmpresaId empresaId, CorreoElectronico email) => _isUnique;
+            public bool EsEmailUnicoPorEmpresa(EmpresaId empresaId, SharedKernel.ValueObjects.Email email) => _isUnique; // No change needed
         }
 
         private sealed class ActividadServiceFake : IUsuarioEmpleadoActividadService
@@ -240,6 +240,8 @@ namespace ConfiguracionSistemaBC.Tests.Domain
             private readonly bool _hasActivity;
             public ActividadServiceFake(bool hasActivity) => _hasActivity = hasActivity;
             public bool TieneAcciones(Guid usuarioEmpleadoId) => _hasActivity;
+            public bool TieneAccionesEnEstablecimiento(Guid usuarioEmpleadoId, EstablecimientoId estId) => _hasActivity;
+            public bool TieneAccionesEnEstablecimientos(Guid usuarioEmpleadoId, System.Collections.Generic.IEnumerable<EstablecimientoId> estIds) => _hasActivity;
         }
     }
 }

@@ -40,36 +40,6 @@ namespace ConfiguracionSistemaBC.Tests.UnitTests.Domain.ValueObjects
             Assert.That(a, Is.Not.EqualTo(c));
         }
 
-        // -------------------- SucursalId --------------------
-
-        [Test]
-        public void SucursalId_Desde_ok_y_trim()
-        {
-            var s = SucursalId.Desde("  SUC-01 ");
-
-            Assert.That(s.Valor, Is.EqualTo("SUC-01"));
-            Assert.That(s.ToString(), Is.EqualTo("SUC-01"));
-        }
-
-        [TestCase("")]
-        [TestCase("   ")]
-        [TestCase(null)]
-        public void SucursalId_Desde_vacio_lanza(string input)
-        {
-            Assert.That(() => _ = SucursalId.Desde(input!),
-                Throws.TypeOf<BusinessRuleException>().With.Message.Contains("obligatorio"));
-        }
-
-        [Test]
-        public void SucursalId_es_record_value_equality()
-        {
-            var a = SucursalId.Desde("S1");
-            var b = new SucursalId("S1");
-            var c = SucursalId.Desde("S2");
-
-            Assert.That(a, Is.EqualTo(b));
-            Assert.That(a, Is.Not.EqualTo(c));
-        }
 
         // -------------------- CorreoElectronico --------------------
 
@@ -177,8 +147,37 @@ namespace ConfiguracionSistemaBC.Tests.UnitTests.Domain.ValueObjects
             Assert.That(hasher.UltimoTextoPlano, Is.EqualTo("secreto"));
             Assert.That(hasher.CantidadLlamadas, Is.EqualTo(1));
         }
+    // -------------------- EstablecimientoId --------------------
 
-        [Test]
+    [Test]
+            public void EstablecimientoId_Desde_ok_y_trim()
+            {
+                var e = EstablecimientoId.Desde("  EST01  ");
+
+                Assert.That(e, Is.Not.Null);
+                Assert.That(e.Valor, Is.EqualTo("EST01"));
+                Assert.That(e.ToString(), Is.EqualTo("EST01"));
+            }
+
+            [TestCase("")]
+            [TestCase("   ")]
+            [TestCase(null)]
+            public void EstablecimientoId_Desde_vacio_lanza(string input)
+            {
+                Assert.That(() => _ = EstablecimientoId.Desde(input!),
+                    Throws.TypeOf<BusinessRuleException>().With.Message.Contains("obligatorio"));
+            }
+
+            [Test]
+            public void EstablecimientoId_es_record_value_equality()
+            {
+                var a = EstablecimientoId.Desde("EST01");
+                var b = EstablecimientoId.Desde("EST01");
+                var c = EstablecimientoId.Desde("EST02");
+
+                Assert.That(a, Is.EqualTo(b));
+                Assert.That(a, Is.Not.EqualTo(c));
+            }
         public void PasswordHash_DesdeTextoPlano_vacio_lanza()
         {
             var hasher = new HasherFake();
