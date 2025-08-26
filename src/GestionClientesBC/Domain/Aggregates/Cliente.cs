@@ -17,7 +17,7 @@ namespace GestionClientesBC.Domain.Aggregates
     {
         private readonly List<ContactoCliente> _contactos = new();
         private readonly List<AdjuntoCliente> _adjuntos = new();
-        private readonly List<OperacionCliente> _operaciones = new();
+    // Eliminado: private readonly List<OperacionCliente> _operaciones = new();
 
         public Guid ClienteId { get; }
     public DocumentoIdentidad DocumentoIdentidad { get; private set; } // Usando SharedKernel.ValueObjects
@@ -35,7 +35,7 @@ namespace GestionClientesBC.Domain.Aggregates
 
         public IReadOnlyCollection<ContactoCliente> Contactos => _contactos.AsReadOnly();
         public IReadOnlyCollection<AdjuntoCliente> Adjuntos => _adjuntos.AsReadOnly();
-        public IReadOnlyCollection<OperacionCliente> Operaciones => _operaciones.AsReadOnly();
+    // Eliminado: public IReadOnlyCollection<OperacionCliente> Operaciones => _operaciones.AsReadOnly();
 
         private readonly List<IDomainEvent> _domainEvents = new();
         public IReadOnlyCollection<IDomainEvent> DomainEvents => _domainEvents.AsReadOnly();
@@ -192,14 +192,7 @@ namespace GestionClientesBC.Domain.Aggregates
             if (adjunto != null)
                 adjunto.MarcarInactivo();
         }
-        public void AgregarOperacion(OperacionCliente operacion)
-{
-    if (operacion == null)
-        throw new ArgumentNullException(nameof(operacion));
-    if (_operaciones.Any(o => o.ReferenciaId.ToString() == operacion.ReferenciaId.ToString()))
-        return; // Evita duplicados
-    _operaciones.Add(operacion);
-}
+    // Eliminado: método AgregarOperacion(OperacionCliente operacion)
 
         
 

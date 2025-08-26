@@ -19,16 +19,7 @@ namespace GestionClientesBC.Application.Interfaces
         // Métodos necesarios para ConsultarClienteUseCase
         Task<ICollection<ContactoCliente>> ObtenerContactosPorClienteIdAsync(Guid clienteId);
         Task<ICollection<AdjuntoCliente>> ObtenerAdjuntosPorClienteIdAsync(Guid clienteId);
-        Task<ICollection<OperacionCliente>> ObtenerOperacionesPorClienteIdAsync(Guid clienteId, DateTime desde);
-        Task<ICollection<OperacionCliente>> ObtenerOperacionesPorClienteIdAsync(
-        Guid clienteId,
-        DateTime? fechaDesde,
-        DateTime? fechaHasta,
-        TipoOperacion? tipoOperacion,
-        int? page,
-        int? pageSize);
-        // Métodos necesarios para RegistrarOperacionClienteUseCase
-        Task RegistrarOperacionClienteAsync(Guid clienteId, OperacionCliente operacion);
+    // Eliminados: métodos relacionados a OperacionCliente y TipoOperacion
                                                      
     }
 }
