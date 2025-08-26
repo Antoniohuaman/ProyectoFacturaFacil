@@ -1,4 +1,5 @@
 using System;
+using SharedKernel.ValueObjects;
 using ConfiguracionSistemaBC.Domain.ValueObjects;
 using SharedKernel.Events;
 
@@ -12,7 +13,7 @@ namespace ConfiguracionSistemaBC.Domain.Events
 		Guid UsuarioEmpleadoId,
 		EmpresaId EmpresaId,
 		IReadOnlyCollection<EstablecimientoId> Establecimientos,
-		CorreoElectronico Email,
+		Email Email,
 		NombrePersona Nombre
 	) : IDomainEvent;
 }

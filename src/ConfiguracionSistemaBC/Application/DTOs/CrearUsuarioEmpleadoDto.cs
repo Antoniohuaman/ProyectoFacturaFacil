@@ -7,8 +7,8 @@ namespace ConfiguracionSistemaBC.Application.DTOs
     /// </summary>
     public class CrearUsuarioEmpleadoDto
     {
-        public Guid? EmpresaId { get; set; }
-        public Guid? SucursalId { get; set; }
+    public string EmpresaId { get; set; } = string.Empty;
+    public string EstablecimientoId { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
         public string Nombre { get; set; } = string.Empty;
         public int Rol { get; set; } // Enum RolUsuario
