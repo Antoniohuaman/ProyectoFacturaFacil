@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
 using NUnit.Framework;
-using ConfiguracionSistemaBC.Domain.ValueObjects;
+using SharedKernel.ValueObjects;
 
-namespace ConfiguracionSistemaBC.Tests.UnitTests.ValueObjects
+namespace SharedKernel.Tests.UnitTests.ValueObjects
 {
     [TestFixture]
     public class TelefonoTests

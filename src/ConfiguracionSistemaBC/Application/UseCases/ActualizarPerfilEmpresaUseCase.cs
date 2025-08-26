@@ -5,8 +5,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using ConfiguracionSistemaBC.Domain.Aggregates;
 using ConfiguracionSistemaBC.Domain.Repositories;
+using SharedKernel.ValueObjects;
 using ConfiguracionSistemaBC.Domain.ValueObjects;
-
 namespace ConfiguracionSistemaBC.Application.UseCases
 {
     /// <summary>

@@ -4,10 +4,10 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text.RegularExpressions;
 
-namespace ConfiguracionSistemaBC.Domain.ValueObjects
+namespace SharedKernel.ValueObjects
 {
     /// <summary>
-    /// Value Object para teléfonos de contacto de la empresa (0 a 3 números).
+    /// Value Object para teléfonos de contacto (0 a 3 números).
     /// - Entrada en un solo campo; admite separar números con "/", "|", ";", ",",
     ///   con " - " (guion rodeado de espacios) o con múltiples espacios.
     /// - Cada número puede venir con espacios, guiones o paréntesis; se normaliza
@@ -15,7 +15,7 @@ namespace ConfiguracionSistemaBC.Domain.ValueObjects
     /// - Longitud válida: 6–15 dígitos (o 8–15 si empieza con "+").
     /// - Se eliminan duplicados (por forma canónica). Igualdad ignora el orden.
     /// - Este VO solo modela el valor; la visibilidad en PDF o etiquetas
-    ///   ("Celular", "WhatsApp") se manejan en la capa de UI/aplicación.
+    ///   ("Celular", "WhatsApp") se maneja en la capa de UI/aplicación.
     /// </summary>
     [DebuggerDisplay("{UnirParaMostrar()}")]
     public sealed class Telefono
