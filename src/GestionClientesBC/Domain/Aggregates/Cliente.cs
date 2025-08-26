@@ -132,7 +132,7 @@ namespace GestionClientesBC.Domain.Aggregates
 
         public void Deshabilitar(string? motivo, DateTime fecha)
         {
-            Estado = EstadoCliente.Inactivo;
+            Estado = EstadoCliente.Inhabilitado;
             FechaDeshabilitacion = fecha;
             MotivoDeshabilitacion = motivo;
         }
