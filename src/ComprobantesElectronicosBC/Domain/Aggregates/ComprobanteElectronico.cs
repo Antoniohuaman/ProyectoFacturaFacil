@@ -11,6 +11,22 @@ using ComprobantesElectronicosBC.Domain.ValueObjects;
 namespace ComprobantesElectronicosBC.Domain.Aggregates
 {
     /// <summary>
+    /// INFORMACIÓN DE NEGOCIO:
+    /// Al emitir el comprobante, el sistema solo asigna el correlativo (número).
+    /// La serie puede estar preconfigurada por defecto o ser seleccionada por el usuario antes de emitir.
+    /// El sistema no asigna automáticamente la serie al emitir; la serie debe estar configurada previamente en ConfiguracionSistemaBC.
+    /// El usuario puede ver y elegir la serie según la configuración, pero la lógica de asignación de serie no está en este aggregate.
+    /// Además, si la moneda del comprobante es distinta a la moneda local, el formulario y el aggregate deben contemplar el campo TipoCambio.
+    /// </summary>
+    public partial class ComprobanteElectronico
+    {
+        // ...existing code...
+        /// <summary>
+        /// Tipo de cambio aplicado al comprobante (solo si la moneda es extranjera).
+        /// </summary>
+        public TipoCambio? TipoCambio { get; private set; }
+        // ...existing code...
+    }
     /// Ciclo de vida del CPE dentro de ComprobantesElectronicosBC.
     /// 
     /// Este enum modela los seis estados principales de un comprobante electrónico (Factura/Boleta) en Factura Fácil.
@@ -117,9 +133,9 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
 
         #region Cabecera (Value Objects)
         public TipoDeComprobante Tipo { get; private set; }
-        public SerieYNumero? SerieNumero { get; private set; } // se asigna al emitir
-        public FechaEmision Emision { get; private set; }
-        public FechaVencimiento Vencimiento { get; private set; }
+        public SerieYNumero? SerieNumero { get; private set; } // El correlativo se asigna al emitir
+        public FechaEmision Emision { get; private set; } // Por defecto la misma fecha de emisión, retroactivo es por normativa Factura 1 dia y boleta 3 días máximo
+        public FechaVencimiento Vencimiento { get; private set; }//Por defecto la misma fecha de emisión, Sólo se cambia para casos de venta a crédito.
         public FormaDePago FormaDePago { get; private set; }
     public Moneda Moneda { get; private set; }
     // Moneda es el value object del SharedKernel, conforme a ISO-4217
@@ -137,8 +153,8 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
 
         public CentroDeCosto? CentroDeCosto { get; private set; }
         public Observaciones? Observaciones { get; private set; }
-        public NumeroGuiaRemision? NumeroGuiaRemision { get; private set; }
-        public NumeroOrdenCompra? NumeroOrdenCompra { get; private set; }
+        public NumeroGuiaRemision? NumeroGuiaRemision { get; private set; } // Son datos de referencia que el usuario emisor pueda proporcionar de manera opcional
+        public NumeroOrdenCompra? NumeroOrdenCompra { get; private set; } // Son datos de referencia que el usuario emisor pueda proporcionar de manera opcional
 
         /// <summary>Correos de envío (0..5). Se normalizan con <see cref="Email.ParseListOrEmpty"/>.</summary>
         public IReadOnlyList<Email> CorreosEnvio => _correosEnvio.AsReadOnly();
