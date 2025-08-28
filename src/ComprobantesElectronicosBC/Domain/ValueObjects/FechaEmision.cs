@@ -1,4 +1,6 @@
 using System;
+using SharedKernel.Exceptions;
+using ComprobantesElectronicosBC.Domain.Exceptions;
 
 namespace ComprobantesElectronicosBC.Domain.ValueObjects
 {
@@ -54,16 +56,15 @@ namespace ComprobantesElectronicosBC.Domain.ValueObjects
             var hoy   = DateOnly.FromDateTime(nowDt);
 
             if (fecha > hoy)
-                throw new ArgumentException("La fecha de emisión no puede ser futura.", nameof(fecha));
+                throw new FechaInvalidaException("La fecha de emisión no puede ser futura.");
 
             // Ventana de retroactivo por normativa
             var ventana = DiasRetroactivoPermitidos(tipo);
             var deltaDias = hoy.DayNumber - fecha.DayNumber; // diferencia absoluta en días
 
             if (deltaDias > ventana)
-                throw new ArgumentException(
-                    $"Retroactivo excede {ventana} días para el tipo {DescribeTipo(tipo)}.",
-                    nameof(fecha));
+                throw new FechaInvalidaException(
+                    $"Retroactivo excede {ventana} días para el tipo {DescribeTipo(tipo)}.");
 
             // Para UBL también incluimos la hora de emisión (capturamos la hora actual)
             var hora = TimeOnly.FromDateTime(nowDt);
@@ -80,9 +81,8 @@ namespace ComprobantesElectronicosBC.Domain.ValueObjects
             {
                 "01" => 3, // Factura
                 "03" => 5, // Boleta
-                _    => throw new ArgumentException(
-                            "Tipo de comprobante no soportado para FechaEmision. Use \"01\" (Factura) o \"03\" (Boleta).",
-                            nameof(tipo))
+                _    => throw new FechaInvalidaException(
+                            "Tipo de comprobante no soportado para FechaEmision. Use \"01\" (Factura) o \"03\" (Boleta).")
             };
 
         /// <summary>Texto legible para mensajes.</summary>
@@ -97,7 +97,7 @@ namespace ComprobantesElectronicosBC.Domain.ValueObjects
             {
                 "01" => s,
                 "03" => s,
-                _    => throw new ArgumentException("Tipo inválido. Use \"01\" (Factura) o \"03\" (Boleta).", nameof(raw))
+                _    => throw new FechaInvalidaException("Tipo inválido. Use \"01\" (Factura) o \"03\" (Boleta).")
             };
         }
 

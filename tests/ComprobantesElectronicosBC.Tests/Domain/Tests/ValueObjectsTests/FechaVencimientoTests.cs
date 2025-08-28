@@ -1,3 +1,4 @@
+using ComprobantesElectronicosBC.Domain.Exceptions;
 using System;
 using NUnit.Framework;
 using ComprobantesElectronicosBC.Domain.ValueObjects;
@@ -27,7 +28,7 @@ namespace ComprobantesElectronicosBC.Tests.UnitTests.ValueObjects
         public void Create_LanzaSiVencimientoEsAnteriorALaEmision()
         {
             var anterior = Emision.AddDays(-1);
-            Assert.Throws<ArgumentException>(() =>
+            Assert.Throws<FechaInvalidaException>(() =>
                 FechaVencimiento.Create(Emision, anterior));
         }
 
@@ -51,10 +52,13 @@ namespace ComprobantesElectronicosBC.Tests.UnitTests.ValueObjects
         [Test]
         public void DesdeDiasCredito_LanzaSiDiasNoPositivos()
         {
-            Assert.Throws<ArgumentOutOfRangeException>(() =>
+            var ex1 = Assert.Throws<FechaInvalidaException>(() =>
                 FechaVencimiento.DesdeDiasCredito(Emision, 0));
-            Assert.Throws<ArgumentOutOfRangeException>(() =>
+            Assert.That(ex1!.Message, Does.Contain("Los días de crédito deben ser > 0").IgnoreCase);
+
+            var ex2 = Assert.Throws<FechaInvalidaException>(() =>
                 FechaVencimiento.DesdeDiasCredito(Emision, -5));
+            Assert.That(ex2!.Message, Does.Contain("Los días de crédito deben ser > 0").IgnoreCase);
         }
 
         // ----------------------------- TryCreate -----------------------------
@@ -93,9 +97,9 @@ namespace ComprobantesElectronicosBC.Tests.UnitTests.ValueObjects
             var credito = FormaDePago.Credito();
 
             // Lanza si no se proveen días > 0
-            Assert.Throws<ArgumentException>(() =>
+            Assert.Throws<FechaInvalidaException>(() =>
                 FechaVencimiento.ParaFormaDePago(credito, Emision, null));
-            Assert.Throws<ArgumentException>(() =>
+            Assert.Throws<FechaInvalidaException>(() =>
                 FechaVencimiento.ParaFormaDePago(credito, Emision, 0));
 
             // OK con días válidos

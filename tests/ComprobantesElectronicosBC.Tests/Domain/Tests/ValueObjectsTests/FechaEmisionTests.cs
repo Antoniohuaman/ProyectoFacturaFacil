@@ -1,6 +1,7 @@
 using System;
 using NUnit.Framework;
 using ComprobantesElectronicosBC.Domain.ValueObjects;
+using ComprobantesElectronicosBC.Domain.Exceptions;
 
 namespace ComprobantesElectronicosBC.Tests.UnitTests.ValueObjects
 {
@@ -45,7 +46,7 @@ namespace ComprobantesElectronicosBC.Tests.UnitTests.ValueObjects
         public void Create_FechaFutura_Lanza()
         {
             var future = Today.AddDays(1);
-            var ex = Assert.Throws<ArgumentException>(() => FechaEmision.Create(future, "01", Now));
+            var ex = Assert.Throws<FechaInvalidaException>(() => FechaEmision.Create(future, "01", Now));
             Assert.That(ex!.Message, Does.Contain("no puede ser futura").IgnoreCase);
         }
 
@@ -57,9 +58,9 @@ namespace ComprobantesElectronicosBC.Tests.UnitTests.ValueObjects
             Assert.That(ok.Fecha, Is.EqualTo(Today.AddDays(-3)));
 
             // Exceso (4 días) debe fallar
-            var ex = Assert.Throws<ArgumentException>(() =>
+            var ex = Assert.Throws<FechaInvalidaException>(() =>
                 FechaEmision.Create(Today.AddDays(-4), "01", Now));
-            Assert.That(ex!.Message, Does.Contain("excede 3 días").IgnoreCase);
+            Assert.That(ex!.Message, Does.Contain("Retroactivo excede 3 días").IgnoreCase);
         }
 
         [Test]
@@ -70,9 +71,9 @@ namespace ComprobantesElectronicosBC.Tests.UnitTests.ValueObjects
             Assert.That(ok.Fecha, Is.EqualTo(Today.AddDays(-5)));
 
             // Exceso (6 días) debe fallar
-            var ex = Assert.Throws<ArgumentException>(() =>
+            var ex = Assert.Throws<FechaInvalidaException>(() =>
                 FechaEmision.Create(Today.AddDays(-6), "03", Now));
-            Assert.That(ex!.Message, Does.Contain("excede 5 días").IgnoreCase);
+            Assert.That(ex!.Message, Does.Contain("Retroactivo excede 5 días").IgnoreCase);
         }
 
         [Test]
@@ -85,15 +86,15 @@ namespace ComprobantesElectronicosBC.Tests.UnitTests.ValueObjects
         [Test]
         public void Hoy_TipoInvalido_Lanza()
         {
-            var ex = Assert.Throws<ArgumentException>(() => FechaEmision.Hoy("99", Now));
-            Assert.That(ex!.Message, Does.Contain("Tipo inválido").IgnoreCase);
+            var ex = Assert.Throws<FechaInvalidaException>(() => FechaEmision.Hoy("99", Now));
+            Assert.That(ex!.Message, Does.Contain("Tipo inválido. Use").IgnoreCase);
         }
 
         [Test]
         public void Create_TipoInvalido_Lanza()
         {
-            var ex = Assert.Throws<ArgumentException>(() => FechaEmision.Create(Today, "XX", Now));
-            Assert.That(ex!.Message, Does.Contain("Tipo inválido").IgnoreCase);
+            var ex = Assert.Throws<FechaInvalidaException>(() => FechaEmision.Create(Today, "XX", Now));
+            Assert.That(ex!.Message, Does.Contain("Tipo inválido. Use").IgnoreCase);
         }
 
         [Test]

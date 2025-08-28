@@ -1,4 +1,6 @@
 using System;
+using SharedKernel.Exceptions;
+using ComprobantesElectronicosBC.Domain.Exceptions;
 
 namespace ComprobantesElectronicosBC.Domain.ValueObjects
 {
@@ -28,7 +30,7 @@ namespace ComprobantesElectronicosBC.Domain.ValueObjects
         public static FechaVencimiento Create(DateOnly fechaEmision, DateOnly fechaVencimiento)
         {
             if (fechaVencimiento < fechaEmision)
-                throw new ArgumentException("La fecha de vencimiento no puede ser anterior a la fecha de emisión.", nameof(fechaVencimiento));
+                throw new FechaInvalidaException("La fecha de vencimiento no puede ser anterior a la fecha de emisión.", nameof(fechaVencimiento));
 
             return new(fechaVencimiento);
         }
@@ -43,7 +45,7 @@ namespace ComprobantesElectronicosBC.Domain.ValueObjects
         /// </summary>
         public static FechaVencimiento DesdeDiasCredito(DateOnly fechaEmision, int dias)
         {
-            if (dias <= 0) throw new ArgumentOutOfRangeException(nameof(dias), "Los días de crédito deben ser > 0.");
+                if (dias <= 0) throw new FechaInvalidaException("Los días de crédito deben ser > 0");
             return new(fechaEmision.AddDays(dias));
         }
 
@@ -75,7 +77,7 @@ namespace ComprobantesElectronicosBC.Domain.ValueObjects
 
             // Crédito
             if (!diasCredito.HasValue || diasCredito.Value <= 0)
-                throw new ArgumentException("Para CRÉDITO debe indicarse días de crédito > 0.", nameof(diasCredito));
+                throw new FechaInvalidaException("Para CRÉDITO debe indicarse días de crédito > 0.", nameof(diasCredito));
 
             return DesdeDiasCredito(fechaEmision, diasCredito.Value);
         }
