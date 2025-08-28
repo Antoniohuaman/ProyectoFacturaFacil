@@ -6,6 +6,7 @@ using ComprobantesElectronicosBC.Domain.Events;
 using ProyectoFacturaFacil.ComprobantesElectronicosBC.Domain.Events;
 using SharedKernel.ValueObjects;
 using ComprobantesElectronicosBC.Domain.ValueObjects;
+using ComprobantesElectronicosBC.Domain.Exceptions;
 // ...existing code...
 
 namespace ComprobantesElectronicosBC.Domain.Aggregates
@@ -429,6 +430,24 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
 
             IgvTotal = Round2(igvTotal);
             Total = Round2(baseNeta + IgvTotal);
+
+            // Validación de totales consistentes
+            // Si la suma de las líneas + IGV + descuento global no cuadra con el total calculado, lanza excepción de dominio
+            var totalEsperado = Round2(baseNeta + IgvTotal);
+            if (Math.Abs(Total - totalEsperado) > 0.01m)
+            {
+                throw new TotalesInconsistentesException(
+                    $"El total del comprobante no coincide con la suma de las líneas y los impuestos.",
+                    new Dictionary<string, object?>
+                    {
+                        { "Total", Total },
+                        { "TotalEsperado", totalEsperado },
+                        { "SubtotalBase", SubtotalBase },
+                        { "DescuentoGlobalMonto", DescuentoGlobalMonto },
+                        { "IgvTotal", IgvTotal }
+                    }
+                );
+            }
         }
         #endregion
 
