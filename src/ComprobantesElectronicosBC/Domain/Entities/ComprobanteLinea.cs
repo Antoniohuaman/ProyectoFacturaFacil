@@ -91,14 +91,28 @@ namespace ComprobantesElectronicosBC.Domain.Entities
         {
             if (numeroLinea <= 0) throw new ArgumentOutOfRangeException(nameof(numeroLinea));
 
+            // Validación de campos obligatorios con excepción de dominio
+            if (descripcion == null || um == null || precioUnitario == null || afectacionImpuesto == null || tasaImpuesto == null)
+            {
+                var faltantes = new List<string>();
+                if (descripcion == null) faltantes.Add(nameof(descripcion));
+                if (um == null) faltantes.Add(nameof(um));
+                if (precioUnitario == null) faltantes.Add(nameof(precioUnitario));
+                if (afectacionImpuesto == null) faltantes.Add(nameof(afectacionImpuesto));
+                if (tasaImpuesto == null) faltantes.Add(nameof(tasaImpuesto));
+                var metadata = new Dictionary<string, object?> { { "CamposFaltantes", faltantes } };
+                throw new Exceptions.CamposObligatoriosFaltantesException(
+                    $"Faltan campos obligatorios en la línea: {string.Join(", ", faltantes)}.", metadata);
+            }
+
             NumeroLinea      = numeroLinea;
-            Descripcion      = descripcion ?? throw new ArgumentNullException(nameof(descripcion));
-            UM               = um ?? throw new ArgumentNullException(nameof(um));
+            Descripcion      = descripcion;
+            UM               = um;
             Cantidad         = cantidad; // validación de escala debajo
-            PrecioUnitario   = precioUnitario ?? throw new ArgumentNullException(nameof(precioUnitario));
+            PrecioUnitario   = precioUnitario;
             PrecioIncluyeIgv = precioIncluyeIgv;
-            AfectacionImpuesto = afectacionImpuesto ?? throw new ArgumentNullException(nameof(afectacionImpuesto));
-            TasaImpuesto = tasaImpuesto ?? throw new ArgumentNullException(nameof(tasaImpuesto));
+            AfectacionImpuesto = afectacionImpuesto;
+            TasaImpuesto = tasaImpuesto;
             Descuento        = descuento ?? DescuentoLinea.None;
             CentroDeCosto    = centroDeCosto;
 
