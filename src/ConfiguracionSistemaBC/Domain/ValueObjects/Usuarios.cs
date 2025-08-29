@@ -1,27 +1,14 @@
 using System;
 using System.Text.RegularExpressions;
-using SharedKernel.Exceptions; 
+using SharedKernel.Exceptions;
+using SharedKernel.ValueObjects;
 
 namespace ConfiguracionSistemaBC.Domain.ValueObjects
 {
 
     // Datos personales
-    public sealed record CorreoElectronico(string Valor)
-    {
-        private static readonly Regex R = new(@"^[^@\s]+@[^@\s]+\.[^@\s]+$", RegexOptions.Compiled);
-
-        public static CorreoElectronico Crear(string v)
-        {
-            if (string.IsNullOrWhiteSpace(v))
-                throw new BusinessRuleException("Email es obligatorio.");
-            v = v.Trim();
-            if (!R.IsMatch(v))
-                throw new BusinessRuleException("Email inválido.");
-            return new(v);
-        }
-
-        public override string ToString() => Valor;
-    }
+    // Reemplazado por el value object compartido Email
+    // Usar: SharedKernel.ValueObjects.Email
 
     public sealed record NombrePersona(string Nombres, string Apellidos)
     {
@@ -64,6 +51,6 @@ namespace ConfiguracionSistemaBC.Domain.ValueObjects
 
     public interface IUnicidadUsuarioEmpleadoService
     {
-    bool EsEmailUnicoPorEmpresa(EmpresaId empresaId, SharedKernel.ValueObjects.Email email);
+    bool EsEmailUnicoPorEmpresa(EmpresaId empresaId, Email email);
     }
 }

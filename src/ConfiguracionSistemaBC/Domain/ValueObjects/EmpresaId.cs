@@ -70,29 +70,29 @@ namespace ConfiguracionSistemaBC.Domain.ValueObjects
         }
 
         /// <summary>
-        /// Genera un EmpresaId legible a partir de un ROOC y un correlativo:
-        /// 1 → "ROOC20", 2 → "ROOC20-2", 3 → "ROOC20-3", ...
+        /// Genera un EmpresaId legible a partir de un RUC y un correlativo:
+        /// 1 → "RUC20", 2 → "RUC20-2", 3 → "RUC20-3", ...
         /// </summary>
-        public static EmpresaId DesdeRooc(string rooc, int correlativo)
+        public static EmpresaId DesdeRuc(string ruc, int correlativo)
         {
-            if (string.IsNullOrWhiteSpace(rooc))
-                throw new BusinessRuleException("El ROOC es obligatorio.");
+            if (string.IsNullOrWhiteSpace(ruc))
+                throw new BusinessRuleException("El RUC es obligatorio.");
             if (correlativo <= 0)
                 throw new BusinessRuleException("El correlativo debe ser positivo.");
 
-            var baseCode = rooc.Trim().ToUpperInvariant();
+            var baseCode = ruc.Trim().ToUpperInvariant();
             var codigo = correlativo == 1 ? baseCode : $"{baseCode}-{correlativo}";
             return Desde(codigo);
         }
 
         /// <summary>
-        /// Helper: consulta el siguiente correlativo para el ROOC y devuelve el EmpresaId.
+        /// Helper: consulta el siguiente correlativo para el RUC y devuelve el EmpresaId.
         /// </summary>
-        public static EmpresaId GenerarParaRooc(string rooc, IRoocCorrelativoService correlativos)
+        public static EmpresaId GenerarParaRuc(string ruc, IRucCorrelativoService correlativos)
         {
             if (correlativos is null) throw new ArgumentNullException(nameof(correlativos));
-            var n = correlativos.ObtenerSiguienteCorrelativo(rooc);
-            return DesdeRooc(rooc, n);
+            var n = correlativos.ObtenerSiguienteCorrelativo(ruc);
+            return DesdeRuc(ruc, n);
         }
 
         /// <summary>Intenta parsear sin lanzar excepciones.</summary>
@@ -120,11 +120,11 @@ namespace ConfiguracionSistemaBC.Domain.ValueObjects
     }
 
     /// <summary>
-    /// Servicio para obtener el correlativo por ROOC (1 para el primero, 2 para el segundo, ...).
+    /// Servicio para obtener el correlativo por RUC (1 para el primero, 2 para el segundo, ...).
     /// Implementación típica: consulta el conteo actual y retorna count+1 con control de concurrencia.
     /// </summary>
-    public interface IRoocCorrelativoService
+    public interface IRucCorrelativoService
     {
-        int ObtenerSiguienteCorrelativo(string rooc);
+        int ObtenerSiguienteCorrelativo(string ruc);
     }
 }

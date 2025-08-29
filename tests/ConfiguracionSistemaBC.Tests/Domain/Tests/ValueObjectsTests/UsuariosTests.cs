@@ -1,6 +1,7 @@
 using System;
 using NUnit.Framework;
 using ConfiguracionSistemaBC.Domain.ValueObjects;
+using SharedKernel.ValueObjects;
 using SharedKernel.Exceptions;
 
 namespace ConfiguracionSistemaBC.Tests.UnitTests.Domain.ValueObjects
@@ -41,46 +42,45 @@ namespace ConfiguracionSistemaBC.Tests.UnitTests.Domain.ValueObjects
         }
 
 
-        // -------------------- CorreoElectronico --------------------
+        // -------------------- Email (SharedKernel) --------------------
 
         [TestCase("user@dominio.com")]
-        [TestCase("USER@DOMINIO.COM")]               // mayúsculas válidas
+        [TestCase("USER@DOMINIO.COM")]
         [TestCase("nombre.apellido+tag@mail.co")]
         [TestCase("a@b.cc")]
-        public void CorreoElectronico_Crear_valido(string email)
+        public void Email_Crear_valido(string email)
         {
-            var e = CorreoElectronico.Crear(email);
-
-            Assert.That(e.Valor, Is.EqualTo(email.Trim()));
-            Assert.That(e.ToString(), Is.EqualTo(email.Trim()));
+            var e = Email.Create(email);
+            Assert.That(e.Value, Is.EqualTo(Email.Create(email).Value));
+            Assert.That(e.ToString(), Is.EqualTo(Email.Create(email).Value));
         }
 
         [TestCase("")]
         [TestCase("   ")]
         [TestCase(null)]
-        public void CorreoElectronico_vacio_lanza(string input)
+        public void Email_vacio_lanza(string input)
         {
-            Assert.That(() => _ = CorreoElectronico.Crear(input!),
-                Throws.TypeOf<BusinessRuleException>().With.Message.Contains("obligatorio"));
+            Assert.That(() => _ = Email.Create(input!),
+                Throws.TypeOf<ArgumentException>().With.Message.Contains("no puede ser vacío"));
         }
 
-        [TestCase("invalido")]
-        [TestCase("a@b")]
-        [TestCase("@dominio.com")]
-        [TestCase("user@@dominio.com")]
-        [TestCase("user dominio@x.com")]
-        [TestCase("user@dominio.")]
-        public void CorreoElectronico_formato_invalido_lanza(string email)
+        [TestCase("invalido", "El email debe contener exactamente un '@'.")]
+        [TestCase("a@b", "El dominio debe contener al menos un punto")]
+        [TestCase("@dominio.com", "El email debe contener parte local y dominio")]
+        [TestCase("user@@dominio.com", "El email debe contener exactamente un '@'.")]
+        [TestCase("user dominio@x.com", "El email no debe contener espacios")]
+        [TestCase("user@dominio.", "El dominio contiene etiquetas inválidas")]
+        public void Email_formato_invalido_lanza(string email, string mensajeEsperado)
         {
-            Assert.That(() => _ = CorreoElectronico.Crear(email),
-                Throws.TypeOf<BusinessRuleException>().With.Message.Contains("inválido"));
+            Assert.That(() => _ = Email.Create(email),
+                Throws.TypeOf<ArgumentException>().With.Message.Contains(mensajeEsperado));
         }
 
         [Test]
-        public void CorreoElectronico_trim()
+        public void Email_trim()
         {
-            var e = CorreoElectronico.Crear("   demo@mail.com   ");
-            Assert.That(e.Valor, Is.EqualTo("demo@mail.com"));
+            var e = Email.Create("   demo@mail.com   ");
+            Assert.That(e.Value, Is.EqualTo(Email.Create("demo@mail.com").Value));
         }
 
         // -------------------- NombrePersona --------------------

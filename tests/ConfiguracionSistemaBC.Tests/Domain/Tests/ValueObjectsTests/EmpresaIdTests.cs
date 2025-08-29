@@ -105,43 +105,44 @@ namespace ConfiguracionSistemaBC.Tests.Domain.ValueObjects
                 Throws.TypeOf<BusinessRuleException>());
         }
 
-        // ---------------- ROOC + correlativo ----------------
+
+        // ---------------- RUC + correlativo ----------------
 
         [Test]
-        public void DesdeRooc_correlativo_1_devuelve_base_sin_sufijo()
+        public void DesdeRuc_correlativo_1_devuelve_base_sin_sufijo()
         {
-            var id = EmpresaId.DesdeRooc("rooc20", 1);
-            Assert.That(id.Valor, Is.EqualTo("ROOC20"));
+            var id = EmpresaId.DesdeRuc("ruc20", 1);
+            Assert.That(id.Valor, Is.EqualTo("RUC20"));
         }
 
         [Test]
-        public void DesdeRooc_correlativo_mayor_1_agrega_sufijo()
+        public void DesdeRuc_correlativo_mayor_1_agrega_sufijo()
         {
-            var id = EmpresaId.DesdeRooc("rooc20", 3);
-            Assert.That(id.Valor, Is.EqualTo("ROOC20-3"));
+            var id = EmpresaId.DesdeRuc("ruc20", 3);
+            Assert.That(id.Valor, Is.EqualTo("RUC20-3"));
         }
 
         [Test]
-        public void DesdeRooc_validaciones_vacias_o_no_positivas_lanzan()
+        public void DesdeRuc_validaciones_vacias_o_no_positivas_lanzan()
         {
-            Assert.That(() => _ = EmpresaId.DesdeRooc("  ", 1),
+            Assert.That(() => _ = EmpresaId.DesdeRuc("  ", 1),
                 Throws.TypeOf<BusinessRuleException>());
-            Assert.That(() => _ = EmpresaId.DesdeRooc("rooc20", 0),
+            Assert.That(() => _ = EmpresaId.DesdeRuc("ruc20", 0),
                 Throws.TypeOf<BusinessRuleException>());
         }
 
         [Test]
-        public void GenerarParaRooc_usa_servicio_para_correlativo_incremental()
+        public void GenerarParaRuc_usa_servicio_para_correlativo_incremental()
         {
-            var svc = new RoocCorrelativoFake();
+            var svc = new RucCorrelativoFake();
 
-            var id1 = EmpresaId.GenerarParaRooc("rooc20", svc);
-            var id2 = EmpresaId.GenerarParaRooc("rooc20", svc);
-            var id3 = EmpresaId.GenerarParaRooc("rooc21", svc);
+            var id1 = EmpresaId.GenerarParaRuc("ruc20", svc);
+            var id2 = EmpresaId.GenerarParaRuc("ruc20", svc);
+            var id3 = EmpresaId.GenerarParaRuc("ruc21", svc);
 
-            Assert.That(id1.Valor, Is.EqualTo("ROOC20"));
-            Assert.That(id2.Valor, Is.EqualTo("ROOC20-2"));
-            Assert.That(id3.Valor, Is.EqualTo("ROOC21")); // primer workspace de otro ROOC
+            Assert.That(id1.Valor, Is.EqualTo("RUC20"));
+            Assert.That(id2.Valor, Is.EqualTo("RUC20-2"));
+            Assert.That(id3.Valor, Is.EqualTo("RUC21")); // primer workspace de otro RUC
         }
 
         // ---------------- TryParse & conversiones ----------------
@@ -190,16 +191,16 @@ namespace ConfiguracionSistemaBC.Tests.Domain.ValueObjects
             Assert.That(a.EsMismaEmpresaQue(c), Is.False);
         }
 
-        // ===== Fake para correlativo por ROOC =====
-        private sealed class RoocCorrelativoFake : IRoocCorrelativoService
+        // ===== Fake para correlativo por RUC =====
+        private sealed class RucCorrelativoFake : IRucCorrelativoService
         {
             private readonly System.Collections.Generic.Dictionary<string, int> _map = new(StringComparer.OrdinalIgnoreCase);
 
-            public int ObtenerSiguienteCorrelativo(string rooc)
+            public int ObtenerSiguienteCorrelativo(string ruc)
             {
-                if (string.IsNullOrWhiteSpace(rooc))
-                    throw new ArgumentException("rooc");
-                var key = rooc.Trim();
+                if (string.IsNullOrWhiteSpace(ruc))
+                    throw new ArgumentException("ruc");
+                var key = ruc.Trim();
                 if (!_map.TryGetValue(key, out var cur))
                 {
                     cur = 0;

@@ -24,7 +24,7 @@ namespace SharedKernel.Tests.ValueObjects
                 try
                 {
                     Email.Create(caso);
-                    TestContext.WriteLine($"NO FALLA: '{caso}'");
+                    TestContext.Out.WriteLine($"NO FALLA: '{caso}'");
                 }
                 catch (ArgumentException)
                 {

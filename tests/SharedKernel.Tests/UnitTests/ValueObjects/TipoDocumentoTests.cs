@@ -32,7 +32,13 @@ public class TipoDocumentoTests
 	[TestCase(TipoDocumento.InPersonaJuridica, "D")]
 	public void Mapeo_SchemeId_Correcto(TipoDocumento tipo, string esperado)
 	{
-		var doc = DocumentoIdentidad.Crear(tipo, "12345678");
+		string numero = tipo switch
+		{
+			TipoDocumento.Ruc => "20600893409", // RUC válido
+			TipoDocumento.Dni => "08661899",     // DNI válido
+			_ => "ABC123"
+		};
+		var doc = DocumentoIdentidad.Crear(tipo, numero);
 		Assert.That(doc.SchemeId, Is.EqualTo(esperado));
 	}
 
@@ -54,7 +60,13 @@ public class TipoDocumentoTests
 	[TestCase(TipoDocumento.SinDocumento, "Sin documento")]
 	public void ToString_Contiene_Etiqueta(TipoDocumento tipo, string esperado)
 	{
-		var doc = DocumentoIdentidad.Crear(tipo, "ABC123");
+		string numero = tipo switch
+		{
+			TipoDocumento.Ruc => "20600893409", // RUC válido
+			TipoDocumento.Dni => "08661899",     // DNI válido
+			_ => "ABC123"
+		};
+		var doc = DocumentoIdentidad.Crear(tipo, numero);
 		Assert.That(doc.ToString(), Does.Contain(esperado));
 	}
 }
