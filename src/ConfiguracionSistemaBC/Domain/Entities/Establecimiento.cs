@@ -1,3 +1,4 @@
+using SharedKernel.Exceptions;
 using SharedKernel.ValueObjects;
 using ConfiguracionSistemaBC.Domain.ValueObjects;
 using System;
@@ -15,7 +16,7 @@ namespace ConfiguracionSistemaBC.Domain.Entities
 		public string Codigo { get; private set; } = string.Empty;
 		public DireccionPostal Direccion { get; private set; } = null!;
 		public Telefono Telefono { get; private set; } = null!;
-		public EmailEmpresa? Email { get; private set; }
+	public Email? Email { get; private set; }
 
 	// Relación con empresa: cada establecimiento pertenece a una empresa
 
@@ -25,10 +26,10 @@ namespace ConfiguracionSistemaBC.Domain.Entities
 			EmpresaId = null!;
 		}
 
-		public Establecimiento(EstablecimientoId id, EmpresaId empresaId, string nombre, string codigo, DireccionPostal direccion, Telefono telefono, EmailEmpresa? email)
+	public Establecimiento(EstablecimientoId id, EmpresaId empresaId, string nombre, string codigo, DireccionPostal direccion, Telefono telefono, Email? email)
 		{
-			if (string.IsNullOrWhiteSpace(nombre)) throw new ArgumentException("El nombre es obligatorio.", nameof(nombre));
-			if (string.IsNullOrWhiteSpace(codigo)) throw new ArgumentException("El código es obligatorio.", nameof(codigo));
+			if (string.IsNullOrWhiteSpace(nombre)) throw new BusinessRuleException("El nombre es obligatorio.");
+			if (string.IsNullOrWhiteSpace(codigo)) throw new BusinessRuleException("El código es obligatorio.");
 			Id = id ?? throw new ArgumentNullException(nameof(id));
 			EmpresaId = empresaId ?? throw new ArgumentNullException(nameof(empresaId));
 			Nombre = nombre;
@@ -39,10 +40,10 @@ namespace ConfiguracionSistemaBC.Domain.Entities
 		}
 
 		// Métodos de negocio
-		public void ActualizarDatos(string nombre, string codigo, DireccionPostal direccion, Telefono telefono, EmailEmpresa? email)
+	public void ActualizarDatos(string nombre, string codigo, DireccionPostal direccion, Telefono telefono, Email? email)
 		{
-			if (string.IsNullOrWhiteSpace(nombre)) throw new ArgumentException("El nombre es obligatorio.", nameof(nombre));
-			if (string.IsNullOrWhiteSpace(codigo)) throw new ArgumentException("El código es obligatorio.", nameof(codigo));
+			if (string.IsNullOrWhiteSpace(nombre)) throw new BusinessRuleException("El nombre es obligatorio.");
+			if (string.IsNullOrWhiteSpace(codigo)) throw new BusinessRuleException("El código es obligatorio.");
 			Nombre = nombre;
 			Codigo = codigo;
 			Direccion = direccion ?? throw new ArgumentNullException(nameof(direccion));

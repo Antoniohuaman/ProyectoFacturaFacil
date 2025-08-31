@@ -39,9 +39,9 @@ namespace ConfiguracionSistemaBC.Domain.ValueObjects
             if (raw is null) throw new ArgumentNullException(nameof(raw));
             var c = raw.Trim().ToUpperInvariant();
 
-            if (!EsFormatoBasicoValido(c))
+            if (!EsFormatoNormativoValido(c))
                 throw new ArgumentOutOfRangeException(nameof(raw),
-                    "La serie debe tener 4 caracteres: 1 letra (A-Z) seguida de 3 dígitos (0-9). Ej.: F001, B123.");
+                    "La serie debe tener 4 caracteres: la primera letra F o B según el tipo, seguida de 3 letras o números. Ej.: F1A2, BABC, F0B1.");
 
             return new SerieCodigo(c);
         }
@@ -66,7 +66,7 @@ namespace ConfiguracionSistemaBC.Domain.ValueObjects
             if (string.IsNullOrWhiteSpace(raw)) return false;
 
             var c = raw.Trim().ToUpperInvariant();
-            if (!EsFormatoBasicoValido(c)) return false;
+            if (!EsFormatoNormativoValido(c)) return false;
 
             serie = new SerieCodigo(c);
             return true;
@@ -93,13 +93,28 @@ namespace ConfiguracionSistemaBC.Domain.ValueObjects
         /// </summary>
         public static bool EsFormatoBasicoValido(string codigoNormalizado)
         {
-            if (codigoNormalizado.Length != 4) return false;
+            return EsFormatoNormativoValido(codigoNormalizado);
+        }
 
+        /// <summary>
+        /// Verifica el formato normativo: 4 caracteres, primero F o B, los otros pueden ser letras o números.
+        /// </summary>
+        public static bool EsFormatoNormativoValido(string codigoNormalizado)
+        {
+            if (codigoNormalizado.Length != 4) return false;
             char c0 = codigoNormalizado[0];
-            return (c0 >= 'A' && c0 <= 'Z')
-                   && EsDigito(codigoNormalizado[1])
-                   && EsDigito(codigoNormalizado[2])
-                   && EsDigito(codigoNormalizado[3]);
+            if (c0 != 'F' && c0 != 'B') return false;
+            for (int i = 1; i < 4; i++)
+            {
+                char c = codigoNormalizado[i];
+                if (!EsLetraONumero(c)) return false;
+            }
+            return true;
+        }
+
+        private static bool EsLetraONumero(char c)
+        {
+            return (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9');
         }
 
         /// <summary>

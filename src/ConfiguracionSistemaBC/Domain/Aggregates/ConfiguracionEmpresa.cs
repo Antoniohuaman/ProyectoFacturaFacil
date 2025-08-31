@@ -4,24 +4,11 @@ using System.Linq;
 using ConfiguracionSistemaBC.Domain.Events;
 using ConfiguracionSistemaBC.Domain.ValueObjects;
 using SharedKernel.ValueObjects;
-using EmailSK = ConfiguracionSistemaBC.Domain.ValueObjects.EmailEmpresa;
 
 namespace ConfiguracionSistemaBC.Domain.Aggregates
 {
     /// <summary>
     /// Aggregate raíz que centraliza la configuración de una empresa (tenant).
-    /// - Datos legales (RUC, razón social, dirección)
-    /// - Moneda base
-    /// - Ambiente FE (PRUEBA/PRODUCCION)
-    /// - Establecimientos
-    /// - Series por tipo de comprobante
-    /// - Preferencias opcionales (teléfonos, emails, pie de página, logo)
-    /// 
-    /// Reglas principales:
-    /// - Ambiente: PRUEBA→PRODUCCION permitido una sola vez (no reversible)
-    /// - Unicidad: código de establecimiento por empresa; (tipo, serie) único
-    /// - Serie solo puede editarse/eliminarse si no está bloqueada por uso
-    /// - Tipo de operación por defecto para series: 0101 (Venta interna)
     /// </summary>
     public sealed class ConfiguracionEmpresa
     {
@@ -29,6 +16,7 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
 
         public sealed record EstablecimientoRead(
             Guid Id,
+            string EmpresaId, // opaco, canonizado desde RUC
             string Codigo,
             string Nombre,
             DireccionPostal Direccion,
@@ -37,6 +25,7 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
 
         public sealed record SerieRead(
             Guid Id,
+            string EmpresaId, // opaco, canonizado desde RUC
             string Serie,
             TipoComprobanteCodigo Tipo,
             Guid EstablecimientoId,
@@ -48,25 +37,25 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
 
         // ========= STATE =========
 
-        // Identidad multi-tenant
-        public Guid TenantId { get; private set; }
+        // Identidad única de empresa: RUC
+        public Ruc Ruc { get; private set; } = null!;
+        // Identidad opaca para integración entre BCs (string basado en RUC)
+        public EmpresaId EmpresaId { get; private set; } = null!;
 
         // Datos legales
-        public Ruc Ruc { get; private set; } = null!;
         public string RazonSocial { get; private set; } = string.Empty;
         public string? NombreComercial { get; private set; }
         public DireccionPostal DireccionFiscal { get; private set; } = null!;
 
         // Parámetros base
-    public Moneda MonedaBase { get; private set; } = Moneda.PEN();
+        public Moneda MonedaBase { get; private set; } = Moneda.PEN();
         public AmbienteFe Ambiente { get; private set; } = AmbienteFe.PRUEBA;
 
         // Preferencias opcionales
         public Telefono Telefonos { get; private set; } = Telefono.Vacio;
-    public List<EmailSK> Emails { get; private set; } = new();
+        public List<Email> Emails { get; private set; } = new();
         public PieDePagina PieDePagina { get; private set; } = PieDePagina.Vacio;
         public LogoImagen? Logo { get; private set; }
-        // Preferencia: mostrar imágenes en comprobantes impresos
         public bool MostrarImagenEnComprobanteImpresa { get; private set; } = false;
 
         // ----- Establecimientos -----
@@ -77,6 +66,7 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
             public string Nombre { get; set; } = string.Empty;
             public DireccionPostal Direccion { get; set; } = null!;
             public bool Habilitado { get; set; } = true;
+            public bool EsPrincipal { get; set; } = false;
         }
 
         private readonly Dictionary<Guid, EstablecimientoState> _estById = new();
@@ -107,40 +97,62 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
         // ========= FACTORY =========
 
         public static ConfiguracionEmpresa RegistrarNueva(
-            Guid tenantId,
             Ruc ruc,
             string razonSocial,
             DireccionPostal direccionFiscal,
             Moneda monedaBase)
         {
-            if (tenantId == Guid.Empty) throw new ArgumentException("TenantId inválido.", nameof(tenantId));
+            if (ruc is null) throw new ArgumentNullException(nameof(ruc));
             if (string.IsNullOrWhiteSpace(razonSocial)) throw new ArgumentNullException(nameof(razonSocial));
             if (direccionFiscal is null) throw new ArgumentNullException(nameof(direccionFiscal));
-            // Validación estricta de dirección fiscal (solo Perú soportado)
             if (!direccionFiscal.EsPeru)
                 throw new ArgumentException("Solo se soporta dirección fiscal de Perú (PE).", nameof(direccionFiscal));
 
             var empresa = new ConfiguracionEmpresa
             {
-                TenantId = tenantId,
                 Ruc = ruc,
+                EmpresaId = EmpresaId.From(ruc.Canonizado), // opaco, canonizado desde RUC
                 RazonSocial = razonSocial.Trim(),
                 DireccionFiscal = direccionFiscal,
                 MonedaBase = monedaBase,
                 Ambiente = AmbienteFe.PRUEBA, // siempre inicia en PRUEBA
                 Telefonos = Telefono.Vacio,
-                Emails = new List<EmailSK>(),
+                Emails = new List<Email>(),
                 PieDePagina = PieDePagina.Vacio,
                 Logo = null
             };
+
+            // Bootstrap: Establecimiento principal + series por defecto
+            var estPrincipalId = empresa.RegistrarEstablecimiento("01", "Establecimiento Principal", direccionFiscal);
+            empresa.EstablecerComoPrincipal(estPrincipalId);
+
+            // Series por defecto (venta interna)
+            // FE01 (Factura), BE01 (Boleta) -> correlativo 1; Default por cada tipo
+            empresa.AgregarSerie(
+                TipoComprobanteCodigo.Factura,
+                SerieCodigo.From("FE01"),
+                estPrincipalId,
+                Correlativo.From(1),
+                TipoOperacion.Default,
+                esPorDefecto: true);
+
+            empresa.AgregarSerie(
+                TipoComprobanteCodigo.Boleta,
+                SerieCodigo.From("BE01"),
+                estPrincipalId,
+                Correlativo.From(1),
+                TipoOperacion.Default,
+                esPorDefecto: true);
+
             empresa.AddDomainEvent(new ConfiguracionEmpresaRegistrada(
-                tenantId,
+                empresa.EmpresaId,
                 ruc,
                 razonSocial.Trim(),
                 direccionFiscal,
                 monedaBase,
                 DateTime.UtcNow
             ));
+
             return empresa;
         }
 
@@ -151,23 +163,26 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
             if (destino is null) throw new ArgumentNullException(nameof(destino));
             AmbienteFe.ValidarTransicion(Ambiente, destino);
             Ambiente = destino;
-            // Limpiezas/migraciones de datos de prueba suceden fuera (Application/Infra).
         }
 
         // ========= DATOS LEGALES =========
 
         public void ActualizarDatosLegales(Ruc ruc, string razonSocial, DireccionPostal direccionFiscal, string? nombreComercial = null)
         {
+            if (ruc is null) throw new ArgumentNullException(nameof(ruc));
             if (string.IsNullOrWhiteSpace(razonSocial)) throw new ArgumentNullException(nameof(razonSocial));
             if (direccionFiscal is null) throw new ArgumentNullException(nameof(direccionFiscal));
             if (!direccionFiscal.EsPeru)
                 throw new ArgumentException("Solo se soporta dirección fiscal de Perú (PE).", nameof(direccionFiscal));
+
             Ruc = ruc;
+            EmpresaId = EmpresaId.From(ruc.Canonizado); // actualiza EmpresaId si cambia RUC
             RazonSocial = razonSocial.Trim();
             NombreComercial = string.IsNullOrWhiteSpace(nombreComercial) ? null : nombreComercial.Trim();
             DireccionFiscal = direccionFiscal;
+
             AddDomainEvent(new ConfiguracionEmpresaActualizada(
-                TenantId,
+                EmpresaId,
                 Ruc,
                 RazonSocial,
                 DireccionFiscal,
@@ -180,7 +195,7 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
 
         // ========= PREFERENCIAS OPCIONALES =========
 
-        public void ReemplazarEmails(IEnumerable<EmailSK> emails)
+        public void ReemplazarEmails(IEnumerable<Email> emails)
         {
             if (emails is null) throw new ArgumentNullException(nameof(emails));
             Emails = emails.ToList();
@@ -195,15 +210,13 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
 
         public void EstablecerLogo(LogoImagen? logo) => Logo = logo;
 
-    public void CambiarMonedaBase(Moneda monedaBase) => MonedaBase = monedaBase ?? Moneda.PEN();
+        public void CambiarMonedaBase(Moneda monedaBase) => MonedaBase = monedaBase ?? Moneda.PEN();
 
-            /// <summary>
-            /// Configura si se mostrarán imágenes de productos en la representación impresa de comprobantes.
-            /// </summary>
-            public void ConfigurarMostrarImagenEnComprobanteImpresa(bool mostrar)
-            {
-                MostrarImagenEnComprobanteImpresa = mostrar;
-            }
+        /// <summary>Mostrar imágenes de productos en impresión.</summary>
+        public void ConfigurarMostrarImagenEnComprobanteImpresa(bool mostrar)
+        {
+            MostrarImagenEnComprobanteImpresa = mostrar;
+        }
 
         // ========= ESTABLECIMIENTOS =========
 
@@ -214,7 +227,7 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
             if (direccion is null) throw new ArgumentNullException(nameof(direccion));
             if (!direccion.EsPeru)
                 throw new ArgumentException("Solo se soporta dirección de Perú (PE) para establecimientos.", nameof(direccion));
-            if (_estByCodigo.ContainsKey(codigo))
+            if (_estByCodigo.ContainsKey(codigo.Trim()))
                 throw new InvalidOperationException($"Ya existe un establecimiento con código \"{codigo}\".");
 
             var id = Guid.NewGuid();
@@ -224,12 +237,46 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
                 Codigo = codigo.Trim(),
                 Nombre = nombre.Trim(),
                 Direccion = direccion,
-                Habilitado = true
+                Habilitado = true,
+                EsPrincipal = false
             };
 
             _estById[id] = st;
             _estByCodigo[st.Codigo] = id;
             return id;
+        }
+
+        public void EstablecerComoPrincipal(Guid id)
+        {
+            if (!_estById.TryGetValue(id, out var st))
+                throw new KeyNotFoundException("Establecimiento no encontrado.");
+
+            foreach (var e in _estById.Values) e.EsPrincipal = false;
+            st.EsPrincipal = true;
+        }
+
+        public EstablecimientoRead? ObtenerEstablecimientoPrincipal()
+        {
+            var st = _estById.Values.FirstOrDefault(x => x.EsPrincipal);
+            return st is null ? null : ToRead(st);
+        }
+
+        public void RecodificarEstablecimiento(Guid id, string nuevoCodigo)
+        {
+            if (string.IsNullOrWhiteSpace(nuevoCodigo))
+                throw new ArgumentNullException(nameof(nuevoCodigo));
+
+            if (!_estById.TryGetValue(id, out var st))
+                throw new KeyNotFoundException("Establecimiento no encontrado.");
+
+            var canon = nuevoCodigo.Trim();
+            if (_estByCodigo.TryGetValue(canon, out var otroId) && otroId != id)
+                throw new InvalidOperationException($"Ya existe un establecimiento con código \"{canon}\".");
+
+            // Actualiza índice
+            _estByCodigo.Remove(st.Codigo);
+            st.Codigo = canon;
+            _estByCodigo[st.Codigo] = id;
         }
 
         public void ActualizarEstablecimiento(Guid id, string nombre, DireccionPostal direccion)
@@ -251,6 +298,42 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
             st.Habilitado = false;
         }
 
+        public void EliminarEstablecimiento(Guid id)
+        {
+            if (!_estById.TryGetValue(id, out var st))
+                throw new KeyNotFoundException("Establecimiento no encontrado.");
+
+            // No dejar a la empresa sin establecimientos
+            if (_estById.Count <= 1)
+                throw new InvalidOperationException("La empresa debe conservar al menos un establecimiento.");
+
+            // No permitir si alguna serie del establecimiento está bloqueada (ya usada)
+            var seriesDelEst = _seriesById.Values.Where(s => s.EstablecimientoId == id).ToList();
+            if (seriesDelEst.Any(s => s.Bloqueada))
+                throw new InvalidOperationException("No se puede eliminar: existen series usadas asociadas al establecimiento.");
+
+            // Si es principal, promover automáticamente otro
+            if (st.EsPrincipal)
+            {
+                var candidato = _estById.Values.First(e => e.Id != id);
+                candidato.EsPrincipal = true;
+            }
+
+            // Limpiar índices de series y series mismas
+            foreach (var s in seriesDelEst)
+            {
+                if (_defaultSerieByTipo.TryGetValue(s.Tipo.Codigo, out var defId) && defId == s.Id)
+                    _defaultSerieByTipo.Remove(s.Tipo.Codigo);
+
+                _indexTipoSerie.Remove(IndexKey(s.Tipo, s.Serie));
+                _seriesById.Remove(s.Id);
+            }
+
+            // Remover establecimiento
+            _estByCodigo.Remove(st.Codigo);
+            _estById.Remove(id);
+        }
+
         public EstablecimientoRead? BuscarEstablecimientoPorCodigo(string codigo)
         {
             if (string.IsNullOrWhiteSpace(codigo)) return null;
@@ -262,8 +345,8 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
         public IReadOnlyList<EstablecimientoRead> ListarEstablecimientos()
             => _estById.Values.Select(ToRead).ToList();
 
-        private static EstablecimientoRead ToRead(EstablecimientoState st)
-            => new(st.Id, st.Codigo, st.Nombre, st.Direccion, st.Habilitado);
+        private EstablecimientoRead ToRead(EstablecimientoState st)
+            => new(st.Id, EmpresaId.Value, st.Codigo, st.Nombre, st.Direccion, st.Habilitado);
 
         private EstablecimientoState GetEstablecimientoOrThrow(Guid id)
         {
@@ -428,9 +511,10 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
             }
         }
 
-        private static SerieRead ToRead(SerieState st)
+        private SerieRead ToRead(SerieState st)
             => new(
                 st.Id,
+                EmpresaId.Value,
                 st.Serie.Codigo,
                 st.Tipo,
                 st.EstablecimientoId,

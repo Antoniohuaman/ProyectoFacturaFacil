@@ -9,7 +9,7 @@ namespace ConfiguracionSistemaBC.Domain.Events
     /// Evento de dominio: se registra una nueva empresa/tenant en el sistema.
     /// </summary>
     public sealed record ConfiguracionEmpresaRegistrada(
-        Guid TenantId,
+        EmpresaId EmpresaId,
         Ruc Ruc,
         string RazonSocial,
         DireccionPostal DireccionFiscal,

@@ -1,21 +1,20 @@
 using System;
 using SharedKernel.ValueObjects;
-using ConfiguracionSistemaBC.Domain.ValueObjects;
 using SharedKernel.Events;
-using ConfiguracionSistemaBC.Domain.Aggregates; // RolUsuario enum
+using ConfiguracionSistemaBC.Domain.Aggregates;
 
 namespace ConfiguracionSistemaBC.Domain.Events
 {
     /// <summary>
-    /// Evento de dominio que representa la creación de un UsuarioEmpleado.
+    /// Evento de dominio que representa la creación de un UsuarioEmpresa.
     /// Ahora se asocia a uno o varios establecimientos, no sucursales.
     /// </summary>
-    public sealed record UsuarioEmpleadoCreado(
-        Guid UsuarioEmpleadoId,
+    public sealed record UsuarioEmpresaCreado(
+        UsuarioId UsuarioId,
         EmpresaId EmpresaId,
         IReadOnlyCollection<EstablecimientoId> Establecimientos,
-    Email Email,
+        Email Email,
         NombrePersona Nombre,
-        RolUsuario Rol
+        RolEmpresa Rol
     ) : IDomainEvent;
 }

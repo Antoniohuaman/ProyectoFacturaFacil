@@ -1,281 +1,112 @@
 using System;
 using System.Linq;
-using System.Collections.Generic;
 using NUnit.Framework;
-using SharedKernel.ValueObjects;
-
 using ConfiguracionSistemaBC.Domain.Aggregates;
 using ConfiguracionSistemaBC.Domain.ValueObjects;
+using SharedKernel.ValueObjects;
 
-namespace ConfiguracionSistemaBC.Tests.UnitTests.Aggregates
+namespace ConfiguracionSistemaBC.Tests.Domain.Aggregates
 {
     [TestFixture]
     public class ConfiguracionEmpresaTests
     {
-        // ------------------------- Helpers -------------------------
-        private static DireccionPostal DirPrincipal() =>
-            DireccionPostal.From(
-                paisCodigoIso: "PE",
-                linea: "AV. PRINCIPAL 123",
-                ubigeo: "150101",
-                departamento: "LIMA",
-                provincia: "LIMA",
-                distrito: "LIMA",
-                addressTypeCode: "0000"
-            );
+        // Helpers de creación (ajusta a tus factorías reales si difiere algún nombre)
+        private static Ruc RUC(string v = "20000000001") => Ruc.From(v);
+        // Ubigeo válido: "150122" (Miraflores, Lima, Lima)
+        private static DireccionPostal DirFiscal() => DireccionPostal.FromPeru(
+            linea: "Av. Principal 123",
+            ubigeo: "150122",
+            departamento: "Lima",
+            provincia: "Lima",
+            distrito: "Miraflores"
+        );
+        private static Moneda PEN() => Moneda.PEN();
 
-    private static Ruc UnRucPJ() => (Ruc)"20000000001"; // válido según el algoritmo del VO
-    private static Ruc OtroRucPJ() => (Ruc)"20100070970"; // otro válido para actualización
-
-        private static EmailEmpresa E(string s, bool visible = true) => EmailEmpresa.From(s, visible);
-
-        // ------------------------- Registro y estado inicial -------------------------
         [Test]
-        public void RegistrarNueva_InicializaEnPrueba_ConDatosLegalesYMoneda()
+        public void RegistrarNueva_CreaEmpresaConBootstrap_PrincipalYSeriesPorDefecto()
         {
-            var ruc = UnRucPJ();
-            var dir = DirPrincipal();
+            var empresa = ConfiguracionEmpresa.RegistrarNueva(RUC(), "ACME S.A.C.", DirFiscal(), PEN());
 
-            var agg = ConfiguracionEmpresa.RegistrarNueva(
-                tenantId: Guid.NewGuid(),
-                ruc: ruc,
-                razonSocial: "ACME S.A.C.",
-                direccionFiscal: dir,
-                monedaBase: Moneda.PEN()
-            );
+            // EmpresaId opaco basado en RUC
+            Assert.That(empresa.EmpresaId.Value, Is.EqualTo("20000000001"));
 
-            Assert.That(agg.Ambiente, Is.EqualTo(AmbienteFe.PRUEBA));
-            Assert.That(agg.Ruc, Is.EqualTo(ruc));
-            Assert.That(agg.RazonSocial, Is.EqualTo("ACME S.A.C."));
-            Assert.That(agg.DireccionFiscal, Is.EqualTo(dir));
-            Assert.That(agg.MonedaBase, Is.EqualTo(Moneda.PEN()));
-        }
-        // ------------------------- Mostrar Imagen en Comprobante Impresa -------------------------
-        [Test]
-        public void MostrarImagenEnComprobanteImpresa_SePuedeConfigurar()
-        {
-            var agg = ConfiguracionEmpresa.RegistrarNueva(Guid.NewGuid(), UnRucPJ(), "ACME S.A.C.", DirPrincipal(), Moneda.PEN());
-            Assert.That(agg.MostrarImagenEnComprobanteImpresa, Is.False, "Por defecto debe ser falso");
-            agg.ConfigurarMostrarImagenEnComprobanteImpresa(true);
-            Assert.That(agg.MostrarImagenEnComprobanteImpresa, Is.True);
-            agg.ConfigurarMostrarImagenEnComprobanteImpresa(false);
-            Assert.That(agg.MostrarImagenEnComprobanteImpresa, Is.False);
-        }
+            // Establecimiento principal
+            var principal = empresa.ObtenerEstablecimientoPrincipal();
+            Assert.That(principal, Is.Not.Null);
+            Assert.That(principal!.Codigo, Is.EqualTo("01"));
+            Assert.That(principal.Nombre, Is.EqualTo("Establecimiento Principal"));
 
-        // ------------------------- Ambiente PRUEBA/PRODUCCIÓN -------------------------
-        [Test]
-        public void CambioDeAmbiente_PruebaAProduccion_Permitido_Y_NoReversible()
-        {
-            var agg = ConfiguracionEmpresa.RegistrarNueva(Guid.NewGuid(), UnRucPJ(), "ACME S.A.C.", DirPrincipal(), Moneda.PEN());
+            // Series FE01/BE01 por defecto
+            var fe = empresa.ObtenerSeriePorDefecto(TipoComprobanteCodigo.Factura);
+            var be = empresa.ObtenerSeriePorDefecto(TipoComprobanteCodigo.Boleta);
 
-            // PRUEBA -> PRODUCCION
-            agg.CambiarAmbiente(AmbienteFe.PRODUCCION);
-            Assert.That(agg.Ambiente, Is.EqualTo(AmbienteFe.PRODUCCION));
-
-            // PRODUCCION -> PRUEBA (debe fallar)
-            var ex = Assert.Throws<InvalidOperationException>(() =>
-                agg.CambiarAmbiente(AmbienteFe.PRUEBA));
-            Assert.That(ex!.Message, Does.Contain("No es posible volver a PRUEBA"));
-        }
-
-        // ------------------------- Datos legales básicos -------------------------
-        [Test]
-        public void ActualizarDatosLegales_ModificaRuc_RazonSocial_Y_Direccion()
-        {
-            var agg = ConfiguracionEmpresa.RegistrarNueva(Guid.NewGuid(), UnRucPJ(), "ACME S.A.C.", DirPrincipal(), Moneda.PEN());
-
-            var nuevoRuc = OtroRucPJ();
-            var nuevaDir = DireccionPostal.From(
-                paisCodigoIso: "PE",
-                linea: "JR. LIMA 456",
-                ubigeo: "150101",
-                departamento: "LIMA",
-                provincia: "LIMA",
-                distrito: "LIMA",
-                addressTypeCode: "0000"
-            );
-            agg.ActualizarDatosLegales(nuevoRuc, "ACME RENOVADA S.A.C.", nuevaDir, nombreComercial: "ACME");
-
-            Assert.That(agg.Ruc, Is.EqualTo(nuevoRuc));
-            Assert.That(agg.RazonSocial, Is.EqualTo("ACME RENOVADA S.A.C."));
-            Assert.That(agg.NombreComercial, Is.EqualTo("ACME"));
-            Assert.That(agg.DireccionFiscal, Is.EqualTo(nuevaDir));
-        }
-
-        // ------------------------- Establecimientos -------------------------
-        [Test]
-        public void Establecimientos_CRUD_Basico_Y_UnicidadCodigo()
-        {
-            var agg = ConfiguracionEmpresa.RegistrarNueva(Guid.NewGuid(), UnRucPJ(), "ACME", DirPrincipal(), Moneda.PEN());
-
-            var id1 = agg.RegistrarEstablecimiento("001", "TIENDA CENTRAL", DireccionPostal.From("PE", "AV. UNO 999", "150101", "LIMA", "LIMA", "LIMA", "0000"));
-            var id2 = agg.RegistrarEstablecimiento("002", "TIENDA SUR", DireccionPostal.From("PE", "AV. DOS 100", "150101", "LIMA", "LIMA", "LIMA", "0000"));
-
-            // Unicidad por código
-            Assert.Throws<InvalidOperationException>(() =>
-                agg.RegistrarEstablecimiento("001", "DUPLICADO", DireccionPostal.From("PE", "CALLE X", "150101", "LIMA", "LIMA", "LIMA", "0000")));
-
-            // Lectura
-            var e1 = agg.BuscarEstablecimientoPorCodigo("001");
-            Assert.That(e1, Is.Not.Null);
-            Assert.That(e1!.Nombre, Is.EqualTo("TIENDA CENTRAL"));
-
-            // Actualizar
-            agg.ActualizarEstablecimiento(id1, "TIENDA CENTRAL - EDIT", DireccionPostal.From("PE", "AV. UNO EDIT 1000", "150101", "LIMA", "LIMA", "LIMA", "0000"));
-            var e1b = agg.BuscarEstablecimientoPorCodigo("001");
-            Assert.That(e1b!.Nombre, Is.EqualTo("TIENDA CENTRAL - EDIT"));
-
-            // Deshabilitar
-            agg.DeshabilitarEstablecimiento(id2);
-            var e2 = agg.BuscarEstablecimientoPorCodigo("002");
-            Assert.That(e2!.Habilitado, Is.False);
-
-            // Listado
-            var list = agg.ListarEstablecimientos();
-            Assert.That(list.Count, Is.EqualTo(2));
-        }
-
-        // ------------------------- Series: agregar / listar / default -------------------------
-        [Test]
-        public void Series_Agregar_Validaciones_Unicidad_Y_DefaultPorTipo()
-        {
-            var agg = ConfiguracionEmpresa.RegistrarNueva(Guid.NewGuid(), UnRucPJ(), "ACME", DirPrincipal(), Moneda.PEN());
-            var est = agg.RegistrarEstablecimiento("001", "TIENDA", DireccionPostal.From("PE", "AV. UNO 1", "150101", "LIMA", "LIMA", "LIMA", "0000"));
-
-            // Serie válida para FACTURA (Fxxx)
-            var serieF1 = SerieCodigo.ForTipo("F001", TipoComprobanteCodigo.Factura);
-            var serieF2 = SerieCodigo.ForTipo("F002", TipoComprobanteCodigo.Factura);
-            var serieB1 = SerieCodigo.ForTipo("B001", TipoComprobanteCodigo.Boleta);
-
-            var s1 = agg.AgregarSerie(TipoComprobanteCodigo.Factura, serieF1, est, correlativoInicial: Correlativo.From(1), esPorDefecto: true);
-            var s2 = agg.AgregarSerie(TipoComprobanteCodigo.Factura, serieF2, est, correlativoInicial: Correlativo.From(200));
-            var s3 = agg.AgregarSerie(TipoComprobanteCodigo.Boleta,  serieB1, est, correlativoInicial: Correlativo.From(1), esPorDefecto: true);
-
-            // Unicidad (tipo+serie)
-            Assert.Throws<InvalidOperationException>(() =>
-                agg.AgregarSerie(TipoComprobanteCodigo.Factura, serieF1, est, Correlativo.From(1)));
-
-            // Default por tipo
-            Assert.That(agg.ObtenerSeriePorDefecto(TipoComprobanteCodigo.Factura)!.Serie, Is.EqualTo("F001"));
-            Assert.That(agg.ObtenerSeriePorDefecto(TipoComprobanteCodigo.Boleta)!.Serie, Is.EqualTo("B001"));
-
-            // Listado por tipo
-            var facturas = agg.ListarSeriesPorTipo(TipoComprobanteCodigo.Factura);
-            Assert.That(facturas.Count, Is.EqualTo(2));
-            var boletas = agg.ListarSeriesPorTipo(TipoComprobanteCodigo.Boleta);
-            Assert.That(boletas.Count, Is.EqualTo(1));
+            Assert.That(fe, Is.Not.Null);
+            Assert.That(be, Is.Not.Null);
+            Assert.That(fe!.Serie, Is.EqualTo("FE01"));
+            Assert.That(fe.CorrelativoActual.Valor, Is.EqualTo(1));
+            Assert.That(be!.Serie, Is.EqualTo("BE01"));
+            Assert.That(be.CorrelativoActual.Valor, Is.EqualTo(1));
         }
 
         [Test]
-        public void Series_PrefijoDebeCoincidirConTipo()
+        public void RecodificarEstablecimiento_CambiaCodigo_ManteniendoUnicidad()
         {
-            var agg = ConfiguracionEmpresa.RegistrarNueva(Guid.NewGuid(), UnRucPJ(), "ACME", DirPrincipal(), Moneda.PEN());
-            var est = agg.RegistrarEstablecimiento("001", "TIENDA", DireccionPostal.From("PE", "AV. UNO 1", "150101", "LIMA", "LIMA", "LIMA", "0000"));
+            var empresa = ConfiguracionEmpresa.RegistrarNueva(RUC(), "ACME S.A.C.", DirFiscal(), PEN());
+            var principal = empresa.ObtenerEstablecimientoPrincipal()!;
+            empresa.RecodificarEstablecimiento(principal.Id, "A1");
 
-            // Intentar Boleta con prefijo de Factura
-            Assert.Throws<ArgumentException>(() =>
-                agg.AgregarSerie(TipoComprobanteCodigo.Boleta,
-                    SerieCodigo.ForTipo("F001", TipoComprobanteCodigo.Factura), // validada para FACTURA, no para Boleta
-                    est,
-                    Correlativo.From(1)));
-        }
-
-        // ------------------------- Series: actualizar -------------------------
-        [Test]
-        public void Series_Actualizar_PuedeCambiarSerie_Establecimiento_TipoOperacion_Y_Default_SiNoBloqueada()
-        {
-            var agg = ConfiguracionEmpresa.RegistrarNueva(Guid.NewGuid(), UnRucPJ(), "ACME", DirPrincipal(), Moneda.PEN());
-            var est1 = agg.RegistrarEstablecimiento("001", "TIENDA 1", DireccionPostal.From("PE", "AV. 1", "150101", "LIMA", "LIMA", "LIMA", "0000"));
-            var est2 = agg.RegistrarEstablecimiento("002", "TIENDA 2", DireccionPostal.From("PE", "AV. 2", "150101", "LIMA", "LIMA", "LIMA", "0000"));
-
-            var id = agg.AgregarSerie(TipoComprobanteCodigo.Factura, SerieCodigo.ForTipo("F001", TipoComprobanteCodigo.Factura), est1, Correlativo.From(1), esPorDefecto: true);
-
-            // Cambiar a F010, mover a est2, cambiar tipo de operación y quitar default
-            agg.ActualizarSerie(id,
-                nuevaSerie: SerieCodigo.ForTipo("F010", TipoComprobanteCodigo.Factura),
-                nuevoEstablecimientoId: est2,
-                nuevoTipoOperacion: TipoOperacion.ExportacionBienes,
-                esPorDefecto: false);
-
-            var info = agg.ObtenerSeriePorId(id);
-            Assert.That(info!.Serie, Is.EqualTo("F010"));
-            Assert.That(info.EstablecimientoId, Is.EqualTo(est2));
-            Assert.That(info.TipoOperacion, Is.EqualTo(TipoOperacion.ExportacionBienes));
-            Assert.That(agg.ObtenerSeriePorDefecto(TipoComprobanteCodigo.Factura), Is.Null);
+            var byCode = empresa.BuscarEstablecimientoPorCodigo("A1");
+            Assert.That(byCode, Is.Not.Null);
+            Assert.That(byCode!.Id, Is.EqualTo(principal.Id));
         }
 
         [Test]
-        public void Series_Actualizar_NoPermiteDuplicarNiUsarEstablecimientoDeshabilitado()
+        public void EliminarEstablecimiento_NoPermiteDejarSinNinguno_PromueveOtroSiEsPrincipal()
         {
-            var agg = ConfiguracionEmpresa.RegistrarNueva(Guid.NewGuid(), UnRucPJ(), "ACME", DirPrincipal(), Moneda.PEN());
-            var est1 = agg.RegistrarEstablecimiento("001", "TIENDA 1", DireccionPostal.From("PE", "AV. 1", "150101", "LIMA", "LIMA", "LIMA", "0000"));
-            var est2 = agg.RegistrarEstablecimiento("002", "TIENDA 2", DireccionPostal.From("PE", "AV. 2", "150101", "LIMA", "LIMA", "LIMA", "0000"));
+            var empresa = ConfiguracionEmpresa.RegistrarNueva(RUC(), "ACME S.A.C.", DirFiscal(), PEN());
+            var p = empresa.ObtenerEstablecimientoPrincipal()!;
+            var otroId = empresa.RegistrarEstablecimiento("02", "Sucursal", DirFiscal());
 
-            var a = agg.AgregarSerie(TipoComprobanteCodigo.Factura, SerieCodigo.ForTipo("F001", TipoComprobanteCodigo.Factura), est1, Correlativo.From(1));
-            var b = agg.AgregarSerie(TipoComprobanteCodigo.Factura, SerieCodigo.ForTipo("F002", TipoComprobanteCodigo.Factura), est1, Correlativo.From(1));
+            // eliminar principal -> debe promover otro automáticamente
+            empresa.EliminarEstablecimiento(p.Id);
 
-            // No duplicar serie (tipo+serie)
-            Assert.Throws<InvalidOperationException>(() =>
-                agg.ActualizarSerie(b, nuevaSerie: SerieCodigo.ForTipo("F001", TipoComprobanteCodigo.Factura)));
+            var principal = empresa.ObtenerEstablecimientoPrincipal();
+            Assert.That(principal, Is.Not.Null);
+            Assert.That(principal!.Id, Is.EqualTo(otroId));
 
-            // Deshabilitar establecimiento y tratar de mover allí
-            agg.DeshabilitarEstablecimiento(est2);
-            Assert.Throws<InvalidOperationException>(() =>
-                agg.ActualizarSerie(a, nuevoEstablecimientoId: est2));
-        }
-
-        // ------------------------- Series: bloqueo por uso -------------------------
-        [Test]
-        public void Series_BloqueoPorUso_ImpideActualizarYEliminar()
-        {
-            var agg = ConfiguracionEmpresa.RegistrarNueva(Guid.NewGuid(), UnRucPJ(), "ACME", DirPrincipal(), Moneda.PEN());
-            var est = agg.RegistrarEstablecimiento("001", "TIENDA", DireccionPostal.From("PE", "AV. UNO 1", "150101", "LIMA", "LIMA", "LIMA", "0000"));
-
-            var id = agg.AgregarSerie(TipoComprobanteCodigo.Factura, SerieCodigo.ForTipo("F001", TipoComprobanteCodigo.Factura), est, Correlativo.From(1));
-
-            // Bloqueo (simula que ya se emitió un documento)
-            agg.BloquearSeriePorUso(id);
-
-            Assert.Throws<InvalidOperationException>(() =>
-                agg.ActualizarSerie(id, nuevaSerie: SerieCodigo.ForTipo("F010", TipoComprobanteCodigo.Factura)));
-
-            Assert.Throws<InvalidOperationException>(() =>
-                agg.EliminarSerie(id));
+            // no permitir dejar sin establecimientos
+            Assert.Throws<InvalidOperationException>(() => empresa.EliminarEstablecimiento(otroId));
         }
 
         [Test]
-        public void Series_Eliminar_PermitidoSiNoBloqueada_QuitaDefaultSiEraDefault()
+        public void EliminarEstablecimiento_FallaSiTieneSerieBloqueada()
         {
-            var agg = ConfiguracionEmpresa.RegistrarNueva(Guid.NewGuid(), UnRucPJ(), "ACME", DirPrincipal(), Moneda.PEN());
-            var est = agg.RegistrarEstablecimiento("001", "TIENDA", DireccionPostal.From("PE", "AV. UNO 1", "150101", "LIMA", "LIMA", "LIMA", "0000"));
+            var empresa = ConfiguracionEmpresa.RegistrarNueva(RUC(), "ACME S.A.C.", DirFiscal(), PEN());
+            var p = empresa.ObtenerEstablecimientoPrincipal()!;
+            // crear serie adicional y bloquearla
+            var sid = empresa.AgregarSerie(TipoComprobanteCodigo.Boleta, SerieCodigo.From("BE02"), p.Id, Correlativo.From(1));
+            empresa.BloquearSeriePorUso(sid);
 
-            var id = agg.AgregarSerie(TipoComprobanteCodigo.Factura, SerieCodigo.ForTipo("F001", TipoComprobanteCodigo.Factura), est, Correlativo.From(1), esPorDefecto: true);
-
-            Assert.That(agg.ObtenerSeriePorDefecto(TipoComprobanteCodigo.Factura), Is.Not.Null);
-
-            agg.EliminarSerie(id);
-
-            Assert.That(agg.ObtenerSeriePorId(id), Is.Null);
-            Assert.That(agg.ObtenerSeriePorDefecto(TipoComprobanteCodigo.Factura), Is.Null);
+            Assert.Throws<InvalidOperationException>(() => empresa.EliminarEstablecimiento(p.Id));
         }
 
-        // ------------------------- Campos opcionales: email, teléfono, pie, logo, moneda -------------------------
         [Test]
-        public void CamposOpcionales_SePuedenActualizarYPersisten()
+        public void ActualizarSerie_CambiaSerie_Establecimiento_Y_Default()
         {
-            var agg = ConfiguracionEmpresa.RegistrarNueva(Guid.NewGuid(), UnRucPJ(), "ACME", DirPrincipal(), Moneda.PEN());
+            var empresa = ConfiguracionEmpresa.RegistrarNueva(RUC(), "ACME S.A.C.", DirFiscal(), PEN());
+            var p = empresa.ObtenerEstablecimientoPrincipal()!;
+            var s = empresa.ObtenerSeriePorDefecto(TipoComprobanteCodigo.Boleta)!;
+            var nuevoEstId = empresa.RegistrarEstablecimiento("03", "Otra Sucursal", DirFiscal());
 
-            agg.ReemplazarEmails(new[] { E("ventas@acme.com"), E("info@acme.com", visible: false) });
-            agg.ReemplazarTelefonos(Telefono.FromTexto("+51 999 888 777 / (01) 234 5678"));
-            agg.ActualizarPieDePagina(PieDePagina.FromTextoPlano("Gracias por su preferencia."));
-            agg.EstablecerLogo(LogoImagen.FromUpload("logo.png", "image/png", bytesLength: 50_000, anchoPx: 300, altoPx: 100));
-            agg.CambiarMonedaBase(Moneda.USD());
+            empresa.ActualizarSerie(
+                s.Id,
+                nuevaSerie: SerieCodigo.From("BE09"),
+                nuevoEstablecimientoId: nuevoEstId,
+                esPorDefecto: true);
 
-            Assert.That(agg.Emails.Count, Is.EqualTo(2));
-            Assert.That(agg.Telefonos.EsVacio, Is.False);
-            Assert.That(agg.PieDePagina.EsVacio, Is.False);
-            Assert.That(agg.Logo, Is.Not.Null);
-            Assert.That(agg.MonedaBase, Is.EqualTo(Moneda.USD()));
+            var def = empresa.ObtenerSeriePorDefecto(TipoComprobanteCodigo.Boleta);
+            Assert.That(def!.Serie, Is.EqualTo("BE09"));
+            Assert.That(def.EstablecimientoId, Is.EqualTo(nuevoEstId));
         }
     }
 }

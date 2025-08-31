@@ -32,10 +32,10 @@ namespace ConfiguracionSistemaBC.Tests.UnitTests.ValueObjects
             // primer caracter no es letra
             Assert.That(() => SerieCodigo.From("1001"), Throws.TypeOf<ArgumentOutOfRangeException>());
 
-            // últimos no son todos dígitos
-            Assert.That(() => SerieCodigo.From("FA01"), Throws.TypeOf<ArgumentOutOfRangeException>());
-            Assert.That(() => SerieCodigo.From("F0A1"), Throws.TypeOf<ArgumentOutOfRangeException>());
-            Assert.That(() => SerieCodigo.From("F01A"), Throws.TypeOf<ArgumentOutOfRangeException>());
+            // últimos pueden ser letras o números, así que estos ahora son válidos
+            Assert.That(() => SerieCodigo.From("FA01"), Throws.Nothing);
+            Assert.That(() => SerieCodigo.From("F0A1"), Throws.Nothing);
+            Assert.That(() => SerieCodigo.From("F01A"), Throws.Nothing);
         }
 
         [Test]
@@ -43,7 +43,10 @@ namespace ConfiguracionSistemaBC.Tests.UnitTests.ValueObjects
         {
             Assert.That(SerieCodigo.EsFormatoBasicoValido("F001"), Is.True);
             Assert.That(SerieCodigo.EsFormatoBasicoValido("B123"), Is.True);
-            Assert.That(SerieCodigo.EsFormatoBasicoValido("Z999"), Is.True);
+            Assert.That(SerieCodigo.EsFormatoBasicoValido("F0A1"), Is.True);
+            Assert.That(SerieCodigo.EsFormatoBasicoValido("FA01"), Is.True);
+            Assert.That(SerieCodigo.EsFormatoBasicoValido("F01A"), Is.True);
+            Assert.That(SerieCodigo.EsFormatoBasicoValido("BABC"), Is.True);
 
             Assert.That(SerieCodigo.EsFormatoBasicoValido("f001"), Is.False); // la función espera ya normalizado
             Assert.That(SerieCodigo.EsFormatoBasicoValido("AA01"), Is.False);
@@ -80,7 +83,8 @@ namespace ConfiguracionSistemaBC.Tests.UnitTests.ValueObjects
             Assert.That(SerieCodigo.TryFrom("f001", out var s1), Is.True);
             Assert.That(s1!.Codigo, Is.EqualTo("F001"));
 
-            Assert.That(SerieCodigo.TryFrom("FA01", out _), Is.False); // formato inválido
+            Assert.That(SerieCodigo.TryFrom("FA01", out var s3), Is.True); // ahora es válido
+            Assert.That(s3!.Codigo, Is.EqualTo("FA01"));
 
             Assert.That(SerieCodigo.TryForTipo("f001", TipoComprobanteCodigo.Factura, out var s2), Is.True);
             Assert.That(s2!.Codigo, Is.EqualTo("F001"));

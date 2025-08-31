@@ -1,4 +1,5 @@
 using System;
+using SharedKernel.Exceptions;
 using NUnit.Framework;
 using ConfiguracionSistemaBC.Domain.Entities;
 using ConfiguracionSistemaBC.Domain.ValueObjects; // EstablecimientoId, EmpresaId, EmailEmpresa
@@ -10,8 +11,16 @@ namespace ConfiguracionSistemaBC.Tests.Domain.Entities
     public class EstablecimientoTests
     {
         // -------- Helpers de creación de VOs (ajusta a tus APIs reales) --------
-        private static EstablecimientoId EstId(string v = "EST-001") => EstablecimientoId.Desde(v);
-        private static EmpresaId EmpId(string v = "EMP01") => EmpresaId.Desde(v);
+    // Helper: acepta solo números de hasta 6 caracteres y los convierte a Guid válido
+    private static EstablecimientoId EstId(string v = "001")
+    {
+        if (string.IsNullOrWhiteSpace(v) || v.Length > 6 || !int.TryParse(v, out _))
+            throw new ArgumentException("El código de establecimiento debe ser numérico y hasta 6 dígitos", nameof(v));
+        // Convierte el número a Guid: rellena con ceros a la izquierda y lo inserta en el último bloque
+        var guidStr = $"00000000-0000-0000-0000-000000{v.PadLeft(6, '0')}";
+        return EstablecimientoId.From(Guid.Parse(guidStr));
+    }
+    private static EmpresaId EmpId(string v = "22222222-2222-2222-2222-222222222222") => EmpresaId.From(v);
 
         private static DireccionPostal Dir() =>
             DireccionPostal.FromPeru(
@@ -25,15 +34,15 @@ namespace ConfiguracionSistemaBC.Tests.Domain.Entities
         private static Telefono Tel() =>
             Telefono.FromTexto("+51 999888777");
 
-        private static EmailEmpresa Mail(string v = "ventas@acme.com") =>
-            EmailEmpresa.From(v);
+        private static Email Mail(string v = "ventas@acme.com") =>
+            Email.Create(v);
 
         // -------------------- Creación --------------------
 
         [Test]
         public void Ctor_asigna_propiedades_correctamente()
         {
-            var id  = EstId("EST-001");
+            var id  = EstId("123456");
             var emp = EmpId("EMP01");
             var dir = Dir();
             var tel = Tel();
@@ -61,23 +70,19 @@ namespace ConfiguracionSistemaBC.Tests.Domain.Entities
         // -------------------- Validaciones en ctor --------------------
 
         [Test]
-        public void Ctor_con_nombre_vacio_lanza_ArgumentException_con_paramName()
+        public void Ctor_con_nombre_vacio_lanza_BusinessRuleException()
         {
-            var ex = Assert.Throws<ArgumentException>(() =>
+            var ex = Assert.Throws<BusinessRuleException>(() =>
                 _ = new Establecimiento(EstId(), EmpId(), "   ", "COD1", Dir(), Tel(), Mail()));
-
-            Assert.That(ex!.ParamName, Is.EqualTo("nombre"));
-            Assert.That(ex.Message, Does.Contain("obligatorio"));
+            Assert.That(ex!.Message!, Does.Contain("El nombre es obligatorio"));
         }
 
         [Test]
-        public void Ctor_con_codigo_vacio_lanza_ArgumentException_con_paramName()
+        public void Ctor_con_codigo_vacio_lanza_BusinessRuleException()
         {
-            var ex = Assert.Throws<ArgumentException>(() =>
+            var ex = Assert.Throws<BusinessRuleException>(() =>
                 _ = new Establecimiento(EstId(), EmpId(), "Local", "   ", Dir(), Tel(), Mail()));
-
-            Assert.That(ex!.ParamName, Is.EqualTo("codigo"));
-            Assert.That(ex.Message, Does.Contain("obligatorio"));
+            Assert.That(ex!.Message!, Does.Contain("El código es obligatorio"));
         }
 
         [Test]
@@ -86,7 +91,7 @@ namespace ConfiguracionSistemaBC.Tests.Domain.Entities
             var ex = Assert.Throws<ArgumentNullException>(() =>
                 _ = new Establecimiento(null!, EmpId(), "Local", "COD1", Dir(), Tel(), Mail()));
 
-            Assert.That(ex!.ParamName, Is.EqualTo("id"));
+            Assert.That(ex!.ParamName!, Is.EqualTo("id"));
         }
 
         [Test]
@@ -95,7 +100,7 @@ namespace ConfiguracionSistemaBC.Tests.Domain.Entities
             var ex = Assert.Throws<ArgumentNullException>(() =>
                 _ = new Establecimiento(EstId(), null!, "Local", "COD1", Dir(), Tel(), Mail()));
 
-            Assert.That(ex!.ParamName, Is.EqualTo("empresaId"));
+            Assert.That(ex!.ParamName!, Is.EqualTo("empresaId"));
         }
 
         [Test]
@@ -104,7 +109,7 @@ namespace ConfiguracionSistemaBC.Tests.Domain.Entities
             var ex = Assert.Throws<ArgumentNullException>(() =>
                 _ = new Establecimiento(EstId(), EmpId(), "Local", "COD1", null!, Tel(), Mail()));
 
-            Assert.That(ex!.ParamName, Is.EqualTo("direccion"));
+            Assert.That(ex!.ParamName!, Is.EqualTo("direccion"));
         }
 
         [Test]
@@ -113,7 +118,7 @@ namespace ConfiguracionSistemaBC.Tests.Domain.Entities
             var ex = Assert.Throws<ArgumentNullException>(() =>
                 _ = new Establecimiento(EstId(), EmpId(), "Local", "COD1", Dir(), null!, Mail()));
 
-            Assert.That(ex!.ParamName, Is.EqualTo("telefono"));
+            Assert.That(ex!.ParamName!, Is.EqualTo("telefono"));
         }
 
         // -------------------- ActualizarDatos --------------------
@@ -136,18 +141,15 @@ namespace ConfiguracionSistemaBC.Tests.Domain.Entities
         }
 
         [Test]
-        public void ActualizarDatos_con_nombre_vacio_lanza_y_no_cambia_estado_actual()
+        public void ActualizarDatos_con_nombre_vacio_lanza_BusinessRuleException_y_no_cambia_estado_actual()
         {
             var dirOriginal = Dir();
             var telOriginal = Tel();
             var mailOriginal = Mail();
             var e = new Establecimiento(EstId(), EmpId(), "Local A", "A01", dirOriginal, telOriginal, mailOriginal);
-
-            var ex = Assert.Throws<ArgumentException>(() =>
+            var ex = Assert.Throws<BusinessRuleException>(() =>
                 e.ActualizarDatos("  ", "B02", Dir(), Tel(), null));
-
-            Assert.That(ex!.ParamName, Is.EqualTo("nombre"));
-
+            Assert.That(ex!.Message!, Does.Contain("El nombre es obligatorio"));
             // No cambió nada
             Assert.That(e.Nombre, Is.EqualTo("Local A"));
             Assert.That(e.Codigo, Is.EqualTo("A01"));
@@ -157,14 +159,12 @@ namespace ConfiguracionSistemaBC.Tests.Domain.Entities
         }
 
         [Test]
-        public void ActualizarDatos_con_codigo_vacio_lanza()
+        public void ActualizarDatos_con_codigo_vacio_lanza_BusinessRuleException()
         {
             var e = new Establecimiento(EstId(), EmpId(), "Local A", "A01", Dir(), Tel(), Mail());
-
-            var ex = Assert.Throws<ArgumentException>(() =>
+            var ex = Assert.Throws<BusinessRuleException>(() =>
                 e.ActualizarDatos("Local B", "   ", Dir(), Tel(), Mail()));
-
-            Assert.That(ex!.ParamName, Is.EqualTo("codigo"));
+            Assert.That(ex!.Message!, Does.Contain("El código es obligatorio"));
         }
 
         [Test]
@@ -175,7 +175,7 @@ namespace ConfiguracionSistemaBC.Tests.Domain.Entities
             var ex = Assert.Throws<ArgumentNullException>(() =>
                 e.ActualizarDatos("Local B", "B01", null!, Tel(), Mail()));
 
-            Assert.That(ex!.ParamName, Is.EqualTo("direccion"));
+            Assert.That(ex!.ParamName!, Is.EqualTo("direccion"));
         }
 
         [Test]
@@ -186,7 +186,7 @@ namespace ConfiguracionSistemaBC.Tests.Domain.Entities
             var ex = Assert.Throws<ArgumentNullException>(() =>
                 e.ActualizarDatos("Local B", "B01", Dir(), null!, Mail()));
 
-            Assert.That(ex!.ParamName, Is.EqualTo("telefono"));
+            Assert.That(ex!.ParamName!, Is.EqualTo("telefono"));
         }
     }
 }

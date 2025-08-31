@@ -9,7 +9,7 @@ namespace ConfiguracionSistemaBC.Domain.Events
     /// Evento de dominio: se actualizan los datos legales o configuración principal de la empresa.
     /// </summary>
     public sealed record ConfiguracionEmpresaActualizada(
-        Guid TenantId,
+    EmpresaId EmpresaId,
         Ruc Ruc,
         string RazonSocial,
         DireccionPostal DireccionFiscal,

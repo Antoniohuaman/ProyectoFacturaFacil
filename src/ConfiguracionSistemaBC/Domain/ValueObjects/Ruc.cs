@@ -1,3 +1,4 @@
+
 using System;
 using System.Diagnostics;
 
@@ -18,8 +19,13 @@ namespace ConfiguracionSistemaBC.Domain.ValueObjects
         /// <summary>Código SUNAT para “RUC” como tipo de documento (cat. 6).</summary>
         public const string SunatDocumentTypeCode = "6";
 
-        /// <summary>Valor canónico: exactamente 11 dígitos.</summary>
-        public string Numero { get; }
+
+    /// <summary>Valor canónico: exactamente 11 dígitos.</summary>
+    public string Numero { get; }
+    /// <summary>
+    /// Valor canonizado del RUC (los 11 dígitos, validado y sin formato extra).
+    /// </summary>
+    public string Canonizado => Numero;
 
         public string Base10 => Numero.Substring(0, 10);
         public int    DigitoVerificador => Numero[10] - '0';
@@ -50,6 +56,10 @@ namespace ConfiguracionSistemaBC.Domain.ValueObjects
 
             return new Ruc(digits);
         }
+        /// <summary>
+        /// Alias de FromString para factoría estándar en tests y dominio.
+        /// </summary>
+        public static Ruc From(string raw) => FromString(raw);
 
         /// <summary>Intenta crear un RUC válido; false si falla la validación.</summary>
         public static bool TryFrom(string? raw, out Ruc? ruc)
