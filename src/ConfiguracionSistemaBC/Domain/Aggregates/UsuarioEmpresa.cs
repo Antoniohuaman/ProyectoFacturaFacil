@@ -15,6 +15,8 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
     /// </summary>
     public sealed class UsuarioEmpresa
     {
+        /// <summary>
+    // ...existing code...
         private readonly List<IDomainEvent> _domainEvents = new();
 
         // Identidad compuesta (tenant + user)
@@ -41,6 +43,24 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
         public IReadOnlyCollection<AccesoEstablecimiento> Accesos => _accesos.AsReadOnly();
 
         public IReadOnlyCollection<IDomainEvent> DomainEvents => _domainEvents.AsReadOnly();
+
+        /// <summary>
+        /// Indica si el usuario puede ser eliminado físicamente del sistema.
+        /// Solo es posible si el usuario no ha realizado acciones relevantes (por ejemplo, no ha operado, registrado movimientos, etc.).
+        /// </summary>
+        public bool PuedeSerEliminado => !HaRealizadoAccionesRelevantes;
+
+        // Esta propiedad debe actualizarse cuando el usuario realiza acciones relevantes en la empresa.
+        private bool HaRealizadoAccionesRelevantes = false;
+
+        /// <summary>
+        /// Marcar que el usuario realizó una acción relevante (por ejemplo, operación, registro, etc.).
+        /// Llamar este método desde los puntos del dominio donde el usuario interactúa de forma significativa.
+        /// </summary>
+        public void MarcarAccionRelevante()
+        {
+            HaRealizadoAccionesRelevantes = true;
+        }
 
         // ------------------------ Ctor ------------------------
         private UsuarioEmpresa(
