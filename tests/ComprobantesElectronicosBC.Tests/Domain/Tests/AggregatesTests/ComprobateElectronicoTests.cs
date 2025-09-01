@@ -86,7 +86,17 @@ namespace ComprobantesElectronicosBC.Tests
                 distrito: "LIMA",
                 addressTypeCode: "0000"
             );
-            return EmisorSnapshot.Create("20123456789", "Mi Empresa SAC", dir);
+            var empresaId = EmpresaId.From("EMPRESA-TEST");
+            var tenantId = TenantId.From(Guid.NewGuid());
+            var establecimientoId = EstablecimientoId.From(Guid.NewGuid());
+            return EmisorSnapshot.Create(
+                empresaId,
+                tenantId,
+                establecimientoId,
+                ruc: "20123456789",
+                razonSocial: "Mi Empresa SAC",
+                direccion: dir
+            );
         }
 
         private static ClienteSnapshot ClienteBoletaDni()

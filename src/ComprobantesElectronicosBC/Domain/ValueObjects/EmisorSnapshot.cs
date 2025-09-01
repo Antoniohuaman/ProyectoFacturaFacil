@@ -11,6 +11,14 @@ namespace ComprobantesElectronicosBC.Domain.ValueObjects
     // Email proviene de SharedKernel.ValueObjects
     public sealed record EmisorSnapshot
     {
+        /// <summary>Identificador de la empresa (multiempresa).</summary>
+        public EmpresaId EmpresaId { get; init; }
+
+        /// <summary>Identificador del tenant (multitenant).</summary>
+        public TenantId TenantId { get; init; }
+
+        /// <summary>Identificador del establecimiento.</summary>
+        public EstablecimientoId EstablecimientoId { get; init; }
         /// <summary>RUC de 11 dígitos.</summary>
         public string Ruc { get; init; }
 
@@ -31,32 +39,76 @@ namespace ComprobantesElectronicosBC.Domain.ValueObjects
 
         public const string SunatDocTipoRuc = "6";
 
-        private EmisorSnapshot(string ruc, string razonSocial, DireccionPostal direccion, string? nombreComercial, Email? email, Telefono? telefono)
+
+        private EmisorSnapshot(
+            EmpresaId empresaId,
+            TenantId tenantId,
+            EstablecimientoId establecimientoId,
+            string ruc,
+            string razonSocial,
+            DireccionPostal direccion,
+            string? nombreComercial,
+            Email? email,
+            Telefono? telefono)
         {
-            Ruc             = ruc;
-            RazonSocial     = razonSocial;
-            Direccion       = direccion;
+            EmpresaId = empresaId;
+            TenantId = tenantId;
+            EstablecimientoId = establecimientoId;
+            Ruc = ruc;
+            RazonSocial = razonSocial;
+            Direccion = direccion;
             NombreComercial = nombreComercial;
-            Email           = email;
-            Telefono        = telefono;
+            Email = email;
+            Telefono = telefono;
         }
 
+
         [JsonConstructor]
-        public EmisorSnapshot(string ruc, string razonSocial, DireccionPostal direccion, string? nombreComercial = null)
-            : this(NormalizarRuc(ruc),
-                   NormalizarNombreObligatorio(razonSocial, nameof(razonSocial)),
-                   direccion ?? throw new ArgumentNullException(nameof(direccion)),
-                   NormalizarNombreOpcional(nombreComercial),
-                   null,
-                   null)
+        public EmisorSnapshot(
+            EmpresaId empresaId,
+            TenantId tenantId,
+            EstablecimientoId establecimientoId,
+            string ruc,
+            string razonSocial,
+            DireccionPostal direccion,
+            string? nombreComercial = null)
+            : this(
+                empresaId,
+                tenantId,
+                establecimientoId,
+                NormalizarRuc(ruc),
+                NormalizarNombreObligatorio(razonSocial, nameof(razonSocial)),
+                direccion ?? throw new ArgumentNullException(nameof(direccion)),
+                NormalizarNombreOpcional(nombreComercial),
+                null,
+                null)
         { }
 
-        public static EmisorSnapshot Create(string ruc, string razonSocial, DireccionPostal direccion, string? nombreComercial = null, Email? email = null, Telefono? telefono = null)
+
+        public static EmisorSnapshot Create(
+            EmpresaId empresaId,
+            TenantId tenantId,
+            EstablecimientoId establecimientoId,
+            string ruc,
+            string razonSocial,
+            DireccionPostal direccion,
+            string? nombreComercial = null,
+            Email? email = null,
+            Telefono? telefono = null)
         {
-            var rucNorm   = NormalizarRuc(ruc);
+            var rucNorm = NormalizarRuc(ruc);
             var razonNorm = NormalizarNombreObligatorio(razonSocial, nameof(razonSocial));
             var nombreCom = NormalizarNombreOpcional(nombreComercial);
-            return new EmisorSnapshot(rucNorm, razonNorm, direccion ?? throw new ArgumentNullException(nameof(direccion)), nombreCom, email, telefono);
+            return new EmisorSnapshot(
+                empresaId,
+                tenantId,
+                establecimientoId,
+                rucNorm,
+                razonNorm,
+                direccion ?? throw new ArgumentNullException(nameof(direccion)),
+                nombreCom,
+                email,
+                telefono);
         }
 
         // ------- Helpers UBL -------
