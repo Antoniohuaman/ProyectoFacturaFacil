@@ -9,6 +9,12 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
 {
     /// <summary>
     /// Aggregate raíz que centraliza la configuración de una empresa (tenant).
+    /// 
+    /// - Representa el punto único de acceso y modificación para todos los parámetros relevantes de la empresa.
+    /// - Encapsula datos legales, preferencias, establecimientos y series de comprobantes.
+    /// - Garantiza la consistencia y las reglas de negocio mediante métodos controlados.
+    /// - Facilita la reconstrucción desde persistencia y la integración entre bounded contexts.
+    /// - Aplica el patrón DDD: solo se modifica a través de sus métodos públicos.
     /// </summary>
     public sealed class ConfiguracionEmpresa
     {
@@ -59,7 +65,7 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
         public bool MostrarImagenEnComprobanteImpresa { get; private set; } = false;
 
         // ----- Establecimientos -----
-        private sealed class EstablecimientoState
+    internal sealed class EstablecimientoState
         {
             public Guid Id { get; init; }
             public string Codigo { get; set; } = string.Empty; // único por empresa
@@ -73,7 +79,7 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
         private readonly Dictionary<string, Guid> _estByCodigo = new(StringComparer.OrdinalIgnoreCase);
 
         // ----- Series -----
-        private sealed class SerieState
+    internal sealed class SerieState
         {
             public Guid Id { get; init; }
             public TipoComprobanteCodigo Tipo { get; set; } = null!;
@@ -93,6 +99,49 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
 
         // ========= CTOR PRIVADO =========
         private ConfiguracionEmpresa() { }
+
+        /// <summary>
+        /// Constructor interno para reconstrucción desde persistencia.
+        /// Solo debe usarse por el repositorio o infraestructura.
+        /// </summary>
+        internal ConfiguracionEmpresa(
+            Ruc ruc,
+            EmpresaId empresaId,
+            string razonSocial,
+            string? nombreComercial,
+            DireccionPostal direccionFiscal,
+            Moneda monedaBase,
+            AmbienteFe ambiente,
+            Telefono telefonos,
+            List<Email> emails,
+            PieDePagina pieDePagina,
+            LogoImagen? logo,
+            bool mostrarImagenEnComprobanteImpresa,
+            Dictionary<Guid, EstablecimientoState> estById,
+            Dictionary<string, Guid> estByCodigo,
+            Dictionary<Guid, SerieState> seriesById,
+            HashSet<string> indexTipoSerie,
+            Dictionary<string, Guid> defaultSerieByTipo
+        )
+        {
+            Ruc = ruc;
+            EmpresaId = empresaId;
+            RazonSocial = razonSocial;
+            NombreComercial = nombreComercial;
+            DireccionFiscal = direccionFiscal;
+            MonedaBase = monedaBase;
+            Ambiente = ambiente;
+            Telefonos = telefonos;
+            Emails = emails;
+            PieDePagina = pieDePagina;
+            Logo = logo;
+            MostrarImagenEnComprobanteImpresa = mostrarImagenEnComprobanteImpresa;
+            _estById = new Dictionary<Guid, EstablecimientoState>(estById);
+            _estByCodigo = new Dictionary<string, Guid>(estByCodigo, StringComparer.OrdinalIgnoreCase);
+            _seriesById = new Dictionary<Guid, SerieState>(seriesById);
+            _indexTipoSerie = new HashSet<string>(indexTipoSerie, StringComparer.Ordinal);
+            _defaultSerieByTipo = new Dictionary<string, Guid>(defaultSerieByTipo, StringComparer.Ordinal);
+        }
 
         // ========= FACTORY =========
 
