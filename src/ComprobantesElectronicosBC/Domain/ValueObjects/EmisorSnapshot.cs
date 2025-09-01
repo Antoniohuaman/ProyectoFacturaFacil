@@ -23,18 +23,22 @@ namespace ComprobantesElectronicosBC.Domain.ValueObjects
         /// <summary>Dirección postal del emisor.</summary>
         public DireccionPostal Direccion { get; init; }
 
-    /// <summary>Email de contacto del emisor (opcional).</summary>
-    public Email? Email { get; init; }
+        /// <summary>Email de contacto del emisor (opcional).</summary>
+        public Email? Email { get; init; }
+
+        /// <summary>Teléfono(s) de contacto del emisor (opcional).</summary>
+        public Telefono? Telefono { get; init; }
 
         public const string SunatDocTipoRuc = "6";
 
-        private EmisorSnapshot(string ruc, string razonSocial, DireccionPostal direccion, string? nombreComercial, Email? email)
+        private EmisorSnapshot(string ruc, string razonSocial, DireccionPostal direccion, string? nombreComercial, Email? email, Telefono? telefono)
         {
             Ruc             = ruc;
             RazonSocial     = razonSocial;
             Direccion       = direccion;
             NombreComercial = nombreComercial;
             Email           = email;
+            Telefono        = telefono;
         }
 
         [JsonConstructor]
@@ -43,15 +47,16 @@ namespace ComprobantesElectronicosBC.Domain.ValueObjects
                    NormalizarNombreObligatorio(razonSocial, nameof(razonSocial)),
                    direccion ?? throw new ArgumentNullException(nameof(direccion)),
                    NormalizarNombreOpcional(nombreComercial),
+                   null,
                    null)
         { }
 
-        public static EmisorSnapshot Create(string ruc, string razonSocial, DireccionPostal direccion, string? nombreComercial = null, Email? email = null)
+        public static EmisorSnapshot Create(string ruc, string razonSocial, DireccionPostal direccion, string? nombreComercial = null, Email? email = null, Telefono? telefono = null)
         {
             var rucNorm   = NormalizarRuc(ruc);
             var razonNorm = NormalizarNombreObligatorio(razonSocial, nameof(razonSocial));
             var nombreCom = NormalizarNombreOpcional(nombreComercial);
-            return new EmisorSnapshot(rucNorm, razonNorm, direccion ?? throw new ArgumentNullException(nameof(direccion)), nombreCom, email);
+            return new EmisorSnapshot(rucNorm, razonNorm, direccion ?? throw new ArgumentNullException(nameof(direccion)), nombreCom, email, telefono);
         }
 
         // ------- Helpers UBL -------
@@ -106,6 +111,7 @@ namespace ComprobantesElectronicosBC.Domain.ValueObjects
 
         // ------- Withers (crean nuevo snapshot) -------
         public EmisorSnapshot ConEmail(Email? email) => this with { Email = email };
+        public EmisorSnapshot ConTelefono(Telefono? telefono) => this with { Telefono = telefono };
         public EmisorSnapshot ConDireccion(DireccionPostal nuevaDireccion)
             => this with { Direccion = nuevaDireccion ?? throw new ArgumentNullException(nameof(nuevaDireccion)) };
         public EmisorSnapshot ConNombreComercial(string? nuevoNombreComercial)

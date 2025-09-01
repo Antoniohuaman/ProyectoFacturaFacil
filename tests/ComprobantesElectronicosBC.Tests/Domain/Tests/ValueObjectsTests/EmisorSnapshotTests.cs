@@ -35,12 +35,14 @@ namespace ComprobantesElectronicosBC.Tests.UnitTests.ValueObjects
             var dir = Dir();
 
             // RUC con separadores -> solo dígitos
+            var telefono = Telefono.FromTexto("999-888-777");
             var emisor = EmisorSnapshot.Create(
                 ruc: " 20-123456789 ",
                 razonSocial: "  ACME   S.A.  ",
                 direccion: dir,
                 nombreComercial: "  tienda   ACME  ",
-                email: Mail("facturacion@acme.com")
+                email: Mail("facturacion@acme.com"),
+                telefono: telefono
             );
 
             Assert.That(emisor.Ruc, Is.EqualTo("20123456789"));
@@ -48,6 +50,10 @@ namespace ComprobantesElectronicosBC.Tests.UnitTests.ValueObjects
             Assert.That(emisor.NombreComercial, Is.EqualTo("tienda ACME"));
             Assert.That(emisor.Direccion, Is.SameAs(dir));
             Assert.That(emisor.Email!.Value, Is.EqualTo("facturacion@acme.com"));
+            Assert.That(emisor.Telefono, Is.Not.Null);
+            Assert.That(emisor.Telefono, Is.SameAs(telefono));
+            Assert.That(emisor.Telefono!.EsVacio, Is.False);
+            Assert.That(emisor.Telefono!.Numeros[0].Canonico, Is.EqualTo("999888777"));
 
             // Helpers UBL
             Assert.That(emisor.UblCompanyId_SchemeId, Is.EqualTo("6"));
@@ -94,7 +100,9 @@ namespace ComprobantesElectronicosBC.Tests.UnitTests.ValueObjects
         {
             var d1 = Dir();
             var d2 = Dir(linea1: "Jr. Nuevo 456");
-            var emisor = EmisorSnapshot.Create("20123456789", "ACME S.A.", d1);
+            var telefono1 = Telefono.FromTexto("999-888-777");
+            var telefono2 = Telefono.FromTexto("555-444-333");
+            var emisor = EmisorSnapshot.Create("20123456789", "ACME S.A.", d1, telefono: telefono1);
 
             var conDir = emisor.ConDireccion(d2);
             Assert.That(conDir, Is.Not.SameAs(emisor));
@@ -105,6 +113,11 @@ namespace ComprobantesElectronicosBC.Tests.UnitTests.ValueObjects
 
             var conEmail = conNombreCom.ConEmail(Mail("ventas@acme.com"));
             Assert.That(conEmail.Email!.Value, Is.EqualTo("ventas@acme.com"));
+
+            var conTelefono = conEmail.ConTelefono(telefono2);
+            Assert.That(conTelefono.Telefono, Is.Not.Null);
+            Assert.That(conTelefono.Telefono, Is.SameAs(telefono2));
+            Assert.That(conTelefono.Telefono!.Numeros[0].Canonico, Is.EqualTo("555444333"));
         }
 
         [Test]
@@ -112,10 +125,10 @@ namespace ComprobantesElectronicosBC.Tests.UnitTests.ValueObjects
         {
             var dir = Dir();
 
-            var sinCom = EmisorSnapshot.Create("20123456789", "ACME S.A.", dir);
+            var sinCom = EmisorSnapshot.Create("20123456789", "ACME S.A.", dir, telefono: Telefono.FromTexto("999-888-777"));
             Assert.That(sinCom.ToString(), Does.Contain("20123456789").And.Contain("ACME S.A."));
 
-            var conCom = EmisorSnapshot.Create("20123456789", "ACME S.A.", dir, "Tienda");
+            var conCom = EmisorSnapshot.Create("20123456789", "ACME S.A.", dir, "Tienda", telefono: Telefono.FromTexto("999-888-777"));
             Assert.That(conCom.ToString(), Does.Contain("\"Tienda\""));
         }
     }
