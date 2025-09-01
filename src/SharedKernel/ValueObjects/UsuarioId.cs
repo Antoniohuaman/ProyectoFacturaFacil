@@ -35,7 +35,7 @@ namespace SharedKernel.ValueObjects
         {
             if (value == Guid.Empty)
             {
-                usuarioId = default!;
+                usuarioId = UsuarioId.Empty;
                 return false;
             }
             usuarioId = new UsuarioId(value);
@@ -57,9 +57,16 @@ namespace SharedKernel.ValueObjects
         /// <summary>Parse no-excepcional desde string.</summary>
         public static bool TryParse(string? value, out UsuarioId usuarioId)
         {
-            usuarioId = default!;
-            if (string.IsNullOrWhiteSpace(value)) return false;
-            if (!Guid.TryParse(value, out var guid) || guid == Guid.Empty) return false;
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                usuarioId = UsuarioId.Empty;
+                return false;
+            }
+            if (!Guid.TryParse(value, out var guid) || guid == Guid.Empty)
+            {
+                usuarioId = UsuarioId.Empty;
+                return false;
+            }
             usuarioId = new UsuarioId(guid);
             return true;
         }
