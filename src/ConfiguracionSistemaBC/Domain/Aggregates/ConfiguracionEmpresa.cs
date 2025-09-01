@@ -118,7 +118,7 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
                 Ambiente = AmbienteFe.PRUEBA, // siempre inicia en PRUEBA
                 Telefonos = Telefono.Vacio,
                 Emails = new List<Email>(),
-                PieDePagina = PieDePagina.Vacio,
+                PieDePagina = PieDePagina.FromTextoPlano("Gracias Por su Preferencia"),
                 Logo = null
             };
 

@@ -30,6 +30,9 @@ namespace ConfiguracionSistemaBC.Tests.Domain.Aggregates
             // EmpresaId opaco basado en RUC
             Assert.That(empresa.EmpresaId.Value, Is.EqualTo("20000000001"));
 
+            // Pie de página por defecto
+            Assert.That(empresa.PieDePagina.Html, Is.EqualTo("Gracias Por su Preferencia"));
+
             // Establecimiento principal
             var principal = empresa.ObtenerEstablecimientoPrincipal();
             Assert.That(principal, Is.Not.Null);
