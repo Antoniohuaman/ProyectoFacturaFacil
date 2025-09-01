@@ -6,7 +6,7 @@ namespace ConfiguracionSistemaBC.Domain.ValueObjects
     /// <summary>
     /// Value Object para el código de Serie (p. ej., "F001", "B001").
     /// Reglas:
-    /// - Formato básico: 4 caracteres => 1 letra (A-Z) + 3 dígitos (0-9).
+    /// - Formato básico: 4 caracteres. El primero debe ser 'F' o 'B', los siguientes tres pueden ser letras (A-Z) o números (0-9).
     /// - Validación por tipo:
     ///   - Factura (01)  → prefijo 'F'
     ///   - Boleta  (03)  → prefijo 'B'
@@ -41,7 +41,7 @@ namespace ConfiguracionSistemaBC.Domain.ValueObjects
 
             if (!EsFormatoNormativoValido(c))
                 throw new ArgumentOutOfRangeException(nameof(raw),
-                    "La serie debe tener 4 caracteres: la primera letra F o B según el tipo, seguida de 3 letras o números. Ej.: F1A2, BABC, F0B1.");
+                    "La serie debe tener 4 caracteres: la primera letra F o B según el tipo, seguida de 3 letras o números. Ej.: F1A2, BEN1, BABC, F0B1.");
 
             return new SerieCodigo(c);
         }
