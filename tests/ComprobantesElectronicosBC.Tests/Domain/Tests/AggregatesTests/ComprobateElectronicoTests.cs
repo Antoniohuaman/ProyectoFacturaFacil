@@ -110,7 +110,9 @@ namespace ComprobantesElectronicosBC.Tests
                 distrito: "LIMA",
                 addressTypeCode: "0000"
             );
-            return ClienteSnapshot.Create(doc, "Juan Perez", dir);
+            var empresaId = EmpresaId.From("EMPRESA-TEST");
+            var tenantId = TenantId.FromString("11111111-1111-1111-1111-111111111111");
+            return ClienteSnapshot.Create(empresaId, tenantId, doc, "Juan Perez", dir);
         }
 
         private static (ComprobanteElectronico agg, DateOnly emision, Moneda moneda) CrearBorradorBoletaContado()

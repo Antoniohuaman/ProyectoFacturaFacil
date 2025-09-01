@@ -25,6 +25,12 @@ namespace ComprobantesElectronicosBC.Domain.ValueObjects
     /// </summary>
     public sealed record ClienteSnapshot
     {
+        /// <summary>Identificador de la empresa emisora (multiempresa).</summary>
+        public EmpresaId EmpresaId { get; init; }
+
+        /// <summary>Identificador del tenant (multitenant).</summary>
+        public TenantId TenantId { get; init; }
+
         /// <summary>Documento de identidad del cliente (Cat. 06).</summary>
         public DocumentoIdentidad Documento { get; init; }
 
@@ -40,47 +46,45 @@ namespace ComprobantesElectronicosBC.Domain.ValueObjects
         /// <summary>Código Cat.06 para RUC (útil en consultas rápidas).</summary>
         public const string SunatDocTipoRuc = "6";
 
-    /// <summary>Conveniencia: ¿el documento del cliente es RUC?</summary>
-    public bool EsRuc => Documento.EsRuc;
+        /// <summary>Conveniencia: ¿el documento del cliente es RUC?</summary>
+        public bool EsRuc => Documento.EsRuc;
 
         // --------------------- Construcción ---------------------
 
-        private ClienteSnapshot(DocumentoIdentidad documento, string nombre, DireccionPostal? direccion, Email? email)
+
+        /// <summary>
+        /// Constructor principal y para (de)serialización JSON. No usar directamente; preferir <see cref="Create"/>.
+        /// </summary>
+        [JsonConstructor]
+        public ClienteSnapshot(EmpresaId empresaId, TenantId tenantId, DocumentoIdentidad documento, string nombre, DireccionPostal? direccion = null, Email? email = null)
         {
-            Documento = documento;
-            Nombre    = nombre;
+            // EmpresaId y TenantId son value objects (structs), no pueden ser null
+            EmpresaId = empresaId;
+            TenantId  = tenantId;
+            Documento = documento ?? throw new ArgumentNullException(nameof(documento));
+            Nombre    = NormalizarNombreObligatorio(nombre, nameof(nombre));
             Direccion = direccion;
             Email     = email;
         }
 
         /// <summary>
-        /// Ctor para (de)serialización JSON. No usar directamente; preferir <see cref="Create"/>.
-        /// </summary>
-        [JsonConstructor]
-        public ClienteSnapshot(DocumentoIdentidad documento, string nombre, DireccionPostal? direccion = null)
-            : this(documento ?? throw new ArgumentNullException(nameof(documento)),
-                   NormalizarNombreObligatorio(nombre, nameof(nombre)),
-                   direccion,
-                   null)
-        { }
-
-        /// <summary>
         /// Fábrica recomendada.
         /// </summary>
-        public static ClienteSnapshot Create(DocumentoIdentidad documento, string nombre, DireccionPostal? direccion = null, Email? email = null)
+        public static ClienteSnapshot Create(EmpresaId empresaId, TenantId tenantId, DocumentoIdentidad documento, string nombre, DireccionPostal? direccion = null, Email? email = null)
         {
+            // EmpresaId y TenantId son value objects (structs), no pueden ser null
             if (documento is null) throw new ArgumentNullException(nameof(documento));
             var nombreNorm = NormalizarNombreObligatorio(nombre, nameof(nombre));
-            return new ClienteSnapshot(documento, nombreNorm, direccion, email);
+            return new ClienteSnapshot(empresaId, tenantId, documento, nombreNorm, direccion, email);
         }
 
         // --------------------- Helpers de negocio / UBL ---------------------
 
-    /// <summary>Valor para UBL &lt;cbc:CompanyID/@schemeID&gt; (código Cat.06).</summary>
-    public string UblCompanyId_SchemeId => Documento.SchemeId;
+        /// <summary>Valor para UBL &lt;cbc:CompanyID/@schemeID&gt; (código Cat.06).</summary>
+        public string UblCompanyId_SchemeId => Documento.SchemeId;
 
-    /// <summary>Valor para UBL &lt;cbc:CompanyID&gt; (número del documento).</summary>
-    public string UblCompanyId_Value => Documento.Numero;
+        /// <summary>Valor para UBL &lt;cbc:CompanyID&gt; (número del documento).</summary>
+        public string UblCompanyId_Value => Documento.Numero;
 
         /// <summary>Valor para UBL &lt;cbc:RegistrationName&gt;.</summary>
         public string UblRegistrationName => Nombre;
@@ -116,5 +120,9 @@ namespace ComprobantesElectronicosBC.Domain.ValueObjects
         /// <summary>Devuelve un snapshot con el nombre normalizado actualizado.</summary>
         public ClienteSnapshot ConNombre(string nuevoNombre)
             => this with { Nombre = NormalizarNombreObligatorio(nuevoNombre, nameof(nuevoNombre)) };
+
+        /// <summary>Devuelve un snapshot con empresa y tenant distintos.</summary>
+        public ClienteSnapshot ConEmpresaTenant(EmpresaId nuevaEmpresaId, TenantId nuevoTenantId)
+            => this with { EmpresaId = nuevaEmpresaId, TenantId = nuevoTenantId };
     }
 }

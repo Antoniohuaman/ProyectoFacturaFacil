@@ -43,6 +43,9 @@ namespace ComprobantesElectronicosBC.Tests.UnitTests.ValueObjects
         private static Email Mail(string s) => Email.Create(s);
         // =========================================================
 
+        private static EmpresaId Empresa() => EmpresaId.From("EMPRESA-TEST");
+        private static TenantId Tenant() => TenantId.FromString("11111111-1111-1111-1111-111111111111");
+
         [Test]
         public void Create_RucConDireccionYEmail_NormalizaNombre_YExponeUbl()
         {
@@ -51,6 +54,8 @@ namespace ComprobantesElectronicosBC.Tests.UnitTests.ValueObjects
             var email     = Mail("facturacion@cliente.com");
 
             var snap = ClienteSnapshot.Create(
+                empresaId: Empresa(),
+                tenantId: Tenant(),
                 documento: documento,
                 nombre: "  CLIENTE   S.A.C. ",
                 direccion: direccion,
@@ -72,13 +77,17 @@ namespace ComprobantesElectronicosBC.Tests.UnitTests.ValueObjects
             Assert.That(snap.UblCompanyId_SchemeId, Is.EqualTo("6"));
             Assert.That(snap.UblCompanyId_Value,    Is.EqualTo("20100070970"));
             Assert.That(snap.UblRegistrationName,   Is.EqualTo("CLIENTE S.A.C."));
+
+            // Multiempresa/multitenant
+            Assert.That(snap.EmpresaId, Is.EqualTo(Empresa()));
+            Assert.That(snap.TenantId, Is.EqualTo(Tenant()));
         }
 
         [Test]
         public void Create_ObligatoriosConDni_SinDireccionNiEmail_OK()
         {
             var documento = Doc("1", "12345678"); // DNI válido
-            var snap = ClienteSnapshot.Create(documento, " Juan   Pérez ");
+            var snap = ClienteSnapshot.Create(Empresa(), Tenant(), documento, " Juan   Pérez ");
 
             Assert.That(snap.Nombre, Is.EqualTo("Juan Pérez"));
             Assert.That(snap.Direccion, Is.Null);
@@ -87,13 +96,15 @@ namespace ComprobantesElectronicosBC.Tests.UnitTests.ValueObjects
 
             Assert.That(snap.UblCompanyId_SchemeId, Is.EqualTo("1"));
             Assert.That(snap.UblCompanyId_Value,    Is.EqualTo("12345678"));
+            Assert.That(snap.EmpresaId, Is.EqualTo(Empresa()));
+            Assert.That(snap.TenantId, Is.EqualTo(Tenant()));
         }
 
         [Test]
         public void Create_DocumentoNull_Lanza()
         {
             Assert.That(
-                () => ClienteSnapshot.Create(documento: null!, nombre: "ACME"),
+                () => ClienteSnapshot.Create(Empresa(), Tenant(), documento: null!, nombre: "ACME"),
                 Throws.TypeOf<System.ArgumentNullException>());
         }
 
@@ -102,8 +113,8 @@ namespace ComprobantesElectronicosBC.Tests.UnitTests.ValueObjects
         {
             var doc = Doc("6", "20100070970");
 
-            Assert.That(() => ClienteSnapshot.Create(doc, ""),      Throws.TypeOf<System.ArgumentException>());
-            Assert.That(() => ClienteSnapshot.Create(doc, "   "),   Throws.TypeOf<System.ArgumentException>());
+            Assert.That(() => ClienteSnapshot.Create(Empresa(), Tenant(), doc, ""),      Throws.TypeOf<System.ArgumentException>());
+            Assert.That(() => ClienteSnapshot.Create(Empresa(), Tenant(), doc, "   "),   Throws.TypeOf<System.ArgumentException>());
         }
 
         [Test]
@@ -112,7 +123,7 @@ namespace ComprobantesElectronicosBC.Tests.UnitTests.ValueObjects
             var doc  = Doc("6", "20100070970");
             var dir1 = Dir();
             var dir2 = Dir(linea1: "Jr. Nueva 456");
-            var c1   = ClienteSnapshot.Create(doc, "CLIENTE S.A.C.", dir1);
+            var c1   = ClienteSnapshot.Create(Empresa(), Tenant(), doc, "CLIENTE S.A.C.", dir1);
 
             var c2 = c1.ConDireccion(dir2);
             Assert.That(c2, Is.Not.SameAs(c1));
@@ -123,12 +134,16 @@ namespace ComprobantesElectronicosBC.Tests.UnitTests.ValueObjects
 
             var c4 = c3.ConNombre("  NUEVO    NOMBRE  ");
             Assert.That(c4.Nombre, Is.EqualTo("NUEVO NOMBRE"));
+
+            var c5 = c4.ConEmpresaTenant(EmpresaId.From("EMPRESA-2"), TenantId.FromString("22222222-2222-2222-2222-222222222222"));
+            Assert.That(c5.EmpresaId, Is.EqualTo(EmpresaId.From("EMPRESA-2")));
+            Assert.That(c5.TenantId, Is.EqualTo(TenantId.FromString("22222222-2222-2222-2222-222222222222")));
         }
 
         [Test]
         public void ToString_IncluyeDocumentoYNombre()
         {
-            var snap = ClienteSnapshot.Create(Doc("6", "20100070970"), "CLIENTE S.A.C.");
+            var snap = ClienteSnapshot.Create(Empresa(), Tenant(), Doc("6", "20100070970"), "CLIENTE S.A.C.");
             var s = snap.ToString();
 
             // Nuevo formato esperado: "RUC 20100070970 - CLIENTE S.A.C."
