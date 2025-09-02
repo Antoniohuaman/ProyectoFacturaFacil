@@ -22,8 +22,8 @@ namespace ConfiguracionSistemaBC.Tests.Domain.Entities
     }
     private static EmpresaId EmpId(string v = "22222222-2222-2222-2222-222222222222") => EmpresaId.From(v);
 
-        private static DireccionPostal Dir() =>
-            DireccionPostal.FromPeru(
+        private static DomicilioFiscal Dir() =>
+            DomicilioFiscal.FromPeru(
                 "Av. Siempre Viva 742",
                 ubigeo: "150101",
                 departamento: "Lima",

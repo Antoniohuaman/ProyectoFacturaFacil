@@ -27,8 +27,8 @@ namespace ComprobantesElectronicosBC.Domain.Specifications
 			if (string.IsNullOrWhiteSpace(emisor.RazonSocial))
 				return ValidationResult.Failure("La razón social del emisor es obligatoria.");
 
-			if (emisor.Direccion is null)
-				return ValidationResult.Failure("La dirección del emisor es obligatoria.");
+			if (emisor.Domicilio is null)
+				return ValidationResult.Failure("El domicilio fiscal del emisor es obligatorio.");
 
 			// Opcional: validar nombre comercial si existe
 			if (emisor.NombreComercial != null && emisor.NombreComercial.Length > 100)

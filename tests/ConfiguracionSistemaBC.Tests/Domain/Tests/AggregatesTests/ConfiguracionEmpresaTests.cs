@@ -13,7 +13,7 @@ namespace ConfiguracionSistemaBC.Tests.Domain.Aggregates
         // Helpers de creación (ajusta a tus factorías reales si difiere algún nombre)
         private static Ruc RUC(string v = "20000000001") => Ruc.From(v);
         // Ubigeo válido: "150122" (Miraflores, Lima, Lima)
-        private static DireccionPostal DirFiscal() => DireccionPostal.FromPeru(
+        private static DomicilioFiscal DirFiscal() => DomicilioFiscal.FromPeru(
             linea: "Av. Principal 123",
             ubigeo: "150122",
             departamento: "Lima",

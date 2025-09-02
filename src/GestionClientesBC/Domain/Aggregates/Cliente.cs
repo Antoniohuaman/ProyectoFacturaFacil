@@ -24,7 +24,7 @@ namespace GestionClientesBC.Domain.Aggregates
         public string RazonSocialONombres { get; private set; }
     public Email Correo { get; private set; }
         public string Celular { get; private set; }
-    public DireccionPostal? DireccionPostal { get; private set; }
+    public DomicilioFiscal? DomicilioFiscal { get; private set; }
         public TipoCliente TipoCliente { get; private set; }
         public EstadoCliente Estado { get; private set; }
         public DateTime FechaRegistro { get; private set; }
@@ -46,7 +46,7 @@ namespace GestionClientesBC.Domain.Aggregates
             string razonSocialONombres,
             Email correo,
             string? celular,
-            DireccionPostal? direccionPostal,
+        DomicilioFiscal? domicilioFiscal,
             TipoCliente tipoCliente,
             EstadoCliente estado)
         {
@@ -57,7 +57,7 @@ namespace GestionClientesBC.Domain.Aggregates
             RazonSocialONombres = !string.IsNullOrWhiteSpace(razonSocialONombres) ? razonSocialONombres : throw new ArgumentNullException(nameof(razonSocialONombres));
             Correo = correo ?? throw new ArgumentNullException(nameof(correo));
             Celular = celular ?? string.Empty;
-            DireccionPostal = direccionPostal;
+            DomicilioFiscal = domicilioFiscal;
             TipoCliente = tipoCliente;
             Estado = estado;
             FechaRegistro = DateTime.UtcNow;
@@ -69,7 +69,7 @@ namespace GestionClientesBC.Domain.Aggregates
                 RazonSocialONombres,
                 Correo.Value,
                 Celular,
-                DireccionPostal?.ToString() ?? string.Empty,
+                DomicilioFiscal?.ToString() ?? string.Empty,
                 TipoCliente,
                 Estado,
                 FechaRegistro
@@ -89,11 +89,11 @@ namespace GestionClientesBC.Domain.Aggregates
 
         // --- Métodos de edición para el caso de uso EditarCliente ---
 
-        public void ActualizarDireccion(DireccionPostal nuevaDireccion)
+    public void ActualizarDireccion(DomicilioFiscal nuevaDireccion)
         {
             if (nuevaDireccion == null)
                 throw new ArgumentNullException(nameof(nuevaDireccion));
-            DireccionPostal = nuevaDireccion;
+            DomicilioFiscal = nuevaDireccion;
             FechaRegistro = DateTime.UtcNow; // Actualiza la fecha internamente
         }
 
@@ -123,7 +123,7 @@ namespace GestionClientesBC.Domain.Aggregates
                 RazonSocialONombres,
                 Correo,
                 Celular,
-                DireccionPostal,
+                DomicilioFiscal,
                 TipoCliente,
                 Estado,
                 DateTime.UtcNow

@@ -49,18 +49,16 @@ namespace ComprobantesElectronicosBC.Tests.ValueObjects
             throw new InvalidOperationException(); // no llega
         }
 
-        private static DireccionPostal MakeDireccion()
+    private static DomicilioFiscal MakeDireccion()
         {
             // Usar valores válidos para Perú
-            return DireccionPostal.FromPeru(
+            return DomicilioFiscal.FromPeru(
                 linea: "Av. Siempre Viva 123",
                 ubigeo: "150101",
                 departamento: "Lima",
                 provincia: "Lima",
                 distrito: "Cercado de Lima",
-                addressTypeCode: "0000",
-                urbanizacion: "Urb. Ejemplo",
-                referencia: "Frente al parque"
+                addressTypeCode: "0000"
             );
         }
 
@@ -95,7 +93,7 @@ namespace ComprobantesElectronicosBC.Tests.ValueObjects
             return (empresa, tenant, estab);
         }
 
-        private static DireccionPostal AnyDireccion() => MakeDireccion();
+    private static DomicilioFiscal AnyDireccion() => MakeDireccion();
 
         // ---------------- PRUEBAS ----------------
 
@@ -109,7 +107,7 @@ namespace ComprobantesElectronicosBC.Tests.ValueObjects
                 empresa, tenant, estab,
                 ruc: "  20-12345678-9  ",
                 razonSocial: "   COMPAÑÍA    XYZ   ",
-                direccion: dir,
+                domicilio: dir,
                 nombreComercial: "   Tienda   XYZ   "
             );
 
@@ -119,7 +117,7 @@ namespace ComprobantesElectronicosBC.Tests.ValueObjects
             Assert.That(s.Ruc, Is.EqualTo("20123456789"));
             Assert.That(s.RazonSocial, Is.EqualTo("COMPAÑÍA XYZ"));
             Assert.That(s.NombreComercial, Is.EqualTo("Tienda XYZ"));
-            Assert.That(s.Direccion, Is.Not.Null);
+            Assert.That(s.Domicilio, Is.Not.Null);
         }
 
         [Test]
@@ -134,7 +132,7 @@ namespace ComprobantesElectronicosBC.Tests.ValueObjects
                 establecimientoId: estab,
                 ruc: "20.123.456-78 9",
                 razonSocial: "  EMPRESA    ABC   ",
-                direccion: dir,
+                domicilio: dir,
                 nombreComercial: "  Comercial  ABC   "
             );
 
@@ -157,7 +155,7 @@ namespace ComprobantesElectronicosBC.Tests.ValueObjects
                 empresa, tenant, estab,
                 ruc: "20123456789",
                 razonSocial: "EMPRESA ABC SAC",
-                direccion: dir,
+                domicilio: dir,
                 nombreComercial: "ABC",
                 email: email,
                 telefono: tel
@@ -248,13 +246,13 @@ namespace ComprobantesElectronicosBC.Tests.ValueObjects
         }
 
         [Test]
-        public void Create_falla_si_Direccion_es_null()
+    public void Create_falla_si_Domicilio_es_null()
         {
             var (empresa, tenant, estab) = MakeIds();
 
             Assert.That(
-                () => EmisorSnapshot.Create(empresa, tenant, estab, "20123456789", "EMPRESA", direccion: null!),
-                Throws.TypeOf<ArgumentNullException>().With.Property("ParamName").EqualTo("direccion"));
+                () => EmisorSnapshot.Create(empresa, tenant, estab, "20123456789", "EMPRESA", domicilio: null!),
+                Throws.TypeOf<ArgumentNullException>().With.Property("ParamName").EqualTo("domicilio"));
         }
 
         [Test]
@@ -270,20 +268,18 @@ namespace ComprobantesElectronicosBC.Tests.ValueObjects
             var nuevoEmail = MakeEmail("contacto@xyz.com");
             var nuevoTel   = MakeTelefono("+51 900 000 000"); // puede ser null
                 // Crear una dirección diferente cambiando algún campo
-                var nuevaDir   = DireccionPostal.FromPeru(
+                var nuevaDir   = DomicilioFiscal.FromPeru(
                     linea: "Calle Falsa 456",
                     ubigeo: "150102",
                     departamento: "Lima",
                     provincia: "Lima",
                     distrito: "San Isidro",
-                    addressTypeCode: "0001",
-                    urbanizacion: "Urb. Alterna",
-                    referencia: "Cerca del río"
+                    addressTypeCode: "0001"
                 );
             var nuevoNom   = "  NUEVO   NOMBRE  ";
 
             var conEmail     = baseSnap.ConEmail(nuevoEmail);
-            var conDireccion = baseSnap.ConDireccion(nuevaDir);
+            var conDireccion = baseSnap.ConDomicilio(nuevaDir);
             var conNombre    = baseSnap.ConNombreComercial(nuevoNom);
 
             Assert.That(conEmail.EmpresaId, Is.EqualTo(baseSnap.EmpresaId));
@@ -291,7 +287,7 @@ namespace ComprobantesElectronicosBC.Tests.ValueObjects
             Assert.That(conNombre.EstablecimientoId, Is.EqualTo(baseSnap.EstablecimientoId));
 
             Assert.That(conEmail.Email, Is.EqualTo(nuevoEmail));
-            Assert.That(conDireccion.Direccion, Is.EqualTo(nuevaDir));
+            Assert.That(conDireccion.Domicilio, Is.EqualTo(nuevaDir));
             Assert.That(conNombre.NombreComercial, Is.EqualTo("NUEVO NOMBRE"));
 
             if (nuevoTel is not null)
@@ -303,12 +299,12 @@ namespace ComprobantesElectronicosBC.Tests.ValueObjects
             }
 
             Assert.That(baseSnap.Email, Is.Not.EqualTo(nuevoEmail));
-            Assert.That(baseSnap.Direccion, Is.Not.EqualTo(nuevaDir));
+            Assert.That(baseSnap.Domicilio, Is.Not.EqualTo(nuevaDir));
             Assert.That(baseSnap.NombreComercial, Is.Not.EqualTo("NUEVO NOMBRE"));
         }
 
         [Test]
-        public void ConDireccion_falla_si_nuevaDireccion_es_null()
+    public void ConDomicilio_falla_si_nuevoDomicilio_es_null()
         {
             var (empresa, tenant, estab) = MakeIds();
             var dir = AnyDireccion();
@@ -317,8 +313,8 @@ namespace ComprobantesElectronicosBC.Tests.ValueObjects
                 empresa, tenant, estab, "20123456789", "EMPRESA", dir);
 
             Assert.That(
-                () => baseSnap.ConDireccion(null!),
-                Throws.TypeOf<ArgumentNullException>().With.Property("ParamName").EqualTo("nuevaDireccion"));
+                () => baseSnap.ConDomicilio(null!),
+                Throws.TypeOf<ArgumentNullException>().With.Property("ParamName").EqualTo("nuevoDomicilio"));
         }
 
         [Test]

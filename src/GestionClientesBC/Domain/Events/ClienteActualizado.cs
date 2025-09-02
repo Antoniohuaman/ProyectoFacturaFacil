@@ -14,7 +14,7 @@ namespace GestionClientesBC.Domain.Events
         string RazonSocialONombres,
         Email Correo,
         string Celular,
-        DireccionPostal? DireccionPostal,
+    DomicilioFiscal? DomicilioFiscal,
         TipoCliente TipoCliente,
         EstadoCliente Estado,
         DateTime FechaActualizacion

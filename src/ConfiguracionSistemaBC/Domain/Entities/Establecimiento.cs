@@ -14,7 +14,7 @@ namespace ConfiguracionSistemaBC.Domain.Entities
 	public EmpresaId EmpresaId { get; private set; }
 		public string Nombre { get; private set; } = string.Empty;
 		public string Codigo { get; private set; } = string.Empty;
-		public DireccionPostal Direccion { get; private set; } = null!;
+	public DomicilioFiscal Direccion { get; private set; } = null!;
 		public Telefono Telefono { get; private set; } = null!;
 	public Email? Email { get; private set; }
 
@@ -26,7 +26,7 @@ namespace ConfiguracionSistemaBC.Domain.Entities
 			EmpresaId = null!;
 		}
 
-	public Establecimiento(EstablecimientoId id, EmpresaId empresaId, string nombre, string codigo, DireccionPostal direccion, Telefono telefono, Email? email)
+	public Establecimiento(EstablecimientoId id, EmpresaId empresaId, string nombre, string codigo, DomicilioFiscal direccion, Telefono telefono, Email? email)
 		{
 			if (string.IsNullOrWhiteSpace(nombre)) throw new BusinessRuleException("El nombre es obligatorio.");
 			if (string.IsNullOrWhiteSpace(codigo)) throw new BusinessRuleException("El código es obligatorio.");
@@ -40,7 +40,7 @@ namespace ConfiguracionSistemaBC.Domain.Entities
 		}
 
 		// Métodos de negocio
-	public void ActualizarDatos(string nombre, string codigo, DireccionPostal direccion, Telefono telefono, Email? email)
+	public void ActualizarDatos(string nombre, string codigo, DomicilioFiscal direccion, Telefono telefono, Email? email)
 		{
 			if (string.IsNullOrWhiteSpace(nombre)) throw new BusinessRuleException("El nombre es obligatorio.");
 			if (string.IsNullOrWhiteSpace(codigo)) throw new BusinessRuleException("El código es obligatorio.");

@@ -28,8 +28,8 @@ namespace ComprobantesElectronicosBC.Domain.ValueObjects
         /// <summary>Nombre comercial (opcional).</summary>
         public string? NombreComercial { get; init; }
 
-        /// <summary>Dirección postal del emisor.</summary>
-        public DireccionPostal Direccion { get; init; }
+    /// <summary>Domicilio fiscal del emisor.</summary>
+    public DomicilioFiscal Domicilio { get; init; }
 
         /// <summary>Email de contacto del emisor (opcional).</summary>
         public Email? Email { get; init; }
@@ -46,7 +46,7 @@ namespace ComprobantesElectronicosBC.Domain.ValueObjects
             EstablecimientoId establecimientoId,
             string ruc,
             string razonSocial,
-            DireccionPostal direccion,
+            DomicilioFiscal domicilio,
             string? nombreComercial,
             Email? email,
             Telefono? telefono)
@@ -56,7 +56,7 @@ namespace ComprobantesElectronicosBC.Domain.ValueObjects
             EstablecimientoId = establecimientoId;
             Ruc = ruc;
             RazonSocial = razonSocial;
-            Direccion = direccion;
+            Domicilio = domicilio;
             NombreComercial = nombreComercial;
             Email = email;
             Telefono = telefono;
@@ -70,7 +70,7 @@ namespace ComprobantesElectronicosBC.Domain.ValueObjects
             EstablecimientoId establecimientoId,
             string ruc,
             string razonSocial,
-            DireccionPostal direccion,
+            DomicilioFiscal domicilio,
             string? nombreComercial = null)
             : this(
                 empresaId,
@@ -78,7 +78,7 @@ namespace ComprobantesElectronicosBC.Domain.ValueObjects
                 establecimientoId,
                 NormalizarRuc(ruc),
                 NormalizarNombreObligatorio(razonSocial, nameof(razonSocial)),
-                direccion ?? throw new ArgumentNullException(nameof(direccion)),
+                domicilio ?? throw new ArgumentNullException(nameof(domicilio)),
                 NormalizarNombreOpcional(nombreComercial),
                 null,
                 null)
@@ -91,7 +91,7 @@ namespace ComprobantesElectronicosBC.Domain.ValueObjects
             EstablecimientoId establecimientoId,
             string ruc,
             string razonSocial,
-            DireccionPostal direccion,
+            DomicilioFiscal domicilio,
             string? nombreComercial = null,
             Email? email = null,
             Telefono? telefono = null)
@@ -105,7 +105,7 @@ namespace ComprobantesElectronicosBC.Domain.ValueObjects
                 establecimientoId,
                 rucNorm,
                 razonNorm,
-                direccion ?? throw new ArgumentNullException(nameof(direccion)),
+                domicilio ?? throw new ArgumentNullException(nameof(domicilio)),
                 nombreCom,
                 email,
                 telefono);
@@ -164,8 +164,8 @@ namespace ComprobantesElectronicosBC.Domain.ValueObjects
         // ------- Withers (crean nuevo snapshot) -------
         public EmisorSnapshot ConEmail(Email? email) => this with { Email = email };
         public EmisorSnapshot ConTelefono(Telefono? telefono) => this with { Telefono = telefono };
-        public EmisorSnapshot ConDireccion(DireccionPostal nuevaDireccion)
-            => this with { Direccion = nuevaDireccion ?? throw new ArgumentNullException(nameof(nuevaDireccion)) };
+        public EmisorSnapshot ConDomicilio(DomicilioFiscal nuevoDomicilio)
+            => this with { Domicilio = nuevoDomicilio ?? throw new ArgumentNullException(nameof(nuevoDomicilio)) };
         public EmisorSnapshot ConNombreComercial(string? nuevoNombreComercial)
             => this with { NombreComercial = NormalizarNombreOpcional(nuevoNombreComercial) };
     }

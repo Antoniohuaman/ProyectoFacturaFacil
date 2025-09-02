@@ -2,100 +2,64 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using SharedKernel.Events;
-using ComprobantesElectronicosBC.Domain.Events;
-using ProyectoFacturaFacil.ComprobantesElectronicosBC.Domain.Events;
 using SharedKernel.ValueObjects;
+using ComprobantesElectronicosBC.Domain.Events;
 using ComprobantesElectronicosBC.Domain.ValueObjects;
 using ComprobantesElectronicosBC.Domain.Exceptions;
-// ...existing code...
+using ComprobantesElectronicosBC.Domain.Entities;
 
 namespace ComprobantesElectronicosBC.Domain.Aggregates
 {
     /// <summary>
     /// INFORMACIÓN DE NEGOCIO:
-    /// Al emitir el comprobante, el sistema solo asigna el correlativo (número).
-    /// La serie puede estar preconfigurada por defecto o ser seleccionada por el usuario antes de emitir.
-    /// El sistema no asigna automáticamente la serie al emitir; la serie debe estar configurada previamente en ConfiguracionSistemaBC.
-    /// El usuario puede ver y elegir la serie según la configuración, pero la lógica de asignación de serie no está en este aggregate.
-    /// Además, si la moneda del comprobante es distinta a la moneda local, el formulario y el aggregate deben contemplar el campo TipoCambio.
+    /// - Al emitir el comprobante, el sistema solo asigna el correlativo (número).
+    /// - La serie puede estar preconfigurada o ser seleccionada por el usuario antes de emitir.
+    /// - La asignación de serie no vive aquí; solo validamos compatibilidad.
+    /// - Si la moneda del comprobante es distinta a la local, se exige TipoCambio al emitir.
+    /// - Retroactividad de emisión: Factura (01) hasta 3 días; Boleta (03) hasta 5 días (validación en <see cref="FechaEmision"/>).
+    /// - Precios/cantidades son editables y recalculan en línea; descuentos por línea y global son opcionales.
     /// </summary>
     public partial class ComprobanteElectronico
     {
-        // ...existing code...
-        /// <summary>
-        /// Tipo de cambio aplicado al comprobante (solo si la moneda es extranjera).
-        /// </summary>
+        /// <summary>Tipo de cambio aplicado al comprobante (solo si la moneda es extranjera).</summary>
         public TipoCambio? TipoCambio { get; private set; }
-        // ...existing code...
+
+        /// <summary>
+        /// Establece el tipo de cambio (p.ej., cuando usuario cambia la moneda del formulario a USD).
+        /// No convierte montos por sí mismo; para conversión usa <see cref="CambiarMoneda"/>.
+        /// </summary>
+        public void EstablecerTipoCambio(TipoCambio tipoCambio)
+        {
+            EnsureEditable();
+            if (tipoCambio is null) throw new ArgumentNullException(nameof(tipoCambio));
+            TipoCambio = tipoCambio;
+        }
+
+        /// <summary>Quita el tipo de cambio (p.ej., si regresa a moneda local).</summary>
+        public void QuitarTipoCambio()
+        {
+            EnsureEditable();
+            TipoCambio = null;
+        }
     }
-    /// Ciclo de vida del CPE dentro de ComprobantesElectronicosBC.
-    /// 
-    /// Este enum modela los seis estados principales de un comprobante electrónico (Factura/Boleta) en Factura Fácil.
-    /// La gestión de estados es responsabilidad de este aggregate; la firma digital y el envío a SUNAT se delegan a un API externo.
-    /// Los estados reflejan el proceso real del usuario y la interacción con el API Service de Facturación.
-    /// </summary>
+
+    /// <summary>Ciclo de vida del CPE dentro de ComprobantesElectronicosBC.</summary>
     public enum EstadoComprobante : short
     {
-    /// <summary>
-    /// Borrador: Fase de preparación inmediata.
-    /// - Se crea al abrir el formulario.
-    /// - Permite editar, eliminar y generar vista previa (PDF/HTML).
-    /// - No tiene correlativo ni XML/ZIP.
-    /// </summary>
         Borrador = 0,
-
-    /// <summary>
-    /// Enviado: Comprobante enviado al API Service.
-    /// - Al hacer clic en “Emitir”, cambia a PendingValidation.
-    /// - Se construye el JSON, se asigna correlativo y se invoca al API Service.
-    /// - El sistema muestra “Enviado” mientras espera respuesta técnica (CDR o error).
-    /// </summary>
         Enviado = 1,
-
-    /// <summary>
-    /// Corregir: Requiere intervención por errores de validación.
-    /// - Rechazo del API Service por formato o reglas de negocio.
-    /// - Excepción de SUNAT (códigos 0100–0199) o fallo de comunicación.
-    /// - Permite “Editar y Reenviar”.
-    /// </summary>
         Corregir = 2,
-
-    /// <summary>
-    /// Aceptado: SUNAT confirma con CDR de aceptación (código 98).
-    /// - Estado final, no editable.
-    /// - Permite descargar el CDR y visualizar el comprobante con sello.
-    /// </summary>
         Aceptado = 3,
-
-    /// <summary>
-    /// Rechazado: SUNAT emite CDR de rechazo (códigos 2000–3999).
-    /// - Estado final, no editable.
-    /// - Se registra motivo y deja de ser editable.
-    /// - No permite nota de crédito ni baja.
-    /// </summary>
         Rechazado = 4,
-
-    /// <summary>
-    /// Anulado: Baja homologada por SUNAT (CDR de baja).
-    /// - Se envía la comunicación de baja (RA) al API Service.
-    /// - Al confirmar el CDR de baja, cambia a Cancelled.
-    /// - Estado final; conserva histórico pero marca el comprobante como anulado.
-    /// </summary>
         Anulado = 5
     }
 
-    /// <summary>
-    /// Utilidades de reglas/etiquetas/códigos para persistencia y UI.
-    /// 
-    /// Métodos de ayuda para mapear los estados a códigos canónicos, reglas de edición/emisión y detección de estados finales.
-    /// </summary>
     public static class EstadoComprobanteInfo
     {
-        // Códigos canónicos (útiles si prefieres guardar texto estable)
         public static string Codigo(this EstadoComprobante e) => e switch
         {
             EstadoComprobante.Borrador  => "DRAFT",
-            EstadoComprobante.Enviado   => "SENT",               // PendingValidation
+            EstadoComprobante.Enviado   => "SENT",
             EstadoComprobante.Corregir  => "NEEDS_CORRECTION",
             EstadoComprobante.Aceptado  => "ACCEPTED",
             EstadoComprobante.Rechazado => "REJECTED",
@@ -103,7 +67,6 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
             _ => "UNKNOWN"
         };
 
-        // Reglas de UI
         public static bool PuedeEditar(this EstadoComprobante e)
             => e is EstadoComprobante.Borrador or EstadoComprobante.Corregir;
 
@@ -114,48 +77,39 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
             => e is EstadoComprobante.Aceptado or EstadoComprobante.Rechazado or EstadoComprobante.Anulado;
     }
 
-    /// <summary>
-    /// Aggregate raíz del Bounded Context ComprobantesElectronicosBC.
-    /// 
-    /// Este aggregate modela la preparación, validación y gestión de estados de un comprobante electrónico (Factura/Boleta).
-    /// La firma digital y el envío a SUNAT se delegan a un API externo; aquí solo se gestiona el ciclo de vida y la lógica de negocio para el usuario.
-    /// Los métodos de transición de estado (Emitir, MarcarCorregir, MarcarAceptado, etc.) reflejan el proceso real y pueden emitir eventos de dominio para integración y auditoría.
-    /// </summary>
+    /// <summary>Aggregate raíz del Bounded Context ComprobantesElectronicosBC.</summary>
     public sealed partial class ComprobanteElectronico
     {
-        // Domain events emitted by this aggregate
+        // --------------------- Domain events ---------------------
         private readonly List<IDomainEvent> _domainEvents = new();
         public IReadOnlyCollection<IDomainEvent> DomainEvents => _domainEvents.AsReadOnly();
-        #region Identidad y estado
+
+        // --------------------- Identidad y estado ----------------
         public Guid ComprobanteId { get; }
         public EstadoComprobante Estado { get; private set; } = EstadoComprobante.Borrador;
         public string EstadoCodigo => Estado.Codigo();
-        #endregion
 
-        #region Cabecera (Value Objects)
+        // Identidad multi-tenant (copiada desde EmisorSnapshot para facilitar queries/seguridad)
+        public EmpresaId EmpresaId { get; }
+        public TenantId TenantId { get; }
+        public EstablecimientoId EstablecimientoId { get; }
+
+        // --------------------- Cabecera (Value Objects) ----------
         public TipoDeComprobante Tipo { get; private set; }
         public SerieYNumero? SerieNumero { get; private set; } // El correlativo se asigna al emitir
-        public FechaEmision Emision { get; private set; } // Por defecto la misma fecha de emisión, retroactivo es por normativa Factura 1 dia y boleta 3 días máximo
-        public FechaVencimiento Vencimiento { get; private set; }//Por defecto la misma fecha de emisión, Sólo se cambia para casos de venta a crédito.
+        public FechaEmision Emision { get; private set; }
+        public FechaVencimiento Vencimiento { get; private set; }
         public FormaDePago FormaDePago { get; private set; }
-    public Moneda Moneda { get; private set; }
-    // Moneda es el value object del SharedKernel, conforme a ISO-4217
-    // Se recomienda instanciarlo siempre usando Moneda.Create o Moneda.PEN()/Moneda.USD()
-    // Ejemplo: Moneda = Moneda.PEN();
+        public Moneda Moneda { get; private set; }
 
-    public EmisorSnapshot Emisor { get; }
-
-    /// <summary>
-    /// Snapshot del usuario emisor (vendedor/cajero) al momento de la emisión del comprobante.
-    /// Permite auditar quién emitió el comprobante, desacoplado del usuario actual.
-    /// </summary>
-    public UsuarioSnapshot UsuarioEmisor { get; }
+        public EmisorSnapshot Emisor { get; }
+        public UsuarioSnapshot UsuarioEmisor { get; }
         public ClienteSnapshot Cliente { get; private set; }
 
         public CentroDeCosto? CentroDeCosto { get; private set; }
         public Observaciones? Observaciones { get; private set; }
-        public NumeroGuiaRemision? NumeroGuiaRemision { get; private set; } // Son datos de referencia que el usuario emisor pueda proporcionar de manera opcional
-        public NumeroOrdenCompra? NumeroOrdenCompra { get; private set; } // Son datos de referencia que el usuario emisor pueda proporcionar de manera opcional
+        public NumeroGuiaRemision? NumeroGuiaRemision { get; private set; }
+        public NumeroOrdenCompra? NumeroOrdenCompra { get; private set; }
 
         /// <summary>Correos de envío (0..5). Se normalizan con <see cref="Email.ParseListOrEmpty"/>.</summary>
         public IReadOnlyList<Email> CorreosEnvio => _correosEnvio.AsReadOnly();
@@ -164,14 +118,12 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
         /// <summary>Notas internas (append-only).</summary>
         public IReadOnlyList<NotaInterna> NotasInternas => _notas.AsReadOnly();
         private readonly List<NotaInterna> _notas = new();
-        #endregion
 
-        #region Detalle (líneas)
-        public IReadOnlyList<LineaDetalle> Lineas => _lineas.AsReadOnly();
-        private readonly List<LineaDetalle> _lineas = new();
-        #endregion
+        // --------------------- Detalle (líneas) ------------------
+        private readonly List<ComprobanteLinea> _lineas = new();
+        public IReadOnlyList<ComprobanteLinea> Lineas => _lineas.AsReadOnly();
 
-        #region Descuentos y totales (moneda del documento)
+        // --------------------- Descuentos y totales --------------
         public DescuentoGlobal DescuentoGlobal { get; private set; } = DescuentoGlobal.None;
 
         /// <summary>Suma de bases imponibles tras descuento de línea, antes de descuento global.</summary>
@@ -191,9 +143,8 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
         public ImporteMonetario ImporteDescuentoGlobal => ImporteMonetario.Create(DescuentoGlobalMonto, Moneda);
         public ImporteMonetario ImporteIgvTotal => ImporteMonetario.Create(IgvTotal, Moneda);
         public ImporteMonetario ImporteTotal => ImporteMonetario.Create(Total, Moneda);
-        #endregion
 
-        #region Auditoría mínima
+        // --------------------- Auditoría mínima ------------------
         public DateTimeOffset CreadoEnUtc { get; }
         public DateTimeOffset? EnviadoEnUtc { get; private set; }
         public DateTimeOffset? AceptadoEnUtc { get; private set; }
@@ -202,9 +153,8 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
         public string? UltimoErrorTecnico { get; private set; }
         public string? UltimoCdrCodigo { get; private set; }
         public string? UltimoCdrDescripcion { get; private set; }
-        #endregion
 
-        #region Constructores / fábricas
+        // --------------------- Constructores / fábricas ----------
         private ComprobanteElectronico(
             Guid id,
             TipoDeComprobante tipo,
@@ -219,14 +169,19 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
         {
             ComprobanteId = id == Guid.Empty ? Guid.NewGuid() : id;
 
-            Tipo = tipo ?? throw new ArgumentNullException(nameof(tipo));
-            Emisor = emisor ?? throw new ArgumentNullException(nameof(emisor));
-            Cliente = cliente ?? throw new ArgumentNullException(nameof(cliente));
-            Moneda = moneda ?? throw new ArgumentNullException(nameof(moneda));
-            Emision = emision ?? throw new ArgumentNullException(nameof(emision));
-            FormaDePago = formaDePago ?? throw new ArgumentNullException(nameof(formaDePago));
-            Vencimiento = vencimiento ?? throw new ArgumentNullException(nameof(vencimiento));
+            Tipo          = tipo ?? throw new ArgumentNullException(nameof(tipo));
+            Emisor        = emisor ?? throw new ArgumentNullException(nameof(emisor));
+            Cliente       = cliente ?? throw new ArgumentNullException(nameof(cliente));
+            Moneda        = moneda ?? throw new ArgumentNullException(nameof(moneda));
+            Emision       = emision ?? throw new ArgumentNullException(nameof(emision));
+            FormaDePago   = formaDePago ?? throw new ArgumentNullException(nameof(formaDePago));
+            Vencimiento   = vencimiento ?? throw new ArgumentNullException(nameof(vencimiento));
             UsuarioEmisor = usuarioEmisor ?? throw new ArgumentNullException(nameof(usuarioEmisor));
+
+            // Copia de identidad multi-tenant para facilitar queries/policies
+            EmpresaId         = Emisor.EmpresaId;
+            TenantId          = Emisor.TenantId;
+            EstablecimientoId = Emisor.EstablecimientoId;
 
             // Regla mínima: en CONTADO, Vencimiento == Emision
             if (FormaDePago.EsContado && !Vencimiento.EsMismoDiaQue(Emision.Fecha))
@@ -250,11 +205,11 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
             var now = ahoraUtc ?? DateTimeOffset.UtcNow;
             return new ComprobanteElectronico(Guid.NewGuid(), tipo, emisor, cliente, moneda, emision, formaDePago, vencimiento, usuarioEmisor, now);
         }
-        #endregion
 
-        #region Mutaciones de cabecera
+        // --------------------- Mutaciones de cabecera -----------
         public void AsignarSerieYNumero(SerieYNumero serieNumero)
         {
+            EnsureEditable();
             if (serieNumero is null) throw new ArgumentNullException(nameof(serieNumero));
             // Convención F*/B* respecto al tipo
             Tipo.ValidarCompatibilidadConSerie(serieNumero.Serie);
@@ -267,11 +222,13 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
 
         public void CambiarCliente(ClienteSnapshot nuevo)
         {
+            EnsureEditable();
             Cliente = nuevo ?? throw new ArgumentNullException(nameof(nuevo));
         }
 
         public void CambiarFormaDePago(FormaDePago forma, int? diasCredito = null)
         {
+            EnsureEditable();
             if (forma is null) throw new ArgumentNullException(nameof(forma));
             Vencimiento = FechaVencimiento.ParaFormaDePago(forma, Emision.Fecha, diasCredito);
             FormaDePago = forma;
@@ -279,32 +236,113 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
 
         public void CambiarVencimiento(FechaVencimiento nuevo)
         {
+            EnsureEditable();
             if (nuevo is null) throw new ArgumentNullException(nameof(nuevo));
             if (FormaDePago.EsContado && !nuevo.EsMismoDiaQue(Emision.Fecha))
                 throw new InvalidOperationException("En CONTADO el vencimiento debe ser igual a la emisión.");
             Vencimiento = nuevo;
         }
 
-        public void CambiarObservaciones(Observaciones? obs) => Observaciones = obs;
-        public void CambiarCentroDeCosto(CentroDeCosto? cc) => CentroDeCosto = cc;
-        public void CambiarNumeroGuia(NumeroGuiaRemision? guia) => NumeroGuiaRemision = guia;
-        public void CambiarNumeroOrdenCompra(NumeroOrdenCompra? oc) => NumeroOrdenCompra = oc;
-
-        public void ReemplazarCorreosEnvio(IReadOnlyList<Email> correos)
+        public void CambiarObservaciones(Observaciones? obs)
         {
-            _correosEnvio.Clear();
-            if (correos is { Count: > 0 }) _correosEnvio.AddRange(correos);
+            EnsureEditable();
+            Observaciones = obs;
         }
 
+        public void CambiarCentroDeCosto(CentroDeCosto? cc)
+        {
+            EnsureEditable();
+            CentroDeCosto = cc;
+        }
+
+        public void CambiarNumeroGuia(NumeroGuiaRemision? guia)
+        {
+            EnsureEditable();
+            NumeroGuiaRemision = guia;
+        }
+
+        public void CambiarNumeroOrdenCompra(NumeroOrdenCompra? oc)
+        {
+            EnsureEditable();
+            NumeroOrdenCompra = oc;
+        }
+
+        /// <summary>Reemplaza correos de envío (máx. 5).</summary>
+        public void ReemplazarCorreosEnvio(IReadOnlyList<Email> correos)
+        {
+            EnsureEditable();
+            _correosEnvio.Clear();
+            if (correos is { Count: > 0 })
+            {
+                if (correos.Count > 5)
+                    throw new InvalidOperationException("Máximo 5 correos de envío.");
+                _correosEnvio.AddRange(correos);
+            }
+        }
+
+        /// <summary>Agrega una nota interna (append-only). Puede permitirse en cualquier estado si así lo decides.</summary>
         public void AgregarNotaInterna(NotaInterna nota)
         {
+            // Si deseas restringir a estados editables, descomenta:
+            // EnsureEditable();
             if (nota is null) throw new ArgumentNullException(nameof(nota));
             _notas.Add(nota);
         }
-        #endregion
 
-        #region Líneas (agregar/editar/quitar)
-        public Guid AgregarLinea(
+        /// <summary>
+        /// Cambia la moneda del comprobante. Si <paramref name="convertirPreciosDeLineas"/> es true,
+        /// aplica el factor de conversión a los precios unitarios de todas las líneas.
+        /// 
+        /// NOTA: Para evitar suposiciones sobre el VO TipoCambio, aquí usamos un <paramref name="factorConversion"/>.
+        /// Si el <paramref name="factorEsDeMonedaActualAHaciaNueva"/> es true, se interpreta que:
+        ///     precioNuevo = precioActual * factorConversion
+        /// En caso contrario:
+        ///     precioNuevo = precioActual / factorConversion
+        /// 
+        /// Ejemplo estándar (PEN↔USD): si factor = 3.78 y estás pasando de PEN→USD, usa factorEsDeMonedaActualAHaciaNueva=false (divide).
+        /// Si vas de USD→PEN, usa factorEsDeMonedaActualAHaciaNueva=true (multiplica).
+        /// </summary>
+        public void CambiarMoneda(
+            Moneda nueva,
+            decimal factorConversion,
+            bool factorEsDeMonedaActualAHaciaNueva,
+            bool convertirPreciosDeLineas = true)
+        {
+            EnsureEditable();
+            if (nueva is null) throw new ArgumentNullException(nameof(nueva));
+            if (nueva.Codigo == Moneda.Codigo) return;
+
+            // Si se requiere conversión de precios de líneas, aplicarla
+            if (convertirPreciosDeLineas)
+            {
+                if (factorConversion <= 0m)
+                    throw new ArgumentOutOfRangeException(nameof(factorConversion), "El factor de conversión debe ser positivo.");
+
+                foreach (var ln in _lineas)
+                {
+                    // Validar consistencia
+                    if (!ln.PrecioUnitario.Moneda.Equals(Moneda))
+                        throw new InvalidOperationException("La moneda de una línea no coincide con la del comprobante antes de convertir.");
+
+                    var actual = ln.PrecioUnitario.Monto;
+                    var convertido = factorEsDeMonedaActualAHaciaNueva ? actual * factorConversion : actual / factorConversion;
+                    var nuevoPrecio = ImporteMonetario.Create(Round2(convertido), nueva);
+                    ln.CambiarPrecio(nuevoPrecio, ln.PrecioIncluyeIgv, permitirCambioDeMoneda: true); // permite cambio de moneda
+                }
+            }
+            else
+            {
+                // Si no conviertes, asegúrate de que las líneas ya vengan en la nueva moneda
+                if (_lineas.Any(l => !l.PrecioUnitario.Moneda.Equals(nueva)))
+                    throw new InvalidOperationException("Las líneas deben tener la misma moneda que el comprobante.");
+            }
+
+            Moneda = nueva;
+            RecalcularTotales();
+        }
+
+        // --------------------- Líneas (agregar/editar/quitar) ---
+        public int AgregarLinea(
             DescripcionProducto descripcion,
             UnidadDeMedida unidad,
             Cantidad cantidad,
@@ -312,8 +350,11 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
             AfectacionImpuesto afectacion,
             TasaImpuesto tasa,
             bool precioIncluyeIgv,
-            DescuentoLinea? descuento = null)
+            DescuentoLinea? descuento = null,
+            CentroDeCosto? centroDeCosto = null)
         {
+            EnsureEditable();
+
             if (descripcion is null) throw new ArgumentNullException(nameof(descripcion));
             if (unidad is null) throw new ArgumentNullException(nameof(unidad));
             if (afectacion is null) throw new ArgumentNullException(nameof(afectacion));
@@ -321,25 +362,26 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
             if (!precioUnitario.Moneda.Equals(Moneda))
                 throw new InvalidOperationException($"La moneda de la línea ({precioUnitario.Moneda.Codigo}) debe coincidir con la del documento ({Moneda.Codigo}).");
 
-            var linea = new LineaDetalle(
-                id: Guid.NewGuid(),
-                descripcion: descripcion,
-                unidad: unidad,
-                cantidad: cantidad,
-                precioUnitario: precioUnitario,
-                afectacion: afectacion,
-                tasa: tasa,
-                precioIncluyeIgv: precioIncluyeIgv,
-                descuento: descuento ?? DescuentoLinea.None
+            var numeroLinea = _lineas.Count + 1;
+            var linea = ComprobanteLinea.Create(
+                numeroLinea,
+                descripcion,
+                unidad,
+                cantidad,
+                precioUnitario,
+                precioIncluyeIgv,
+                afectacion,
+                tasa,
+                descuento,
+                centroDeCosto
             );
-
             _lineas.Add(linea);
             RecalcularTotales();
-            return linea.LineaId;
+            return numeroLinea;
         }
 
         public void EditarLinea(
-            Guid lineaId,
+            int numeroLinea,
             DescripcionProducto? descripcion = null,
             UnidadDeMedida? unidad = null,
             Cantidad? cantidad = null,
@@ -347,30 +389,68 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
             AfectacionImpuesto? afectacion = null,
             TasaImpuesto? tasa = null,
             bool? precioIncluyeIgv = null,
-            DescuentoLinea? descuento = null)
+            DescuentoLinea? descuento = null,
+            CentroDeCosto? centroDeCosto = null)
         {
-            var ln = _lineas.FirstOrDefault(l => l.LineaId == lineaId)
-                     ?? throw new ArgumentException("No existe la línea indicada.", nameof(lineaId));
+            EnsureEditable();
+
+            var ln = _lineas.FirstOrDefault(l => l.NumeroLinea == numeroLinea)
+                     ?? throw new ArgumentException("No existe la línea indicada.", nameof(numeroLinea));
 
             if (precioUnitario is not null && !precioUnitario.Moneda.Equals(Moneda))
                 throw new InvalidOperationException($"La moneda de la línea ({precioUnitario.Moneda.Codigo}) debe coincidir con la del documento ({Moneda.Codigo}).");
 
-            ln.Editar(descripcion, unidad, cantidad, precioUnitario, afectacion, tasa, precioIncluyeIgv, descuento);
+            if (descripcion is not null) ln.CambiarDescripcion(descripcion);
+            if (unidad is not null) ln.CambiarUnidad(unidad);
+            if (cantidad is not null) ln.CambiarCantidad(cantidad.Value);
+            if (precioUnitario is not null) ln.CambiarPrecio(precioUnitario, precioIncluyeIgv);
+
+            // Permite cambios parciales de impuesto
+            if (afectacion is not null && tasa is not null) ln.CambiarImpuesto(afectacion, tasa);
+            else if (afectacion is not null)               ln.CambiarImpuesto(afectacion, ln.TasaImpuesto);
+            else if (tasa is not null)                     ln.CambiarImpuesto(ln.AfectacionImpuesto, tasa);
+
+            if (descuento is not null) ln.CambiarDescuento(descuento);
+            if (centroDeCosto is not null) ln.CambiarCentroDeCosto(centroDeCosto);
+
             RecalcularTotales();
         }
 
-        public void EliminarLinea(Guid lineaId)
+        public void EliminarLinea(int numeroLinea)
         {
-            var removed = _lineas.RemoveAll(l => l.LineaId == lineaId);
-            if (removed == 0)
-                throw new ArgumentException("No existe la línea indicada.", nameof(lineaId));
+            EnsureEditable();
+
+            var idx = _lineas.FindIndex(l => l.NumeroLinea == numeroLinea);
+            if (idx == -1)
+                throw new ArgumentException("No existe la línea indicada.", nameof(numeroLinea));
+
+            _lineas.RemoveAt(idx);
+
+            // Reasigna los números de línea para mantener la secuencia 1..N
+            for (int i = 0; i < _lineas.Count; i++)
+            {
+                var src = _lineas[i];
+                _lineas[i] = ComprobanteLinea.Create(
+                    i + 1,
+                    src.Descripcion,
+                    src.UM,
+                    src.Cantidad,
+                    src.PrecioUnitario,
+                    src.PrecioIncluyeIgv,
+                    src.AfectacionImpuesto,
+                    src.TasaImpuesto,
+                    src.Descuento,
+                    src.CentroDeCosto
+                );
+            }
+
             RecalcularTotales();
         }
-        #endregion
 
-        #region Descuento global y totales
+        // --------------------- Descuento global y totales -------
         public void CambiarDescuentoGlobal(DescuentoGlobal nuevo)
         {
+            EnsureEditable();
             DescuentoGlobal = nuevo ?? throw new ArgumentNullException(nameof(nuevo));
             RecalcularTotales();
         }
@@ -386,44 +466,36 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
                 return;
             }
 
-            // 1) Montos por línea aplicando DESCUENTO DE LÍNEA
-            var montosPorLinea = _lineas.Select(l => l.CalcularMontos()).ToList();
-
-            // Bases separadas (después del descuento de línea)
-            var baseTotal = montosPorLinea.Sum(m => m.BaseDespues);
+            // 1) Bases separadas (después del descuento de línea)
+            var baseTotal = _lineas.Sum(l => l.BaseImponible.Monto);
 
             // 2) Descuento global sobre la BASE
             SubtotalBase = Round2(baseTotal);
             DescuentoGlobalMonto = Round2(DescuentoGlobal.CalcularMontoDescuento(SubtotalBase));
             var baseNeta = Round2(SubtotalBase - DescuentoGlobalMonto);
 
-            // 3) Prorrateo del descuento global a cada línea para recalcular IGV correctamente
+            // 3) IGV total
             decimal igvTotal = 0m;
-
             if (DescuentoGlobal.EsNinguno)
             {
-                igvTotal = montosPorLinea.Sum(m => m.Igv);
+                igvTotal = _lineas.Sum(l => l.Igv.Monto);
             }
             else
             {
+                // Prorrateo del descuento global a cada línea para recalcular IGV correctamente
                 for (int i = 0; i < _lineas.Count; i++)
                 {
                     var linea = _lineas[i];
-                    var m = montosPorLinea[i];
-
-                    // Porción del descuento global que afecta a la base de ESTA línea
                     decimal share = DescuentoGlobal.Modo switch
                     {
-                        DescuentoGlobalModo.Porcentaje => Round6(m.BaseDespues * DescuentoGlobal.Valor),
-                        DescuentoGlobalModo.Monto      => SubtotalBase == 0m ? 0m : Round6(DescuentoGlobalMonto * (m.BaseDespues / SubtotalBase)),
+                        DescuentoGlobalModo.Porcentaje => Round6(linea.BaseImponible.Monto * DescuentoGlobal.Valor),
+                        DescuentoGlobalModo.Monto      => SubtotalBase == 0m ? 0m : Round6(DescuentoGlobalMonto * (linea.BaseImponible.Monto / SubtotalBase)),
                         _                              => 0m
                     };
-
-                    var baseLineaTrasGlobal = Round2(m.BaseDespues - share);
-                    var igvLinea = linea.Afectacion.GravaImpuesto
-                        ? Round2(baseLineaTrasGlobal * linea.Tasa.Fraccion)
+                    var baseLineaTrasGlobal = Round2(linea.BaseImponible.Monto - share);
+                    var igvLinea = linea.AfectacionImpuesto.GravaImpuesto
+                        ? Round2(baseLineaTrasGlobal * linea.TasaImpuesto.Fraccion)
                         : 0m;
-
                     igvTotal += igvLinea;
                 }
             }
@@ -431,29 +503,14 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
             IgvTotal = Round2(igvTotal);
             Total = Round2(baseNeta + IgvTotal);
 
-            // Validación de totales consistentes
-            // Si la suma de las líneas + IGV + descuento global no cuadra con el total calculado, lanza excepción de dominio
-            var totalEsperado = Round2(baseNeta + IgvTotal);
-            if (Math.Abs(Total - totalEsperado) > 0.01m)
-            {
-                throw new TotalesInconsistentesException(
-                    $"El total del comprobante no coincide con la suma de las líneas y los impuestos.",
-                    new Dictionary<string, object?>
-                    {
-                        { "Total", Total },
-                        { "TotalEsperado", totalEsperado },
-                        { "SubtotalBase", SubtotalBase },
-                        { "DescuentoGlobalMonto", DescuentoGlobalMonto },
-                        { "IgvTotal", IgvTotal }
-                    }
-                );
-            }
+            // Nota: El check de "totales inconsistentes" era inalcanzable porque Total se calcula del mismo modo.
+            // Si deseas una validación dura, compárala contra una recomposición independiente o fuentes externas.
         }
-        #endregion
 
-        #region Transiciones de estado
+        // --------------------- Transiciones de estado ----------
         /// <summary>
         /// Pasa de Borrador/Corregir → Enviado. Requiere Serie/Número y al menos una línea.
+        /// También valida: Factura → RUC de cliente; moneda extranjera → TipoCambio obligatorio.
         /// </summary>
         public void Emitir()
         {
@@ -464,13 +521,20 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
             if (_lineas.Count == 0)
                 throw new InvalidOperationException("Debe existir al menos una línea antes de emitir.");
 
+            // Guards normativos
+            if (Tipo.RequiereRucCliente && !Cliente.EsRuc)
+                throw new InvalidOperationException("Para Factura (01) el cliente debe tener RUC.");
+            if (Moneda.Codigo != "PEN" && TipoCambio is null)
+                throw new InvalidOperationException("Tipo de cambio obligatorio para moneda extranjera.");
+
             Estado = EstadoComprobante.Enviado;
             EnviadoEnUtc = DateTimeOffset.UtcNow;
             UltimoErrorTecnico = null;
             UltimoCdrCodigo = null;
             UltimoCdrDescripcion = null;
-            // Emit domain event
-            _domainEvents.Add(new ComprobanteEmitidoDomainEvent(ComprobanteId, DateTime.UtcNow));
+
+            // Emit domain event (enviado)
+            _domainEvents.Add(new ComprobanteEnviadoDomainEvent(ComprobanteId, EnviadoEnUtc.Value.UtcDateTime));
         }
 
         /// <summary>Pasa de Enviado → Corregir (error recuperable).</summary>
@@ -478,15 +542,12 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
         {
             if (Estado != EstadoComprobante.Enviado)
                 throw new InvalidOperationException("Solo un comprobante ENVIADO puede pasar a CORREGIR.");
+
             UltimoErrorTecnico = string.IsNullOrWhiteSpace(detalleError) ? "Error no especificado" : detalleError.Trim();
             Estado = EstadoComprobante.Corregir;
-            // Emit domain events
-            _domainEvents.Add(new ComprobanteObservadoDomainEvent(ComprobanteId, detalleError, DateTime.UtcNow));
-            _domainEvents.Add(new ComprobanteCorregidoDomainEvent(
-                ComprobanteId,
-                DateTime.UtcNow,
-                detalleError
-            ));
+
+            // Evento: Observado (corrección requerida)
+            _domainEvents.Add(new ComprobanteObservadoDomainEvent(ComprobanteId, UltimoErrorTecnico, DateTimeOffset.UtcNow.UtcDateTime));
         }
 
         /// <summary>Pasa de Enviado → Aceptado.</summary>
@@ -495,12 +556,12 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
             EnsurePuedeAceptar();
             Estado = EstadoComprobante.Aceptado;
             AceptadoEnUtc = DateTimeOffset.UtcNow;
-            // Emit domain events
-            _domainEvents.Add(new ComprobanteEnviadoDomainEvent(ComprobanteId, DateTime.UtcNow));
-            _domainEvents.Add(new ProyectoFacturaFacil.ComprobantesElectronicosBC.Domain.Events.ComprobanteAceptadoDomainEvent(
+
+            // Evento: Aceptado (se respeta namespace/nombre que ya usas)
+            _domainEvents.Add(new ComprobanteAceptadoDomainEvent(
                 ComprobanteId,
-                DateTime.UtcNow
-            ));
+                AceptadoEnUtc.Value.UtcDateTime,
+                UltimoCdrDescripcion));
         }
 
         /// <summary>Pasa de Enviado → Aceptado con fecha específica (wrapper de compatibilidad).</summary>
@@ -509,12 +570,11 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
             EnsurePuedeAceptar();
             Estado = EstadoComprobante.Aceptado;
             AceptadoEnUtc = aceptadoEnUtc;
-            // Emit domain events
-            _domainEvents.Add(new ComprobanteEnviadoDomainEvent(ComprobanteId, aceptadoEnUtc.UtcDateTime));
-            _domainEvents.Add(new ProyectoFacturaFacil.ComprobantesElectronicosBC.Domain.Events.ComprobanteAceptadoDomainEvent(
+
+            _domainEvents.Add(new ComprobanteAceptadoDomainEvent(
                 ComprobanteId,
-                aceptadoEnUtc.UtcDateTime
-            ));
+                AceptadoEnUtc.Value.UtcDateTime,
+                UltimoCdrDescripcion));
         }
 
         /// <summary>Pasa de Enviado → Rechazado (CDR 2000–3999).</summary>
@@ -522,11 +582,16 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
         {
             if (Estado != EstadoComprobante.Enviado)
                 throw new InvalidOperationException("Solo un comprobante ENVIADO puede marcarse RECHAZADO.");
+
             UltimoCdrCodigo = string.IsNullOrWhiteSpace(codigoCdr) ? null : codigoCdr.Trim();
             UltimoCdrDescripcion = string.IsNullOrWhiteSpace(descripcion) ? null : descripcion.Trim();
             Estado = EstadoComprobante.Rechazado;
-            // Emit domain event
-            _domainEvents.Add(new ComprobanteRechazadoDomainEvent(ComprobanteId, codigoCdr, descripcion, DateTime.UtcNow));
+
+            _domainEvents.Add(new ComprobanteRechazadoDomainEvent(
+                ComprobanteId,
+                UltimoCdrCodigo ?? string.Empty,
+                UltimoCdrDescripcion ?? string.Empty,
+                DateTimeOffset.UtcNow.UtcDateTime));
         }
 
         /// <summary>Pasa de Aceptado → Anulado (RA aceptada).</summary>
@@ -534,10 +599,13 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
         {
             if (Estado != EstadoComprobante.Aceptado)
                 throw new InvalidOperationException("Solo un comprobante ACEPTADO puede anularse por baja.");
+
             Estado = EstadoComprobante.Anulado;
             AnuladoEnUtc = cdrBajaEnUtc;
-            // Emit domain event
-            _domainEvents.Add(new ComprobanteAnuladoDomainEvent(ComprobanteId, cdrBajaEnUtc.UtcDateTime));
+
+            _domainEvents.Add(new ComprobanteAnuladoDomainEvent(
+                ComprobanteId,
+                AnuladoEnUtc.Value.UtcDateTime));
         }
 
         private void EnsurePuedeAceptar()
@@ -549,73 +617,23 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
             if (_lineas.Count == 0)
                 throw new InvalidOperationException("Debe existir al menos una línea antes de la aceptación.");
         }
-        #endregion
 
-        #region Helpers
+        private void EnsureEditable()
+        {
+            if (!Estado.PuedeEditar())
+                throw new InvalidOperationException("Solo en BORRADOR o CORREGIR puede editarse el comprobante.");
+        }
+
+        // --------------------- Helpers -------------------------
         private static decimal Round2(decimal v) => Math.Round(v, 2, MidpointRounding.AwayFromZero);
         private static decimal Round6(decimal v) => Math.Round(v, 6, MidpointRounding.AwayFromZero);
-        #endregion
 
-        // ============================================================
-        // Entidad interna de línea (en el mismo archivo por claridad)
-        // ============================================================
-        public sealed class LineaDetalle
+        /// <summary>Permite al application service drenar eventos tras persistir/publicar.</summary>
+        public IReadOnlyCollection<IDomainEvent> DrainDomainEvents()
         {
-            public Guid LineaId { get; }
-            public DescripcionProducto Descripcion { get; private set; }
-            public UnidadDeMedida Unidad { get; private set; }
-            public Cantidad Cantidad { get; private set; }
-            public ImporteMonetario PrecioUnitario { get; private set; }
-            public bool PrecioIncluyeIgv { get; private set; }
-            public AfectacionImpuesto Afectacion { get; private set; }
-            public TasaImpuesto Tasa { get; private set; }
-            public DescuentoLinea Descuento { get; private set; }
-
-            internal LineaDetalle(
-                Guid id,
-                DescripcionProducto descripcion,
-                UnidadDeMedida unidad,
-                Cantidad cantidad,
-                ImporteMonetario precioUnitario,
-                AfectacionImpuesto afectacion,
-                TasaImpuesto tasa,
-                bool precioIncluyeIgv,
-                DescuentoLinea descuento)
-            {
-                LineaId = id == Guid.Empty ? Guid.NewGuid() : id;
-                Descripcion = descripcion ?? throw new ArgumentNullException(nameof(descripcion));
-                Unidad = unidad ?? throw new ArgumentNullException(nameof(unidad));
-                Cantidad = cantidad;
-                PrecioUnitario = precioUnitario ?? throw new ArgumentNullException(nameof(precioUnitario));
-                Afectacion = afectacion ?? throw new ArgumentNullException(nameof(afectacion));
-                Tasa = tasa ?? throw new ArgumentNullException(nameof(tasa));
-                PrecioIncluyeIgv = precioIncluyeIgv;
-                Descuento = descuento ?? DescuentoLinea.None;
-            }
-
-            internal void Editar(
-                DescripcionProducto? descripcion,
-                UnidadDeMedida? unidad,
-                Cantidad? cantidad,
-                ImporteMonetario? precioUnitario,
-                AfectacionImpuesto? afectacion,
-                TasaImpuesto? tasa,
-                bool? precioIncluyeIgv,
-                DescuentoLinea? descuento)
-            {
-                if (descripcion is not null) Descripcion = descripcion;
-                if (unidad is not null) Unidad = unidad;
-                if (cantidad is not null) Cantidad = cantidad.Value;
-                if (precioUnitario is not null) PrecioUnitario = precioUnitario;
-                if (afectacion is not null) Afectacion = afectacion;
-                if (tasa is not null) Tasa = tasa;
-                if (precioIncluyeIgv.HasValue) PrecioIncluyeIgv = precioIncluyeIgv.Value;
-                if (descuento is not null) Descuento = descuento;
-            }
-
-            /// <summary>Montos de la línea después de aplicar el descuento de línea.</summary>
-            internal DescuentoLinea.Resultado CalcularMontos()
-                => Descuento.Aplicar(Afectacion, PrecioUnitario.Monto, Cantidad, PrecioIncluyeIgv);
+            var copy = _domainEvents.ToArray();
+            _domainEvents.Clear();
+            return copy;
         }
     }
 }

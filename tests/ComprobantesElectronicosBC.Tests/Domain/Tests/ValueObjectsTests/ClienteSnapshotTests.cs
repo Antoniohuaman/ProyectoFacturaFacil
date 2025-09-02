@@ -25,13 +25,13 @@ namespace ComprobantesElectronicosBC.Tests.UnitTests.ValueObjects
             return DocumentoIdentidad.Crear(tipo, numero);
         }
 
-        private static DireccionPostal Dir(
+        private static DomicilioFiscal Domicilio(
             string linea1 = "Av. Los Olivos 123",
             string ubigeo = "150101",
             string distrito = "LIMA",
             string provincia = "LIMA",
             string departamento = "LIMA")
-            => DireccionPostal.FromPeru(
+            => DomicilioFiscal.FromPeru(
                 linea: linea1,
                 ubigeo: ubigeo,
                 departamento: departamento,
@@ -50,7 +50,7 @@ namespace ComprobantesElectronicosBC.Tests.UnitTests.ValueObjects
         public void Create_RucConDireccionYEmail_NormalizaNombre_YExponeUbl()
         {
             var documento = Doc("6", "20100070970"); // RUC válido
-            var direccion = Dir();
+            var domicilio = Domicilio();
             var email     = Mail("facturacion@cliente.com");
 
             var snap = ClienteSnapshot.Create(
@@ -58,7 +58,7 @@ namespace ComprobantesElectronicosBC.Tests.UnitTests.ValueObjects
                 tenantId: Tenant(),
                 documento: documento,
                 nombre: "  CLIENTE   S.A.C. ",
-                direccion: direccion,
+                domicilio: domicilio,
                 email: email
             );
 
@@ -67,7 +67,7 @@ namespace ComprobantesElectronicosBC.Tests.UnitTests.ValueObjects
 
             // Asignación de VOs
             Assert.That(snap.Documento, Is.SameAs(documento));
-            Assert.That(snap.Direccion, Is.SameAs(direccion));
+            Assert.That(snap.Domicilio, Is.SameAs(domicilio));
             Assert.That(snap.Email, Is.SameAs(email));
 
             // Conveniencia
@@ -90,7 +90,7 @@ namespace ComprobantesElectronicosBC.Tests.UnitTests.ValueObjects
             var snap = ClienteSnapshot.Create(Empresa(), Tenant(), documento, " Juan   Pérez ");
 
             Assert.That(snap.Nombre, Is.EqualTo("Juan Pérez"));
-            Assert.That(snap.Direccion, Is.Null);
+            Assert.That(snap.Domicilio, Is.Null);
             Assert.That(snap.Email, Is.Null);
             Assert.That(snap.EsRuc, Is.False);
 
@@ -121,13 +121,13 @@ namespace ComprobantesElectronicosBC.Tests.UnitTests.ValueObjects
         public void Withers_CreanNuevaInstancia_YActualizanCampos()
         {
             var doc  = Doc("6", "20100070970");
-            var dir1 = Dir();
-            var dir2 = Dir(linea1: "Jr. Nueva 456");
-            var c1   = ClienteSnapshot.Create(Empresa(), Tenant(), doc, "CLIENTE S.A.C.", dir1);
+            var dom1 = Domicilio();
+            var dom2 = Domicilio(linea1: "Jr. Nueva 456");
+            var c1   = ClienteSnapshot.Create(Empresa(), Tenant(), doc, "CLIENTE S.A.C.", dom1);
 
-            var c2 = c1.ConDireccion(dir2);
+            var c2 = c1.ConDomicilio(dom2);
             Assert.That(c2, Is.Not.SameAs(c1));
-            Assert.That(c2.Direccion, Is.SameAs(dir2));
+            Assert.That(c2.Domicilio, Is.SameAs(dom2));
 
             var c3 = c2.ConEmail(Mail("ventas@cliente.com"));
             Assert.That(c3.Email!.Value, Is.EqualTo("ventas@cliente.com"));

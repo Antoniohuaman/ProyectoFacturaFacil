@@ -25,7 +25,7 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
             string EmpresaId, // opaco, canonizado desde RUC
             string Codigo,
             string Nombre,
-            DireccionPostal Direccion,
+            DomicilioFiscal Direccion,
             bool Habilitado
         );
 
@@ -51,7 +51,7 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
         // Datos legales
         public string RazonSocial { get; private set; } = string.Empty;
         public string? NombreComercial { get; private set; }
-        public DireccionPostal DireccionFiscal { get; private set; } = null!;
+    public DomicilioFiscal DireccionFiscal { get; private set; } = null!;
 
         // Parámetros base
         public Moneda MonedaBase { get; private set; } = Moneda.PEN();
@@ -70,7 +70,7 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
             public Guid Id { get; init; }
             public string Codigo { get; set; } = string.Empty; // único por empresa
             public string Nombre { get; set; } = string.Empty;
-            public DireccionPostal Direccion { get; set; } = null!;
+            public DomicilioFiscal Direccion { get; set; } = null!;
             public bool Habilitado { get; set; } = true;
             public bool EsPrincipal { get; set; } = false;
         }
@@ -109,7 +109,7 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
             EmpresaId empresaId,
             string razonSocial,
             string? nombreComercial,
-            DireccionPostal direccionFiscal,
+            DomicilioFiscal direccionFiscal,
             Moneda monedaBase,
             AmbienteFe ambiente,
             Telefono telefonos,
@@ -148,14 +148,14 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
         public static ConfiguracionEmpresa RegistrarNueva(
             Ruc ruc,
             string razonSocial,
-            DireccionPostal direccionFiscal,
+            DomicilioFiscal direccionFiscal,
             Moneda monedaBase)
         {
             if (ruc is null) throw new ArgumentNullException(nameof(ruc));
             if (string.IsNullOrWhiteSpace(razonSocial)) throw new ArgumentNullException(nameof(razonSocial));
             if (direccionFiscal is null) throw new ArgumentNullException(nameof(direccionFiscal));
             if (!direccionFiscal.EsPeru)
-                throw new ArgumentException("Solo se soporta dirección fiscal de Perú (PE).", nameof(direccionFiscal));
+                throw new ArgumentException("Solo se soporta domicilio fiscal de Perú (PE).", nameof(direccionFiscal));
 
             var empresa = new ConfiguracionEmpresa
             {
@@ -216,13 +216,13 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
 
         // ========= DATOS LEGALES =========
 
-        public void ActualizarDatosLegales(Ruc ruc, string razonSocial, DireccionPostal direccionFiscal, string? nombreComercial = null)
+    public void ActualizarDatosLegales(Ruc ruc, string razonSocial, DomicilioFiscal direccionFiscal, string? nombreComercial = null)
         {
             if (ruc is null) throw new ArgumentNullException(nameof(ruc));
             if (string.IsNullOrWhiteSpace(razonSocial)) throw new ArgumentNullException(nameof(razonSocial));
             if (direccionFiscal is null) throw new ArgumentNullException(nameof(direccionFiscal));
             if (!direccionFiscal.EsPeru)
-                throw new ArgumentException("Solo se soporta dirección fiscal de Perú (PE).", nameof(direccionFiscal));
+                throw new ArgumentException("Solo se soporta domicilio fiscal de Perú (PE).", nameof(direccionFiscal));
 
             Ruc = ruc;
             EmpresaId = EmpresaId.From(ruc.Canonizado); // actualiza EmpresaId si cambia RUC
@@ -269,13 +269,13 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
 
         // ========= ESTABLECIMIENTOS =========
 
-        public Guid RegistrarEstablecimiento(string codigo, string nombre, DireccionPostal direccion)
+    public Guid RegistrarEstablecimiento(string codigo, string nombre, DomicilioFiscal direccion)
         {
             if (string.IsNullOrWhiteSpace(codigo)) throw new ArgumentNullException(nameof(codigo));
             if (string.IsNullOrWhiteSpace(nombre)) throw new ArgumentNullException(nameof(nombre));
             if (direccion is null) throw new ArgumentNullException(nameof(direccion));
             if (!direccion.EsPeru)
-                throw new ArgumentException("Solo se soporta dirección de Perú (PE) para establecimientos.", nameof(direccion));
+                throw new ArgumentException("Solo se soporta domicilio fiscal de Perú (PE) para establecimientos.", nameof(direccion));
             if (_estByCodigo.ContainsKey(codigo.Trim()))
                 throw new InvalidOperationException($"Ya existe un establecimiento con código \"{codigo}\".");
 
@@ -328,14 +328,14 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
             _estByCodigo[st.Codigo] = id;
         }
 
-        public void ActualizarEstablecimiento(Guid id, string nombre, DireccionPostal direccion)
+    public void ActualizarEstablecimiento(Guid id, string nombre, DomicilioFiscal direccion)
         {
             if (!_estById.TryGetValue(id, out var st))
                 throw new KeyNotFoundException("Establecimiento no encontrado.");
             if (string.IsNullOrWhiteSpace(nombre)) throw new ArgumentNullException(nameof(nombre));
             if (direccion is null) throw new ArgumentNullException(nameof(direccion));
             if (!direccion.EsPeru)
-                throw new ArgumentException("Solo se soporta dirección de Perú (PE) para establecimientos.", nameof(direccion));
+                throw new ArgumentException("Solo se soporta domicilio fiscal de Perú (PE) para establecimientos.", nameof(direccion));
             st.Nombre = nombre.Trim();
             st.Direccion = direccion;
         }

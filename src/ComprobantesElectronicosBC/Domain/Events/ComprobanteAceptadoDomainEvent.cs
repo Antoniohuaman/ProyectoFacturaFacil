@@ -1,7 +1,7 @@
 using System;
 using SharedKernel.Events;
 
-namespace ProyectoFacturaFacil.ComprobantesElectronicosBC.Domain.Events
+namespace ComprobantesElectronicosBC.Domain.Events
 {
 		public class ComprobanteAceptadoDomainEvent : DomainEvent
 	{

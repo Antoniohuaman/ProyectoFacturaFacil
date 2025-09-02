@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using ComprobantesElectronicosBC.Domain.ValueObjects;
 using SharedKernel.ValueObjects;
 
@@ -33,44 +34,43 @@ namespace ComprobantesElectronicosBC.Domain.Entities
         public UnidadDeMedida UM { get; private set; }
         public Cantidad Cantidad { get; private set; }
 
-        /// <summary>Precio unitario declaradio por el usuario (con su Moneda).</summary>
+        /// <summary>Precio unitario declarado por el usuario (con su Moneda).</summary>
         public ImporteMonetario PrecioUnitario { get; private set; }
 
         /// <summary>Si true, el precio ingresado incluye IGV; si false, NO incluye IGV.</summary>
         public bool PrecioIncluyeIgv { get; private set; }
 
-    /// <summary>Afectación de impuesto (Cat. 07) y tasa.</summary>
-    public AfectacionImpuesto AfectacionImpuesto { get; private set; }
-    public TasaImpuesto TasaImpuesto { get; private set; }
+        /// <summary>Afectación de impuesto (Cat. 07) y tasa.</summary>
+        public AfectacionImpuesto AfectacionImpuesto { get; private set; }
+        public TasaImpuesto TasaImpuesto { get; private set; }
 
         /// <summary>Descuento de línea (monto o %). Por defecto: None.</summary>
         public DescuentoLinea Descuento { get; private set; }
 
         /// <summary>Centro de costo opcional por línea.</summary>
-    public CentroDeCosto? CentroDeCosto { get; private set; }
+        public CentroDeCosto? CentroDeCosto { get; private set; }
 
         // --------------------- Montos calculados ----------------
         /// <summary>Unitario SIN IGV (para UBL &lt;PriceAmount&gt;).</summary>
+        public ImporteMonetario UnitPriceSinIgv { get; private set; } = null!;
 
-    public ImporteMonetario UnitPriceSinIgv { get; private set; } = null!;
+        /// <summary>Unitario CON IGV (solo para mostrar si el usuario trabaja “con IGV”).</summary>
+        public ImporteMonetario UnitPriceConIgv { get; private set; } = null!;
 
-    /// <summary>Unitario CON IGV (solo para mostrar si el usuario trabaja “con IGV”).</summary>
-    public ImporteMonetario UnitPriceConIgv { get; private set; } = null!;
+        /// <summary>Base imponible ANTES de descuento.</summary>
+        public ImporteMonetario BaseAntesDescuento { get; private set; } = null!;
 
-    /// <summary>Base imponible ANTES de descuento.</summary>
-    public ImporteMonetario BaseAntesDescuento { get; private set; } = null!;
+        /// <summary>Monto de descuento aplicado (0 si no hay).</summary>
+        public ImporteMonetario DescuentoMonto { get; private set; } = null!;
 
-    /// <summary>Monto de descuento aplicado (0 si no hay).</summary>
-    public ImporteMonetario DescuentoMonto { get; private set; } = null!;
+        /// <summary>Base imponible DESPUÉS de descuento.</summary>
+        public ImporteMonetario BaseImponible { get; private set; } = null!;
 
-    /// <summary>Base imponible DESPUÉS de descuento.</summary>
-    public ImporteMonetario BaseImponible { get; private set; } = null!;
+        /// <summary>IGV calculado sobre la base después del descuento (0 si exo/ina/exp).</summary>
+        public ImporteMonetario Igv { get; private set; } = null!;
 
-    /// <summary>IGV calculado sobre la base después del descuento (0 si exo/ina/exp).</summary>
-    public ImporteMonetario Igv { get; private set; } = null!;
-
-    /// <summary>Total de la línea (base después de descuento + IGV).</summary>
-    public ImporteMonetario ImporteTotal { get; private set; } = null!;
+        /// <summary>Total de la línea (base después de descuento + IGV).</summary>
+        public ImporteMonetario ImporteTotal { get; private set; } = null!;
 
         /// <summary>Conveniencia: moneda única de la línea.</summary>
         public Moneda Moneda => PrecioUnitario.Moneda;
@@ -105,16 +105,16 @@ namespace ComprobantesElectronicosBC.Domain.Entities
                     $"Faltan campos obligatorios en la línea: {string.Join(", ", faltantes)}.", metadata);
             }
 
-            NumeroLinea      = numeroLinea;
-            Descripcion      = descripcion;
-            UM               = um;
-            Cantidad         = cantidad; // validación de escala debajo
-            PrecioUnitario   = precioUnitario;
-            PrecioIncluyeIgv = precioIncluyeIgv;
+            NumeroLinea        = numeroLinea;
+            Descripcion        = descripcion;
+            UM                 = um;
+            Cantidad           = cantidad; // validación de escala debajo
+            PrecioUnitario     = precioUnitario;
+            PrecioIncluyeIgv   = precioIncluyeIgv;
             AfectacionImpuesto = afectacionImpuesto;
-            TasaImpuesto = tasaImpuesto;
-            Descuento        = descuento ?? DescuentoLinea.None;
-            CentroDeCosto    = centroDeCosto;
+            TasaImpuesto       = tasaImpuesto;
+            Descuento          = descuento ?? DescuentoLinea.None;
+            CentroDeCosto      = centroDeCosto;
 
             // Inicializa importes en cero con la moneda del precio (evita CS8618)
             InicializarMontosEnCero();
@@ -164,8 +164,13 @@ namespace ComprobantesElectronicosBC.Domain.Entities
 
         public void CambiarPrecio(ImporteMonetario nuevo, bool? incluyeIgv = null)
         {
+            CambiarPrecio(nuevo, incluyeIgv, permitirCambioDeMoneda: false);
+        }
+
+        public void CambiarPrecio(ImporteMonetario nuevo, bool? incluyeIgv, bool permitirCambioDeMoneda)
+        {
             if (nuevo is null) throw new ArgumentNullException(nameof(nuevo));
-            if (!Equals(nuevo.Moneda, Moneda))
+            if (!Equals(nuevo.Moneda, Moneda) && !permitirCambioDeMoneda)
                 throw new InvalidOperationException("No se puede cambiar la moneda dentro de la misma línea.");
 
             PrecioUnitario = nuevo;
@@ -186,7 +191,7 @@ namespace ComprobantesElectronicosBC.Domain.Entities
             Recalcular();
         }
 
-    public void CambiarCentroDeCosto(CentroDeCosto? nuevo) => CentroDeCosto = nuevo;
+        public void CambiarCentroDeCosto(CentroDeCosto? nuevo) => CentroDeCosto = nuevo;
 
         // --------------------- Cálculo ------------------------
 
@@ -196,9 +201,9 @@ namespace ComprobantesElectronicosBC.Domain.Entities
             var moneda = Moneda;
 
             // 1) Montos base según afectación y si el precio incluye IGV
-            // Calcular montos usando el VO DescuentoLinea y AfectacionImpuesto
             var r = Descuento.Aplicar(
                 afectacion: AfectacionImpuesto,
+                tasa: TasaImpuesto,
                 unitPriceEntrada: PrecioUnitario.Monto,
                 cantidad: Cantidad,
                 priceIncludesIgv: PrecioIncluyeIgv);
@@ -208,8 +213,26 @@ namespace ComprobantesElectronicosBC.Domain.Entities
             BaseImponible      = new ImporteMonetario(moneda, r.BaseDespues);
             Igv                = new ImporteMonetario(moneda, r.Igv);
             ImporteTotal       = new ImporteMonetario(moneda, r.Total);
-            UnitPriceSinIgv    = new ImporteMonetario(moneda, PrecioUnitario.Monto); // Puedes ajustar según lógica de negocio
-            UnitPriceConIgv    = new ImporteMonetario(moneda, PrecioUnitario.Monto); // Puedes ajustar según lógica de negocio
+
+            // 2) UnitPriceSinIgv / UnitPriceConIgv coherentes con afectación y tasa
+            decimal unitSin, unitCon;
+            if (PrecioIncluyeIgv)
+            {
+                unitCon = PrecioUnitario.Monto;
+                unitSin = AfectacionImpuesto.GravaImpuesto
+                    ? Round2(unitCon / (1 + TasaImpuesto.Fraccion))
+                    : unitCon;
+            }
+            else
+            {
+                unitSin = PrecioUnitario.Monto;
+                unitCon = AfectacionImpuesto.GravaImpuesto
+                    ? Round2(unitSin * (1 + TasaImpuesto.Fraccion))
+                    : unitSin;
+            }
+
+            UnitPriceSinIgv = new ImporteMonetario(moneda, unitSin);
+            UnitPriceConIgv = new ImporteMonetario(moneda, unitCon);
         }
 
         // --------------------- Validaciones auxiliares --------
@@ -244,7 +267,7 @@ namespace ComprobantesElectronicosBC.Domain.Entities
 
         // --------------------- Consultas útiles ---------------
 
-    public bool EsGravado => AfectacionImpuesto.GravaImpuesto;
+        public bool EsGravado => AfectacionImpuesto.GravaImpuesto;
 
         /// <summary>SubTotal sin IGV (ya considerando descuento).</summary>
         public ImporteMonetario SubtotalSinIgv => BaseImponible;
@@ -254,5 +277,8 @@ namespace ComprobantesElectronicosBC.Domain.Entities
 
         public override string ToString()
             => $"#{NumeroLinea} {Cantidad.Value:0.######} {UM.Codigo} — {Descripcion.Nombre}: {ImporteTotal}";
+
+        // --------------------- Helpers ------------------------
+        private static decimal Round2(decimal v) => Math.Round(v, 2, MidpointRounding.AwayFromZero);
     }
 }

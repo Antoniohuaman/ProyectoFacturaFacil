@@ -12,7 +12,7 @@ namespace ConfiguracionSistemaBC.Domain.Events
         EmpresaId EmpresaId,
         Ruc Ruc,
         string RazonSocial,
-        DireccionPostal DireccionFiscal,
+    DomicilioFiscal DireccionFiscal,
         Moneda MonedaBase,
         DateTime OccurredOn
     ) : IDomainEvent;

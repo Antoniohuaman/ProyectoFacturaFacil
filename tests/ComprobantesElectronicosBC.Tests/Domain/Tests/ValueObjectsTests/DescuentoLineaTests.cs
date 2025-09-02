@@ -100,8 +100,8 @@ namespace ComprobantesElectronicosBC.Tests.UnitTests.ValueObjects
             var afectacion = SharedKernel.ValueObjects.AfectacionImpuesto.From("10");
             var cant = Cantidad.Create(2m);
             var desc = DescuentoLinea.FromPorcentaje(10m); // 10%
-
-            var res = desc.Aplicar(afectacion, unitPriceEntrada: 100m, cantidad: cant, priceIncludesIgv: false);
+            var tasa = SharedKernel.ValueObjects.TasaImpuesto.FromPercent(18m);
+            var res = desc.Aplicar(afectacion, tasa, unitPriceEntrada: 100m, cantidad: cant, priceIncludesIgv: false);
 
             Assert.Multiple(() =>
             {
@@ -120,8 +120,8 @@ namespace ComprobantesElectronicosBC.Tests.UnitTests.ValueObjects
             var afectacion = SharedKernel.ValueObjects.AfectacionImpuesto.From("10");
             var cant = Cantidad.Create(2m);
             var desc = DescuentoLinea.FromPorcentaje(10m);
-
-            var res = desc.Aplicar(afectacion, unitPriceEntrada: 118m, cantidad: cant, priceIncludesIgv: true);
+            var tasa = SharedKernel.ValueObjects.TasaImpuesto.FromPercent(18m);
+            var res = desc.Aplicar(afectacion, tasa, unitPriceEntrada: 118m, cantidad: cant, priceIncludesIgv: true);
 
             // Debe dar el mismo resultado que el caso anterior
             Assert.Multiple(() =>
@@ -141,8 +141,8 @@ namespace ComprobantesElectronicosBC.Tests.UnitTests.ValueObjects
             var afectacion = SharedKernel.ValueObjects.AfectacionImpuesto.From("12"); // "12" para Gravado 10%
             var cant = Cantidad.Create(2m);
             var desc = DescuentoLinea.FromMonto(25m);
-
-            var res = desc.Aplicar(afectacion, unitPriceEntrada: 100m, cantidad: cant, priceIncludesIgv: false);
+            var tasa = SharedKernel.ValueObjects.TasaImpuesto.FromPercent(10m);
+            var res = desc.Aplicar(afectacion, tasa, unitPriceEntrada: 100m, cantidad: cant, priceIncludesIgv: false);
 
             // BaseDespues=175 → IGV=17.50 → Total=192.50
             Assert.Multiple(() =>
@@ -150,8 +150,8 @@ namespace ComprobantesElectronicosBC.Tests.UnitTests.ValueObjects
                 Assert.That(res.BaseAntes,   Is.EqualTo(200.00m));
                 Assert.That(res.Descuento,   Is.EqualTo(25.00m));
                 Assert.That(res.BaseDespues, Is.EqualTo(175.00m));
-                Assert.That(res.Igv,         Is.EqualTo(31.50m)); // Actual: 31.50
-                Assert.That(res.Total,       Is.EqualTo(206.50m)); // Actual: 206.50
+                Assert.That(res.Igv,         Is.EqualTo(17.50m)); // 175 * 0.10
+                Assert.That(res.Total,       Is.EqualTo(192.50m));
             });
         }
 
@@ -161,8 +161,8 @@ namespace ComprobantesElectronicosBC.Tests.UnitTests.ValueObjects
             var afectacion = SharedKernel.ValueObjects.AfectacionImpuesto.From("10");
             var cant = Cantidad.Create(2m);
             var desc = DescuentoLinea.FromPorcentaje(100m);
-
-            var res = desc.Aplicar(afectacion, unitPriceEntrada: 100m, cantidad: cant, priceIncludesIgv: false);
+            var tasa = SharedKernel.ValueObjects.TasaImpuesto.FromPercent(18m);
+            var res = desc.Aplicar(afectacion, tasa, unitPriceEntrada: 100m, cantidad: cant, priceIncludesIgv: false);
 
             Assert.Multiple(() =>
             {
@@ -182,7 +182,8 @@ namespace ComprobantesElectronicosBC.Tests.UnitTests.ValueObjects
 
             // Precio unitario “base” 50, cantidad 3 → BaseAntes=150
             var desc = DescuentoLinea.FromPorcentaje(10m);
-            var res = desc.Aplicar(afectacion, unitPriceEntrada: 50m, cantidad: cant, priceIncludesIgv: false);
+            var tasa = SharedKernel.ValueObjects.TasaImpuesto.FromPercent(0m);
+            var res = desc.Aplicar(afectacion, tasa, unitPriceEntrada: 50m, cantidad: cant, priceIncludesIgv: false);
 
             Assert.Multiple(() =>
             {

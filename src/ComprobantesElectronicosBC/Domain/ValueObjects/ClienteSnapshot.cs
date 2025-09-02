@@ -36,8 +36,8 @@ namespace ComprobantesElectronicosBC.Domain.ValueObjects
         /// <summary>Nombre/Razón social del cliente (RegistrationName).</summary>
         public string Nombre { get; init; }
 
-        /// <summary>Dirección postal del cliente (opcional).</summary>
-        public DireccionPostal? Direccion { get; init; }
+    /// <summary>Domicilio fiscal del cliente (opcional).</summary>
+    public DomicilioFiscal? Domicilio { get; init; }
 
         /// <summary>Email de contacto del cliente (opcional).</summary>
         public Email? Email { get; init; }
@@ -55,26 +55,26 @@ namespace ComprobantesElectronicosBC.Domain.ValueObjects
         /// Constructor principal y para (de)serialización JSON. No usar directamente; preferir <see cref="Create"/>.
         /// </summary>
         [JsonConstructor]
-        public ClienteSnapshot(EmpresaId empresaId, TenantId tenantId, DocumentoIdentidad documento, string nombre, DireccionPostal? direccion = null, Email? email = null)
+        public ClienteSnapshot(EmpresaId empresaId, TenantId tenantId, DocumentoIdentidad documento, string nombre, DomicilioFiscal? domicilio = null, Email? email = null)
         {
             // EmpresaId y TenantId son value objects (structs), no pueden ser null
             EmpresaId = empresaId;
             TenantId  = tenantId;
             Documento = documento ?? throw new ArgumentNullException(nameof(documento));
             Nombre    = NormalizarNombreObligatorio(nombre, nameof(nombre));
-            Direccion = direccion;
+            Domicilio = domicilio;
             Email     = email;
         }
 
         /// <summary>
         /// Fábrica recomendada.
         /// </summary>
-        public static ClienteSnapshot Create(EmpresaId empresaId, TenantId tenantId, DocumentoIdentidad documento, string nombre, DireccionPostal? direccion = null, Email? email = null)
+    public static ClienteSnapshot Create(EmpresaId empresaId, TenantId tenantId, DocumentoIdentidad documento, string nombre, DomicilioFiscal? domicilio = null, Email? email = null)
         {
             // EmpresaId y TenantId son value objects (structs), no pueden ser null
             if (documento is null) throw new ArgumentNullException(nameof(documento));
             var nombreNorm = NormalizarNombreObligatorio(nombre, nameof(nombre));
-            return new ClienteSnapshot(empresaId, tenantId, documento, nombreNorm, direccion, email);
+            return new ClienteSnapshot(empresaId, tenantId, documento, nombreNorm, domicilio, email);
         }
 
         // --------------------- Helpers de negocio / UBL ---------------------
@@ -112,9 +112,9 @@ namespace ComprobantesElectronicosBC.Domain.ValueObjects
         /// <summary>Devuelve un snapshot con un email distinto.</summary>
         public ClienteSnapshot ConEmail(Email? email) => this with { Email = email };
 
-        /// <summary>Devuelve un snapshot con una dirección distinta.</summary>
-        public ClienteSnapshot ConDireccion(DireccionPostal? nuevaDireccion)
-            => this with { Direccion = nuevaDireccion };
+        /// <summary>Devuelve un snapshot con un domicilio fiscal distinto.</summary>
+        public ClienteSnapshot ConDomicilio(DomicilioFiscal? nuevoDomicilio)
+            => this with { Domicilio = nuevoDomicilio };
 
         /// <summary>Devuelve un snapshot con el nombre normalizado actualizado.</summary>
         public ClienteSnapshot ConNombre(string nuevoNombre)
