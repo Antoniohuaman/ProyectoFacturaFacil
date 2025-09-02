@@ -1,4 +1,3 @@
-// src/ComprobantesElectronicosBC/Domain/ValueObjects/ClienteSnapshot.cs
 using System;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
