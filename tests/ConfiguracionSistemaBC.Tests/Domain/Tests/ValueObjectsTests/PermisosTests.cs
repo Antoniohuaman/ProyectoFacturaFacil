@@ -4,7 +4,7 @@ using ConfiguracionSistemaBC.Domain.ValueObjects;
 namespace ConfiguracionSistemaBC.Tests.Domain.ValueObjects
 {
     [TestFixture]
-    public class PermisoTests
+    public class PermisosTests
     {
         [Test]
         public void SoloLeer_CreaPermisoConSoloAccionVer()
