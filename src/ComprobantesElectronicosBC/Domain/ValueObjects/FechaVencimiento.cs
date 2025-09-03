@@ -65,7 +65,7 @@ namespace ComprobantesElectronicosBC.Domain.ValueObjects
         /// - CONTADO: vencimiento == emisión (ignora días si se pasan).
         /// - CRÉDITO: requiere díasCredito &gt; 0.
         /// </summary>
-        public static FechaVencimiento ParaFormaDePago(FormaDePago forma, DateOnly fechaEmision, int? diasCredito = null)
+    public static FechaVencimiento ParaFormaDePago(SharedKernel.ValueObjects.FormaDePago forma, DateOnly fechaEmision, int? diasCredito = null)
         {
             if (forma is null) throw new ArgumentNullException(nameof(forma));
 

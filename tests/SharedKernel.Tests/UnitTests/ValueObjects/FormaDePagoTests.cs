@@ -1,8 +1,8 @@
 using System;
 using NUnit.Framework;
-using ComprobantesElectronicosBC.Domain.ValueObjects;
+using SharedKernel.ValueObjects;
 
-namespace ComprobantesElectronicosBC.Tests.UnitTests.ValueObjects
+namespace SharedKernel.Tests.UnitTests.ValueObjects
 {
     public class FormaDePagoTests
     {

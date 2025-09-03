@@ -7,7 +7,6 @@ using ComprobantesElectronicosBC.Domain.Events;
 using ComprobantesElectronicosBC.Domain.ValueObjects;
 using ComprobantesElectronicosBC.Domain.Exceptions;
 using ComprobantesElectronicosBC.Domain.Entities;
-
 namespace ComprobantesElectronicosBC.Domain.Aggregates
 {
     /// <summary>
@@ -99,7 +98,7 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
         public SerieYNumero? SerieNumero { get; private set; } // El correlativo se asigna al emitir
         public FechaEmision Emision { get; private set; }
         public FechaVencimiento Vencimiento { get; private set; }
-        public FormaDePago FormaDePago { get; private set; }
+    public FormaDePago FormaDePago { get; private set; }
         public Moneda Moneda { get; private set; }
 
         public EmisorSnapshot Emisor { get; }
@@ -226,7 +225,7 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
             Cliente = nuevo ?? throw new ArgumentNullException(nameof(nuevo));
         }
 
-        public void CambiarFormaDePago(FormaDePago forma, int? diasCredito = null)
+    public void CambiarFormaDePago(FormaDePago forma, int? diasCredito = null)
         {
             EnsureEditable();
             if (forma is null) throw new ArgumentNullException(nameof(forma));

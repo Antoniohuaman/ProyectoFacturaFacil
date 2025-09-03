@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace ComprobantesElectronicosBC.Domain.ValueObjects
+namespace SharedKernel.ValueObjects
 {
     /// <summary>
     /// Forma de pago normativa (SUNAT/UBL PaymentMeansCode):

@@ -1,4 +1,4 @@
-using ComprobantesElectronicosBC.Domain.ValueObjects;
+using SharedKernel.ValueObjects;
 
 namespace ComprobantesElectronicosBC.Domain.Specifications
 {
