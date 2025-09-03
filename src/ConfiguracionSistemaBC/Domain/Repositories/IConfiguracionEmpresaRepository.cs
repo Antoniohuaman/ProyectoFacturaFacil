@@ -1,16 +1,18 @@
 using System;
+using ConfiguracionSistemaBC.Domain.Aggregates;
+using SharedKernel.ValueObjects;
 using System.Threading;
 using System.Threading.Tasks;
-using ConfiguracionSistemaBC.Domain.Aggregates;
+
 
 namespace ConfiguracionSistemaBC.Domain.Repositories
 {
     public interface IConfiguracionEmpresaRepository
     {
-        /// <summary>
-        /// Obtiene la configuración de empresa por TenantId (multiempresa).
-        /// </summary>
-        Task<ConfiguracionEmpresa?> GetByTenantIdAsync(Guid tenantId, CancellationToken ct = default);
+    /// <summary>
+    /// Obtiene la configuración de empresa por EmpresaId (identidad opaca).
+    /// </summary>
+    Task<ConfiguracionEmpresa?> GetByEmpresaIdAsync(EmpresaId empresaId, CancellationToken ct = default);
 
         /// <summary>
         /// Agrega una nueva configuración de empresa.
@@ -22,10 +24,10 @@ namespace ConfiguracionSistemaBC.Domain.Repositories
         /// </summary>
         Task UpdateAsync(ConfiguracionEmpresa aggregate, CancellationToken ct = default);
 
-        /// <summary>
-        /// Elimina (lógica o física) la configuración de empresa.
-        /// </summary>
-        Task DeleteAsync(Guid tenantId, CancellationToken ct = default);
+    /// <summary>
+    /// Elimina (lógica o física) la configuración de empresa por EmpresaId.
+    /// </summary>
+    Task DeleteAsync(EmpresaId empresaId, CancellationToken ct = default);
 
         /// <summary>
         /// Busca configuración por RUC (útil para migraciones, validaciones, etc.).

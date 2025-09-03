@@ -10,7 +10,6 @@ namespace ConfiguracionSistemaBC.Domain.Events
 	/// Ahora se asocia a uno o varios establecimientos, no sucursales.
 	/// </summary>
 	public sealed record UsuarioEmpresaEliminado(
-		Guid UsuarioEmpresaId,
 		EmpresaId EmpresaId,
 		IReadOnlyCollection<EstablecimientoId> Establecimientos,
 		Email Email,

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using SharedKernel.Exceptions;
+using ConfiguracionSistemaBC.Domain.Events;
 using SharedKernel.Events;                    // IDomainEvent
 using SharedKernel.ValueObjects;             // EmpresaId, UsuarioId, EstablecimientoId, DocumentoIdentidad, NombrePersona, Email, Telefono
 
@@ -15,8 +16,7 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
     /// </summary>
     public sealed class UsuarioEmpresa
     {
-        /// <summary>
-    // ...existing code...
+    /// <summary>
         private readonly List<IDomainEvent> _domainEvents = new();
 
         // Identidad compuesta (tenant + user)
@@ -60,6 +60,7 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
         public void MarcarAccionRelevante()
         {
             HaRealizadoAccionesRelevantes = true;
+            Version++;
         }
 
         // ------------------------ Ctor ------------------------
@@ -81,7 +82,14 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
             Estado = UsuarioEmpresaEstado.Invitado;
             Version = 0;
 
-            _domainEvents.Add(new UsuarioEmpresaCreado(EmpresaId, UsuarioId));
+            _domainEvents.Add(new ConfiguracionSistemaBC.Domain.Events.UsuarioEmpresaCreado(
+                UsuarioId,
+                EmpresaId,
+                new List<EstablecimientoId>(),
+                EmailContacto,
+                Nombre,
+                null // RolEmpresa, si aplica
+            ));
         }
 
         /// <summary>Fábrica DDD: crea la membresía en estado Invitado y asigna roles/accesos opcionales.</summary>
@@ -109,7 +117,7 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
         {
             Documento = documento; // puede ser null
             Version++;
-            _domainEvents.Add(new DatosDeUsuarioEmpresaActualizados(EmpresaId, UsuarioId));
+            // Evento de actualización de datos, si existe en Domain.Events, usarlo aquí
         }
 
         public void ActualizarDatosContacto(NombrePersona nombre, Email email, Telefono? telefono)
@@ -118,7 +126,7 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
             EmailContacto = email ?? throw new ArgumentNullException(nameof(email));
             TelefonoContacto = telefono;
             Version++;
-            _domainEvents.Add(new DatosDeUsuarioEmpresaActualizados(EmpresaId, UsuarioId));
+            // Evento de actualización de datos, si existe en Domain.Events, usarlo aquí
         }
 
         /// <summary>Reemplaza el set de roles de empresa (deduplica, ignora Guid.Empty).</summary>
@@ -131,7 +139,7 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
                 _rolesEmpresaIds.Add(id);
 
             Version++;
-            _domainEvents.Add(new RolesEmpresaAsignados(EmpresaId, UsuarioId, _rolesEmpresaIds.ToArray()));
+            // Evento de asignación de roles, si existe en Domain.Events, usarlo aquí
         }
 
         /// <summary>Agrega un rol de empresa sin reemplazar los existentes.</summary>
@@ -141,7 +149,7 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
             if (_rolesEmpresaIds.Add(rolId))
             {
                 Version++;
-                _domainEvents.Add(new RolesEmpresaAsignados(EmpresaId, UsuarioId, _rolesEmpresaIds.ToArray()));
+                // Evento de asignación de roles, si existe en Domain.Events, usarlo aquí
             }
         }
 
@@ -151,7 +159,7 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
             if (_rolesEmpresaIds.Remove(rolId))
             {
                 Version++;
-                _domainEvents.Add(new RolesEmpresaAsignados(EmpresaId, UsuarioId, _rolesEmpresaIds.ToArray()));
+                // Evento de asignación de roles, si existe en Domain.Events, usarlo aquí
             }
         }
 
@@ -165,7 +173,7 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
                 acceso.ReemplazarRoles(rolIdsEst);
 
             Version++;
-            _domainEvents.Add(new AccesosDeUsuarioEmpresaActualizados(EmpresaId, UsuarioId));
+            // Evento de actualización de accesos, si existe en Domain.Events, usarlo aquí
         }
 
         /// <summary>Agrega (merge) roles a un establecimiento SIN reemplazar los existentes.</summary>
@@ -178,7 +186,7 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
                 acceso.AgregarRoles(rolIdsEst);
 
             Version++;
-            _domainEvents.Add(new AccesosDeUsuarioEmpresaActualizados(EmpresaId, UsuarioId));
+            // Evento de actualización de accesos, si existe en Domain.Events, usarlo aquí
         }
 
         /// <summary>Quita un rol puntual de un establecimiento.</summary>
@@ -190,7 +198,7 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
             if (acceso.QuitarRol(rolId))
             {
                 Version++;
-                _domainEvents.Add(new AccesosDeUsuarioEmpresaActualizados(EmpresaId, UsuarioId));
+                // Evento de actualización de accesos, si existe en Domain.Events, usarlo aquí
             }
         }
 
@@ -208,10 +216,16 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
             _accesos.Clear();
             _accesos.AddRange(nuevos);
             Version++;
-            _domainEvents.Add(new AccesosDeUsuarioEmpresaActualizados(EmpresaId, UsuarioId));
+            // Evento de actualización de accesos, si existe en Domain.Events, usarlo aquí
         }
 
         /// <summary>Asigna un rol a TODOS los establecimientos indicados. Si reemplazar=true, deja solo ese rol en cada uno.</summary>
+    /// <remarks>
+    /// Si el usuario no tiene acceso previo a un establecimiento, se crea el acceso y se asigna el rol indicado.
+    /// Si ya tiene acceso:
+    /// - Si reemplazar=true, se eliminan los roles previos y se deja solo el nuevo rol.
+    /// - Si reemplazar=false, se agrega el nuevo rol a los existentes.
+    /// </remarks>
         public void AsignarRolATodosLosEstablecimientos(IEnumerable<EstablecimientoId> establecimientos, Guid rolId, bool reemplazar = false)
         {
             if (establecimientos is null) throw new ArgumentNullException(nameof(establecimientos));
@@ -239,7 +253,7 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
             if (any)
             {
                 Version++;
-                _domainEvents.Add(new AccesosDeUsuarioEmpresaActualizados(EmpresaId, UsuarioId));
+                // Evento de actualización de accesos, si existe en Domain.Events, usarlo aquí
             }
         }
 
@@ -249,7 +263,7 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
             if (removed > 0)
             {
                 Version++;
-                _domainEvents.Add(new AccesosDeUsuarioEmpresaActualizados(EmpresaId, UsuarioId));
+                // Evento de actualización de accesos, si existe en Domain.Events, usarlo aquí
             }
         }
 
@@ -259,7 +273,10 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
             if (Estado == UsuarioEmpresaEstado.Habilitado) return;
             Estado = UsuarioEmpresaEstado.Habilitado;
             Version++;
-            _domainEvents.Add(new UsuarioEmpresaHabilitado(EmpresaId, UsuarioId));
+            _domainEvents.Add(new UsuarioEmpresaHabilitado(
+                EmpresaId,
+                _accesos.Select(a => a.EstablecimientoId).ToList()
+            ));
         }
 
         public void Inhabilitar(string razon)
@@ -267,7 +284,11 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
             if (Estado == UsuarioEmpresaEstado.Inhabilitado) return;
             Estado = UsuarioEmpresaEstado.Inhabilitado;
             Version++;
-            _domainEvents.Add(new UsuarioEmpresaInhabilitado(EmpresaId, UsuarioId, razon));
+            _domainEvents.Add(new ConfiguracionSistemaBC.Domain.Events.UsuarioEmpresaInhabilitado(
+                EmpresaId,
+                UsuarioId,
+                razon
+            ));
         }
 
         /// <summary>Unión de roles de empresa con los del establecimiento indicado.</summary>
@@ -320,11 +341,5 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
         public bool QuitarRol(Guid rolId) => _rolIds.Remove(rolId);
     }
 
-    // ================== Eventos de dominio ==================
-    public sealed record UsuarioEmpresaCreado(EmpresaId EmpresaId, UsuarioId UsuarioId) : IDomainEvent;
-    public sealed record DatosDeUsuarioEmpresaActualizados(EmpresaId EmpresaId, UsuarioId UsuarioId) : IDomainEvent;
-    public sealed record RolesEmpresaAsignados(EmpresaId EmpresaId, UsuarioId UsuarioId, IReadOnlyCollection<Guid> RolIds) : IDomainEvent;
-    public sealed record AccesosDeUsuarioEmpresaActualizados(EmpresaId EmpresaId, UsuarioId UsuarioId) : IDomainEvent;
-    public sealed record UsuarioEmpresaHabilitado(EmpresaId EmpresaId, UsuarioId UsuarioId) : IDomainEvent;
-    public sealed record UsuarioEmpresaInhabilitado(EmpresaId EmpresaId, UsuarioId UsuarioId, string Razon) : IDomainEvent;
+  
 }

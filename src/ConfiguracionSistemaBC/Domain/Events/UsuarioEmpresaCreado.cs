@@ -15,6 +15,6 @@ namespace ConfiguracionSistemaBC.Domain.Events
         IReadOnlyCollection<EstablecimientoId> Establecimientos,
         Email Email,
         NombrePersona Nombre,
-        RolEmpresa Rol
+        RolEmpresa? Rol // Ahora es opcional
     ) : IDomainEvent;
 }

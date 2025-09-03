@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using ConfiguracionSistemaBC.Domain.Events;
 using ConfiguracionSistemaBC.Domain.ValueObjects;
+using ConfiguracionSistemaBC.Domain.Entities;
 using SharedKernel.ValueObjects;
 
 namespace ConfiguracionSistemaBC.Domain.Aggregates
@@ -47,6 +48,10 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
         public Ruc Ruc { get; private set; } = null!;
         // Identidad opaca para integración entre BCs (string basado en RUC)
         public EmpresaId EmpresaId { get; private set; } = null!;
+        /// <summary>
+        /// Control de concurrencia optimista
+        /// </summary>
+        public int Version { get; private set; }
 
         // Datos legales
         public string RazonSocial { get; private set; } = string.Empty;
@@ -58,25 +63,17 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
         public AmbienteFe Ambiente { get; private set; } = AmbienteFe.PRUEBA;
 
         // Preferencias opcionales
-        public Telefono Telefonos { get; private set; } = Telefono.Vacio;
+    public Telefono Telefono { get; private set; } = Telefono.Vacio;
         public List<Email> Emails { get; private set; } = new();
         public PieDePagina PieDePagina { get; private set; } = PieDePagina.Vacio;
         public LogoImagen? Logo { get; private set; }
         public bool MostrarImagenEnComprobanteImpresa { get; private set; } = false;
 
         // ----- Establecimientos -----
-    internal sealed class EstablecimientoState
-        {
-            public Guid Id { get; init; }
-            public string Codigo { get; set; } = string.Empty; // único por empresa
-            public string Nombre { get; set; } = string.Empty;
-            public DomicilioFiscal Direccion { get; set; } = null!;
-            public bool Habilitado { get; set; } = true;
-            public bool EsPrincipal { get; set; } = false;
-        }
-
-        private readonly Dictionary<Guid, EstablecimientoState> _estById = new();
-        private readonly Dictionary<string, Guid> _estByCodigo = new(StringComparer.OrdinalIgnoreCase);
+    // Fuente de verdad: entidad Establecimiento
+    private readonly Dictionary<Guid, Establecimiento> _estById = new();
+    private readonly Dictionary<string, Guid> _estByCodigo = new(StringComparer.OrdinalIgnoreCase);
+    private Guid? _principalEstablecimientoId;
 
         // ----- Series -----
     internal sealed class SerieState
@@ -112,13 +109,14 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
             DomicilioFiscal direccionFiscal,
             Moneda monedaBase,
             AmbienteFe ambiente,
-            Telefono telefonos,
+            Telefono telefono,
             List<Email> emails,
             PieDePagina pieDePagina,
             LogoImagen? logo,
             bool mostrarImagenEnComprobanteImpresa,
-            Dictionary<Guid, EstablecimientoState> estById,
+            Dictionary<Guid, Entities.Establecimiento> estById,
             Dictionary<string, Guid> estByCodigo,
+            Guid? principalEstablecimientoId,
             Dictionary<Guid, SerieState> seriesById,
             HashSet<string> indexTipoSerie,
             Dictionary<string, Guid> defaultSerieByTipo
@@ -131,13 +129,14 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
             DireccionFiscal = direccionFiscal;
             MonedaBase = monedaBase;
             Ambiente = ambiente;
-            Telefonos = telefonos;
+            Telefono = telefono;
             Emails = emails;
             PieDePagina = pieDePagina;
             Logo = logo;
             MostrarImagenEnComprobanteImpresa = mostrarImagenEnComprobanteImpresa;
-            _estById = new Dictionary<Guid, EstablecimientoState>(estById);
+            _estById = new Dictionary<Guid, Entities.Establecimiento>(estById);
             _estByCodigo = new Dictionary<string, Guid>(estByCodigo, StringComparer.OrdinalIgnoreCase);
+            _principalEstablecimientoId = principalEstablecimientoId;
             _seriesById = new Dictionary<Guid, SerieState>(seriesById);
             _indexTipoSerie = new HashSet<string>(indexTipoSerie, StringComparer.Ordinal);
             _defaultSerieByTipo = new Dictionary<string, Guid>(defaultSerieByTipo, StringComparer.Ordinal);
@@ -165,7 +164,7 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
                 DireccionFiscal = direccionFiscal,
                 MonedaBase = monedaBase,
                 Ambiente = AmbienteFe.PRUEBA, // siempre inicia en PRUEBA
-                Telefonos = Telefono.Vacio,
+                Telefono = Telefono.Vacio,
                 Emails = new List<Email>(),
                 PieDePagina = PieDePagina.FromTextoPlano("Gracias Por su Preferencia"),
                 Logo = null
@@ -212,6 +211,7 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
             if (destino is null) throw new ArgumentNullException(nameof(destino));
             AmbienteFe.ValidarTransicion(Ambiente, destino);
             Ambiente = destino;
+                Version++;
         }
 
         // ========= DATOS LEGALES =========
@@ -230,6 +230,7 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
             NombreComercial = string.IsNullOrWhiteSpace(nombreComercial) ? null : nombreComercial.Trim();
             DireccionFiscal = direccionFiscal;
 
+                Version++;
             AddDomainEvent(new ConfiguracionEmpresaActualizada(
                 EmpresaId,
                 Ruc,
@@ -248,28 +249,43 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
         {
             if (emails is null) throw new ArgumentNullException(nameof(emails));
             Emails = emails.ToList();
+            Version++;
         }
 
-        public void ReemplazarTelefonos(Telefono telefonos)
+        public void ReemplazarTelefono(Telefono telefono)
         {
-            Telefonos = telefonos ?? Telefono.Vacio;
+            Telefono = telefono ?? Telefono.Vacio;
+            Version++;
         }
 
-        public void ActualizarPieDePagina(PieDePagina pie) => PieDePagina = pie ?? PieDePagina.Vacio;
+        public void ActualizarPieDePagina(PieDePagina pie)
+        {
+            PieDePagina = pie ?? PieDePagina.Vacio;
+            Version++;
+        }
 
-        public void EstablecerLogo(LogoImagen? logo) => Logo = logo;
+        public void EstablecerLogo(LogoImagen? logo)
+        {
+            Logo = logo;
+            Version++;
+        }
 
-        public void CambiarMonedaBase(Moneda monedaBase) => MonedaBase = monedaBase ?? Moneda.PEN();
+        public void CambiarMonedaBase(Moneda monedaBase)
+        {
+            MonedaBase = monedaBase ?? Moneda.PEN();
+            Version++;
+        }
 
         /// <summary>Mostrar imágenes de productos en impresión.</summary>
         public void ConfigurarMostrarImagenEnComprobanteImpresa(bool mostrar)
         {
             MostrarImagenEnComprobanteImpresa = mostrar;
+            Version++;
         }
 
         // ========= ESTABLECIMIENTOS =========
 
-    public Guid RegistrarEstablecimiento(string codigo, string nombre, DomicilioFiscal direccion)
+        public Guid RegistrarEstablecimiento(string codigo, string nombre, DomicilioFiscal direccion, Telefono? telefono = null, Email? email = null)
         {
             if (string.IsNullOrWhiteSpace(codigo)) throw new ArgumentNullException(nameof(codigo));
             if (string.IsNullOrWhiteSpace(nombre)) throw new ArgumentNullException(nameof(nombre));
@@ -280,107 +296,96 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
                 throw new InvalidOperationException($"Ya existe un establecimiento con código \"{codigo}\".");
 
             var id = Guid.NewGuid();
-            var st = new EstablecimientoState
-            {
-                Id = id,
-                Codigo = codigo.Trim(),
-                Nombre = nombre.Trim(),
-                Direccion = direccion,
-                Habilitado = true,
-                EsPrincipal = false
-            };
-
-            _estById[id] = st;
-            _estByCodigo[st.Codigo] = id;
+            var est = new Establecimiento(
+                EstablecimientoId.From(id),
+                EmpresaId,
+                nombre.Trim(),
+                codigo.Trim(),
+                direccion,
+                telefono ?? Telefono.Vacio,
+                email
+            );
+            _estById[id] = est;
+            _estByCodigo[est.Codigo] = id;
+            Version++;
             return id;
         }
 
         public void EstablecerComoPrincipal(Guid id)
         {
-            if (!_estById.TryGetValue(id, out var st))
+            if (!_estById.ContainsKey(id))
                 throw new KeyNotFoundException("Establecimiento no encontrado.");
-
-            foreach (var e in _estById.Values) e.EsPrincipal = false;
-            st.EsPrincipal = true;
+            _principalEstablecimientoId = id;
         }
 
         public EstablecimientoRead? ObtenerEstablecimientoPrincipal()
         {
-            var st = _estById.Values.FirstOrDefault(x => x.EsPrincipal);
-            return st is null ? null : ToRead(st);
+            if (_principalEstablecimientoId is null) return null;
+            return _estById.TryGetValue(_principalEstablecimientoId.Value, out var est)
+                ? ToRead(est)
+                : null;
         }
 
         public void RecodificarEstablecimiento(Guid id, string nuevoCodigo)
         {
             if (string.IsNullOrWhiteSpace(nuevoCodigo))
                 throw new ArgumentNullException(nameof(nuevoCodigo));
-
-            if (!_estById.TryGetValue(id, out var st))
+            if (!_estById.TryGetValue(id, out var est))
                 throw new KeyNotFoundException("Establecimiento no encontrado.");
-
             var canon = nuevoCodigo.Trim();
             if (_estByCodigo.TryGetValue(canon, out var otroId) && otroId != id)
                 throw new InvalidOperationException($"Ya existe un establecimiento con código \"{canon}\".");
-
             // Actualiza índice
-            _estByCodigo.Remove(st.Codigo);
-            st.Codigo = canon;
-            _estByCodigo[st.Codigo] = id;
+            _estByCodigo.Remove(est.Codigo);
+            // Actualiza la entidad
+            est.ActualizarDatos(est.Nombre, canon, est.Direccion, est.Telefono, est.Email);
+            _estByCodigo[canon] = id;
+            Version++;
         }
 
-    public void ActualizarEstablecimiento(Guid id, string nombre, DomicilioFiscal direccion)
+        public void ActualizarEstablecimiento(Guid id, string nombre, DomicilioFiscal direccion, Telefono? telefono = null, Email? email = null)
         {
-            if (!_estById.TryGetValue(id, out var st))
+            if (!_estById.TryGetValue(id, out var est))
                 throw new KeyNotFoundException("Establecimiento no encontrado.");
             if (string.IsNullOrWhiteSpace(nombre)) throw new ArgumentNullException(nameof(nombre));
             if (direccion is null) throw new ArgumentNullException(nameof(direccion));
             if (!direccion.EsPeru)
                 throw new ArgumentException("Solo se soporta domicilio fiscal de Perú (PE) para establecimientos.", nameof(direccion));
-            st.Nombre = nombre.Trim();
-            st.Direccion = direccion;
+            est.ActualizarDatos(nombre.Trim(), est.Codigo, direccion, telefono ?? est.Telefono, email ?? est.Email);
+            Version++;
         }
 
-        public void DeshabilitarEstablecimiento(Guid id)
-        {
-            if (!_estById.TryGetValue(id, out var st))
-                throw new KeyNotFoundException("Establecimiento no encontrado.");
-            st.Habilitado = false;
-        }
+    // Si necesitas habilitar/deshabilitar, agrega propiedad en la entidad Establecimiento y método aquí
 
         public void EliminarEstablecimiento(Guid id)
         {
-            if (!_estById.TryGetValue(id, out var st))
+            if (!_estById.TryGetValue(id, out var est))
                 throw new KeyNotFoundException("Establecimiento no encontrado.");
-
             // No dejar a la empresa sin establecimientos
             if (_estById.Count <= 1)
                 throw new InvalidOperationException("La empresa debe conservar al menos un establecimiento.");
-
             // No permitir si alguna serie del establecimiento está bloqueada (ya usada)
             var seriesDelEst = _seriesById.Values.Where(s => s.EstablecimientoId == id).ToList();
             if (seriesDelEst.Any(s => s.Bloqueada))
                 throw new InvalidOperationException("No se puede eliminar: existen series usadas asociadas al establecimiento.");
-
             // Si es principal, promover automáticamente otro
-            if (st.EsPrincipal)
+            if (_principalEstablecimientoId == id)
             {
-                var candidato = _estById.Values.First(e => e.Id != id);
-                candidato.EsPrincipal = true;
+                var candidato = _estById.Keys.First(eid => eid != id);
+                _principalEstablecimientoId = candidato;
             }
-
             // Limpiar índices de series y series mismas
             foreach (var s in seriesDelEst)
             {
                 if (_defaultSerieByTipo.TryGetValue(s.Tipo.Codigo, out var defId) && defId == s.Id)
                     _defaultSerieByTipo.Remove(s.Tipo.Codigo);
-
                 _indexTipoSerie.Remove(IndexKey(s.Tipo, s.Serie));
                 _seriesById.Remove(s.Id);
             }
-
             // Remover establecimiento
-            _estByCodigo.Remove(st.Codigo);
+            _estByCodigo.Remove(est.Codigo);
             _estById.Remove(id);
+            Version++;
         }
 
         public EstablecimientoRead? BuscarEstablecimientoPorCodigo(string codigo)
@@ -394,14 +399,14 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
         public IReadOnlyList<EstablecimientoRead> ListarEstablecimientos()
             => _estById.Values.Select(ToRead).ToList();
 
-        private EstablecimientoRead ToRead(EstablecimientoState st)
-            => new(st.Id, EmpresaId.Value, st.Codigo, st.Nombre, st.Direccion, st.Habilitado);
+        private EstablecimientoRead ToRead(Establecimiento est)
+            => new(est.Id.Value, EmpresaId.Value, est.Codigo, est.Nombre, est.Direccion, est.Habilitado);
 
-        private EstablecimientoState GetEstablecimientoOrThrow(Guid id)
+        private Establecimiento GetEstablecimientoOrThrow(Guid id)
         {
-            if (!_estById.TryGetValue(id, out var st))
+            if (!_estById.TryGetValue(id, out var est))
                 throw new KeyNotFoundException("Establecimiento no encontrado.");
-            return st;
+            return est;
         }
 
         // ========= SERIES =========
@@ -485,7 +490,7 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
                 var est = GetEstablecimientoOrThrow(nuevoEstablecimientoId.Value);
                 if (!est.Habilitado)
                     throw new InvalidOperationException("No se puede asignar a un establecimiento deshabilitado.");
-                st.EstablecimientoId = est.Id;
+                st.EstablecimientoId = est.Id.Value;
             }
 
             // Cambiar tipo de operación
@@ -513,6 +518,7 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
                 if (esPorDefecto.Value) EstablecerDefault(st.Tipo, st.Id, setTrueOnItem: true);
                 else                     EstablecerDefault(st.Tipo, st.Id, setTrueOnItem: false);
             }
+            Version++;
         }
 
         public void BloquearSeriePorUso(Guid serieId)

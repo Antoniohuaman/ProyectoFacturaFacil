@@ -6,7 +6,6 @@ using ConfiguracionSistemaBC.Domain.ValueObjects;
 namespace ConfiguracionSistemaBC.Domain.Events
 {
     public sealed record InvitacionUsuarioEmpresaEnviada(
-        Guid UsuarioEmpresaId,
         EmpresaId EmpresaId,
         Email Email,
         string Token,
