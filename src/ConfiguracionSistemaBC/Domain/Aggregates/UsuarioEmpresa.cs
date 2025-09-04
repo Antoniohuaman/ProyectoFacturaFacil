@@ -36,7 +36,7 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
 
         // Roles de ámbito EMPRESA (aplican a todos los establecimientos)
         private readonly HashSet<Guid> _rolesEmpresaIds = new();
-        public IReadOnlyCollection<Guid> RolesEmpresaIds => _rolesEmpresaIds;
+    public IReadOnlyCollection<Guid> RolesEmpresaIds => _rolesEmpresaIds.ToList().AsReadOnly();
 
         // Accesos por establecimiento
         private readonly List<AccesoEstablecimiento> _accesos = new();
@@ -311,7 +311,7 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
     {
         public EstablecimientoId EstablecimientoId { get; }
         private readonly HashSet<Guid> _rolIds = new();
-        public IReadOnlyCollection<Guid> RolIds => _rolIds;
+    public IReadOnlyCollection<Guid> RolIds => _rolIds.ToList().AsReadOnly();
 
         public AccesoEstablecimiento(EstablecimientoId estId, IEnumerable<Guid> rolIds)
         {
