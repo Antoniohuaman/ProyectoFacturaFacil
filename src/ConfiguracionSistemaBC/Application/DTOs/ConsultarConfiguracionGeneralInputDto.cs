@@ -1,4 +1,7 @@
-namespace ConfiguracionSistemaBC.Application.DTOs
+using System;
+
+namespace ConfiguracionSistemaBC.Application.UseCases.DTOs
 {
-    public sealed record ConsultarConfiguracionGeneralInputDto { }
+    /// <summary>Entrada para consultar la configuración general.</summary>
+    public sealed record ConsultarConfiguracionGeneralInputDto(string Ruc);
 }

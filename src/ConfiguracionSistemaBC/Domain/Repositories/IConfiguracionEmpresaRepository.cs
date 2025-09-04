@@ -1,5 +1,6 @@
 using System;
 using ConfiguracionSistemaBC.Domain.Aggregates;
+using ConfiguracionSistemaBC.Domain.ValueObjects;
 using SharedKernel.ValueObjects;
 using System.Threading;
 using System.Threading.Tasks;
@@ -29,10 +30,10 @@ namespace ConfiguracionSistemaBC.Domain.Repositories
     /// </summary>
     Task DeleteAsync(EmpresaId empresaId, CancellationToken ct = default);
 
-        /// <summary>
-        /// Busca configuración por RUC (útil para migraciones, validaciones, etc.).
-        /// </summary>
-        Task<ConfiguracionEmpresa?> FindByRucAsync(string ruc, CancellationToken ct = default);
+    /// <summary>
+    /// Busca configuración por RUC (útil para migraciones, validaciones, etc.).
+    /// </summary>
+    Task<ConfiguracionEmpresa?> FindByRucAsync(Ruc ruc, CancellationToken ct = default);
 
         /// <summary>
         /// Actualiza solo si la versión coincide (optimistic concurrency).
