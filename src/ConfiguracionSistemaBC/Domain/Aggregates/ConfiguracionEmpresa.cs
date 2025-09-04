@@ -69,30 +69,7 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
         public LogoImagen? Logo { get; private set; }
         public bool MostrarImagenEnComprobanteImpresa { get; private set; } = false;
 
-            // Prefijos válidos por tipo de documento. Extensible para futuros tipos.
-            private static readonly Dictionary<string, string[]> PrefijosPorTipo = new()
-            {
-                { "Factura", new[] { "F" } },
-                { "Boleta", new[] { "B" } },
-                // Ejemplo para futuros tipos:
-                // { "NotaCredito", new[] { "NC" } },
-                // { "NotaDebito", new[] { "ND" } },
-            };
-
-            // Valida si el prefijo es válido para el tipo de documento
-            public static bool PrefijoValidoParaTipo(string tipo, string prefijo)
-            {
-                return PrefijosPorTipo.TryGetValue(tipo, out var prefijos) && prefijos.Contains(prefijo);
-            }
-
-            // Valida si el formato normativo es válido (puedes ajustar para más tipos)
-            public static bool EsFormatoNormativoValido(string serieCodigo, string tipo)
-            {
-                if (string.IsNullOrWhiteSpace(serieCodigo) || serieCodigo.Length < 1)
-                    return false;
-                var prefijo = serieCodigo.Substring(0, 1);
-                return PrefijoValidoParaTipo(tipo, prefijo);
-            }
+            
         // ----- Establecimientos -----
     // Fuente de verdad: entidad Establecimiento
     private readonly Dictionary<Guid, Establecimiento> _estById = new();
@@ -239,7 +216,7 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
             Version++;
             // Emitir evento de dominio AmbienteCambiado
             AddDomainEvent(new ConfiguracionSistemaBC.Domain.Events.AmbienteCambiado(
-                EmpresaId.Value,
+                EmpresaId,
                 ambienteAnterior.ToString(),
                 destino.ToString()
             ));
@@ -342,7 +319,7 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
             Version++;
             // Emit domain event for establishment registration
             AddDomainEvent(new ConfiguracionSistemaBC.Domain.Events.EstablecimientoRegistrado(
-                EmpresaId.Value,
+                EmpresaId,
                 canonCodigo
             ));
             return id;
@@ -499,11 +476,12 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
 
             // Emitir evento de dominio SerieAgregada
             AddDomainEvent(new ConfiguracionSistemaBC.Domain.Events.SerieAgregada(
-                EmpresaId.Value,
+                EmpresaId,
                 serie.Codigo
             ));
 
-            return id;
+                Version++;
+                return id;
         }
 
         public SerieRead? ObtenerSeriePorId(Guid id)
@@ -574,6 +552,7 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
             if (!_seriesById.TryGetValue(serieId, out var st))
                 throw new KeyNotFoundException("Serie no encontrada.");
             st.Bloqueada = true;
+                Version++;
         }
 
         public void EliminarSerie(Guid serieId)
@@ -590,6 +569,7 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
 
             _indexTipoSerie.Remove(IndexKey(st.Tipo, st.Serie));
             _seriesById.Remove(serieId);
+                Version++;
         }
 
         private static string IndexKey(TipoComprobanteCodigo tipo, SerieCodigo serie)

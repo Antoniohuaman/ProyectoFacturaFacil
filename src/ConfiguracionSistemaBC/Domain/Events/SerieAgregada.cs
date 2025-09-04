@@ -1,4 +1,6 @@
 using System;
+using SharedKernel.ValueObjects;
+using ConfiguracionSistemaBC.Domain.ValueObjects;
 
 namespace ConfiguracionSistemaBC.Domain.Events
 {
@@ -6,13 +8,13 @@ namespace ConfiguracionSistemaBC.Domain.Events
 
     public class SerieAgregada : DomainEvent
     {
-        public string EmpresaCodigo { get; }
+        public EmpresaId EmpresaId { get; }
         public string SerieCodigo { get; }
 
-        public SerieAgregada(string empresaCodigo, string serieCodigo, DateTime? occurredOnUtc = null, System.Guid? eventId = null)
+        public SerieAgregada(EmpresaId empresaId, string serieCodigo, DateTime? occurredOnUtc = null, System.Guid? eventId = null)
             : base(eventId, occurredOnUtc)
         {
-            EmpresaCodigo = empresaCodigo;
+            EmpresaId = empresaId;
             SerieCodigo = serieCodigo;
         }
     }

@@ -1,4 +1,6 @@
 using System;
+using SharedKernel.ValueObjects;
+using ConfiguracionSistemaBC.Domain.ValueObjects;
 
 namespace ConfiguracionSistemaBC.Domain.Events
 {
@@ -6,13 +8,13 @@ namespace ConfiguracionSistemaBC.Domain.Events
 
     public class EstablecimientoRegistrado : DomainEvent
     {
-        public string EmpresaCodigo { get; }
+        public EmpresaId EmpresaId { get; }
         public string EstablecimientoCodigo { get; }
 
-        public EstablecimientoRegistrado(string empresaCodigo, string establecimientoCodigo, DateTime? occurredOnUtc = null, System.Guid? eventId = null)
+        public EstablecimientoRegistrado(EmpresaId empresaId, string establecimientoCodigo, DateTime? occurredOnUtc = null, System.Guid? eventId = null)
             : base(eventId, occurredOnUtc)
         {
-            EmpresaCodigo = empresaCodigo;
+            EmpresaId = empresaId;
             EstablecimientoCodigo = establecimientoCodigo;
         }
     }
