@@ -1,4 +1,11 @@
-namespace ConfiguracionSistemaBC.Application.DTOs
+using SharedKernel.ValueObjects;
+using ConfiguracionSistemaBC.Domain.ValueObjects;
+
+namespace ConfiguracionSistemaBC.Application.UseCases.DTOs
 {
-    public sealed record CambiarAmbienteEmpresaInputDto { }
+    /// <summary>Entrada para cambio de ambiente.</summary>
+    public sealed record CambiarAmbienteEmpresaInputDto(
+        string Ruc,
+        AmbienteFe Destino
+    );
 }
