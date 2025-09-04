@@ -139,7 +139,11 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
                 _rolesEmpresaIds.Add(id);
 
             Version++;
-            // Evento de asignación de roles, si existe en Domain.Events, usarlo aquí
+            _domainEvents.Add(new ConfiguracionSistemaBC.Domain.Events.RolesEmpresaAsignados(
+                EmpresaId,
+                UsuarioId,
+                RolesEmpresaIds
+            ));
         }
 
         /// <summary>Agrega un rol de empresa sin reemplazar los existentes.</summary>
@@ -149,7 +153,11 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
             if (_rolesEmpresaIds.Add(rolId))
             {
                 Version++;
-                // Evento de asignación de roles, si existe en Domain.Events, usarlo aquí
+                _domainEvents.Add(new ConfiguracionSistemaBC.Domain.Events.RolesEmpresaAsignados(
+                    EmpresaId,
+                    UsuarioId,
+                    RolesEmpresaIds
+                ));
             }
         }
 
@@ -159,7 +167,11 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
             if (_rolesEmpresaIds.Remove(rolId))
             {
                 Version++;
-                // Evento de asignación de roles, si existe en Domain.Events, usarlo aquí
+                _domainEvents.Add(new ConfiguracionSistemaBC.Domain.Events.RolesEmpresaAsignados(
+                    EmpresaId,
+                    UsuarioId,
+                    RolesEmpresaIds
+                ));
             }
         }
 
@@ -173,7 +185,11 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
                 acceso.ReemplazarRoles(rolIdsEst);
 
             Version++;
-            // Evento de actualización de accesos, si existe en Domain.Events, usarlo aquí
+            _domainEvents.Add(new ConfiguracionSistemaBC.Domain.Events.AccesosDeUsuarioEmpresaActualizados(
+                EmpresaId,
+                UsuarioId,
+                _accesos.Select(a => (a.EstablecimientoId, (IReadOnlyCollection<Guid>)a.RolIds.ToList().AsReadOnly())).ToList().AsReadOnly()
+            ));
         }
 
         /// <summary>Agrega (merge) roles a un establecimiento SIN reemplazar los existentes.</summary>
@@ -186,7 +202,11 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
                 acceso.AgregarRoles(rolIdsEst);
 
             Version++;
-            // Evento de actualización de accesos, si existe en Domain.Events, usarlo aquí
+            _domainEvents.Add(new ConfiguracionSistemaBC.Domain.Events.AccesosDeUsuarioEmpresaActualizados(
+                EmpresaId,
+                UsuarioId,
+                _accesos.Select(a => (a.EstablecimientoId, (IReadOnlyCollection<Guid>)a.RolIds.ToList().AsReadOnly())).ToList().AsReadOnly()
+            ));
         }
 
         /// <summary>Quita un rol puntual de un establecimiento.</summary>
@@ -197,8 +217,14 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
 
             if (acceso.QuitarRol(rolId))
             {
+                if (acceso.RolIds.Count == 0)
+                    _accesos.Remove(acceso);
                 Version++;
-                // Evento de actualización de accesos, si existe en Domain.Events, usarlo aquí
+                _domainEvents.Add(new ConfiguracionSistemaBC.Domain.Events.AccesosDeUsuarioEmpresaActualizados(
+                    EmpresaId,
+                    UsuarioId,
+                    _accesos.Select(a => (a.EstablecimientoId, (IReadOnlyCollection<Guid>)a.RolIds.ToList().AsReadOnly())).ToList().AsReadOnly()
+                ));
             }
         }
 
@@ -216,7 +242,11 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
             _accesos.Clear();
             _accesos.AddRange(nuevos);
             Version++;
-            // Evento de actualización de accesos, si existe en Domain.Events, usarlo aquí
+            _domainEvents.Add(new ConfiguracionSistemaBC.Domain.Events.AccesosDeUsuarioEmpresaActualizados(
+                EmpresaId,
+                UsuarioId,
+                _accesos.Select(a => (a.EstablecimientoId, (IReadOnlyCollection<Guid>)a.RolIds.ToList().AsReadOnly())).ToList().AsReadOnly()
+            ));
         }
 
         /// <summary>Asigna un rol a TODOS los establecimientos indicados. Si reemplazar=true, deja solo ese rol en cada uno.</summary>

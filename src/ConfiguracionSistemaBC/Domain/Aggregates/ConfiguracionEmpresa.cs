@@ -234,8 +234,15 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
         {
             if (destino is null) throw new ArgumentNullException(nameof(destino));
             AmbienteFe.ValidarTransicion(Ambiente, destino);
+            var ambienteAnterior = Ambiente;
             Ambiente = destino;
-                Version++;
+            Version++;
+            // Emitir evento de dominio AmbienteCambiado
+            AddDomainEvent(new ConfiguracionSistemaBC.Domain.Events.AmbienteCambiado(
+                EmpresaId.Value,
+                ambienteAnterior.ToString(),
+                destino.ToString()
+            ));
         }
 
         // ========= DATOS LEGALES =========
@@ -320,11 +327,12 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
                 throw new InvalidOperationException($"Ya existe un establecimiento con código \"{codigo}\".");
 
             var id = Guid.NewGuid();
+            var canonCodigo = codigo.Trim();
             var est = new Establecimiento(
                 EstablecimientoId.From(id),
                 EmpresaId,
                 nombre.Trim(),
-                codigo.Trim(),
+                canonCodigo,
                 direccion,
                 telefono ?? Telefono.Vacio,
                 email
@@ -332,6 +340,11 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
             _estById[id] = est;
             _estByCodigo[est.Codigo] = id;
             Version++;
+            // Emit domain event for establishment registration
+            AddDomainEvent(new ConfiguracionSistemaBC.Domain.Events.EstablecimientoRegistrado(
+                EmpresaId.Value,
+                canonCodigo
+            ));
             return id;
         }
 
@@ -483,6 +496,12 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
             _indexTipoSerie.Add(indexKey);
 
             if (esPorDefecto) EstablecerDefault(tipo, id, setTrueOnItem: true);
+
+            // Emitir evento de dominio SerieAgregada
+            AddDomainEvent(new ConfiguracionSistemaBC.Domain.Events.SerieAgregada(
+                EmpresaId.Value,
+                serie.Codigo
+            ));
 
             return id;
         }
