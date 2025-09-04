@@ -14,7 +14,7 @@ namespace SharedKernel.ValueObjects
         /// <summary>Alias de compatibilidad (si en tu código existente usas .Valor).</summary>
         public string Valor => Value;
 
-        private EmpresaId(string value) => Value = value;
+    public EmpresaId(string value) => Value = value;
 
         /// <summary>
         /// Crea un EmpresaId desde cadena. No interpreta el valor (p.ej. RUC), solo valida no vacío.
