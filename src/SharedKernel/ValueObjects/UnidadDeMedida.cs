@@ -19,7 +19,7 @@ namespace SharedKernel.ValueObjects
         private const int MinLen = 1;
         private const int MaxLen = 15;
 
-        private UnidadDeMedida(string codigo, Func<string, bool>? extraValidator)
+    public UnidadDeMedida(string codigo, Func<string, bool>? extraValidator)
         {
             if (string.IsNullOrWhiteSpace(codigo))
                 throw new ArgumentException("Código de unidad de medida obligatorio.", nameof(codigo));

@@ -42,6 +42,29 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
             bool Bloqueada
         );
 
+        // ---- NUEVOS READ MODELS ----
+        public sealed record FormaPagoRead(
+            Guid Id,
+            string EmpresaId,
+            FormaDePago Valor,      // VO con código SUNAT "10"/"20" y método (solo en CONTADO)
+            string Nombre,          // nombre visible para UI (p.ej., "Efectivo", "Crédito 30 días")
+            bool Visible,
+            bool EsPorDefecto,
+            bool EsSistema,
+            int Orden
+        );
+
+        public sealed record UnidadMedidaRead(
+            Guid Id,
+            string EmpresaId,
+            UnidadDeMedida Unidad,  // VO con código (p.ej., "NIU", "KGM")
+            string Nombre,          // nombre visible (p.ej., "UNIDAD", "KILOGRAMO")
+            bool Visible,
+            bool EsPorDefecto,
+            bool EsSistema,
+            int Orden
+        );
+
         // ========= STATE =========
 
         // Identidad única de empresa: RUC
@@ -56,28 +79,27 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
         // Datos legales
         public string RazonSocial { get; private set; } = string.Empty;
         public string? NombreComercial { get; private set; }
-    public DomicilioFiscal DireccionFiscal { get; private set; } = null!;
+        public DomicilioFiscal DireccionFiscal { get; private set; } = null!;
 
         // Parámetros base
         public Moneda MonedaBase { get; private set; } = Moneda.PEN();
         public AmbienteFe Ambiente { get; private set; } = AmbienteFe.PRUEBA;
 
         // Preferencias opcionales
-    public Telefono Telefono { get; private set; } = Telefono.Vacio;
+        public Telefono Telefono { get; private set; } = Telefono.Vacio;
         public List<Email> Emails { get; private set; } = new();
         public PieDePagina PieDePagina { get; private set; } = PieDePagina.Vacio;
         public LogoImagen? Logo { get; private set; }
         public bool MostrarImagenEnComprobanteImpresa { get; private set; } = false;
 
-            
         // ----- Establecimientos -----
-    // Fuente de verdad: entidad Establecimiento
-    private readonly Dictionary<Guid, Establecimiento> _estById = new();
-    private readonly Dictionary<string, Guid> _estByCodigo = new(StringComparer.OrdinalIgnoreCase);
-    private Guid? _principalEstablecimientoId;
+        // Fuente de verdad: entidad Establecimiento
+        private readonly Dictionary<Guid, Establecimiento> _estById = new();
+        private readonly Dictionary<string, Guid> _estByCodigo = new(StringComparer.OrdinalIgnoreCase);
+        private Guid? _principalEstablecimientoId;
 
         // ----- Series -----
-    internal sealed class SerieState
+        internal sealed class SerieState
         {
             public Guid Id { get; init; }
             public TipoComprobanteCodigo Tipo { get; set; } = null!;
@@ -94,6 +116,38 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
         private readonly HashSet<string> _indexTipoSerie = new(StringComparer.Ordinal);
         // Serie default por tipo (key: tipo.Codigo)
         private readonly Dictionary<string, Guid> _defaultSerieByTipo = new(StringComparer.Ordinal);
+
+        // ----- Formas de Pago -----
+        internal sealed class FormaPagoState
+        {
+            public Guid Id { get; init; }
+            public FormaDePago Valor { get; set; } = null!; // VO "10"/"20" + método (solo en CONTADO)
+            public string Nombre { get; set; } = string.Empty; // visible en UI
+            public bool Visible { get; set; } = true;
+            public bool EsPorDefecto { get; set; }
+            public bool EsSistema { get; init; }
+            public int Orden { get; set; }
+        }
+
+        private readonly Dictionary<Guid, FormaPagoState> _fpById = new();
+        private readonly HashSet<string> _indexFormaPago = new(StringComparer.Ordinal); // (code|metodo|NOMBRE)
+        private Guid? _formaPagoDefaultId;
+
+        // ----- Unidades de Medida -----
+        internal sealed class UnidadMedidaState
+        {
+            public Guid Id { get; init; }
+            public UnidadDeMedida Unidad { get; set; } = null!;
+            public string Nombre { get; set; } = string.Empty;
+            public bool Visible { get; set; } = true;
+            public bool EsPorDefecto { get; set; }
+            public bool EsSistema { get; init; }
+            public int Orden { get; set; }
+        }
+
+        private readonly Dictionary<Guid, UnidadMedidaState> _umById = new();
+        private readonly HashSet<string> _indexUnidadCodigo = new(StringComparer.Ordinal); // por código VO
+        private Guid? _unidadMedidaDefaultId;
 
         // ========= CTOR PRIVADO =========
         private ConfiguracionEmpresa() { }
@@ -120,7 +174,14 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
             Guid? principalEstablecimientoId,
             Dictionary<Guid, SerieState> seriesById,
             HashSet<string> indexTipoSerie,
-            Dictionary<string, Guid> defaultSerieByTipo
+            Dictionary<string, Guid> defaultSerieByTipo,
+            // nuevos (formas de pago / unidades)
+            Dictionary<Guid, FormaPagoState> fpById,
+            HashSet<string> indexFormaPago,
+            Guid? formaPagoDefaultId,
+            Dictionary<Guid, UnidadMedidaState> umById,
+            HashSet<string> indexUnidadCodigo,
+            Guid? unidadMedidaDefaultId
         )
         {
             Ruc = ruc;
@@ -135,12 +196,22 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
             PieDePagina = pieDePagina;
             Logo = logo;
             MostrarImagenEnComprobanteImpresa = mostrarImagenEnComprobanteImpresa;
+
             _estById = new Dictionary<Guid, Entities.Establecimiento>(estById);
             _estByCodigo = new Dictionary<string, Guid>(estByCodigo, StringComparer.OrdinalIgnoreCase);
             _principalEstablecimientoId = principalEstablecimientoId;
+
             _seriesById = new Dictionary<Guid, SerieState>(seriesById);
             _indexTipoSerie = new HashSet<string>(indexTipoSerie, StringComparer.Ordinal);
             _defaultSerieByTipo = new Dictionary<string, Guid>(defaultSerieByTipo, StringComparer.Ordinal);
+
+            _fpById = new Dictionary<Guid, FormaPagoState>(fpById);
+            _indexFormaPago = new HashSet<string>(indexFormaPago, StringComparer.Ordinal);
+            _formaPagoDefaultId = formaPagoDefaultId;
+
+            _umById = new Dictionary<Guid, UnidadMedidaState>(umById);
+            _indexUnidadCodigo = new HashSet<string>(indexUnidadCodigo, StringComparer.Ordinal);
+            _unidadMedidaDefaultId = unidadMedidaDefaultId;
         }
 
         // ========= FACTORY =========
@@ -193,6 +264,10 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
                 TipoOperacion.Default,
                 esPorDefecto: true);
 
+            // Bootstrap: Formas de pago (preconfiguradas) y Unidades de medida (preconfiguradas)
+            empresa.BootstrapFormasDePago();
+            empresa.BootstrapUnidadesDeMedida();
+
             empresa.AddDomainEvent(new ConfiguracionEmpresaRegistrada(
                 empresa.EmpresaId,
                 ruc,
@@ -224,7 +299,7 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
 
         // ========= DATOS LEGALES =========
 
-    public void ActualizarDatosLegales(Ruc ruc, string razonSocial, DomicilioFiscal direccionFiscal, string? nombreComercial = null)
+        public void ActualizarDatosLegales(Ruc ruc, string razonSocial, DomicilioFiscal direccionFiscal, string? nombreComercial = null)
         {
             if (ruc is null) throw new ArgumentNullException(nameof(ruc));
             if (string.IsNullOrWhiteSpace(razonSocial)) throw new ArgumentNullException(nameof(razonSocial));
@@ -238,7 +313,7 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
             NombreComercial = string.IsNullOrWhiteSpace(nombreComercial) ? null : nombreComercial.Trim();
             DireccionFiscal = direccionFiscal;
 
-                Version++;
+            Version++;
             AddDomainEvent(new ConfiguracionEmpresaActualizada(
                 EmpresaId,
                 Ruc,
@@ -374,26 +449,23 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
             Version++;
         }
 
-    // Si necesitas habilitar/deshabilitar, agrega propiedad en la entidad Establecimiento y método aquí
+        // Si necesitas habilitar/deshabilitar, agrega propiedad en la entidad Establecimiento y método aquí
 
         public void EliminarEstablecimiento(Guid id)
         {
             if (!_estById.TryGetValue(id, out var est))
                 throw new KeyNotFoundException("Establecimiento no encontrado.");
-            // No dejar a la empresa sin establecimientos
-            if (_estById.Count <= 1)
-                throw new InvalidOperationException("La empresa debe conservar al menos un establecimiento.");
-            // No permitir si alguna serie del establecimiento está bloqueada (ya usada)
-            var seriesDelEst = _seriesById.Values.Where(s => s.EstablecimientoId == id).ToList();
-            if (seriesDelEst.Any(s => s.Bloqueada))
-                throw new InvalidOperationException("No se puede eliminar: existen series usadas asociadas al establecimiento.");
-            // Si es principal, promover automáticamente otro
-            if (_principalEstablecimientoId == id)
-            {
-                var candidato = _estById.Keys.First(eid => eid != id);
-                _principalEstablecimientoId = candidato;
-            }
+
+            // Si solo queda uno, lanzar excepción
+            if (_estById.Count == 1)
+                throw new InvalidOperationException("No se puede eliminar el único establecimiento restante.");
+
+            // Única restricción: gestiones vinculadas
+            if (est.TieneGestionesVinculadas())
+                throw new InvalidOperationException("No se puede eliminar el establecimiento porque tiene gestiones vinculadas.");
+
             // Limpiar índices de series y series mismas
+            var seriesDelEst = _seriesById.Values.Where(s => s.EstablecimientoId == id).ToList();
             foreach (var s in seriesDelEst)
             {
                 if (_defaultSerieByTipo.TryGetValue(s.Tipo.Codigo, out var defId) && defId == s.Id)
@@ -480,8 +552,8 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
                 serie.Codigo
             ));
 
-                Version++;
-                return id;
+            Version++;
+            return id;
         }
 
         public SerieRead? ObtenerSeriePorId(Guid id)
@@ -552,7 +624,7 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
             if (!_seriesById.TryGetValue(serieId, out var st))
                 throw new KeyNotFoundException("Serie no encontrada.");
             st.Bloqueada = true;
-                Version++;
+            Version++;
         }
 
         public void EliminarSerie(Guid serieId)
@@ -569,7 +641,7 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
 
             _indexTipoSerie.Remove(IndexKey(st.Tipo, st.Serie));
             _seriesById.Remove(serieId);
-                Version++;
+            Version++;
         }
 
         private static string IndexKey(TipoComprobanteCodigo tipo, SerieCodigo serie)
@@ -606,6 +678,323 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
                 st.EsPorDefecto,
                 st.Bloqueada
             );
+
+        // ========= FORMAS DE PAGO =========
+
+        private static string FpIndexKey(FormaDePago fp, string nombre)
+            => $"{fp.PaymentMeansCode}|{(fp.MetodoCodigo ?? "")}|{nombre.Trim().ToUpperInvariant()}";
+
+        private FormaPagoRead ToRead(FormaPagoState st)
+            => new(st.Id, EmpresaId.Value, st.Valor, st.Nombre, st.Visible, st.EsPorDefecto, st.EsSistema, st.Orden);
+
+        private void BootstrapFormasDePago()
+        {
+            // Orden base incremental
+            var orden = 1;
+
+            // CONTADO (preconfiguradas). Default: "Contado".
+            AddFormaPagoSistema(FormaDePago.Contado(),           "Contado",               visible: true,  orden++, esPorDefecto: true);
+            AddFormaPagoSistema(FormaDePago.ContadoEfectivo(),   "Efectivo",              visible: true,  orden++, esPorDefecto: false);
+            AddFormaPagoSistema(FormaDePago.ContadoTarjeta(),    "Tarjeta",               visible: true,  orden++, esPorDefecto: false);
+            AddFormaPagoSistema(FormaDePago.ContadoTransferencia(),"Transferencia",       visible: true,  orden++, esPorDefecto: false);
+            AddFormaPagoSistema(FormaDePago.ContadoYape(),       "Yape",                  visible: true,  orden++, esPorDefecto: false);
+            AddFormaPagoSistema(FormaDePago.ContadoPlin(),       "Plin",                  visible: true,  orden++, esPorDefecto: false);
+            AddFormaPagoSistema(FormaDePago.ContadoDeposito(),   "Depósito en cuenta",    visible: true,  orden++, esPorDefecto: false);
+
+            // CRÉDITO (visibles, sin método; el nombre diferencia el plazo)
+            AddFormaPagoSistema(FormaDePago.Credito(), "Crédito 7 días",       visible: true,  orden++, esPorDefecto: false);
+            AddFormaPagoSistema(FormaDePago.Credito(), "Crédito 15 días",      visible: true,  orden++, esPorDefecto: false);
+            AddFormaPagoSistema(FormaDePago.Credito(), "Crédito 30 días",      visible: true,  orden++, esPorDefecto: false);
+            AddFormaPagoSistema(FormaDePago.Credito(), "Crédito 45 días",      visible: true,  orden++, esPorDefecto: false);
+            AddFormaPagoSistema(FormaDePago.Credito(), "Crédito 60 días",      visible: true,  orden++, esPorDefecto: false);
+            AddFormaPagoSistema(FormaDePago.Credito(), "Crédito 30-60-90 días",visible: true,  orden++, esPorDefecto: false);
+        }
+
+        private Guid AddFormaPagoSistema(FormaDePago valor, string nombre, bool visible, int orden, bool esPorDefecto)
+        {
+            var id = Guid.NewGuid();
+            var st = new FormaPagoState
+            {
+                Id = id,
+                Valor = valor,
+                Nombre = nombre.Trim(),
+                Visible = visible,
+                EsPorDefecto = false,
+                EsSistema = true,
+                Orden = orden
+            };
+
+            var key = FpIndexKey(st.Valor, st.Nombre);
+            if (_indexFormaPago.Contains(key))
+                throw new InvalidOperationException($"La forma de pago \"{st.Nombre}\" ya existe.");
+
+            _fpById[id] = st;
+            _indexFormaPago.Add(key);
+
+            if (esPorDefecto) EstablecerFormaPagoPorDefecto(id);
+            return id;
+        }
+
+        public IReadOnlyList<FormaPagoRead> ListarFormasDePago()
+            => _fpById.Values.OrderBy(v => v.Orden).Select(ToRead).ToList();
+
+        public FormaPagoRead? ObtenerFormaDePagoPorDefecto()
+            => _formaPagoDefaultId is Guid id && _fpById.TryGetValue(id, out var st) ? ToRead(st) : null;
+
+        public Guid AgregarFormaDePagoPersonalizada(FormaDePago valor, string nombre, bool visible = true, int? orden = null, bool esPorDefecto = false)
+        {
+            if (string.IsNullOrWhiteSpace(nombre)) throw new ArgumentNullException(nameof(nombre));
+
+            var id = Guid.NewGuid();
+            var st = new FormaPagoState
+            {
+                Id = id,
+                Valor = valor,
+                Nombre = nombre.Trim(),
+                Visible = visible,
+                EsPorDefecto = false,
+                EsSistema = false,
+                Orden = orden ?? (_fpById.Count + 1)
+            };
+
+            var key = FpIndexKey(st.Valor, st.Nombre);
+            if (_indexFormaPago.Contains(key))
+                throw new InvalidOperationException($"La forma de pago \"{st.Nombre}\" ya existe.");
+
+            _fpById[id] = st;
+            _indexFormaPago.Add(key);
+
+            if (esPorDefecto) EstablecerFormaPagoPorDefecto(id);
+            Version++;
+            return id;
+        }
+
+        public void ActualizarFormaDePago(
+            Guid id,
+            FormaDePago? nuevoValor = null,
+            string? nuevoNombre = null,
+            bool? visible = null,
+            int? nuevoOrden = null,
+            bool? esPorDefecto = null)
+        {
+            if (!_fpById.TryGetValue(id, out var st))
+                throw new KeyNotFoundException("Forma de pago no encontrada.");
+
+            if (st.EsSistema && (nuevoValor is not null || !string.IsNullOrWhiteSpace(nuevoNombre)))
+                throw new InvalidOperationException("No se puede editar valor o nombre de una forma de pago del sistema.");
+
+            // visible siempre se puede cambiar (incluso en sistema), salvo que sea la default (no ocultar default)
+            if (visible.HasValue && st.EsPorDefecto && visible.Value == false)
+                throw new InvalidOperationException("No se puede ocultar la forma de pago por defecto.");
+
+            // Recalcular índice si cambian valor o nombre
+            var oldKey = FpIndexKey(st.Valor, st.Nombre);
+            if (nuevoValor is not null || !string.IsNullOrWhiteSpace(nuevoNombre))
+            {
+                var newValor = nuevoValor ?? st.Valor;
+                var newNombre = string.IsNullOrWhiteSpace(nuevoNombre) ? st.Nombre : nuevoNombre!.Trim();
+                var newKey = FpIndexKey(newValor, newNombre);
+
+                if (newKey != oldKey && _indexFormaPago.Contains(newKey))
+                    throw new InvalidOperationException($"La forma de pago \"{newNombre}\" ya existe.");
+
+                _indexFormaPago.Remove(oldKey);
+                st.Valor = newValor;
+                st.Nombre = newNombre;
+                _indexFormaPago.Add(newKey);
+            }
+
+            if (visible.HasValue) st.Visible = visible.Value;
+            if (nuevoOrden.HasValue) st.Orden = nuevoOrden.Value;
+
+            if (esPorDefecto.HasValue)
+            {
+                if (esPorDefecto.Value) EstablecerFormaPagoPorDefecto(id);
+                else if (st.EsPorDefecto) throw new InvalidOperationException("Para quitar el defecto, establece otra forma como defecto.");
+            }
+
+            Version++;
+        }
+
+        public void EstablecerFormaPagoPorDefecto(Guid id)
+        {
+            if (!_fpById.TryGetValue(id, out var st))
+                throw new KeyNotFoundException("Forma de pago no encontrada.");
+            if (!st.Visible)
+                throw new InvalidOperationException("No se puede establecer por defecto una forma de pago oculta.");
+
+            if (_formaPagoDefaultId is Guid prevId && _fpById.TryGetValue(prevId, out var prev))
+                prev.EsPorDefecto = false;
+
+            st.EsPorDefecto = true;
+            _formaPagoDefaultId = id;
+            Version++;
+        }
+
+        public void EliminarFormaDePago(Guid id)
+        {
+            if (!_fpById.TryGetValue(id, out var st))
+                throw new KeyNotFoundException("Forma de pago no encontrada.");
+            if (st.EsSistema)
+                throw new InvalidOperationException("No se puede eliminar una forma de pago del sistema.");
+            if (st.EsPorDefecto)
+                throw new InvalidOperationException("No se puede eliminar la forma de pago por defecto.");
+
+            _indexFormaPago.Remove(FpIndexKey(st.Valor, st.Nombre));
+            _fpById.Remove(id);
+            Version++;
+        }
+
+        // ========= UNIDADES DE MEDIDA =========
+
+        private UnidadMedidaRead ToRead(UnidadMedidaState st)
+            => new(st.Id, EmpresaId.Value, st.Unidad, st.Nombre, st.Visible, st.EsPorDefecto, st.EsSistema, st.Orden);
+
+        private void BootstrapUnidadesDeMedida()
+        {
+            var orden = 1;
+
+            // Preconfiguradas comunes (SUNAT/UNECE). Default: NIU (UNIDAD).
+            AddUnidadSistema(UnidadDeMedida.NIU, "UNIDAD",    visible: true,  orden++, esPorDefecto: true);
+            AddUnidadSistema(UnidadDeMedida.ZZ,  "SERVICIO",  visible: true,  orden++, esPorDefecto: false);
+            AddUnidadSistema(UnidadDeMedida.KGM, "KILOGRAMO", visible: true,  orden++, esPorDefecto: false);
+            AddUnidadSistema(new UnidadDeMedida("GRM", null), "GRAMO",        visible: true,  orden++, esPorDefecto: false);
+            AddUnidadSistema(UnidadDeMedida.LTR, "LITRO",     visible: true,  orden++, esPorDefecto: false);
+            AddUnidadSistema(UnidadDeMedida.MTR, "METRO",     visible: true,  orden++, esPorDefecto: false);
+
+            // Algunos códigos comerciales frecuentes
+            AddUnidadSistema((UnidadDeMedida)"DZN", "DOCENA",   visible: true,  orden++, esPorDefecto: false);
+            AddUnidadSistema((UnidadDeMedida)"JR",  "FRASCO",   visible: true,  orden++, esPorDefecto: false);
+            AddUnidadSistema((UnidadDeMedida)"RO",  "ROLLO",    visible: true,  orden++, esPorDefecto: false);
+            AddUnidadSistema((UnidadDeMedida)"SET", "JUEGO",    visible: true,  orden++, esPorDefecto: false);
+            AddUnidadSistema((UnidadDeMedida)"PA",  "PAQUETE",  visible: true,  orden++, esPorDefecto: false);
+            AddUnidadSistema((UnidadDeMedida)"SA",  "SACO",     visible: true,  orden++, esPorDefecto: false);
+        }
+
+        private Guid AddUnidadSistema(UnidadDeMedida unidad, string nombre, bool visible, int orden, bool esPorDefecto)
+        {
+            var id = Guid.NewGuid();
+            var st = new UnidadMedidaState
+            {
+                Id = id,
+                Unidad = unidad,
+                Nombre = nombre.Trim(),
+                Visible = visible,
+                EsPorDefecto = false,
+                EsSistema = true,
+                Orden = orden
+            };
+
+            if (_indexUnidadCodigo.Contains(st.Unidad.Codigo))
+                throw new InvalidOperationException($"La unidad de medida \"{st.Unidad.Codigo}\" ya existe.");
+
+            _umById[id] = st;
+            _indexUnidadCodigo.Add(st.Unidad.Codigo);
+
+            if (esPorDefecto) EstablecerUnidadDeMedidaPorDefecto(id);
+            return id;
+        }
+
+        public IReadOnlyList<UnidadMedidaRead> ListarUnidadesDeMedida()
+            => _umById.Values.OrderBy(v => v.Orden).Select(ToRead).ToList();
+
+        public UnidadMedidaRead? ObtenerUnidadDeMedidaPorDefecto()
+            => _unidadMedidaDefaultId is Guid id && _umById.TryGetValue(id, out var st) ? ToRead(st) : null;
+
+        public Guid AgregarUnidadDeMedidaPersonalizada(UnidadDeMedida unidad, string nombre, bool visible = true, int? orden = null, bool esPorDefecto = false)
+        {
+            if (string.IsNullOrWhiteSpace(nombre)) throw new ArgumentNullException(nameof(nombre));
+
+            var id = Guid.NewGuid();
+            var st = new UnidadMedidaState
+            {
+                Id = id,
+                Unidad = unidad,
+                Nombre = nombre.Trim(),
+                Visible = visible,
+                EsPorDefecto = false,
+                EsSistema = false,
+                Orden = orden ?? (_umById.Count + 1)
+            };
+
+            if (_indexUnidadCodigo.Contains(st.Unidad.Codigo))
+                throw new InvalidOperationException($"La unidad de medida \"{st.Unidad.Codigo}\" ya existe.");
+
+            _umById[id] = st;
+            _indexUnidadCodigo.Add(st.Unidad.Codigo);
+
+            if (esPorDefecto) EstablecerUnidadDeMedidaPorDefecto(id);
+            Version++;
+            return id;
+        }
+
+        public void ActualizarUnidadDeMedida(
+            Guid id,
+            UnidadDeMedida? nuevaUnidad = null,
+            string? nuevoNombre = null,
+            bool? visible = null,
+            int? nuevoOrden = null,
+            bool? esPorDefecto = null)
+        {
+            if (!_umById.TryGetValue(id, out var st))
+                throw new KeyNotFoundException("Unidad de medida no encontrada.");
+
+            if (st.EsSistema && (nuevaUnidad is not null || !string.IsNullOrWhiteSpace(nuevoNombre)))
+                throw new InvalidOperationException("No se puede editar código o nombre de una unidad del sistema.");
+
+            if (visible.HasValue && st.EsPorDefecto && visible.Value == false)
+                throw new InvalidOperationException("No se puede ocultar la unidad de medida por defecto.");
+
+            if (nuevaUnidad is not null && nuevaUnidad.Codigo != st.Unidad.Codigo)
+            {
+                if (_indexUnidadCodigo.Contains(nuevaUnidad.Codigo))
+                    throw new InvalidOperationException($"La unidad de medida \"{nuevaUnidad.Codigo}\" ya existe.");
+                _indexUnidadCodigo.Remove(st.Unidad.Codigo);
+                st.Unidad = nuevaUnidad;
+                _indexUnidadCodigo.Add(st.Unidad.Codigo);
+            }
+
+            if (!string.IsNullOrWhiteSpace(nuevoNombre)) st.Nombre = nuevoNombre.Trim();
+            if (visible.HasValue) st.Visible = visible.Value;
+            if (nuevoOrden.HasValue) st.Orden = nuevoOrden.Value;
+
+            if (esPorDefecto.HasValue)
+            {
+                if (esPorDefecto.Value) EstablecerUnidadDeMedidaPorDefecto(id);
+                else if (st.EsPorDefecto) throw new InvalidOperationException("Para quitar el defecto, establece otra unidad como defecto.");
+            }
+
+            Version++;
+        }
+
+        public void EstablecerUnidadDeMedidaPorDefecto(Guid id)
+        {
+            if (!_umById.TryGetValue(id, out var st))
+                throw new KeyNotFoundException("Unidad de medida no encontrada.");
+            if (!st.Visible)
+                throw new InvalidOperationException("No se puede establecer por defecto una unidad oculta.");
+
+            if (_unidadMedidaDefaultId is Guid prevId && _umById.TryGetValue(prevId, out var prev))
+                prev.EsPorDefecto = false;
+
+            st.EsPorDefecto = true;
+            _unidadMedidaDefaultId = id;
+            Version++;
+        }
+
+        public void EliminarUnidadDeMedida(Guid id)
+        {
+            if (!_umById.TryGetValue(id, out var st))
+                throw new KeyNotFoundException("Unidad de medida no encontrada.");
+            if (st.EsSistema)
+                throw new InvalidOperationException("No se puede eliminar una unidad del sistema.");
+            if (st.EsPorDefecto)
+                throw new InvalidOperationException("No se puede eliminar la unidad por defecto.");
+
+            _indexUnidadCodigo.Remove(st.Unidad.Codigo);
+            _umById.Remove(id);
+            Version++;
+        }
 
         // ========= DOMAIN EVENTS =========
         private readonly List<SharedKernel.Events.IDomainEvent> _domainEvents = new();

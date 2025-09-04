@@ -59,5 +59,15 @@ namespace ConfiguracionSistemaBC.Domain.Entities
 	public void Habilitar() => Habilitado = true;
 	public void MarcarComoPrincipal() => EsPrincipal = true;
 	public void MarcarComoSecundario() => EsPrincipal = false;
+	
+	/// <summary>
+	/// Indica si el establecimiento tiene gestiones vinculadas.
+	/// Stub: Retorna false por defecto. Implementar lógica real según sea necesario.
+	/// </summary>
+	public bool TieneGestionesVinculadas()
+	{
+		// TODO: Implementar la lógica real para verificar gestiones vinculadas
+		return false;
+	}
 	}
 }
