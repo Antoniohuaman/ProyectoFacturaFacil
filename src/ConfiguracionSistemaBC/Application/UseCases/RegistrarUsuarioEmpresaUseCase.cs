@@ -8,29 +8,33 @@ using ConfiguracionSistemaBC.Domain.Aggregates;          // UsuarioEmpresa
 using ConfiguracionSistemaBC.Domain.Repositories;        // IUsuarioEmpresaRepository
 using SharedKernel.ValueObjects;                         // EmpresaId, UsuarioId, EstablecimientoId, Email, Telefono, NombrePersona
 using SharedKernel.Application.Interfaces;               // ITenantContext
+      
 
 namespace ConfiguracionSistemaBC.Application.UseCases
 {
     /// <summary>
     /// Caso de uso: Registrar un usuario dentro de la empresa (tenant actual).
     /// - Email obligatorio y único por empresa.
-    /// - Nombre/Celular opcionales.
+    /// - Nombre obligatorio, celular opcional.
     /// - Debe tener al menos un acceso con 1+ roles.
     /// - Crea la membresía en estado Invitado (habilitación es otro caso de uso).
     /// </summary>
     public sealed class RegistrarUsuarioEmpresaUseCase
     {
-        private readonly ITenantContext _tenant;
-        private readonly IUsuarioEmpresaRepository _repo;
-        private readonly IUnitOfWork _uow;
+    private readonly ITenantContext _tenant;
+    private readonly IUsuarioEmpresaRepository _repo;
+    private readonly IRolEmpresaRepository _rolRepo;
+    private readonly IUnitOfWork _uow;
 
         public RegistrarUsuarioEmpresaUseCase(
             ITenantContext tenant,
             IUsuarioEmpresaRepository repo,
+            IRolEmpresaRepository rolRepo,
             IUnitOfWork uow)
         {
             _tenant = tenant ?? throw new ArgumentNullException(nameof(tenant));
             _repo = repo ?? throw new ArgumentNullException(nameof(repo));
+            _rolRepo = rolRepo ?? throw new ArgumentNullException(nameof(rolRepo));
             _uow = uow ?? throw new ArgumentNullException(nameof(uow));
         }
 
@@ -56,7 +60,20 @@ namespace ConfiguracionSistemaBC.Application.UseCases
             }
 
             var empresaId = _tenant.EmpresaId ?? throw new InvalidOperationException("EmpresaId no disponible en el contexto.");
-                var emailVO = Email.Create(input.Email.Trim());
+            var emailVO = Email.Create(input.Email.Trim());
+
+            // Validación de roles
+            foreach (var acceso in input.Accesos)
+            {
+                foreach (var rolId in acceso.RolIds)
+                {
+                    var rol = await _rolRepo.GetByIdAsync(rolId, ct);
+                    if (rol == null)
+                        throw new InvalidOperationException($"El rol con ID {rolId} no existe.");
+                    if (!rol.EsSistema && rol.EmpresaId != empresaId)
+                        throw new InvalidOperationException($"El rol con ID {rolId} no pertenece a la empresa actual.");
+                }
+            }
 
             // Regla de unicidad de email en la empresa
             var emailUsado = await _repo.EmailExisteEnEmpresaAsync(empresaId, emailVO, ct);

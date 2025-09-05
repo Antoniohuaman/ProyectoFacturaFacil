@@ -19,6 +19,7 @@ namespace ConfiguracionSistemaBC.Tests.Application.UseCases
     {
     private Mock<ITenantContext>? _tenant;
     private Mock<IUsuarioEmpresaRepository>? _repo;
+    private Mock<IRolEmpresaRepository>? _rolRepo;
     private Mock<IUnitOfWork>? _uow;
 
     private RegistrarUsuarioEmpresaUseCase? _sut;
@@ -28,9 +29,10 @@ namespace ConfiguracionSistemaBC.Tests.Application.UseCases
         {
             _tenant = new Mock<ITenantContext>();
             _repo = new Mock<IUsuarioEmpresaRepository>();
+            _rolRepo = new Mock<IRolEmpresaRepository>();
             _uow = new Mock<IUnitOfWork>();
 
-            _sut = new RegistrarUsuarioEmpresaUseCase(_tenant.Object, _repo.Object, _uow.Object);
+            _sut = new RegistrarUsuarioEmpresaUseCase(_tenant.Object, _repo.Object, _rolRepo.Object, _uow.Object);
         }
 
         [Test]
@@ -63,6 +65,17 @@ namespace ConfiguracionSistemaBC.Tests.Application.UseCases
                     }
                 }
             };
+            // Setup mock for valid roles
+            var permisos = new List<ConfiguracionSistemaBC.Domain.ValueObjects.Permiso> {
+                ConfiguracionSistemaBC.Domain.ValueObjects.Permiso.SoloLeer(ConfiguracionSistemaBC.Domain.ValueObjects.Recurso.Usuarios)
+            };
+            foreach (var rolId in input.Accesos.SelectMany(a => a.RolIds))
+            {
+                _rolRepo!.Setup(r => r.GetByIdAsync(
+                    It.Is<Guid>(id => id == rolId),
+                    It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(ConfiguracionSistemaBC.Domain.Aggregates.RolEmpresa.CrearPersonalizado(empresaId, $"Rol-{rolId}", permisos));
+            }
 
             // Act
             var result = await _sut!.ExecuteAsync(input);
@@ -105,6 +118,17 @@ namespace ConfiguracionSistemaBC.Tests.Application.UseCases
                     }
                 }
             };
+            // Setup mock for valid roles
+            var permisos = new List<ConfiguracionSistemaBC.Domain.ValueObjects.Permiso> {
+                ConfiguracionSistemaBC.Domain.ValueObjects.Permiso.SoloLeer(ConfiguracionSistemaBC.Domain.ValueObjects.Recurso.Usuarios)
+            };
+            foreach (var rolId in input.Accesos.SelectMany(a => a.RolIds))
+            {
+                _rolRepo!.Setup(r => r.GetByIdAsync(
+                    It.Is<Guid>(id => id == rolId),
+                    It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(ConfiguracionSistemaBC.Domain.Aggregates.RolEmpresa.CrearPersonalizado(_tenant!.Object.EmpresaId, $"Rol-{rolId}", permisos));
+            }
 
             // Act + Assert
             var ex = Assert.ThrowsAsync<ArgumentException>(async () => await _sut!.ExecuteAsync(input));
@@ -177,6 +201,17 @@ namespace ConfiguracionSistemaBC.Tests.Application.UseCases
                     }
                 }
             };
+            // Setup mock for valid roles
+            var permisos = new List<ConfiguracionSistemaBC.Domain.ValueObjects.Permiso> {
+                ConfiguracionSistemaBC.Domain.ValueObjects.Permiso.SoloLeer(ConfiguracionSistemaBC.Domain.ValueObjects.Recurso.Usuarios)
+            };
+            foreach (var rolId in input.Accesos.SelectMany(a => a.RolIds))
+            {
+                _rolRepo!.Setup(r => r.GetByIdAsync(
+                    It.Is<Guid>(id => id == rolId),
+                    It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(ConfiguracionSistemaBC.Domain.Aggregates.RolEmpresa.CrearPersonalizado(empresaId, $"Rol-{rolId}", permisos));
+            }
 
             // Act + Assert
             var ex = Assert.ThrowsAsync<InvalidOperationException>(async () => await _sut!.ExecuteAsync(input));
