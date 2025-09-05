@@ -1,11 +1,20 @@
-using SharedKernel.ValueObjects;
-using ConfiguracionSistemaBC.Domain.ValueObjects;
+using System;
 
-namespace ConfiguracionSistemaBC.Application.UseCases.DTOs
+namespace ConfiguracionSistemaBC.Application.UseCases
 {
-    /// <summary>Entrada para cambio de ambiente.</summary>
-    public sealed record CambiarAmbienteEmpresaInputDto(
-        string Ruc,
-        AmbienteFe Destino
-    );
+    /// <summary>
+    /// Solicitud para cambiar el ambiente de la empresa del contexto.
+    /// </summary>
+    public sealed class CambiarAmbienteEmpresaInputDto
+    {
+        /// <summary>
+        /// Destino del ambiente: "PRUEBA" o "PRODUCCION".
+        /// </summary>
+        public string Destino { get; init; } = "PRODUCCION";
+
+        /// <summary>
+        /// Si es true y el destino es PRODUCCION, se purgan los documentos emitidos en PRUEBA.
+        /// </summary>
+        public bool BorrarDocumentosEmitidosEnPrueba { get; init; } = true;
+    }
 }
