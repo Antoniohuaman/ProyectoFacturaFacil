@@ -11,11 +11,10 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
     /// <summary>
     /// Aggregate raíz que centraliza la configuración de una empresa (tenant).
     /// 
-    /// - Representa el punto único de acceso y modificación para todos los parámetros relevantes de la empresa.
-    /// - Encapsula datos legales, preferencias, establecimientos y series de comprobantes.
-    /// - Garantiza la consistencia y las reglas de negocio mediante métodos controlados.
-    /// - Facilita la reconstrucción desde persistencia y la integración entre bounded contexts.
-    /// - Aplica el patrón DDD: solo se modifica a través de sus métodos públicos.
+    /// - Representa el punto único de acceso y modificación para parámetros relevantes de la empresa.
+    /// - Encapsula datos legales, preferencias y establecimientos.
+    /// - Mantiene consistencia de reglas de negocio mediante métodos controlados.
+    /// - DDD puro: no conoce Series (fueron extraídas al aggregate SerieComprobante).
     /// </summary>
     public sealed class ConfiguracionEmpresa
     {
@@ -30,24 +29,12 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
             bool Habilitado
         );
 
-        public sealed record SerieRead(
-            Guid Id,
-            string EmpresaId, // opaco, canonizado desde RUC
-            string Serie,
-            TipoComprobanteCodigo Tipo,
-            Guid EstablecimientoId,
-            Correlativo CorrelativoActual,
-            TipoOperacion TipoOperacion,
-            bool EsPorDefecto,
-            bool Bloqueada
-        );
-
-        // ---- NUEVOS READ MODELS ----
+        // ---- READ MODELS (otros catálogos locales) ----
         public sealed record FormaPagoRead(
             Guid Id,
             string EmpresaId,
             FormaDePago Valor,      // VO con código SUNAT "10"/"20" y método (solo en CONTADO)
-            string Nombre,          // nombre visible para UI (p.ej., "Efectivo", "Crédito 30 días")
+            string Nombre,          // visible en UI
             bool Visible,
             bool EsPorDefecto,
             bool EsSistema,
@@ -58,7 +45,7 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
             Guid Id,
             string EmpresaId,
             UnidadDeMedida Unidad,  // VO con código (p.ej., "NIU", "KGM")
-            string Nombre,          // nombre visible (p.ej., "UNIDAD", "KILOGRAMO")
+            string Nombre,          // visible (p.ej., "UNIDAD")
             bool Visible,
             bool EsPorDefecto,
             bool EsSistema,
@@ -67,13 +54,8 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
 
         // ========= STATE =========
 
-        // Identidad única de empresa: RUC
         public Ruc Ruc { get; private set; } = null!;
-        // Identidad opaca para integración entre BCs (string basado en RUC)
         public EmpresaId EmpresaId { get; private set; } = null!;
-        /// <summary>
-        /// Control de concurrencia optimista
-        /// </summary>
         public int Version { get; private set; }
 
         // Datos legales
@@ -93,36 +75,16 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
         public bool MostrarImagenEnComprobanteImpresa { get; private set; } = false;
 
         // ----- Establecimientos -----
-        // Fuente de verdad: entidad Establecimiento
         private readonly Dictionary<Guid, Establecimiento> _estById = new();
         private readonly Dictionary<string, Guid> _estByCodigo = new(StringComparer.OrdinalIgnoreCase);
         private Guid? _principalEstablecimientoId;
-
-        // ----- Series -----
-        internal sealed class SerieState
-        {
-            public Guid Id { get; init; }
-            public TipoComprobanteCodigo Tipo { get; set; } = null!;
-            public SerieCodigo Serie { get; set; } = null!;
-            public Guid EstablecimientoId { get; set; }
-            public Correlativo CorrelativoActual { get; set; } = null!;
-            public TipoOperacion TipoOperacion { get; set; } = TipoOperacion.Default;
-            public bool EsPorDefecto { get; set; }
-            public bool Bloqueada { get; set; } // true si ya se usó en emisión
-        }
-
-        private readonly Dictionary<Guid, SerieState> _seriesById = new();
-        // Índice de unicidad por (Tipo.Codigo, Serie.Codigo)
-        private readonly HashSet<string> _indexTipoSerie = new(StringComparer.Ordinal);
-        // Serie default por tipo (key: tipo.Codigo)
-        private readonly Dictionary<string, Guid> _defaultSerieByTipo = new(StringComparer.Ordinal);
 
         // ----- Formas de Pago -----
         internal sealed class FormaPagoState
         {
             public Guid Id { get; init; }
-            public FormaDePago Valor { get; set; } = null!; // VO "10"/"20" + método (solo en CONTADO)
-            public string Nombre { get; set; } = string.Empty; // visible en UI
+            public FormaDePago Valor { get; set; } = null!;
+            public string Nombre { get; set; } = string.Empty;
             public bool Visible { get; set; } = true;
             public bool EsPorDefecto { get; set; }
             public bool EsSistema { get; init; }
@@ -146,16 +108,13 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
         }
 
         private readonly Dictionary<Guid, UnidadMedidaState> _umById = new();
-        private readonly HashSet<string> _indexUnidadCodigo = new(StringComparer.Ordinal); // por código VO
+        private readonly HashSet<string> _indexUnidadCodigo = new(StringComparer.Ordinal);
         private Guid? _unidadMedidaDefaultId;
 
         // ========= CTOR PRIVADO =========
         private ConfiguracionEmpresa() { }
 
-        /// <summary>
-        /// Constructor interno para reconstrucción desde persistencia.
-        /// Solo debe usarse por el repositorio o infraestructura.
-        /// </summary>
+        /// <summary>Rehidratación desde persistencia.</summary>
         internal ConfiguracionEmpresa(
             Ruc ruc,
             EmpresaId empresaId,
@@ -169,13 +128,10 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
             PieDePagina pieDePagina,
             LogoImagen? logo,
             bool mostrarImagenEnComprobanteImpresa,
-            Dictionary<Guid, Entities.Establecimiento> estById,
+            Dictionary<Guid, Establecimiento> estById,
             Dictionary<string, Guid> estByCodigo,
             Guid? principalEstablecimientoId,
-            Dictionary<Guid, SerieState> seriesById,
-            HashSet<string> indexTipoSerie,
-            Dictionary<string, Guid> defaultSerieByTipo,
-            // nuevos (formas de pago / unidades)
+            // catálogos internos
             Dictionary<Guid, FormaPagoState> fpById,
             HashSet<string> indexFormaPago,
             Guid? formaPagoDefaultId,
@@ -197,20 +153,16 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
             Logo = logo;
             MostrarImagenEnComprobanteImpresa = mostrarImagenEnComprobanteImpresa;
 
-            _estById = new Dictionary<Guid, Entities.Establecimiento>(estById);
-            _estByCodigo = new Dictionary<string, Guid>(estByCodigo, StringComparer.OrdinalIgnoreCase);
+            _estById = new(estById);
+            _estByCodigo = new(estByCodigo, StringComparer.OrdinalIgnoreCase);
             _principalEstablecimientoId = principalEstablecimientoId;
 
-            _seriesById = new Dictionary<Guid, SerieState>(seriesById);
-            _indexTipoSerie = new HashSet<string>(indexTipoSerie, StringComparer.Ordinal);
-            _defaultSerieByTipo = new Dictionary<string, Guid>(defaultSerieByTipo, StringComparer.Ordinal);
-
-            _fpById = new Dictionary<Guid, FormaPagoState>(fpById);
-            _indexFormaPago = new HashSet<string>(indexFormaPago, StringComparer.Ordinal);
+            _fpById = new(fpById);
+            _indexFormaPago = new(indexFormaPago, StringComparer.Ordinal);
             _formaPagoDefaultId = formaPagoDefaultId;
 
-            _umById = new Dictionary<Guid, UnidadMedidaState>(umById);
-            _indexUnidadCodigo = new HashSet<string>(indexUnidadCodigo, StringComparer.Ordinal);
+            _umById = new(umById);
+            _indexUnidadCodigo = new(indexUnidadCodigo, StringComparer.Ordinal);
             _unidadMedidaDefaultId = unidadMedidaDefaultId;
         }
 
@@ -231,43 +183,27 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
             var empresa = new ConfiguracionEmpresa
             {
                 Ruc = ruc,
-                EmpresaId = EmpresaId.From(ruc.Canonizado), // opaco, canonizado desde RUC
+                EmpresaId = EmpresaId.From(ruc.Canonizado),
                 RazonSocial = razonSocial.Trim(),
                 DireccionFiscal = direccionFiscal,
                 MonedaBase = monedaBase,
-                Ambiente = AmbienteFe.PRUEBA, // siempre inicia en PRUEBA
+                Ambiente = AmbienteFe.PRUEBA,
                 Telefono = Telefono.Vacio,
                 Emails = new List<Email>(),
                 PieDePagina = PieDePagina.FromTextoPlano("Gracias Por su Preferencia"),
                 Logo = null
             };
 
-            // Bootstrap: Establecimiento principal + series por defecto
+            // Bootstrap: Establecimiento principal
             var estPrincipalId = empresa.RegistrarEstablecimiento("01", "Establecimiento Principal", direccionFiscal);
             empresa.EstablecerComoPrincipal(estPrincipalId);
 
-            // Series por defecto (venta interna)
-            // FE01 (Factura), BE01 (Boleta) -> correlativo 1; Default por cada tipo
-            empresa.AgregarSerie(
-                TipoComprobanteCodigo.Factura,
-                SerieCodigo.From("FE01"),
-                estPrincipalId,
-                Correlativo.From(1),
-                TipoOperacion.Default,
-                esPorDefecto: true);
-
-            empresa.AgregarSerie(
-                TipoComprobanteCodigo.Boleta,
-                SerieCodigo.From("BE01"),
-                estPrincipalId,
-                Correlativo.From(1),
-                TipoOperacion.Default,
-                esPorDefecto: true);
-
-            // Bootstrap: Formas de pago (preconfiguradas) y Unidades de medida (preconfiguradas)
+            // Bootstrap: Formas de pago y Unidades (preconfiguradas en este aggregate)
             empresa.BootstrapFormasDePago();
             empresa.BootstrapUnidadesDeMedida();
 
+            // Nota: ya NO se crean series aquí. Usa una política de aplicación
+            // que reaccione a este evento para crear FE01/BE01 en SerieComprobante.
             empresa.AddDomainEvent(new ConfiguracionEmpresaRegistrada(
                 empresa.EmpresaId,
                 ruc,
@@ -289,7 +225,6 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
             var ambienteAnterior = Ambiente;
             Ambiente = destino;
             Version++;
-            // Emitir evento de dominio AmbienteCambiado
             AddDomainEvent(new ConfiguracionSistemaBC.Domain.Events.AmbienteCambiado(
                 EmpresaId,
                 ambienteAnterior.ToString(),
@@ -368,7 +303,7 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
 
         // ========= ESTABLECIMIENTOS =========
 
-        public Guid RegistrarEstablecimiento(string codigo, string nombre, DomicilioFiscal direccion, Telefono? telefono = null, Email? email = null)
+    public Guid RegistrarEstablecimiento(string codigo, string nombre, DomicilioFiscal direccion)
         {
             if (string.IsNullOrWhiteSpace(codigo)) throw new ArgumentNullException(nameof(codigo));
             if (string.IsNullOrWhiteSpace(nombre)) throw new ArgumentNullException(nameof(nombre));
@@ -385,14 +320,11 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
                 EmpresaId,
                 nombre.Trim(),
                 canonCodigo,
-                direccion,
-                telefono ?? Telefono.Vacio,
-                email
+                direccion
             );
             _estById[id] = est;
             _estByCodigo[est.Codigo] = id;
             Version++;
-            // Emit domain event for establishment registration
             AddDomainEvent(new ConfiguracionSistemaBC.Domain.Events.EstablecimientoRegistrado(
                 EmpresaId,
                 canonCodigo
@@ -429,15 +361,13 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
             var canon = nuevoCodigo.Trim();
             if (_estByCodigo.TryGetValue(canon, out var otroId) && otroId != id)
                 throw new InvalidOperationException($"Ya existe un establecimiento con código \"{canon}\".");
-            // Actualiza índice
             _estByCodigo.Remove(est.Codigo);
-            // Actualiza la entidad
-            est.ActualizarDatos(est.Nombre, canon, est.Direccion, est.Telefono, est.Email);
+            est.ActualizarDatos(est.Nombre, canon, est.Direccion);
             _estByCodigo[canon] = id;
             Version++;
         }
 
-        public void ActualizarEstablecimiento(Guid id, string nombre, DomicilioFiscal direccion, Telefono? telefono = null, Email? email = null)
+    public void ActualizarEstablecimiento(Guid id, string nombre, DomicilioFiscal direccion)
         {
             if (!_estById.TryGetValue(id, out var est))
                 throw new KeyNotFoundException("Establecimiento no encontrado.");
@@ -445,11 +375,9 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
             if (direccion is null) throw new ArgumentNullException(nameof(direccion));
             if (!direccion.EsPeru)
                 throw new ArgumentException("Solo se soporta domicilio fiscal de Perú (PE) para establecimientos.", nameof(direccion));
-            est.ActualizarDatos(nombre.Trim(), est.Codigo, direccion, telefono ?? est.Telefono, email ?? est.Email);
+            est.ActualizarDatos(nombre.Trim(), est.Codigo, direccion);
             Version++;
         }
-
-        // Si necesitas habilitar/deshabilitar, agrega propiedad en la entidad Establecimiento y método aquí
 
         public void EliminarEstablecimiento(Guid id)
         {
@@ -460,20 +388,13 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
             if (_estById.Count == 1)
                 throw new InvalidOperationException("No se puede eliminar el único establecimiento restante.");
 
-            // Única restricción: gestiones vinculadas
+            // Regla local: si tiene gestiones vinculadas, no permitir.
             if (est.TieneGestionesVinculadas())
                 throw new InvalidOperationException("No se puede eliminar el establecimiento porque tiene gestiones vinculadas.");
 
-            // Limpiar índices de series y series mismas
-            var seriesDelEst = _seriesById.Values.Where(s => s.EstablecimientoId == id).ToList();
-            foreach (var s in seriesDelEst)
-            {
-                if (_defaultSerieByTipo.TryGetValue(s.Tipo.Codigo, out var defId) && defId == s.Id)
-                    _defaultSerieByTipo.Remove(s.Tipo.Codigo);
-                _indexTipoSerie.Remove(IndexKey(s.Tipo, s.Serie));
-                _seriesById.Remove(s.Id);
-            }
-            // Remover establecimiento
+            // NOTA: La relación con Series está fuera del aggregate.
+            // Una política de aplicación debe verificar/validar y eliminar/inhabilitar series del establecimiento.
+
             _estByCodigo.Remove(est.Codigo);
             _estById.Remove(id);
             Version++;
@@ -493,192 +414,6 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
         private EstablecimientoRead ToRead(Establecimiento est)
             => new(est.Id.Value, EmpresaId.Value, est.Codigo, est.Nombre, est.Direccion, est.Habilitado);
 
-        private Establecimiento GetEstablecimientoOrThrow(Guid id)
-        {
-            if (!_estById.TryGetValue(id, out var est))
-                throw new KeyNotFoundException("Establecimiento no encontrado.");
-            return est;
-        }
-
-        // ========= SERIES =========
-
-        /// <summary>
-        /// Agrega una serie para un tipo de comprobante.
-        /// El <paramref name="tipoOperacion"/> es opcional; por defecto se usa 0101 – Venta interna.
-        /// </summary>
-        public Guid AgregarSerie(
-            TipoComprobanteCodigo tipo,
-            SerieCodigo serie,
-            Guid establecimientoId,
-            Correlativo correlativoInicial,
-            TipoOperacion? tipoOperacion = null,
-            bool esPorDefecto = false)
-        {
-            if (tipo is null) throw new ArgumentNullException(nameof(tipo));
-            if (serie is null) throw new ArgumentNullException(nameof(serie));
-
-            var est = GetEstablecimientoOrThrow(establecimientoId);
-            if (!est.Habilitado)
-                throw new InvalidOperationException("No se puede registrar serie en un establecimiento deshabilitado.");
-
-            // Validación de prefijo según tipo (F/B). Lanza si no coincide.
-            SerieCodigo.ValidarSegunTipo(serie, tipo);
-
-            var indexKey = IndexKey(tipo, serie);
-            if (_indexTipoSerie.Contains(indexKey))
-                throw new InvalidOperationException($"La serie \"{serie}\" ya existe para el tipo {tipo.Codigo}.");
-
-            var id = Guid.NewGuid();
-            var st = new SerieState
-            {
-                Id = id,
-                Tipo = tipo,
-                Serie = serie,
-                EstablecimientoId = establecimientoId,
-                CorrelativoActual = correlativoInicial,
-                TipoOperacion = tipoOperacion ?? TipoOperacion.Default,
-                EsPorDefecto = false,
-                Bloqueada = false
-            };
-
-            _seriesById[id] = st;
-            _indexTipoSerie.Add(indexKey);
-
-            if (esPorDefecto) EstablecerDefault(tipo, id, setTrueOnItem: true);
-
-            // Emitir evento de dominio SerieAgregada
-            AddDomainEvent(new ConfiguracionSistemaBC.Domain.Events.SerieAgregada(
-                EmpresaId,
-                serie.Codigo
-            ));
-
-            Version++;
-            return id;
-        }
-
-        public SerieRead? ObtenerSeriePorId(Guid id)
-            => _seriesById.TryGetValue(id, out var st) ? ToRead(st) : null;
-
-        public SerieRead? ObtenerSeriePorDefecto(TipoComprobanteCodigo tipo)
-        {
-            if (_defaultSerieByTipo.TryGetValue(tipo.Codigo, out var id) && _seriesById.TryGetValue(id, out var st))
-                return ToRead(st);
-            return null;
-        }
-
-        public IReadOnlyList<SerieRead> ListarSeriesPorTipo(TipoComprobanteCodigo tipo)
-            => _seriesById.Values.Where(s => s.Tipo == tipo).Select(ToRead).ToList();
-
-        public void ActualizarSerie(
-            Guid serieId,
-            SerieCodigo? nuevaSerie = null,
-            Guid? nuevoEstablecimientoId = null,
-            TipoOperacion? nuevoTipoOperacion = null,
-            bool? esPorDefecto = null)
-        {
-            if (!_seriesById.TryGetValue(serieId, out var st))
-                throw new KeyNotFoundException("Serie no encontrada.");
-
-            if (st.Bloqueada)
-                throw new InvalidOperationException("La serie ya fue usada y no puede actualizarse.");
-
-            // Cambiar establecimiento
-            if (nuevoEstablecimientoId.HasValue)
-            {
-                var est = GetEstablecimientoOrThrow(nuevoEstablecimientoId.Value);
-                if (!est.Habilitado)
-                    throw new InvalidOperationException("No se puede asignar a un establecimiento deshabilitado.");
-                st.EstablecimientoId = est.Id.Value;
-            }
-
-            // Cambiar tipo de operación
-            if (nuevoTipoOperacion is not null)
-                st.TipoOperacion = nuevoTipoOperacion;
-
-            // Cambiar serie (respetando unicidad y prefijo por tipo)
-            if (nuevaSerie is not null)
-            {
-                SerieCodigo.ValidarSegunTipo(nuevaSerie, st.Tipo);
-
-                var newKey = IndexKey(st.Tipo, nuevaSerie);
-                if (newKey != IndexKey(st.Tipo, st.Serie) && _indexTipoSerie.Contains(newKey))
-                    throw new InvalidOperationException($"Ya existe la serie \"{nuevaSerie}\" para tipo {st.Tipo.Codigo}.");
-
-                // liberar índice viejo y ocupar el nuevo
-                _indexTipoSerie.Remove(IndexKey(st.Tipo, st.Serie));
-                st.Serie = nuevaSerie;
-                _indexTipoSerie.Add(newKey);
-            }
-
-            // Default flag
-            if (esPorDefecto.HasValue)
-            {
-                if (esPorDefecto.Value) EstablecerDefault(st.Tipo, st.Id, setTrueOnItem: true);
-                else                     EstablecerDefault(st.Tipo, st.Id, setTrueOnItem: false);
-            }
-            Version++;
-        }
-
-        public void BloquearSeriePorUso(Guid serieId)
-        {
-            if (!_seriesById.TryGetValue(serieId, out var st))
-                throw new KeyNotFoundException("Serie no encontrada.");
-            st.Bloqueada = true;
-            Version++;
-        }
-
-        public void EliminarSerie(Guid serieId)
-        {
-            if (!_seriesById.TryGetValue(serieId, out var st))
-                throw new KeyNotFoundException("Serie no encontrada.");
-
-            if (st.Bloqueada)
-                throw new InvalidOperationException("No se puede eliminar una serie que ya fue usada.");
-
-            // Quitar default si corresponde
-            if (_defaultSerieByTipo.TryGetValue(st.Tipo.Codigo, out var defId) && defId == serieId)
-                _defaultSerieByTipo.Remove(st.Tipo.Codigo);
-
-            _indexTipoSerie.Remove(IndexKey(st.Tipo, st.Serie));
-            _seriesById.Remove(serieId);
-            Version++;
-        }
-
-        private static string IndexKey(TipoComprobanteCodigo tipo, SerieCodigo serie)
-            => $"{tipo.Codigo}|{serie.Codigo}";
-
-        private void EstablecerDefault(TipoComprobanteCodigo tipo, Guid id, bool setTrueOnItem)
-        {
-            // desmarcar el anterior
-            if (_defaultSerieByTipo.TryGetValue(tipo.Codigo, out var prevId) && _seriesById.TryGetValue(prevId, out var prev))
-                prev.EsPorDefecto = false;
-
-            if (setTrueOnItem && _seriesById.TryGetValue(id, out var st))
-            {
-                st.EsPorDefecto = true;
-                _defaultSerieByTipo[tipo.Codigo] = id;
-            }
-            else
-            {
-                // quitar default (si quitaste el flag en la misma serie actual)
-                if (_defaultSerieByTipo.TryGetValue(tipo.Codigo, out var cur) && cur == id)
-                    _defaultSerieByTipo.Remove(tipo.Codigo);
-            }
-        }
-
-        private SerieRead ToRead(SerieState st)
-            => new(
-                st.Id,
-                EmpresaId.Value,
-                st.Serie.Codigo,
-                st.Tipo,
-                st.EstablecimientoId,
-                st.CorrelativoActual,
-                st.TipoOperacion,
-                st.EsPorDefecto,
-                st.Bloqueada
-            );
-
         // ========= FORMAS DE PAGO =========
 
         private static string FpIndexKey(FormaDePago fp, string nombre)
@@ -689,25 +424,21 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
 
         private void BootstrapFormasDePago()
         {
-            // Orden base incremental
             var orden = 1;
+            AddFormaPagoSistema(FormaDePago.Contado(),            "Contado",               visible: true,  orden++, esPorDefecto: true);
+            AddFormaPagoSistema(FormaDePago.ContadoEfectivo(),    "Efectivo",              visible: true,  orden++, esPorDefecto: false);
+            AddFormaPagoSistema(FormaDePago.ContadoTarjeta(),     "Tarjeta",               visible: true,  orden++, esPorDefecto: false);
+            AddFormaPagoSistema(FormaDePago.ContadoTransferencia(),"Transferencia",        visible: true,  orden++, esPorDefecto: false);
+            AddFormaPagoSistema(FormaDePago.ContadoYape(),        "Yape",                  visible: true,  orden++, esPorDefecto: false);
+            AddFormaPagoSistema(FormaDePago.ContadoPlin(),        "Plin",                  visible: true,  orden++, esPorDefecto: false);
+            AddFormaPagoSistema(FormaDePago.ContadoDeposito(),    "Depósito en cuenta",    visible: true,  orden++, esPorDefecto: false);
 
-            // CONTADO (preconfiguradas). Default: "Contado".
-            AddFormaPagoSistema(FormaDePago.Contado(),           "Contado",               visible: true,  orden++, esPorDefecto: true);
-            AddFormaPagoSistema(FormaDePago.ContadoEfectivo(),   "Efectivo",              visible: true,  orden++, esPorDefecto: false);
-            AddFormaPagoSistema(FormaDePago.ContadoTarjeta(),    "Tarjeta",               visible: true,  orden++, esPorDefecto: false);
-            AddFormaPagoSistema(FormaDePago.ContadoTransferencia(),"Transferencia",       visible: true,  orden++, esPorDefecto: false);
-            AddFormaPagoSistema(FormaDePago.ContadoYape(),       "Yape",                  visible: true,  orden++, esPorDefecto: false);
-            AddFormaPagoSistema(FormaDePago.ContadoPlin(),       "Plin",                  visible: true,  orden++, esPorDefecto: false);
-            AddFormaPagoSistema(FormaDePago.ContadoDeposito(),   "Depósito en cuenta",    visible: true,  orden++, esPorDefecto: false);
-
-            // CRÉDITO (visibles, sin método; el nombre diferencia el plazo)
-            AddFormaPagoSistema(FormaDePago.Credito(), "Crédito 7 días",       visible: true,  orden++, esPorDefecto: false);
-            AddFormaPagoSistema(FormaDePago.Credito(), "Crédito 15 días",      visible: true,  orden++, esPorDefecto: false);
-            AddFormaPagoSistema(FormaDePago.Credito(), "Crédito 30 días",      visible: true,  orden++, esPorDefecto: false);
-            AddFormaPagoSistema(FormaDePago.Credito(), "Crédito 45 días",      visible: true,  orden++, esPorDefecto: false);
-            AddFormaPagoSistema(FormaDePago.Credito(), "Crédito 60 días",      visible: true,  orden++, esPorDefecto: false);
-            AddFormaPagoSistema(FormaDePago.Credito(), "Crédito 30-60-90 días",visible: true,  orden++, esPorDefecto: false);
+            AddFormaPagoSistema(FormaDePago.Credito(), "Crédito 7 días",        visible: true,  orden++, esPorDefecto: false);
+            AddFormaPagoSistema(FormaDePago.Credito(), "Crédito 15 días",       visible: true,  orden++, esPorDefecto: false);
+            AddFormaPagoSistema(FormaDePago.Credito(), "Crédito 30 días",       visible: true,  orden++, esPorDefecto: false);
+            AddFormaPagoSistema(FormaDePago.Credito(), "Crédito 45 días",       visible: true,  orden++, esPorDefecto: false);
+            AddFormaPagoSistema(FormaDePago.Credito(), "Crédito 60 días",       visible: true,  orden++, esPorDefecto: false);
+            AddFormaPagoSistema(FormaDePago.Credito(), "Crédito 30-60-90 días", visible: true,  orden++, esPorDefecto: false);
         }
 
         private Guid AddFormaPagoSistema(FormaDePago valor, string nombre, bool visible, int orden, bool esPorDefecto)
@@ -783,11 +514,9 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
             if (st.EsSistema && (nuevoValor is not null || !string.IsNullOrWhiteSpace(nuevoNombre)))
                 throw new InvalidOperationException("No se puede editar valor o nombre de una forma de pago del sistema.");
 
-            // visible siempre se puede cambiar (incluso en sistema), salvo que sea la default (no ocultar default)
             if (visible.HasValue && st.EsPorDefecto && visible.Value == false)
                 throw new InvalidOperationException("No se puede ocultar la forma de pago por defecto.");
 
-            // Recalcular índice si cambian valor o nombre
             var oldKey = FpIndexKey(st.Valor, st.Nombre);
             if (nuevoValor is not null || !string.IsNullOrWhiteSpace(nuevoNombre))
             {
@@ -853,8 +582,6 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
         private void BootstrapUnidadesDeMedida()
         {
             var orden = 1;
-
-            // Preconfiguradas comunes (SUNAT/UNECE). Default: NIU (UNIDAD).
             AddUnidadSistema(UnidadDeMedida.NIU, "UNIDAD",    visible: true,  orden++, esPorDefecto: true);
             AddUnidadSistema(UnidadDeMedida.ZZ,  "SERVICIO",  visible: true,  orden++, esPorDefecto: false);
             AddUnidadSistema(UnidadDeMedida.KGM, "KILOGRAMO", visible: true,  orden++, esPorDefecto: false);
@@ -862,7 +589,6 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
             AddUnidadSistema(UnidadDeMedida.LTR, "LITRO",     visible: true,  orden++, esPorDefecto: false);
             AddUnidadSistema(UnidadDeMedida.MTR, "METRO",     visible: true,  orden++, esPorDefecto: false);
 
-            // Algunos códigos comerciales frecuentes
             AddUnidadSistema((UnidadDeMedida)"DZN", "DOCENA",   visible: true,  orden++, esPorDefecto: false);
             AddUnidadSistema((UnidadDeMedida)"JR",  "FRASCO",   visible: true,  orden++, esPorDefecto: false);
             AddUnidadSistema((UnidadDeMedida)"RO",  "ROLLO",    visible: true,  orden++, esPorDefecto: false);

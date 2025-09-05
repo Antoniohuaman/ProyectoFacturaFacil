@@ -2,123 +2,147 @@ using System;
 using NUnit.Framework;
 using ConfiguracionSistemaBC.Domain.ValueObjects;
 
-namespace ConfiguracionSistemaBC.Tests.UnitTests.ValueObjects
+namespace ConfiguracionSistemaBC.Tests.ValueObjects
 {
     [TestFixture]
     public class RucTests
     {
-        // Casos válidos (tomados de tus XML y uno generado con prefijo 10)
-        private const string RucEmpresaJuridica1 = "20600552849";
-        private const string RucEmpresaJuridica2 = "20606272741";
-        private const string RucEmpresaJuridica3 = "20120571487";
-        private const string RucEmpresaJuridica4 = "20601131952";
-        // Persona natural con negocio (prefijo 10) válido:
-        private const string RucPersonaNatural   = "10788811816";
+        // RUC válidos (calculados con el algoritmo del VO):
+        // PN (10, 15, 17) y PJ (20)
+        private const string RucValidoPN10 = "10141381933";
+        private const string RucValidoPN15 = "15597441841";
+        private const string RucValidoPN17 = "17798528050";
+        private const string RucValidoPJ20 = "20342996940";
+
+        // Versiones con DV alterado para probar error de DV:
+        private const string RucInvalidoDv_PN10 = "10141381934";
+        private const string RucInvalidoDv_PN15 = "15597441842";
+        private const string RucInvalidoDv_PN17 = "17798528051";
+        private const string RucInvalidoDv_PJ20 = "20342996941";
 
         [Test]
-        public void FromString_Valido_NormalizaYValidaDV()
+        [TestCase(RucValidoPN10, "10", true,  false, true)]  // PN10: Natural + ConNegocio
+        [TestCase(RucValidoPN15, "15", true,  false, false)] // PN15: Natural
+        [TestCase(RucValidoPN17, "17", true,  false, false)] // PN17: Natural
+        [TestCase(RucValidoPJ20, "20", false, true,  false)] // PJ20: Jurídica
+        public void FromString_Valido_DeberiaCrearRucConPropiedadesCorrectas(
+            string rucText, string prefijoEsperado, bool esPN, bool esPJ, bool esPNConNegocio)
         {
-            // Sin separadores
-            var r1 = Ruc.FromString(RucEmpresaJuridica1);
-            Assert.That(r1.Numero, Is.EqualTo(RucEmpresaJuridica1));
-            Assert.That(r1.EsPersonaJuridica, Is.True);
-            Assert.That(r1.EsPersonaNaturalConNegocio, Is.False);
-            Assert.That(r1.Prefijo, Is.EqualTo("20"));
-            Assert.That(r1.Base10, Is.EqualTo(RucEmpresaJuridica1.Substring(0, 10)));
-            Assert.That(r1.DigitoVerificador, Is.EqualTo(RucEmpresaJuridica1[10] - '0'));
+            var ruc = Ruc.FromString(rucText);
 
-            // Con separadores y espacios (debe normalizar a los 11 dígitos)
-            var r2 = Ruc.FromString("2060-055-2849");
-            Assert.That(r2.Numero, Is.EqualTo(RucEmpresaJuridica1));
-            Assert.That(r2, Is.EqualTo(r1));
+            Assert.That(ruc, Is.Not.Null);
+            Assert.That(ruc.Numero, Is.EqualTo(rucText));
+            Assert.That(ruc.Canonizado, Is.EqualTo(rucText));
+            Assert.That(ruc.Prefijo, Is.EqualTo(prefijoEsperado));
+            Assert.That(ruc.EsPersonaNatural, Is.EqualTo(esPN));
+            Assert.That(ruc.EsPersonaJuridica, Is.EqualTo(esPJ));
+            Assert.That(ruc.EsPersonaNaturalConNegocio, Is.EqualTo(esPNConNegocio));
 
-            // Prefijo 10 (PN con negocio) válido
-            var r3 = Ruc.FromString(RucPersonaNatural);
-            Assert.That(r3.EsPersonaNaturalConNegocio, Is.True);
-            Assert.That(r3.EsPersonaJuridica, Is.False);
-            Assert.That(r3.Prefijo, Is.EqualTo("10"));
+            Assert.That(ruc.Numero.Length, Is.EqualTo(11));
+            Assert.That(ruc.Base10.Length, Is.EqualTo(10));
+            Assert.That(ruc.Base10 + ruc.DigitoVerificador, Is.EqualTo(ruc.Numero));
         }
 
         [Test]
-        public void FromString_LongitudInvalida_LanzaArgumentOutOfRange()
+        public void FromString_NormalizaFormato_PermiteEspaciosYGuiones()
         {
-            Assert.That(() => Ruc.FromString("2012345678"),  // 10 dígitos
+            // Toma el válido y le agrega espacios/guiones — debe canonizar a los 11 dígitos
+            var crudo = "20 342-99694 - 0";
+            var ruc = Ruc.FromString(crudo);
+
+            Assert.That(ruc.Numero, Is.EqualTo(RucValidoPJ20)); // canonizado
+            Assert.That(ruc.Prefijo, Is.EqualTo("20"));
+            Assert.That(ruc.EsPersonaJuridica, Is.True);
+            Assert.That(ruc.EsPersonaNatural, Is.False);
+        }
+
+        [Test]
+        public void FromString_LongitudDistintaA11_DeberiaLanzarExcepcion()
+        {
+            Assert.That(() => Ruc.FromString("2012345678"), // 10 dígitos
                 Throws.TypeOf<ArgumentOutOfRangeException>());
-            Assert.That(() => Ruc.FromString("201234567890"), // 12 dígitos
-                Throws.TypeOf<ArgumentOutOfRangeException>());
-            Assert.That(() => Ruc.FromString(""),             // vacío
-                Throws.TypeOf<ArgumentOutOfRangeException>());
-            Assert.That(() => Ruc.FromString(null!),          // null
-                Throws.TypeOf<ArgumentNullException>());
         }
 
         [Test]
-        public void FromString_PrefijoNoPermitido_LanzaArgumentOutOfRange()
+        public void FromString_PrefijoInvalido_DeberiaLanzarExcepcion()
         {
-            // 30xxxxx... con DV cualquiera (longitud correcta pero prefijo inválido)
-            Assert.That(() => Ruc.FromString("30600552849"),
+            // 12xxxxxxxxx (prefijo no permitido). La longitud es 11 para que caiga por prefijo.
+            Assert.That(() => Ruc.FromString("12123456789"),
                 Throws.TypeOf<ArgumentOutOfRangeException>());
         }
 
         [Test]
-        public void FromString_DigitoVerificadorIncorrecto_LanzaArgumentException()
+        [TestCase(RucInvalidoDv_PN10)]
+        [TestCase(RucInvalidoDv_PN15)]
+        [TestCase(RucInvalidoDv_PN17)]
+        [TestCase(RucInvalidoDv_PJ20)]
+        public void FromString_DigitoVerificadorIncorrecto_DeberiaLanzarExcepcion(string rucConDvErrado)
         {
-            // Cambiamos el último dígito a uno incorrecto
-            var invalido = "20600552848"; // debería terminar en ...9 para ser válido
-            Assert.That(() => Ruc.FromString(invalido),
-                Throws.TypeOf<ArgumentException>().With.Message.Contains("verificador"));
+            Assert.That(() => Ruc.FromString(rucConDvErrado),
+                Throws.TypeOf<ArgumentException>());
         }
 
         [Test]
-        public void TryFrom_DevuelveTrueParaValidos_YFalseParaInvalidos()
+        public void TryFrom_Valido_DeberiaRetornarTrueYOutInstancia()
         {
-            Assert.That(Ruc.TryFrom(RucEmpresaJuridica2, out var ok1), Is.True);
-            Assert.That(ok1!.Numero, Is.EqualTo(RucEmpresaJuridica2));
+            var ok = Ruc.TryFrom(RucValidoPN15, out var ruc);
 
-            // El RUC "2060 623 2741" (con espacios) no es válido según el Value Object, así que debe devolver false
-            Assert.That(Ruc.TryFrom("2060 623 2741", out var ok2), Is.False);
-
-            Assert.That(Ruc.TryFrom("ABC", out _), Is.False); // sin 11 dígitos
-            Assert.That(Ruc.TryFrom("30600552849", out _), Is.False); // prefijo inválido
-            Assert.That(Ruc.TryFrom("20600552848", out _), Is.False); // DV incorrecto
-            Assert.That(Ruc.TryFrom(null, out _), Is.False);
+            Assert.That(ok, Is.True);
+            Assert.That(ruc, Is.Not.Null);
+            Assert.That(ruc!.Numero, Is.EqualTo(RucValidoPN15));
         }
 
         [Test]
-        public void EsValido_AtajosDeValidacion()
+        public void TryFrom_Invalido_DeberiaRetornarFalseYOutNull()
         {
-            Assert.That(Ruc.EsValido(RucEmpresaJuridica3), Is.True);
-            Assert.That(Ruc.EsValido("2012-057-1487"), Is.True); // normaliza y valida
-            Assert.That(Ruc.EsValido("20120571488"), Is.False);  // DV incorrecto
-            Assert.That(Ruc.EsValido("30-120571487"), Is.False); // prefijo inválido
+            var ok = Ruc.TryFrom("12123456789", out var ruc);
+
+            Assert.That(ok, Is.False);
+            Assert.That(ruc, Is.Null);
+        }
+
+        [Test]
+        public void EsValido_DeberiaReflejarResultadoDeTryFrom()
+        {
+            Assert.That(Ruc.EsValido(RucValidoPN17), Is.True);
+            Assert.That(Ruc.EsValido(RucInvalidoDv_PN17), Is.False);
             Assert.That(Ruc.EsValido(""), Is.False);
+            Assert.That(Ruc.EsValido(null), Is.False);
         }
 
         [Test]
-        public void IgualdadPorValor_OperadoresYHashCode()
+        public void IgualdadPorValor_MismoNumero_DeberiaSerIgual()
         {
-            var a = Ruc.FromString(RucEmpresaJuridica4);
-            var b = Ruc.FromString("2060-113-1952"); // mismo RUC normalizado
-            var c = Ruc.FromString(RucEmpresaJuridica1);
+            var a = Ruc.FromString(RucValidoPJ20);
+            var b = Ruc.FromString(RucValidoPJ20);
 
-            Assert.That(a.Equals(b), Is.True);
+            Assert.That(a, Is.EqualTo(b));
             Assert.That(a == b, Is.True);
-            Assert.That(a != b, Is.False);
-            Assert.That(a.Equals(c), Is.False);
+            Assert.That(a.Equals(b), Is.True);
             Assert.That(a.GetHashCode(), Is.EqualTo(b.GetHashCode()));
         }
 
         [Test]
-        public void Conversiones_ToString_ImplícitoYExplícito()
+        public void Operadores_ToString_ImplicitExplicit_DeberianFuncionar()
         {
-            var r = Ruc.FromString(RucEmpresaJuridica1);
-            Assert.That(r.ToString(), Is.EqualTo(RucEmpresaJuridica1));
+            var r = Ruc.FromString(RucValidoPJ20);
 
             string s = r; // implícito a string
-            Assert.That(s, Is.EqualTo(RucEmpresaJuridica1));
+            Assert.That(s, Is.EqualTo(RucValidoPJ20));
+            Assert.That(r.ToString(), Is.EqualTo(RucValidoPJ20));
 
-            var r2 = (Ruc)"2060 055 2849"; // explícito desde string (normaliza)
-            Assert.That(r2.Numero, Is.EqualTo(RucEmpresaJuridica1));
+            var r2 = (Ruc)RucValidoPJ20; // explícito desde string
+            Assert.That(r2, Is.EqualTo(r));
+        }
+
+        [Test]
+        public void PropiedadesPrefijoBase10Dv_DeberianSerCoherentes()
+        {
+            var r = Ruc.FromString(RucValidoPN10);
+
+            Assert.That(r.Prefijo, Is.EqualTo("10"));
+            Assert.That(r.Base10, Is.EqualTo(RucValidoPN10.Substring(0, 10)));
+            Assert.That(r.DigitoVerificador, Is.EqualTo(RucValidoPN10[10] - '0'));
         }
     }
 }

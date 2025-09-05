@@ -14,8 +14,7 @@ namespace ConfiguracionSistemaBC.Domain.Entities
 		public string Nombre { get; private set; } = string.Empty;
 		public string Codigo { get; private set; } = string.Empty;
 	public DomicilioFiscal Direccion { get; private set; } = null!;
-		public Telefono Telefono { get; private set; } = null!;
-	public Email? Email { get; private set; }
+
 
 	public bool Habilitado { get; private set; } = true;
 	public bool EsPrincipal { get; private set; } = false;
@@ -28,7 +27,7 @@ namespace ConfiguracionSistemaBC.Domain.Entities
 			EmpresaId = null!;
 		}
 
-	public Establecimiento(EstablecimientoId id, EmpresaId empresaId, string nombre, string codigo, DomicilioFiscal direccion, Telefono telefono, Email? email, bool habilitado = true, bool esPrincipal = false)
+	public Establecimiento(EstablecimientoId id, EmpresaId empresaId, string nombre, string codigo, DomicilioFiscal direccion, bool habilitado = true, bool esPrincipal = false)
 	{
 		if (string.IsNullOrWhiteSpace(nombre)) throw new BusinessRuleException("El nombre es obligatorio.");
 		if (string.IsNullOrWhiteSpace(codigo)) throw new BusinessRuleException("El código es obligatorio.");
@@ -37,22 +36,18 @@ namespace ConfiguracionSistemaBC.Domain.Entities
 		Nombre = nombre;
 		Codigo = codigo;
 		Direccion = direccion ?? throw new ArgumentNullException(nameof(direccion));
-		Telefono = telefono ?? throw new ArgumentNullException(nameof(telefono));
-		Email = email;
 		Habilitado = habilitado;
 		EsPrincipal = esPrincipal;
 	}
 
 		// Métodos de negocio
-	public void ActualizarDatos(string nombre, string codigo, DomicilioFiscal direccion, Telefono telefono, Email? email)
+	public void ActualizarDatos(string nombre, string codigo, DomicilioFiscal direccion)
 	{
 		if (string.IsNullOrWhiteSpace(nombre)) throw new BusinessRuleException("El nombre es obligatorio.");
 		if (string.IsNullOrWhiteSpace(codigo)) throw new BusinessRuleException("El código es obligatorio.");
 		Nombre = nombre;
 		Codigo = codigo;
 		Direccion = direccion ?? throw new ArgumentNullException(nameof(direccion));
-		Telefono = telefono ?? throw new ArgumentNullException(nameof(telefono));
-		Email = email;
 	}
 
 	public void Deshabilitar() => Habilitado = false;

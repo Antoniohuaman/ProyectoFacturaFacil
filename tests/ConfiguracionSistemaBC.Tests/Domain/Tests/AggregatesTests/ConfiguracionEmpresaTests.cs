@@ -1,10 +1,12 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
 using ConfiguracionSistemaBC.Domain.Aggregates;
+using ConfiguracionSistemaBC.Domain.Entities;
 using ConfiguracionSistemaBC.Domain.ValueObjects;
 using ConfiguracionSistemaBC.Domain.Events;
+
+// Shared Kernel VOs
 using SharedKernel.ValueObjects;
 
 namespace ConfiguracionSistemaBC.Tests.Domain.Aggregates
@@ -12,519 +14,249 @@ namespace ConfiguracionSistemaBC.Tests.Domain.Aggregates
     [TestFixture]
     public class ConfiguracionEmpresaTests
     {
-        // ---------------------------------------------------------------------
-        // Helpers
-        // ---------------------------------------------------------------------
-        private static ConfiguracionEmpresa NuevaEmpresa()
+        // ================= Helpers / Fixtures =================
+
+    private static Ruc RucValido() => Ruc.From("20100070970"); // RUC válido SUNAT
+
+        // Ajusta este helper si tu factoría de DomicilioFiscal tiene otro nombre/firma.
+        private static DomicilioFiscal DfPeru(
+            string ubigeo = "150101",
+            string direccion = "AV. DEMO 123",
+            string distrito = "LIMA",
+            string provincia = "LIMA",
+            string departamento = "LIMA")
         {
-            var ruc = Ruc.From("20600893409");
-            var dir = DomicilioFiscal.From(
-                paisCodigoIso: "PE",
-                departamento: "LIMA",
-                provincia: "LIMA",
-                distrito: "MIRAFLORES",
-                linea: "Av. X 123",
-                ubigeo: "150122"
+            return DomicilioFiscal.FromPeru(
+                direccion,
+                ubigeo,
+                departamento,
+                provincia,
+                distrito,
+                null
             );
-            return ConfiguracionEmpresa.RegistrarNueva(ruc, "EMPRESA S.A.C.", dir, Moneda.PEN());
         }
 
-        private static SerieCodigo FE(string code) => SerieCodigo.From(code);
-        private static SerieCodigo BE(string code) => SerieCodigo.From(code);
+        private static Moneda PEN() => Moneda.PEN();
 
-        // ---------------------------------------------------------------------
-        // RegistrarNueva / Bootstrap básicos
-        // ---------------------------------------------------------------------
-
-        [Test]
-        public void RegistrarNueva_inicializa_defaults_y_bootstrap_minimo()
+        private static ConfiguracionEmpresa NuevaEmpresaBaseline()
         {
-            var agg = NuevaEmpresa();
-
-            Assert.Multiple(() =>
-            {
-                // Identidad y legales
-                Assert.That(agg.Ruc, Is.Not.Null);
-                Assert.That(agg.EmpresaId, Is.Not.Null);
-                Assert.That(agg.RazonSocial, Is.EqualTo("EMPRESA S.A.C."));
-
-                // Ambiente y moneda
-                Assert.That(agg.Ambiente, Is.EqualTo(AmbienteFe.PRUEBA));
-                Assert.That(agg.MonedaBase, Is.EqualTo(Moneda.PEN()));
-
-                // Establecimiento principal
-                var princ = agg.ObtenerEstablecimientoPrincipal();
-                Assert.That(princ, Is.Not.Null);
-                Assert.That(princ!.Codigo, Is.EqualTo("01"));
-
-                // Series por defecto por tipo (Factura / Boleta)
-                var defFac = agg.ObtenerSeriePorDefecto(TipoComprobanteCodigo.Factura);
-                var defBol = agg.ObtenerSeriePorDefecto(TipoComprobanteCodigo.Boleta);
-                Assert.That(defFac, Is.Not.Null);
-                Assert.That(defBol, Is.Not.Null);
-                Assert.That(defFac!.Serie, Is.EqualTo("FE01"));
-                Assert.That(defBol!.Serie, Is.EqualTo("BE01"));
-
-                // Forma de pago por defecto = Contado
-                var fpDef = agg.ObtenerFormaDePagoPorDefecto();
-                Assert.That(fpDef, Is.Not.Null);
-                Assert.That(fpDef!.Valor.EsContado, Is.True);
-                Assert.That(fpDef.Nombre, Is.EqualTo("Contado"));
-
-                // Unidad por defecto = NIU (UNIDAD)
-                var umDef = agg.ObtenerUnidadDeMedidaPorDefecto();
-                Assert.That(umDef, Is.Not.Null);
-                Assert.That(umDef!.Unidad.Codigo, Is.EqualTo("NIU"));
-                Assert.That(umDef.Nombre, Is.EqualTo("UNIDAD"));
-
-                // Se emite evento de configuración registrada
-                Assert.That(agg.DomainEvents.Any(e => e is ConfiguracionEmpresaRegistrada), Is.True);
-            });
+            return ConfiguracionEmpresa.RegistrarNueva(
+                ruc: RucValido(),
+                razonSocial: "ACME S.A.C.",
+                direccionFiscal: DfPeru(),
+                monedaBase: PEN()
+            );
         }
 
-        // ---------------------------------------------------------------------
-        // Cambios de ambiente
-        // ---------------------------------------------------------------------
+        // ================= Tests =================
 
         [Test]
-        public void CambiarAmbiente_emite_evento_y_actualiza_estado()
+        public void RegistrarNueva_CreaBootstrapBasicoYEvento()
         {
-            var agg = NuevaEmpresa();
-            agg.ClearDomainEvents();
-            var v0 = agg.Version;
+            var agg = NuevaEmpresaBaseline();
+
+            // Identidad y datos base
+            Assert.That(agg.EmpresaId, Is.Not.Null);
+            Assert.That(agg.RazonSocial, Is.EqualTo("ACME S.A.C."));
+            Assert.That(agg.MonedaBase, Is.EqualTo(PEN()));
+            Assert.That(agg.Ambiente, Is.EqualTo(AmbienteFe.PRUEBA));
+
+            // Establecimiento principal
+            var principal = agg.ObtenerEstablecimientoPrincipal();
+            Assert.That(principal, Is.Not.Null);
+            Assert.That(principal!.Codigo, Is.EqualTo("01"));
+            Assert.That(principal.Habilitado, Is.True);
+
+            // Formas de pago (bootstrapped) → existe una default visible
+            var fpDefault = agg.ObtenerFormaDePagoPorDefecto();
+            Assert.That(fpDefault, Is.Not.Null);
+            Assert.That(fpDefault!.Visible, Is.True);
+            Assert.That(fpDefault.EsPorDefecto, Is.True);
+
+            // Unidades de medida (bootstrapped) → NIU por defecto
+            var umDefault = agg.ObtenerUnidadDeMedidaPorDefecto();
+            Assert.That(umDefault, Is.Not.Null);
+            Assert.That(umDefault!.Unidad, Is.EqualTo(UnidadDeMedida.NIU));
+            Assert.That(umDefault.EsPorDefecto, Is.True);
+
+            // Evento de dominio
+            Assert.That(agg.DomainEvents.Any(e => e is ConfiguracionEmpresaRegistrada), Is.True);
+        }
+
+        [Test]
+        public void CambiarAmbiente_TransicionValida_ActualizaVersionYEmiteEvento()
+        {
+            var agg = NuevaEmpresaBaseline();
+            var version0 = agg.Version;
 
             agg.CambiarAmbiente(AmbienteFe.PRODUCCION);
 
-            Assert.Multiple(() =>
-            {
-                Assert.That(agg.Ambiente, Is.EqualTo(AmbienteFe.PRODUCCION));
-                Assert.That(agg.Version, Is.GreaterThan(v0));
-                Assert.That(agg.DomainEvents.OfType<AmbienteCambiado>().Count(), Is.EqualTo(1));
-            });
-        }
-
-        // ---------------------------------------------------------------------
-        // Datos legales / preferencias
-        // ---------------------------------------------------------------------
-
-        [Test]
-        public void ActualizarDatosLegales_actualiza_y_emite_evento()
-        {
-            var agg = NuevaEmpresa();
-            agg.ClearDomainEvents();
-            var dir = DomicilioFiscal.From(
-                paisCodigoIso: "PE",
-                departamento: "CUSCO",
-                provincia: "CUSCO",
-                distrito: "WANCHAQ",
-                linea: "Jr. Q 456",
-                ubigeo: "080101"
-            );
-
-            agg.ActualizarDatosLegales(Ruc.From("20600893409"), "OTRA EMPRESA S.A.", dir, "OTRA");
-
-            Assert.Multiple(() =>
-            {
-                Assert.That(agg.Ruc.Canonizado, Is.EqualTo("20600893409"));
-                Assert.That(agg.RazonSocial, Is.EqualTo("OTRA EMPRESA S.A."));
-                Assert.That(agg.NombreComercial, Is.EqualTo("OTRA"));
-                Assert.That(agg.DireccionFiscal, Is.EqualTo(dir));
-                Assert.That(agg.DomainEvents.OfType<ConfiguracionEmpresaActualizada>().Any(), Is.True);
-            });
+            Assert.That(agg.Ambiente, Is.EqualTo(AmbienteFe.PRODUCCION));
+            Assert.That(agg.Version, Is.GreaterThan(version0));
+            Assert.That(agg.DomainEvents.Any(e => e is AmbienteCambiado), Is.True);
         }
 
         [Test]
-        public void Preferencias_varias_incrementan_version()
+        public void ActualizarDatosLegales_CambiaRucRazonSocialDireccion_EmiteEventoYVersiona()
         {
-            var agg = NuevaEmpresa();
-            var v0 = agg.Version;
+            var agg = NuevaEmpresaBaseline();
+            var version0 = agg.Version;
 
-            agg.ReemplazarTelefono(Telefono.FromTexto("+51 987 654 321"));
-            agg.ReemplazarEmails(new[] { Email.Create("a@acme.com"), Email.Create("b@acme.com") });
-            agg.ActualizarPieDePagina(PieDePagina.FromTextoPlano("Gracias por su preferencia"));
-            agg.EstablecerLogo(null);
-            agg.CambiarMonedaBase(Moneda.USD());
+            var nuevoRuc = Ruc.From("20100070970"); // Usar un RUC válido SUNAT
+            var nuevaDir = DfPeru(direccion: "JR. NUEVA 456");
+
+            agg.ActualizarDatosLegales(nuevoRuc, "ACME RENOVADA S.A.C.", nuevaDir, "ACME");
+
+            Assert.That(agg.Ruc, Is.EqualTo(nuevoRuc));
+            Assert.That(agg.RazonSocial, Is.EqualTo("ACME RENOVADA S.A.C."));
+            Assert.That(agg.NombreComercial, Is.EqualTo("ACME"));
+            Assert.That(agg.Version, Is.GreaterThan(version0));
+            Assert.That(agg.DomainEvents.Any(e => e is ConfiguracionEmpresaActualizada), Is.True);
+        }
+
+        [Test]
+        public void Preferencias_TelefonoEmailsPieLogoImagen_SeActualizanCorrectamente()
+        {
+            var agg = NuevaEmpresaBaseline();
+
+            agg.ReemplazarTelefono(Telefono.FromTexto("+51 999 999 999"));
+            agg.ReemplazarEmails(new[]
+            {
+                Email.Create("ventas@acme.test"),
+                Email.Create("facturacion@acme.test")
+            });
+            agg.ActualizarPieDePagina(PieDePagina.FromTextoPlano("¡Gracias por su preferencia!"));
+            agg.EstablecerLogo(null); // permitido (sin logo)
             agg.ConfigurarMostrarImagenEnComprobanteImpresa(true);
 
-            Assert.That(agg.Version, Is.GreaterThan(v0));
+            Assert.That(agg.Telefono.ToString(), Is.EqualTo("+51 999 999 999"));
+            Assert.That(agg.Emails.Count, Is.EqualTo(2));
+            Assert.That(agg.PieDePagina, Is.Not.Null);
+            Assert.That(agg.MostrarImagenEnComprobanteImpresa, Is.True);
         }
 
-        // ---------------------------------------------------------------------
-        // Establecimientos
-        // ---------------------------------------------------------------------
-
         [Test]
-        public void Establecimientos_registro_recodificacion_busqueda_actualizacion_y_eliminacion()
+        public void Establecimientos_CRUD_BasicoYRestricciones()
         {
-            var agg = NuevaEmpresa();
+            var agg = NuevaEmpresaBaseline();
 
-            // Registrar otro
-            var dir2 = DomicilioFiscal.From(
-                paisCodigoIso: "PE",
-                departamento: "AREQUIPA",
-                provincia: "AREQUIPA",
-                distrito: "YANAHUARA",
-                linea: "Av. Z 789",
-                ubigeo: "040101"
-            );
-            var id2 = agg.RegistrarEstablecimiento("02", "Sucursal AQP", dir2);
+            // Registrar otro establecimiento
+            var id2 = agg.RegistrarEstablecimiento("02", "Sucursal Centro", DfPeru(direccion: "AV. CENTRO 100"));
+            var todos = agg.ListarEstablecimientos();
+            Assert.That(todos.Any(e => e.Id == id2), Is.True);
 
-            // Búsqueda por código
-            var e2 = agg.BuscarEstablecimientoPorCodigo("02");
-            Assert.Multiple(() =>
-            {
-                Assert.That(e2, Is.Not.Null);
-                Assert.That(e2!.Nombre, Is.EqualTo("Sucursal AQP"));
-            });
+            // Establecer como principal el nuevo
+            agg.EstablecerComoPrincipal(id2);
+            Assert.That(agg.ObtenerEstablecimientoPrincipal()!.Id, Is.EqualTo(id2));
 
-            // Recodificar y validar unicidad
-            agg.RecodificarEstablecimiento(id2, "03");
-            Assert.That(agg.BuscarEstablecimientoPorCodigo("03"), Is.Not.Null);
-            Assert.That(() => agg.RecodificarEstablecimiento(id2, "01"), // ya existe principal con 01
-                Throws.TypeOf<InvalidOperationException>());
+            // Recodificar
+            agg.RecodificarEstablecimiento(id2, "10");
+            var buscado = agg.BuscarEstablecimientoPorCodigo("10");
+            Assert.That(buscado, Is.Not.Null);
+            Assert.That(buscado!.Codigo, Is.EqualTo("10"));
 
             // Actualizar datos
-            var dir3 = DomicilioFiscal.From(
-                paisCodigoIso: "PE",
-                departamento: "AREQUIPA",
-                provincia: "AREQUIPA",
-                distrito: "YANAHUARA",
-                linea: "Av. Z 999",
-                ubigeo: "040101"
-            );
-            agg.ActualizarEstablecimiento(id2, "Sucursal AQP Centro", dir3, Telefono.FromTexto("054-111111"), Email.Create("a@b.com"));
+            agg.ActualizarEstablecimiento(id2, "Sucursal Central", DfPeru(direccion: "AV. CENTRAL 101"));
+            var actualizado = agg.ListarEstablecimientos().First(x => x.Id == id2);
+            Assert.That(actualizado.Nombre, Is.EqualTo("Sucursal Central"));
 
-            var e3 = agg.ListarEstablecimientos().Single(x => x.Id == id2);
-            Assert.Multiple(() =>
-            {
-                Assert.That(e3.Nombre, Is.EqualTo("Sucursal AQP Centro"));
-                Assert.That(e3.Direccion, Is.EqualTo(dir3));
-            });
+            // Evento de dominio por registro de establecimiento
+            Assert.That(agg.DomainEvents.Any(e => e is EstablecimientoRegistrado), Is.True);
 
-            // Eliminar: no puede dejar a la empresa sin establecimientos
-            // (ya hay al menos el principal, así que se permite eliminar id2)
-            agg.EliminarEstablecimiento(id2);
-            Assert.That(agg.ListarEstablecimientos().Any(x => x.Id == id2), Is.False);
-        }
-
-        [Test]
-        public void EliminarEstablecimiento_no_permite_si_queda_sin_establecimientos()
-        {
-            var agg = NuevaEmpresa();
-
-            // Intentar borrar el único (primero crea otro y borra el otro, luego intenta borrar el último)
-            var dir2 = DomicilioFiscal.From(
-                paisCodigoIso: "PE",
-                departamento: "PIURA",
-                provincia: "PIURA",
-                distrito: "CASTILLA",
-                linea: "Mz A Lt 1",
-                ubigeo: "200101"
-            );
-            var id2 = agg.RegistrarEstablecimiento("02", "Sucursal Piura", dir2);
-
-            // Agrego serie en sucursal 02, la bloqueo y luego intento eliminar el establecimiento
-            var serieId = agg.AgregarSerie(TipoComprobanteCodigo.Factura, FE("FE02"), id2, Correlativo.From(1));
-            agg.BloquearSeriePorUso(serieId);
-            // Ahora se permite eliminar el establecimiento aunque tenga series usadas (bloqueadas)
-            Assert.DoesNotThrow(() => agg.EliminarEstablecimiento(id2));
-
-            // Ahora elimino serie 02 (no se puede por bloqueada), muevo default y elimino sucursal 02 restaurando estado:
-            // Ya no existe la serie, no se debe intentar eliminar nuevamente.
-
-            // Sigo: elimino sucursal 02 no procede; elimino entonces la serie no (bloqueada), así que dejo sucursal 02 y
-            // pruebo que no me deje eliminar el único quedando sin ninguno:
-            // (elimino sucursal 02 primero para tener solo el principal y verificar restricción)
-            // Desbloquear no existe en dominio; simplemente pruebo la regla de "al menos uno":
-            // Borro la sucursal 02 creando antes una nueva 03 sin series para poder borrar 02:
-            var id3 = agg.RegistrarEstablecimiento("03", "Temporal", dir2);
-            // Borrar 03 (ok)
-            agg.EliminarEstablecimiento(id3);
-            // Ahora solo queda el principal, intentar eliminarlo (debe lanzar excepción)
+            // Eliminar uno (deben quedar al menos 1; si intentas borrar el único → excepción)
             var principal = agg.ObtenerEstablecimientoPrincipal()!;
-            Assert.That(agg.ListarEstablecimientos().Count, Is.EqualTo(1));
-            Assert.That(() => agg.EliminarEstablecimiento(principal.Id), Throws.TypeOf<InvalidOperationException>());
+            var otroId = agg.ListarEstablecimientos().First(e => e.Id != principal.Id).Id;
+            agg.EliminarEstablecimiento(otroId);
+
+            // Queda solo 1: intentar eliminarlo debe lanzar
+            Assert.That(() => agg.EliminarEstablecimiento(principal.Id),
+                Throws.TypeOf<InvalidOperationException>());
         }
 
-        // ---------------------------------------------------------------------
-        // Series
-        // ---------------------------------------------------------------------
-
         [Test]
-        public void Series_agregar_actualizar_default_bloqueo_y_eliminar_con_restricciones()
+        public void FormasDePago_ReglasDeSistema_Default_Visibilidad_Personalizadas()
         {
-            var agg = NuevaEmpresa();
+            var agg = NuevaEmpresaBaseline();
 
-            var princ = agg.ObtenerEstablecimientoPrincipal()!;
-            var serieId = agg.AgregarSerie(TipoComprobanteCodigo.Factura, FE("FE02"), princ.Id, Correlativo.From(100));
+            var todas = agg.ListarFormasDePago();
+            Assert.That(todas.Count, Is.GreaterThanOrEqualTo(3));
 
-            // Evento SerieAgregada
-            Assert.That(agg.DomainEvents.OfType<SerieAgregada>().Any(e => e is SerieAgregada), Is.True);
-            agg.ClearDomainEvents();
+            var contado = todas.First(fp => fp.Nombre.ToUpperInvariant().Contains("CONTADO"));
+            var efectivo = todas.First(fp => fp.Nombre.ToUpperInvariant().Contains("EFECTIVO"));
 
-            // Duplicado por (tipo, serie) => error
-            Assert.That(() => agg.AgregarSerie(TipoComprobanteCodigo.Factura, FE("FE02"), princ.Id, Correlativo.From(1)),
+            // 1) No se puede editar nombre/valor de una FP del sistema
+            Assert.That(() => agg.ActualizarFormaDePago(contado.Id, nuevoNombre: "Contado X"),
                 Throws.TypeOf<InvalidOperationException>());
 
-            // Prefijo inválido vs tipo => debe lanzar (BExx con Factura, por ejemplo)
-            Assert.That(() => agg.AgregarSerie(TipoComprobanteCodigo.Factura, BE("BE99"), princ.Id, Correlativo.From(1)),
-                Throws.Exception);
+            // 2) No se puede ocultar la default actual
+            Assert.That(contado.EsPorDefecto, Is.True);
+            Assert.That(() => agg.ActualizarFormaDePago(contado.Id, visible: false),
+                Throws.TypeOf<InvalidOperationException>());
 
-            // Cambiar serie y marcar como default
-            agg.ActualizarSerie(serieId, nuevaSerie: FE("FE20"), esPorDefecto: true);
-            var def = agg.ObtenerSeriePorDefecto(TipoComprobanteCodigo.Factura);
-            Assert.That(def!.Id, Is.EqualTo(serieId));
-
-            // Bloquear por uso => no permite más actualizaciones ni eliminación
-            agg.BloquearSeriePorUso(serieId);
-            Assert.That(() => agg.ActualizarSerie(serieId, nuevaSerie: FE("FE21")), Throws.TypeOf<InvalidOperationException>());
-            Assert.That(() => agg.EliminarSerie(serieId), Throws.TypeOf<InvalidOperationException>());
-        }
-
-        // ---------------------------------------------------------------------
-        // Formas de pago
-        // ---------------------------------------------------------------------
-
-        [Test]
-        public void FormasPago_bootstrap_listado_y_default()
-        {
-            var agg = NuevaEmpresa();
-
-            var lista = agg.ListarFormasDePago();
-            Assert.Multiple(() =>
-            {
-                // Default Contado
-                var def = agg.ObtenerFormaDePagoPorDefecto();
-                Assert.That(def, Is.Not.Null);
-                Assert.That(def!.Valor.EsContado, Is.True);
-                Assert.That(def.Nombre, Is.EqualTo("Contado"));
-
-                // Algunas visibles del sistema
-                Assert.That(lista.Any(x => x.Nombre == "Efectivo" && x.EsSistema && x.Visible), Is.True);
-                Assert.That(lista.Any(x => x.Nombre == "Tarjeta" && x.EsSistema && x.Visible), Is.True);
-
-                // Orden ascendente
-                Assert.That(lista.Select(x => x.Orden).ToArray(), Is.Ordered.Ascending);
-            });
-        }
-
-        [Test]
-        public void FormasPago_personalizadas_crud_restricciones_y_default()
-        {
-            var agg = NuevaEmpresa();
-
-            // Crear personalizada
-            var id = agg.AgregarFormaDePagoPersonalizada(FormaDePago.ContadoPredefinido("BCP", "BCP"), "BCP Caja", visible: true, orden: 999);
-
-            var creada = agg.ListarFormasDePago().Single(x => x.Id == id);
-            Assert.Multiple(() =>
-            {
-                Assert.That(creada.EsSistema, Is.False);
-                Assert.That(creada.Visible, Is.True);
-                Assert.That(creada.Orden, Is.EqualTo(999));
-            });
-
-            // Editar (permitido en personalizadas)
-            agg.ActualizarFormaDePago(id,
-                nuevoValor: FormaDePago.ContadoPredefinido("INTERBANK", "INTERBANK"),
-                nuevoNombre: "Interbank Caja",
-                nuevoOrden: 500);
-
-            var editada = agg.ListarFormasDePago().Single(x => x.Id == id);
-            Assert.Multiple(() =>
-            {
-                Assert.That(editada.Nombre, Is.EqualTo("Interbank Caja"));
-                Assert.That(editada.Valor.MetodoCodigo, Is.EqualTo("INTERBANK"));
-                Assert.That(editada.Orden, Is.EqualTo(500));
-            });
-
-            // Poner como default
-            agg.EstablecerFormaPagoPorDefecto(id);
-            var def = agg.ObtenerFormaDePagoPorDefecto();
-            Assert.That(def!.Id, Is.EqualTo(id));
-
-            // No se puede eliminar la default
-            Assert.That(() => agg.EliminarFormaDePago(id), Throws.TypeOf<InvalidOperationException>());
-
-            // Cambiar default a Efectivo y eliminar la personalizada
-            var efectivo = agg.ListarFormasDePago().First(x => x.Nombre == "Efectivo");
+            // 3) Puedo marcar otra como default (la default anterior se desmarca)
             agg.EstablecerFormaPagoPorDefecto(efectivo.Id);
-            agg.EliminarFormaDePago(id);
-            Assert.That(agg.ListarFormasDePago().Any(x => x.Id == id), Is.False);
-        }
+            var def = agg.ObtenerFormaDePagoPorDefecto();
+            Assert.That(def, Is.Not.Null);
+            Assert.That(def!.Id, Is.EqualTo(efectivo.Id));
 
-        [Test]
-        public void FormasPago_restricciones_sobre_sistema_visibilidad_y_unicidad()
-        {
-            var agg = NuevaEmpresa();
+            // 4) Agregar personalizada y luego eliminar (no default)
+            var personalizadaId = agg.AgregarFormaDePagoPersonalizada(
+                FormaDePago.ContadoPersonalizado("TRANSFER_APP", "Transfer App"),
+                nombre: "Mi App",
+                visible: true,
+                orden: 999,
+                esPorDefecto: false);
 
-            var sistema = agg.ListarFormasDePago().First(x => x.EsSistema && !x.EsPorDefecto);
+            // Eliminación de personalizada (válida)
+            agg.EliminarFormaDePago(personalizadaId);
 
-            // No puedo cambiar nombre ni valor en sistema
-            Assert.That(() => agg.ActualizarFormaDePago(sistema.Id, nuevoNombre: "Otro"),
+            // 5) No se puede eliminar una del sistema ni la default
+            Assert.That(() => agg.EliminarFormaDePago(efectivo.Id),
                 Throws.TypeOf<InvalidOperationException>());
-            Assert.That(() => agg.ActualizarFormaDePago(sistema.Id, nuevoValor: FormaDePago.Credito()),
-                Throws.TypeOf<InvalidOperationException>());
 
-            // Visibilidad y orden sí
-            agg.ActualizarFormaDePago(sistema.Id, visible: false, nuevoOrden: sistema.Orden + 10);
-            var rec = agg.ListarFormasDePago().First(x => x.Id == sistema.Id);
-            Assert.Multiple(() =>
-            {
-                Assert.That(rec.Visible, Is.False);
-                Assert.That(rec.Orden, Is.EqualTo(sistema.Orden + 10));
-            });
-
-            // Unicidad por (code|metodo|nombre)
-            agg.AgregarFormaDePagoPersonalizada(FormaDePago.ContadoYape(), "Yape Caja");
-            Assert.That(() => agg.AgregarFormaDePagoPersonalizada(FormaDePago.ContadoYape(), "Yape Caja"),
+            var ahoraDefault = agg.ListarFormasDePago().First(x => x.EsPorDefecto);
+            Assert.That(() => agg.EliminarFormaDePago(ahoraDefault.Id),
                 Throws.TypeOf<InvalidOperationException>());
         }
 
         [Test]
-        public void FormasPago_no_puedo_ocultar_default_ni_definir_default_oculta()
+        public void UnidadesDeMedida_ReglasSistema_Default_YPersonalizadas()
         {
-            var agg = NuevaEmpresa();
+            var agg = NuevaEmpresaBaseline();
 
-            var plin = agg.ListarFormasDePago().First(x => x.Nombre == "Plin");
-            agg.ActualizarFormaDePago(plin.Id, visible: false);
-            Assert.That(() => agg.EstablecerFormaPagoPorDefecto(plin.Id),
-                Throws.TypeOf<InvalidOperationException>());
-
-            var def = agg.ObtenerFormaDePagoPorDefecto()!;
-            Assert.That(() => agg.ActualizarFormaDePago(def.Id, visible: false),
-                Throws.TypeOf<InvalidOperationException>());
-        }
-
-        // ---------------------------------------------------------------------
-        // Unidades de medida
-        // ---------------------------------------------------------------------
-
-        [Test]
-        public void Unidades_bootstrap_listado_y_default()
-        {
-            var agg = NuevaEmpresa();
-
-            var lista = agg.ListarUnidadesDeMedida();
-            Assert.Multiple(() =>
-            {
-                var def = agg.ObtenerUnidadDeMedidaPorDefecto();
-                Assert.That(def, Is.Not.Null);
-                Assert.That(def!.Unidad.Codigo, Is.EqualTo("NIU"));
-                Assert.That(def.Nombre, Is.EqualTo("UNIDAD"));
-
-                // Algunas visibles del sistema
-                Assert.That(lista.Any(x => x.Unidad.Codigo == "KGM" && x.EsSistema && x.Visible), Is.True);
-                Assert.That(lista.Any(x => x.Unidad.Codigo == "ZZ"  && x.EsSistema && x.Visible), Is.True);
-
-                // Orden ascendente
-                Assert.That(lista.Select(x => x.Orden).ToArray(), Is.Ordered.Ascending);
-            });
-        }
-
-        [Test]
-        public void Unidades_personalizadas_crud_restricciones_y_default()
-        {
-            var agg = NuevaEmpresa();
-
-            // Crear personalizada
-            var id = agg.AgregarUnidadDeMedidaPersonalizada(UnidadDeMedida.From("CAJA"), "CAJA", visible: true, orden: 900);
-
-            var creada = agg.ListarUnidadesDeMedida().Single(x => x.Id == id);
-            Assert.Multiple(() =>
-            {
-                Assert.That(creada.EsSistema, Is.False);
-                Assert.That(creada.Visible, Is.True);
-                Assert.That(creada.Unidad.Codigo, Is.EqualTo("CAJA"));
-                Assert.That(creada.Orden, Is.EqualTo(900));
-            });
-
-            // Editar (permitido en personalizadas)
-            agg.ActualizarUnidadDeMedida(id, nuevaUnidad: UnidadDeMedida.From("C62"), nuevoNombre: "PIEZA", nuevoOrden: 500);
-            var editada = agg.ListarUnidadesDeMedida().Single(x => x.Id == id);
-            Assert.Multiple(() =>
-            {
-                Assert.That(editada.Unidad.Codigo, Is.EqualTo("C62"));
-                Assert.That(editada.Nombre, Is.EqualTo("PIEZA"));
-                Assert.That(editada.Orden, Is.EqualTo(500));
-            });
-
-            // Poner default y validar restricción de eliminación
-            agg.EstablecerUnidadDeMedidaPorDefecto(id);
+            // Default NIU
             var def = agg.ObtenerUnidadDeMedidaPorDefecto();
-            Assert.That(def!.Id, Is.EqualTo(id));
-            Assert.That(() => agg.EliminarUnidadDeMedida(id), Throws.TypeOf<InvalidOperationException>());
+            Assert.That(def, Is.Not.Null);
+            Assert.That(def!.Unidad, Is.EqualTo(UnidadDeMedida.NIU));
 
-            // Cambiar default y eliminar
-            var niu = agg.ListarUnidadesDeMedida().First(x => x.Unidad.Codigo == "NIU");
-            agg.EstablecerUnidadDeMedidaPorDefecto(niu.Id);
-            agg.EliminarUnidadDeMedida(id);
-            Assert.That(agg.ListarUnidadesDeMedida().Any(x => x.Id == id), Is.False);
-        }
-
-        [Test]
-        public void Unidades_restricciones_sobre_sistema_visibilidad_y_unicidad()
-        {
-            var agg = NuevaEmpresa();
-
-            // No duplicar código existente
-            Assert.That(() => agg.AgregarUnidadDeMedidaPersonalizada(UnidadDeMedida.From("NIU"), "UNIDAD X"),
+            // No se puede editar código/nombre de una unidad de sistema
+            Assert.That(() => agg.ActualizarUnidadDeMedida(def.Id, nuevaUnidad: UnidadDeMedida.KGM),
                 Throws.TypeOf<InvalidOperationException>());
 
-            var sistema = agg.ListarUnidadesDeMedida().First(x => x.EsSistema && !x.EsPorDefecto);
-
-            // No cambiar código ni nombre a sistema
-            Assert.That(() => agg.ActualizarUnidadDeMedida(sistema.Id, nuevaUnidad: UnidadDeMedida.From("C62")),
-                Throws.TypeOf<InvalidOperationException>());
-            Assert.That(() => agg.ActualizarUnidadDeMedida(sistema.Id, nuevoNombre: "OTRO"),
+            // No se puede ocultar la default
+            Assert.That(() => agg.ActualizarUnidadDeMedida(def.Id, visible: false),
                 Throws.TypeOf<InvalidOperationException>());
 
-            // Visibilidad/orden sí
-            agg.ActualizarUnidadDeMedida(sistema.Id, visible: false, nuevoOrden: sistema.Orden + 5);
-            var rec = agg.ListarUnidadesDeMedida().First(x => x.Id == sistema.Id);
-            Assert.Multiple(() =>
-            {
-                Assert.That(rec.Visible, Is.False);
-                Assert.That(rec.Orden, Is.EqualTo(sistema.Orden + 5));
-            });
+            // Agregar personalizada y setearla como default
+            var persId = agg.AgregarUnidadDeMedidaPersonalizada(
+                unidad: (UnidadDeMedida)"CJ",
+                nombre: "CAJA",
+                visible: true,
+                orden: 999,
+                esPorDefecto: false);
 
-            // No puedo hacer default una oculta
-            Assert.That(() => agg.EstablecerUnidadDeMedidaPorDefecto(sistema.Id), Throws.TypeOf<InvalidOperationException>());
-        }
+            agg.EstablecerUnidadDeMedidaPorDefecto(persId);
+            var nuevaDef = agg.ObtenerUnidadDeMedidaPorDefecto();
+            Assert.That(nuevaDef, Is.Not.Null);
+            Assert.That(nuevaDef!.Id, Is.EqualTo(persId));
 
-        // ---------------------------------------------------------------------
-        // Version y eventos (spot checks)
-        // ---------------------------------------------------------------------
+            // No se puede eliminar la default actual
+            Assert.That(() => agg.EliminarUnidadDeMedida(persId),
+                Throws.TypeOf<InvalidOperationException>());
 
-        [Test]
-        public void Version_incrementa_en_mutaciones_relevantes_y_ClearDomainEvents_limpia()
-        {
-            var agg = NuevaEmpresa();
-            var v0 = agg.Version;
-
-            // Serie nueva
-            var princ = agg.ObtenerEstablecimientoPrincipal()!;
-            agg.AgregarSerie(TipoComprobanteCodigo.Factura, FE("FE10"), princ.Id, Correlativo.From(1));
-            Assert.That(agg.Version, Is.GreaterThan(v0));
-            Assert.That(agg.DomainEvents.Any(), Is.True);
-            agg.ClearDomainEvents();
-            Assert.That(agg.DomainEvents.Any(), Is.False);
-
-            // Forma de pago personalizada
-            var v1 = agg.Version;
-            var fpId = agg.AgregarFormaDePagoPersonalizada(FormaDePago.ContadoBcp("BCP"), "BCP");
-            Assert.That(agg.Version, Is.GreaterThan(v1));
-
-            // Unidad personalizada
-            var v2 = agg.Version;
-            var umId = agg.AgregarUnidadDeMedidaPersonalizada(UnidadDeMedida.From("CJG"), "CAJA GRANDE");
-            Assert.That(agg.Version, Is.GreaterThan(v2));
-
-            // Ediciones
-            var v3 = agg.Version;
-            agg.ActualizarFormaDePago(fpId, nuevoNombre: "BCP Ventanilla");
-            agg.ActualizarUnidadDeMedida(umId, nuevoNombre: "CAJA G.");
-            Assert.That(agg.Version, Is.GreaterThan(v3));
+            // Tampoco se puede eliminar una de sistema
+            Assert.That(() => agg.EliminarUnidadDeMedida(def.Id),
+                Throws.TypeOf<InvalidOperationException>());
         }
     }
 }

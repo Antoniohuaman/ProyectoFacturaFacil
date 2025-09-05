@@ -1,4 +1,3 @@
-
 using System;
 using System.Diagnostics;
 
@@ -6,39 +5,50 @@ namespace ConfiguracionSistemaBC.Domain.ValueObjects
 {
     /// <summary>
     /// Value Object para RUC peruano (Registro Único de Contribuyentes).
-    /// Reglas (estrictas, práctica vigente):
-    /// - 11 dígitos numéricos.
-    /// - Prefijo permitido: 10 (PN con negocio) o 20 (PJ).
-    /// - Dígito verificador válido (algoritmo SUNAT).
+    /// Reglas (práctica vigente):
+    /// - Exactamente 11 dígitos numéricos.
+    /// - Prefijos permitidos:
+    ///     * 10, 15, 17 => Personas naturales (distintos orígenes de inscripción).
+    ///     * 20          => Personas jurídicas.
+    /// - Dígito verificador válido (módulo 11 con ponderadores 5,4,3,2,7,6,5,4,3,2; 10→0, 11→1).
     ///
-    /// Nota: la obtención de datos (razón social, domicilio, etc.) es responsabilidad de otra capa/BC.
+    /// Nota: la obtención de datos (razón social, domicilio, etc.) corresponde a otra capa/BC.
     /// </summary>
     [DebuggerDisplay("{Numero}")]
     public sealed class Ruc
     {
-        /// <summary>Código SUNAT para “RUC” como tipo de documento (cat. 6).</summary>
+        /// <summary>Código SUNAT para “RUC” como tipo de documento (Catálogo 06).</summary>
         public const string SunatDocumentTypeCode = "6";
 
+        /// <summary>Valor canónico: exactamente 11 dígitos.</summary>
+        public string Numero { get; }
 
-    /// <summary>Valor canónico: exactamente 11 dígitos.</summary>
-    public string Numero { get; }
-    /// <summary>
-    /// Valor canonizado del RUC (los 11 dígitos, validado y sin formato extra).
-    /// </summary>
-    public string Canonizado => Numero;
+        /// <summary>Valor canonizado del RUC (los 11 dígitos, validado y sin formato extra).</summary>
+        public string Canonizado => Numero;
 
+        /// <summary>Primeros 10 dígitos (sin el dígito verificador).</summary>
         public string Base10 => Numero.Substring(0, 10);
-        public int    DigitoVerificador => Numero[10] - '0';
+
+        /// <summary>Último dígito (dígito verificador).</summary>
+        public int DigitoVerificador => Numero[10] - '0';
+
+        /// <summary>Prefijo (primeros 2 dígitos).</summary>
         public string Prefijo => Numero.Substring(0, 2);
 
+        /// <summary>True si el RUC pertenece a persona jurídica (prefijo 20).</summary>
         public bool EsPersonaJuridica => Prefijo == "20";
+
+        /// <summary>True si el RUC pertenece a persona natural (prefijo 10, 15 o 17).</summary>
+        public bool EsPersonaNatural => Prefijo == "10" || Prefijo == "15" || Prefijo == "17";
+
+        /// <summary>Compatibilidad con tu código anterior: PN con negocio (prefijo 10).</summary>
         public bool EsPersonaNaturalConNegocio => Prefijo == "10";
 
         private Ruc(string numeroOnceDigitos) => Numero = numeroOnceDigitos;
 
         /// <summary>
         /// Crea desde texto libre (admite espacios/guiones), normaliza a 11 dígitos y valida:
-        /// longitud, prefijo (10/20) y dígito verificador.
+        /// longitud, prefijo (10/15/17/20) y dígito verificador.
         /// </summary>
         public static Ruc FromString(string raw)
         {
@@ -49,16 +59,16 @@ namespace ConfiguracionSistemaBC.Domain.ValueObjects
                 throw new ArgumentOutOfRangeException(nameof(raw), "El RUC debe tener exactamente 11 dígitos.");
 
             if (!EsPrefijoPermitido(digits))
-                throw new ArgumentOutOfRangeException(nameof(raw), "El RUC debe iniciar con 10 (PN) o 20 (PJ).");
+                throw new ArgumentOutOfRangeException(nameof(raw),
+                    "El RUC debe iniciar con 10, 15, 17 (persona natural) o 20 (persona jurídica).");
 
             if (!ValidaDigitoVerificador(digits))
                 throw new ArgumentException("El dígito verificador del RUC no es válido.", nameof(raw));
 
             return new Ruc(digits);
         }
-        /// <summary>
-        /// Alias de FromString para factoría estándar en tests y dominio.
-        /// </summary>
+
+        /// <summary>Alias de FromString para factoría estándar en tests y dominio.</summary>
         public static Ruc From(string raw) => FromString(raw);
 
         /// <summary>Intenta crear un RUC válido; false si falla la validación.</summary>
@@ -79,7 +89,7 @@ namespace ConfiguracionSistemaBC.Domain.ValueObjects
         /// <summary>Valida rápidamente formato + dígito verificador.</summary>
         public static bool EsValido(string? raw) => TryFrom(raw, out _);
 
-        // -------- Igualdad por valor (basada en Numero) --------
+        // ---------------- Igualdad por valor (basada en Numero) ----------------
         public override bool Equals(object? obj)
             => obj is Ruc other && string.Equals(Numero, other.Numero, StringComparison.Ordinal);
 
@@ -110,21 +120,22 @@ namespace ConfiguracionSistemaBC.Domain.ValueObjects
             for (int i = 0; i < span.Length; i++)
             {
                 var c = span[i];
-                if (c >= '0' && c <= '9') buffer[idx++] = c;
+                if (c is >= '0' and <= '9') buffer[idx++] = c;
             }
             return new string(buffer, 0, idx);
         }
 
         private static bool EsPrefijoPermitido(string digits11)
         {
-            // Solo 10 o 20
+            // PN: 10, 15, 17 | PJ: 20
             var p0 = digits11[0];
             var p1 = digits11[1];
-            return (p0 == '1' && p1 == '0') || (p0 == '2' && p1 == '0');
+            return (p0 == '1' && (p1 == '0' || p1 == '5' || p1 == '7'))  // 10, 15, 17
+                || (p0 == '2' && p1 == '0');                             // 20
         }
 
         /// <summary>
-        /// Cálculo del dígito verificador (ponderadores 5,4,3,2,7,6,5,4,3,2).
+        /// Valida el dígito verificador (ponderadores 5,4,3,2,7,6,5,4,3,2; 10→0, 11→1).
         /// </summary>
         private static bool ValidaDigitoVerificador(string digits11)
         {
