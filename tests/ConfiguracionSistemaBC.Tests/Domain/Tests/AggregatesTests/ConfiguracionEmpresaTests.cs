@@ -163,14 +163,14 @@ namespace ConfiguracionSistemaBC.Tests.Domain.Aggregates
             // Evento de dominio por registro de establecimiento
             Assert.That(agg.DomainEvents.Any(e => e is EstablecimientoRegistrado), Is.True);
 
-            // Eliminar uno (deben quedar al menos 1; si intentas borrar el único → excepción)
+            // Eliminar uno (deben quedar al menos 1)
             var principal = agg.ObtenerEstablecimientoPrincipal()!;
             var otroId = agg.ListarEstablecimientos().First(e => e.Id != principal.Id).Id;
             agg.EliminarEstablecimiento(otroId);
 
-            // Queda solo 1: intentar eliminarlo debe lanzar
-            Assert.That(() => agg.EliminarEstablecimiento(principal.Id),
-                Throws.TypeOf<InvalidOperationException>());
+            // Ahora debe poder eliminar el último establecimiento sin excepción
+            agg.EliminarEstablecimiento(principal.Id);
+            Assert.That(agg.ListarEstablecimientos().Count, Is.EqualTo(0));
         }
 
         [Test]

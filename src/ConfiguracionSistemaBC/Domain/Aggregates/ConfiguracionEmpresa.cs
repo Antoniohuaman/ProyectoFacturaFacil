@@ -384,10 +384,6 @@ namespace ConfiguracionSistemaBC.Domain.Aggregates
             if (!_estById.TryGetValue(id, out var est))
                 throw new KeyNotFoundException("Establecimiento no encontrado.");
 
-            // Si solo queda uno, lanzar excepción
-            if (_estById.Count == 1)
-                throw new InvalidOperationException("No se puede eliminar el único establecimiento restante.");
-
             // Regla local: si tiene gestiones vinculadas, no permitir.
             if (est.TieneGestionesVinculadas())
                 throw new InvalidOperationException("No se puede eliminar el establecimiento porque tiene gestiones vinculadas.");
