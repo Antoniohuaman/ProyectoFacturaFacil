@@ -1,91 +1,189 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<TestRun id="1b6be557-508a-4b0b-a0ca-4eee3d50dd1d" name="Asus@DESKTOP-GBNCN2L 2025-08-11 18:29:26" runUser="DESKTOP-GBNCN2L\Asus" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
-  <Times creation="2025-08-11T18:29:26.5575766-05:00" queuing="2025-08-11T18:29:26.5575770-05:00" start="2025-08-11T18:29:25.7966771-05:00" finish="2025-08-11T18:29:26.5942894-05:00" />
-  <TestSettings name="default" id="8c88417c-a5bc-4775-bba4-5b8bc5a0aeb3">
-    <Deployment runDeploymentRoot="Asus_DESKTOP-GBNCN2L_2025-08-11_18_29_26" />
+<TestRun id="22df212d-f1de-40f0-8a3b-c4457b3dc856" name="ANTONIO HUAMAN@DESKTOP-M3BHVTI 2025-09-06 00:36:36" runUser="DESKTOP-M3BHVTI\ANTONIO HUAMAN" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times creation="2025-09-06T00:36:36.3980499-05:00" queuing="2025-09-06T00:36:36.3980500-05:00" start="2025-09-06T00:36:35.7107182-05:00" finish="2025-09-06T00:36:36.4246441-05:00" />
+  <TestSettings name="default" id="79035283-e7b3-49e6-903a-a1cbd87b32ad">
+    <Deployment runDeploymentRoot="ANTONIO_HUAMAN_DESKTOP-M3BHVTI_2025-09-06_00_36_36" />
   </TestSettings>
   <Results>
-    <UnitTestResult executionId="70ad6f3e-4726-41fc-93a8-e25ae343aa29" testId="022a928d-c3da-40b6-5699-f773738fed51" testName="Series_Actualizar_PuedeCambiarSerie_Establecimiento_TipoOperacion_Y_Default_SiNoBloqueada" computerName="DESKTOP-GBNCN2L" duration="00:00:00.0056800" startTime="2025-08-11T18:29:26.4632916-05:00" endTime="2025-08-11T18:29:26.4689623-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="70ad6f3e-4726-41fc-93a8-e25ae343aa29" />
-    <UnitTestResult executionId="55e27d51-a632-4839-8c67-f48ab3de1f4a" testId="3aa52ee5-556b-3c2a-7adf-457ff1dad563" testName="CambioDeAmbiente_PruebaAProduccion_Permitido_Y_NoReversible" computerName="DESKTOP-GBNCN2L" duration="00:00:00.0150460" startTime="2025-08-11T18:29:26.4224191-05:00" endTime="2025-08-11T18:29:26.4374652-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="55e27d51-a632-4839-8c67-f48ab3de1f4a" />
-    <UnitTestResult executionId="bdab475d-5879-4750-9e15-a43b66189fef" testId="340e2d14-2c9c-ce17-99f2-5747a3994383" testName="Series_Agregar_Validaciones_Unicidad_Y_DefaultPorTipo" computerName="DESKTOP-GBNCN2L" duration="00:00:00.0017100" startTime="2025-08-11T18:29:26.4692367-05:00" endTime="2025-08-11T18:29:26.4709464-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="bdab475d-5879-4750-9e15-a43b66189fef" />
-    <UnitTestResult executionId="ac8ca3bd-7beb-47a3-bc61-f49fdfd26053" testId="25219eb0-e3d6-f27d-be4c-1dc2e082ffdd" testName="Establecimientos_CRUD_Basico_Y_UnicidadCodigo" computerName="DESKTOP-GBNCN2L" duration="00:00:00.0037910" startTime="2025-08-11T18:29:26.4552856-05:00" endTime="2025-08-11T18:29:26.4590762-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="ac8ca3bd-7beb-47a3-bc61-f49fdfd26053" />
-    <UnitTestResult executionId="8165794b-50ec-482b-aae8-85001fe95336" testId="407367ed-5e4d-a61f-3fa9-0363e0887944" testName="Series_PrefijoDebeCoincidirConTipo" computerName="DESKTOP-GBNCN2L" duration="00:00:00.0004000" startTime="2025-08-11T18:29:26.4719210-05:00" endTime="2025-08-11T18:29:26.4723213-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="8165794b-50ec-482b-aae8-85001fe95336" />
-    <UnitTestResult executionId="c1dd1767-074c-46cd-8790-35a02f6ac4bd" testId="9c525752-55c9-6e98-7296-0bc9178df877" testName="ActualizarDatosLegales_ModificaRuc_RazonSocial_Y_Direccion" computerName="DESKTOP-GBNCN2L" duration="00:00:00.0107270" startTime="2025-08-11T18:29:26.4107457-05:00" endTime="2025-08-11T18:29:26.4214331-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="c1dd1767-074c-46cd-8790-35a02f6ac4bd" />
-    <UnitTestResult executionId="a195af35-3d21-44a7-b5ef-9739cd061d6b" testId="72ee84d7-0807-76e7-d74c-a9f3b6245d55" testName="CamposOpcionales_SePuedenActualizarYPersisten" computerName="DESKTOP-GBNCN2L" duration="00:00:00.0177320" startTime="2025-08-11T18:29:26.4375067-05:00" endTime="2025-08-11T18:29:26.4552379-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="a195af35-3d21-44a7-b5ef-9739cd061d6b" />
-    <UnitTestResult executionId="6d13b169-2534-426d-a146-b66ac553a76c" testId="6142900e-c486-a46d-775c-d01badb22561" testName="Series_Actualizar_NoPermiteDuplicarNiUsarEstablecimientoDeshabilitado" computerName="DESKTOP-GBNCN2L" duration="00:00:00.0038930" startTime="2025-08-11T18:29:26.4593719-05:00" endTime="2025-08-11T18:29:26.4632650-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="6d13b169-2534-426d-a146-b66ac553a76c" />
-    <UnitTestResult executionId="88b23775-15a1-45c2-bec9-9d084fa2fd7c" testId="481c9395-b049-87b9-eaed-b75b8acd960a" testName="Series_BloqueoPorUso_ImpideActualizarYEliminar" computerName="DESKTOP-GBNCN2L" duration="00:00:00.0006489" startTime="2025-08-11T18:29:26.4709736-05:00" endTime="2025-08-11T18:29:26.4716222-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="88b23775-15a1-45c2-bec9-9d084fa2fd7c" />
-    <UnitTestResult executionId="0fdcd4a0-8253-4992-8699-348d918ec292" testId="e22bd998-dd32-91c9-5a0e-0e86b6091a4b" testName="RegistrarNueva_InicializaEnPrueba_ConDatosLegalesYMoneda" computerName="DESKTOP-GBNCN2L" duration="00:00:00.0002530" startTime="2025-08-11T18:29:26.4591099-05:00" endTime="2025-08-11T18:29:26.4593626-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="0fdcd4a0-8253-4992-8699-348d918ec292" />
-    <UnitTestResult executionId="ccc1071f-0dd0-4b7b-97ae-47d5ba1bbb35" testId="281b032c-2cb7-5a9f-2a3c-37286dd08355" testName="Series_Eliminar_PermitidoSiNoBloqueada_QuitaDefaultSiEraDefault" computerName="DESKTOP-GBNCN2L" duration="00:00:00.0002650" startTime="2025-08-11T18:29:26.4716477-05:00" endTime="2025-08-11T18:29:26.4719127-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="ccc1071f-0dd0-4b7b-97ae-47d5ba1bbb35" />
+    <UnitTestResult executionId="ae33013b-9660-49a1-84c9-a726b994ed34" testId="157e78e0-b055-1306-a1fe-73e1bb643192" testName="Actualiza_preferencias_y_moneda_correctamente" computerName="DESKTOP-M3BHVTI" duration="00:00:00.0067600" startTime="2025-09-06T00:36:36.2600189-05:00" endTime="2025-09-06T00:36:36.2667787-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Failed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="ae33013b-9660-49a1-84c9-a726b994ed34">
+      <Output>
+        <ErrorInfo>
+          <Message>Moq.MockException : IConfiguracionEmpresaRepository.UpdateIfVersionMatchAsync(ConfiguracionEmpresa, 4, CancellationToken) invocation failed with mock behavior Strict.&#xD;
+All invocations on the mock must have a corresponding setup.</Message>
+          <StackTrace>   at Moq.FailForStrictMock.Handle(Invocation invocation, Mock mock) in /_/src/Moq/Interception/InterceptionAspects.cs:line 182&#xD;
+   at Moq.Mock.Moq.IInterceptor.Intercept(Invocation invocation) in /_/src/Moq/Interception/Mock.cs:line 27&#xD;
+   at Moq.CastleProxyFactory.Interceptor.Intercept(IInvocation underlying) in /_/src/Moq/Interception/CastleProxyFactory.cs:line 107&#xD;
+   at Castle.DynamicProxy.AbstractInvocation.Proceed()&#xD;
+   at Castle.Proxies.IConfiguracionEmpresaRepositoryProxy.UpdateIfVersionMatchAsync(ConfiguracionEmpresa aggregate, Int32 expectedVersion, CancellationToken ct)&#xD;
+   at ConfiguracionSistemaBC.Application.UseCases.ActualizarConfiguracionEmpresaUseCase.HandleAsync(ActualizarConfiguracionEmpresaInputDto input, CancellationToken ct) in C:\ProyectoFacturaFacil\src\ConfiguracionSistemaBC\Application\UseCases\ActualizarConfiguracionEmpresaUseCase.cs:line 111&#xD;
+   at ConfiguracionSistemaBC.Tests.Application.UseCases.ActualizarConfiguracionEmpresaUseCaseTests.Actualiza_preferencias_y_moneda_correctamente() in C:\ProyectoFacturaFacil\tests\ConfiguracionSistemaBC.Tests\Application\Tests\UseCasesTests\ActualizarConfiguracionEmpresaUseCaseTests.cs:line 72&#xD;
+   at NUnit.Framework.Internal.TaskAwaitAdapter.GenericAdapter`1.GetResult()&#xD;
+   at NUnit.Framework.Internal.AsyncToSyncAdapter.Await[TResult](Func`1 invoke)&#xD;
+   at NUnit.Framework.Internal.AsyncToSyncAdapter.Await(Func`1 invoke)&#xD;
+   at NUnit.Framework.Internal.Commands.TestMethodCommand.RunTestMethod(TestExecutionContext context)&#xD;
+   at NUnit.Framework.Internal.Commands.TestMethodCommand.Execute(TestExecutionContext context)&#xD;
+   at NUnit.Framework.Internal.Execution.SimpleWorkItem.&lt;&gt;c__DisplayClass3_0.&lt;PerformWork&gt;b__0()&#xD;
+   at NUnit.Framework.Internal.ContextUtils.&lt;&gt;c__DisplayClass1_0`1.&lt;DoIsolated&gt;b__0(Object _)&#xD;
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)&#xD;
+--- End of stack trace from previous location ---&#xD;
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)&#xD;
+   at NUnit.Framework.Internal.ContextUtils.DoIsolated(ContextCallback callback, Object state)&#xD;
+   at NUnit.Framework.Internal.ContextUtils.DoIsolated[T](Func`1 func)&#xD;
+   at NUnit.Framework.Internal.Execution.SimpleWorkItem.PerformWork()
+</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="18a4ee7f-eef2-4fcf-b2f4-fdccc0337115" testId="a6315c38-8eb7-e6e4-0c52-7f439701c463" testName="Lanza_si_no_hay_empresa_en_contexto_y_no_se_envia_en_input" computerName="DESKTOP-M3BHVTI" duration="00:00:00.0007500" startTime="2025-09-06T00:36:36.2795813-05:00" endTime="2025-09-06T00:36:36.2803306-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="18a4ee7f-eef2-4fcf-b2f4-fdccc0337115" />
+    <UnitTestResult executionId="2c385667-2624-4064-bd9c-5f38346c70f0" testId="1d1ccecf-1e86-d8a9-0cb5-c2e64f2e19fc" testName="Actualiza_datos_legales_sin_cambiar_RUC" computerName="DESKTOP-M3BHVTI" duration="00:00:00.0725910" startTime="2025-09-06T00:36:36.1865935-05:00" endTime="2025-09-06T00:36:36.2591520-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Failed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="2c385667-2624-4064-bd9c-5f38346c70f0">
+      <Output>
+        <ErrorInfo>
+          <Message>Moq.MockException : IConfiguracionEmpresaRepository.UpdateIfVersionMatchAsync(ConfiguracionEmpresa, 4, CancellationToken) invocation failed with mock behavior Strict.&#xD;
+All invocations on the mock must have a corresponding setup.</Message>
+          <StackTrace>   at Moq.FailForStrictMock.Handle(Invocation invocation, Mock mock) in /_/src/Moq/Interception/InterceptionAspects.cs:line 182&#xD;
+   at Moq.Mock.Moq.IInterceptor.Intercept(Invocation invocation) in /_/src/Moq/Interception/Mock.cs:line 27&#xD;
+   at Moq.CastleProxyFactory.Interceptor.Intercept(IInvocation underlying) in /_/src/Moq/Interception/CastleProxyFactory.cs:line 107&#xD;
+   at Castle.DynamicProxy.AbstractInvocation.Proceed()&#xD;
+   at Castle.Proxies.IConfiguracionEmpresaRepositoryProxy.UpdateIfVersionMatchAsync(ConfiguracionEmpresa aggregate, Int32 expectedVersion, CancellationToken ct)&#xD;
+   at ConfiguracionSistemaBC.Application.UseCases.ActualizarConfiguracionEmpresaUseCase.HandleAsync(ActualizarConfiguracionEmpresaInputDto input, CancellationToken ct) in C:\ProyectoFacturaFacil\src\ConfiguracionSistemaBC\Application\UseCases\ActualizarConfiguracionEmpresaUseCase.cs:line 111&#xD;
+   at ConfiguracionSistemaBC.Tests.Application.UseCases.ActualizarConfiguracionEmpresaUseCaseTests.Actualiza_datos_legales_sin_cambiar_RUC() in C:\ProyectoFacturaFacil\tests\ConfiguracionSistemaBC.Tests\Application\Tests\UseCasesTests\ActualizarConfiguracionEmpresaUseCaseTests.cs:line 129&#xD;
+   at NUnit.Framework.Internal.TaskAwaitAdapter.GenericAdapter`1.GetResult()&#xD;
+   at NUnit.Framework.Internal.AsyncToSyncAdapter.Await[TResult](Func`1 invoke)&#xD;
+   at NUnit.Framework.Internal.AsyncToSyncAdapter.Await(Func`1 invoke)&#xD;
+   at NUnit.Framework.Internal.Commands.TestMethodCommand.RunTestMethod(TestExecutionContext context)&#xD;
+   at NUnit.Framework.Internal.Commands.TestMethodCommand.Execute(TestExecutionContext context)&#xD;
+   at NUnit.Framework.Internal.Execution.SimpleWorkItem.&lt;&gt;c__DisplayClass3_0.&lt;PerformWork&gt;b__0()&#xD;
+   at NUnit.Framework.Internal.ContextUtils.&lt;&gt;c__DisplayClass1_0`1.&lt;DoIsolated&gt;b__0(Object _)&#xD;
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)&#xD;
+--- End of stack trace from previous location ---&#xD;
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)&#xD;
+   at NUnit.Framework.Internal.ContextUtils.DoIsolated(ContextCallback callback, Object state)&#xD;
+   at NUnit.Framework.Internal.ContextUtils.DoIsolated[T](Func`1 func)&#xD;
+   at NUnit.Framework.Internal.Execution.SimpleWorkItem.PerformWork()
+</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="145106c0-3ecc-43ca-bfc3-d29c7b3c8ea8" testId="eb0729b9-c6fe-382b-5673-20ce7a499fd7" testName="Lanza_si_no_existe_la_configuracion" computerName="DESKTOP-M3BHVTI" duration="00:00:00.0127650" startTime="2025-09-06T00:36:36.2667962-05:00" endTime="2025-09-06T00:36:36.2795611-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Failed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="145106c0-3ecc-43ca-bfc3-d29c7b3c8ea8">
+      <Output>
+        <ErrorInfo>
+          <Message>Moq.MockException : Mock&lt;ITenantContext:3&gt;:&#xD;
+This mock failed verification due to the following:&#xD;
+&#xD;
+   ITenantContext t =&gt; t.TenantId:&#xD;
+   This setup was not matched.</Message>
+          <StackTrace>   at Moq.Mock.Verify(Func`2 predicate, HashSet`1 verifiedMocks) in /_/src/Moq/Mock.cs:line 310&#xD;
+   at Moq.Mock.VerifyAll() in /_/src/Moq/Mock.cs:line 277&#xD;
+   at ConfiguracionSistemaBC.Tests.Application.UseCases.ActualizarConfiguracionEmpresaUseCaseTests.Lanza_si_no_existe_la_configuracion() in C:\ProyectoFacturaFacil\tests\ConfiguracionSistemaBC.Tests\Application\Tests\UseCasesTests\ActualizarConfiguracionEmpresaUseCaseTests.cs:line 232&#xD;
+   at System.RuntimeMethodHandle.InvokeMethod(Object target, Void** arguments, Signature sig, Boolean isConstructor)&#xD;
+   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
+</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="6ab1c9dc-bcc6-478e-9cb6-f968171bcf69" testId="ff39f156-b736-325c-989b-1a7a187c20a9" testName="Permite_vaciar_lista_de_emails" computerName="DESKTOP-M3BHVTI" duration="00:00:00.0019600" startTime="2025-09-06T00:36:36.2803433-05:00" endTime="2025-09-06T00:36:36.2823031-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Failed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="6ab1c9dc-bcc6-478e-9cb6-f968171bcf69">
+      <Output>
+        <ErrorInfo>
+          <Message>Moq.MockException : IConfiguracionEmpresaRepository.UpdateIfVersionMatchAsync(ConfiguracionEmpresa, 5, CancellationToken) invocation failed with mock behavior Strict.&#xD;
+All invocations on the mock must have a corresponding setup.</Message>
+          <StackTrace>   at Moq.FailForStrictMock.Handle(Invocation invocation, Mock mock) in /_/src/Moq/Interception/InterceptionAspects.cs:line 182&#xD;
+   at Moq.Mock.Moq.IInterceptor.Intercept(Invocation invocation) in /_/src/Moq/Interception/Mock.cs:line 27&#xD;
+   at Moq.CastleProxyFactory.Interceptor.Intercept(IInvocation underlying) in /_/src/Moq/Interception/CastleProxyFactory.cs:line 107&#xD;
+   at Castle.DynamicProxy.AbstractInvocation.Proceed()&#xD;
+   at Castle.Proxies.IConfiguracionEmpresaRepositoryProxy.UpdateIfVersionMatchAsync(ConfiguracionEmpresa aggregate, Int32 expectedVersion, CancellationToken ct)&#xD;
+   at ConfiguracionSistemaBC.Application.UseCases.ActualizarConfiguracionEmpresaUseCase.HandleAsync(ActualizarConfiguracionEmpresaInputDto input, CancellationToken ct) in C:\ProyectoFacturaFacil\src\ConfiguracionSistemaBC\Application\UseCases\ActualizarConfiguracionEmpresaUseCase.cs:line 111&#xD;
+   at ConfiguracionSistemaBC.Tests.Application.UseCases.ActualizarConfiguracionEmpresaUseCaseTests.Permite_vaciar_lista_de_emails() in C:\ProyectoFacturaFacil\tests\ConfiguracionSistemaBC.Tests\Application\Tests\UseCasesTests\ActualizarConfiguracionEmpresaUseCaseTests.cs:line 267&#xD;
+   at NUnit.Framework.Internal.TaskAwaitAdapter.GenericAdapter`1.GetResult()&#xD;
+   at NUnit.Framework.Internal.AsyncToSyncAdapter.Await[TResult](Func`1 invoke)&#xD;
+   at NUnit.Framework.Internal.AsyncToSyncAdapter.Await(Func`1 invoke)&#xD;
+   at NUnit.Framework.Internal.Commands.TestMethodCommand.RunTestMethod(TestExecutionContext context)&#xD;
+   at NUnit.Framework.Internal.Commands.TestMethodCommand.Execute(TestExecutionContext context)&#xD;
+   at NUnit.Framework.Internal.Execution.SimpleWorkItem.&lt;&gt;c__DisplayClass3_0.&lt;PerformWork&gt;b__0()&#xD;
+   at NUnit.Framework.Internal.ContextUtils.&lt;&gt;c__DisplayClass1_0`1.&lt;DoIsolated&gt;b__0(Object _)&#xD;
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)&#xD;
+--- End of stack trace from previous location ---&#xD;
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)&#xD;
+   at NUnit.Framework.Internal.ContextUtils.DoIsolated(ContextCallback callback, Object state)&#xD;
+   at NUnit.Framework.Internal.ContextUtils.DoIsolated[T](Func`1 func)&#xD;
+   at NUnit.Framework.Internal.Execution.SimpleWorkItem.PerformWork()
+</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="1ed46d91-cb4c-4037-aceb-3fd4644a262c" testId="f76615dd-9fcd-c7b7-c11f-491a3ea5d7d3" testName="Usa_EmpresaId_del_input_cuando_se_provee" computerName="DESKTOP-M3BHVTI" duration="00:00:00.0023330" startTime="2025-09-06T00:36:36.2823149-05:00" endTime="2025-09-06T00:36:36.2846478-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Failed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="1ed46d91-cb4c-4037-aceb-3fd4644a262c">
+      <Output>
+        <ErrorInfo>
+          <Message>Moq.MockException : IConfiguracionEmpresaRepository.UpdateIfVersionMatchAsync(ConfiguracionEmpresa, 4, CancellationToken) invocation failed with mock behavior Strict.&#xD;
+All invocations on the mock must have a corresponding setup.</Message>
+          <StackTrace>   at Moq.FailForStrictMock.Handle(Invocation invocation, Mock mock) in /_/src/Moq/Interception/InterceptionAspects.cs:line 182&#xD;
+   at Moq.Mock.Moq.IInterceptor.Intercept(Invocation invocation) in /_/src/Moq/Interception/Mock.cs:line 27&#xD;
+   at Moq.CastleProxyFactory.Interceptor.Intercept(IInvocation underlying) in /_/src/Moq/Interception/CastleProxyFactory.cs:line 107&#xD;
+   at Castle.DynamicProxy.AbstractInvocation.Proceed()&#xD;
+   at Castle.Proxies.IConfiguracionEmpresaRepositoryProxy.UpdateIfVersionMatchAsync(ConfiguracionEmpresa aggregate, Int32 expectedVersion, CancellationToken ct)&#xD;
+   at ConfiguracionSistemaBC.Application.UseCases.ActualizarConfiguracionEmpresaUseCase.HandleAsync(ActualizarConfiguracionEmpresaInputDto input, CancellationToken ct) in C:\ProyectoFacturaFacil\src\ConfiguracionSistemaBC\Application\UseCases\ActualizarConfiguracionEmpresaUseCase.cs:line 111&#xD;
+   at ConfiguracionSistemaBC.Tests.Application.UseCases.ActualizarConfiguracionEmpresaUseCaseTests.Usa_EmpresaId_del_input_cuando_se_provee() in C:\ProyectoFacturaFacil\tests\ConfiguracionSistemaBC.Tests\Application\Tests\UseCasesTests\ActualizarConfiguracionEmpresaUseCaseTests.cs:line 176&#xD;
+   at NUnit.Framework.Internal.TaskAwaitAdapter.GenericAdapter`1.GetResult()&#xD;
+   at NUnit.Framework.Internal.AsyncToSyncAdapter.Await[TResult](Func`1 invoke)&#xD;
+   at NUnit.Framework.Internal.AsyncToSyncAdapter.Await(Func`1 invoke)&#xD;
+   at NUnit.Framework.Internal.Commands.TestMethodCommand.RunTestMethod(TestExecutionContext context)&#xD;
+   at NUnit.Framework.Internal.Commands.TestMethodCommand.Execute(TestExecutionContext context)&#xD;
+   at NUnit.Framework.Internal.Execution.SimpleWorkItem.&lt;&gt;c__DisplayClass3_0.&lt;PerformWork&gt;b__0()&#xD;
+   at NUnit.Framework.Internal.ContextUtils.&lt;&gt;c__DisplayClass1_0`1.&lt;DoIsolated&gt;b__0(Object _)&#xD;
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)&#xD;
+--- End of stack trace from previous location ---&#xD;
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)&#xD;
+   at NUnit.Framework.Internal.ContextUtils.DoIsolated(ContextCallback callback, Object state)&#xD;
+   at NUnit.Framework.Internal.ContextUtils.DoIsolated[T](Func`1 func)&#xD;
+   at NUnit.Framework.Internal.Execution.SimpleWorkItem.PerformWork()
+</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
   </Results>
   <TestDefinitions>
-    <UnitTest name="Series_Actualizar_PuedeCambiarSerie_Establecimiento_TipoOperacion_Y_Default_SiNoBloqueada" storage="c:\users\asus\onedrive - contasis\proyectofacturafacil\tests\configuracionsistemabc.tests\bin\debug\net9.0\configuracionsistemabc.tests.dll" id="022a928d-c3da-40b6-5699-f773738fed51">
-      <Execution id="70ad6f3e-4726-41fc-93a8-e25ae343aa29" />
-      <TestMethod codeBase="C:\Users\Asus\OneDrive - CONTASIS\ProyectoFacturaFacil\tests\ConfiguracionSistemaBC.Tests\bin\Debug\net9.0\ConfiguracionSistemaBC.Tests.dll" adapterTypeName="executor://nunit3testexecutor/" className="ConfiguracionSistemaBC.Tests.UnitTests.Aggregates.ConfiguracionEmpresaTests" name="Series_Actualizar_PuedeCambiarSerie_Establecimiento_TipoOperacion_Y_Default_SiNoBloqueada" />
+    <UnitTest name="Usa_EmpresaId_del_input_cuando_se_provee" storage="c:\proyectofacturafacil\tests\configuracionsistemabc.tests\bin\debug\net9.0\configuracionsistemabc.tests.dll" id="f76615dd-9fcd-c7b7-c11f-491a3ea5d7d3">
+      <Execution id="1ed46d91-cb4c-4037-aceb-3fd4644a262c" />
+      <TestMethod codeBase="C:\ProyectoFacturaFacil\tests\ConfiguracionSistemaBC.Tests\bin\Debug\net9.0\ConfiguracionSistemaBC.Tests.dll" adapterTypeName="executor://nunit3testexecutor/" className="ConfiguracionSistemaBC.Tests.Application.UseCases.ActualizarConfiguracionEmpresaUseCaseTests" name="Usa_EmpresaId_del_input_cuando_se_provee" />
     </UnitTest>
-    <UnitTest name="Series_PrefijoDebeCoincidirConTipo" storage="c:\users\asus\onedrive - contasis\proyectofacturafacil\tests\configuracionsistemabc.tests\bin\debug\net9.0\configuracionsistemabc.tests.dll" id="407367ed-5e4d-a61f-3fa9-0363e0887944">
-      <Execution id="8165794b-50ec-482b-aae8-85001fe95336" />
-      <TestMethod codeBase="C:\Users\Asus\OneDrive - CONTASIS\ProyectoFacturaFacil\tests\ConfiguracionSistemaBC.Tests\bin\Debug\net9.0\ConfiguracionSistemaBC.Tests.dll" adapterTypeName="executor://nunit3testexecutor/" className="ConfiguracionSistemaBC.Tests.UnitTests.Aggregates.ConfiguracionEmpresaTests" name="Series_PrefijoDebeCoincidirConTipo" />
+    <UnitTest name="Permite_vaciar_lista_de_emails" storage="c:\proyectofacturafacil\tests\configuracionsistemabc.tests\bin\debug\net9.0\configuracionsistemabc.tests.dll" id="ff39f156-b736-325c-989b-1a7a187c20a9">
+      <Execution id="6ab1c9dc-bcc6-478e-9cb6-f968171bcf69" />
+      <TestMethod codeBase="C:\ProyectoFacturaFacil\tests\ConfiguracionSistemaBC.Tests\bin\Debug\net9.0\ConfiguracionSistemaBC.Tests.dll" adapterTypeName="executor://nunit3testexecutor/" className="ConfiguracionSistemaBC.Tests.Application.UseCases.ActualizarConfiguracionEmpresaUseCaseTests" name="Permite_vaciar_lista_de_emails" />
     </UnitTest>
-    <UnitTest name="CamposOpcionales_SePuedenActualizarYPersisten" storage="c:\users\asus\onedrive - contasis\proyectofacturafacil\tests\configuracionsistemabc.tests\bin\debug\net9.0\configuracionsistemabc.tests.dll" id="72ee84d7-0807-76e7-d74c-a9f3b6245d55">
-      <Execution id="a195af35-3d21-44a7-b5ef-9739cd061d6b" />
-      <TestMethod codeBase="C:\Users\Asus\OneDrive - CONTASIS\ProyectoFacturaFacil\tests\ConfiguracionSistemaBC.Tests\bin\Debug\net9.0\ConfiguracionSistemaBC.Tests.dll" adapterTypeName="executor://nunit3testexecutor/" className="ConfiguracionSistemaBC.Tests.UnitTests.Aggregates.ConfiguracionEmpresaTests" name="CamposOpcionales_SePuedenActualizarYPersisten" />
+    <UnitTest name="Actualiza_datos_legales_sin_cambiar_RUC" storage="c:\proyectofacturafacil\tests\configuracionsistemabc.tests\bin\debug\net9.0\configuracionsistemabc.tests.dll" id="1d1ccecf-1e86-d8a9-0cb5-c2e64f2e19fc">
+      <Execution id="2c385667-2624-4064-bd9c-5f38346c70f0" />
+      <TestMethod codeBase="C:\ProyectoFacturaFacil\tests\ConfiguracionSistemaBC.Tests\bin\Debug\net9.0\ConfiguracionSistemaBC.Tests.dll" adapterTypeName="executor://nunit3testexecutor/" className="ConfiguracionSistemaBC.Tests.Application.UseCases.ActualizarConfiguracionEmpresaUseCaseTests" name="Actualiza_datos_legales_sin_cambiar_RUC" />
     </UnitTest>
-    <UnitTest name="Series_Eliminar_PermitidoSiNoBloqueada_QuitaDefaultSiEraDefault" storage="c:\users\asus\onedrive - contasis\proyectofacturafacil\tests\configuracionsistemabc.tests\bin\debug\net9.0\configuracionsistemabc.tests.dll" id="281b032c-2cb7-5a9f-2a3c-37286dd08355">
-      <Execution id="ccc1071f-0dd0-4b7b-97ae-47d5ba1bbb35" />
-      <TestMethod codeBase="C:\Users\Asus\OneDrive - CONTASIS\ProyectoFacturaFacil\tests\ConfiguracionSistemaBC.Tests\bin\Debug\net9.0\ConfiguracionSistemaBC.Tests.dll" adapterTypeName="executor://nunit3testexecutor/" className="ConfiguracionSistemaBC.Tests.UnitTests.Aggregates.ConfiguracionEmpresaTests" name="Series_Eliminar_PermitidoSiNoBloqueada_QuitaDefaultSiEraDefault" />
+    <UnitTest name="Lanza_si_no_hay_empresa_en_contexto_y_no_se_envia_en_input" storage="c:\proyectofacturafacil\tests\configuracionsistemabc.tests\bin\debug\net9.0\configuracionsistemabc.tests.dll" id="a6315c38-8eb7-e6e4-0c52-7f439701c463">
+      <Execution id="18a4ee7f-eef2-4fcf-b2f4-fdccc0337115" />
+      <TestMethod codeBase="C:\ProyectoFacturaFacil\tests\ConfiguracionSistemaBC.Tests\bin\Debug\net9.0\ConfiguracionSistemaBC.Tests.dll" adapterTypeName="executor://nunit3testexecutor/" className="ConfiguracionSistemaBC.Tests.Application.UseCases.ActualizarConfiguracionEmpresaUseCaseTests" name="Lanza_si_no_hay_empresa_en_contexto_y_no_se_envia_en_input" />
     </UnitTest>
-    <UnitTest name="Series_BloqueoPorUso_ImpideActualizarYEliminar" storage="c:\users\asus\onedrive - contasis\proyectofacturafacil\tests\configuracionsistemabc.tests\bin\debug\net9.0\configuracionsistemabc.tests.dll" id="481c9395-b049-87b9-eaed-b75b8acd960a">
-      <Execution id="88b23775-15a1-45c2-bec9-9d084fa2fd7c" />
-      <TestMethod codeBase="C:\Users\Asus\OneDrive - CONTASIS\ProyectoFacturaFacil\tests\ConfiguracionSistemaBC.Tests\bin\Debug\net9.0\ConfiguracionSistemaBC.Tests.dll" adapterTypeName="executor://nunit3testexecutor/" className="ConfiguracionSistemaBC.Tests.UnitTests.Aggregates.ConfiguracionEmpresaTests" name="Series_BloqueoPorUso_ImpideActualizarYEliminar" />
+    <UnitTest name="Actualiza_preferencias_y_moneda_correctamente" storage="c:\proyectofacturafacil\tests\configuracionsistemabc.tests\bin\debug\net9.0\configuracionsistemabc.tests.dll" id="157e78e0-b055-1306-a1fe-73e1bb643192">
+      <Execution id="ae33013b-9660-49a1-84c9-a726b994ed34" />
+      <TestMethod codeBase="C:\ProyectoFacturaFacil\tests\ConfiguracionSistemaBC.Tests\bin\Debug\net9.0\ConfiguracionSistemaBC.Tests.dll" adapterTypeName="executor://nunit3testexecutor/" className="ConfiguracionSistemaBC.Tests.Application.UseCases.ActualizarConfiguracionEmpresaUseCaseTests" name="Actualiza_preferencias_y_moneda_correctamente" />
     </UnitTest>
-    <UnitTest name="Series_Agregar_Validaciones_Unicidad_Y_DefaultPorTipo" storage="c:\users\asus\onedrive - contasis\proyectofacturafacil\tests\configuracionsistemabc.tests\bin\debug\net9.0\configuracionsistemabc.tests.dll" id="340e2d14-2c9c-ce17-99f2-5747a3994383">
-      <Execution id="bdab475d-5879-4750-9e15-a43b66189fef" />
-      <TestMethod codeBase="C:\Users\Asus\OneDrive - CONTASIS\ProyectoFacturaFacil\tests\ConfiguracionSistemaBC.Tests\bin\Debug\net9.0\ConfiguracionSistemaBC.Tests.dll" adapterTypeName="executor://nunit3testexecutor/" className="ConfiguracionSistemaBC.Tests.UnitTests.Aggregates.ConfiguracionEmpresaTests" name="Series_Agregar_Validaciones_Unicidad_Y_DefaultPorTipo" />
-    </UnitTest>
-    <UnitTest name="RegistrarNueva_InicializaEnPrueba_ConDatosLegalesYMoneda" storage="c:\users\asus\onedrive - contasis\proyectofacturafacil\tests\configuracionsistemabc.tests\bin\debug\net9.0\configuracionsistemabc.tests.dll" id="e22bd998-dd32-91c9-5a0e-0e86b6091a4b">
-      <Execution id="0fdcd4a0-8253-4992-8699-348d918ec292" />
-      <TestMethod codeBase="C:\Users\Asus\OneDrive - CONTASIS\ProyectoFacturaFacil\tests\ConfiguracionSistemaBC.Tests\bin\Debug\net9.0\ConfiguracionSistemaBC.Tests.dll" adapterTypeName="executor://nunit3testexecutor/" className="ConfiguracionSistemaBC.Tests.UnitTests.Aggregates.ConfiguracionEmpresaTests" name="RegistrarNueva_InicializaEnPrueba_ConDatosLegalesYMoneda" />
-    </UnitTest>
-    <UnitTest name="ActualizarDatosLegales_ModificaRuc_RazonSocial_Y_Direccion" storage="c:\users\asus\onedrive - contasis\proyectofacturafacil\tests\configuracionsistemabc.tests\bin\debug\net9.0\configuracionsistemabc.tests.dll" id="9c525752-55c9-6e98-7296-0bc9178df877">
-      <Execution id="c1dd1767-074c-46cd-8790-35a02f6ac4bd" />
-      <TestMethod codeBase="C:\Users\Asus\OneDrive - CONTASIS\ProyectoFacturaFacil\tests\ConfiguracionSistemaBC.Tests\bin\Debug\net9.0\ConfiguracionSistemaBC.Tests.dll" adapterTypeName="executor://nunit3testexecutor/" className="ConfiguracionSistemaBC.Tests.UnitTests.Aggregates.ConfiguracionEmpresaTests" name="ActualizarDatosLegales_ModificaRuc_RazonSocial_Y_Direccion" />
-    </UnitTest>
-    <UnitTest name="CambioDeAmbiente_PruebaAProduccion_Permitido_Y_NoReversible" storage="c:\users\asus\onedrive - contasis\proyectofacturafacil\tests\configuracionsistemabc.tests\bin\debug\net9.0\configuracionsistemabc.tests.dll" id="3aa52ee5-556b-3c2a-7adf-457ff1dad563">
-      <Execution id="55e27d51-a632-4839-8c67-f48ab3de1f4a" />
-      <TestMethod codeBase="C:\Users\Asus\OneDrive - CONTASIS\ProyectoFacturaFacil\tests\ConfiguracionSistemaBC.Tests\bin\Debug\net9.0\ConfiguracionSistemaBC.Tests.dll" adapterTypeName="executor://nunit3testexecutor/" className="ConfiguracionSistemaBC.Tests.UnitTests.Aggregates.ConfiguracionEmpresaTests" name="CambioDeAmbiente_PruebaAProduccion_Permitido_Y_NoReversible" />
-    </UnitTest>
-    <UnitTest name="Establecimientos_CRUD_Basico_Y_UnicidadCodigo" storage="c:\users\asus\onedrive - contasis\proyectofacturafacil\tests\configuracionsistemabc.tests\bin\debug\net9.0\configuracionsistemabc.tests.dll" id="25219eb0-e3d6-f27d-be4c-1dc2e082ffdd">
-      <Execution id="ac8ca3bd-7beb-47a3-bc61-f49fdfd26053" />
-      <TestMethod codeBase="C:\Users\Asus\OneDrive - CONTASIS\ProyectoFacturaFacil\tests\ConfiguracionSistemaBC.Tests\bin\Debug\net9.0\ConfiguracionSistemaBC.Tests.dll" adapterTypeName="executor://nunit3testexecutor/" className="ConfiguracionSistemaBC.Tests.UnitTests.Aggregates.ConfiguracionEmpresaTests" name="Establecimientos_CRUD_Basico_Y_UnicidadCodigo" />
-    </UnitTest>
-    <UnitTest name="Series_Actualizar_NoPermiteDuplicarNiUsarEstablecimientoDeshabilitado" storage="c:\users\asus\onedrive - contasis\proyectofacturafacil\tests\configuracionsistemabc.tests\bin\debug\net9.0\configuracionsistemabc.tests.dll" id="6142900e-c486-a46d-775c-d01badb22561">
-      <Execution id="6d13b169-2534-426d-a146-b66ac553a76c" />
-      <TestMethod codeBase="C:\Users\Asus\OneDrive - CONTASIS\ProyectoFacturaFacil\tests\ConfiguracionSistemaBC.Tests\bin\Debug\net9.0\ConfiguracionSistemaBC.Tests.dll" adapterTypeName="executor://nunit3testexecutor/" className="ConfiguracionSistemaBC.Tests.UnitTests.Aggregates.ConfiguracionEmpresaTests" name="Series_Actualizar_NoPermiteDuplicarNiUsarEstablecimientoDeshabilitado" />
+    <UnitTest name="Lanza_si_no_existe_la_configuracion" storage="c:\proyectofacturafacil\tests\configuracionsistemabc.tests\bin\debug\net9.0\configuracionsistemabc.tests.dll" id="eb0729b9-c6fe-382b-5673-20ce7a499fd7">
+      <Execution id="145106c0-3ecc-43ca-bfc3-d29c7b3c8ea8" />
+      <TestMethod codeBase="C:\ProyectoFacturaFacil\tests\ConfiguracionSistemaBC.Tests\bin\Debug\net9.0\ConfiguracionSistemaBC.Tests.dll" adapterTypeName="executor://nunit3testexecutor/" className="ConfiguracionSistemaBC.Tests.Application.UseCases.ActualizarConfiguracionEmpresaUseCaseTests" name="Lanza_si_no_existe_la_configuracion" />
     </UnitTest>
   </TestDefinitions>
   <TestEntries>
-    <TestEntry testId="022a928d-c3da-40b6-5699-f773738fed51" executionId="70ad6f3e-4726-41fc-93a8-e25ae343aa29" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
-    <TestEntry testId="3aa52ee5-556b-3c2a-7adf-457ff1dad563" executionId="55e27d51-a632-4839-8c67-f48ab3de1f4a" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
-    <TestEntry testId="340e2d14-2c9c-ce17-99f2-5747a3994383" executionId="bdab475d-5879-4750-9e15-a43b66189fef" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
-    <TestEntry testId="25219eb0-e3d6-f27d-be4c-1dc2e082ffdd" executionId="ac8ca3bd-7beb-47a3-bc61-f49fdfd26053" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
-    <TestEntry testId="407367ed-5e4d-a61f-3fa9-0363e0887944" executionId="8165794b-50ec-482b-aae8-85001fe95336" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
-    <TestEntry testId="9c525752-55c9-6e98-7296-0bc9178df877" executionId="c1dd1767-074c-46cd-8790-35a02f6ac4bd" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
-    <TestEntry testId="72ee84d7-0807-76e7-d74c-a9f3b6245d55" executionId="a195af35-3d21-44a7-b5ef-9739cd061d6b" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
-    <TestEntry testId="6142900e-c486-a46d-775c-d01badb22561" executionId="6d13b169-2534-426d-a146-b66ac553a76c" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
-    <TestEntry testId="481c9395-b049-87b9-eaed-b75b8acd960a" executionId="88b23775-15a1-45c2-bec9-9d084fa2fd7c" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
-    <TestEntry testId="e22bd998-dd32-91c9-5a0e-0e86b6091a4b" executionId="0fdcd4a0-8253-4992-8699-348d918ec292" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
-    <TestEntry testId="281b032c-2cb7-5a9f-2a3c-37286dd08355" executionId="ccc1071f-0dd0-4b7b-97ae-47d5ba1bbb35" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="157e78e0-b055-1306-a1fe-73e1bb643192" executionId="ae33013b-9660-49a1-84c9-a726b994ed34" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="a6315c38-8eb7-e6e4-0c52-7f439701c463" executionId="18a4ee7f-eef2-4fcf-b2f4-fdccc0337115" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1d1ccecf-1e86-d8a9-0cb5-c2e64f2e19fc" executionId="2c385667-2624-4064-bd9c-5f38346c70f0" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="eb0729b9-c6fe-382b-5673-20ce7a499fd7" executionId="145106c0-3ecc-43ca-bfc3-d29c7b3c8ea8" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="ff39f156-b736-325c-989b-1a7a187c20a9" executionId="6ab1c9dc-bcc6-478e-9cb6-f968171bcf69" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="f76615dd-9fcd-c7b7-c11f-491a3ea5d7d3" executionId="1ed46d91-cb4c-4037-aceb-3fd4644a262c" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
   </TestEntries>
   <TestLists>
     <TestList name="Resultados sin formato de lista" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
     <TestList name="Todos los resultados cargados" id="19431567-8539-422a-85d7-44ee4e166bda" />
   </TestLists>
-  <ResultSummary outcome="Completed">
-    <Counters total="11" executed="11" passed="11" failed="0" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
+  <ResultSummary outcome="Failed">
+    <Counters total="6" executed="6" passed="1" failed="5" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
     <Output>
       <StdOut>NUnit Adapter 4.6.0.0: Test execution started&#xD;
-Running selected tests in C:\Users\Asus\OneDrive - CONTASIS\ProyectoFacturaFacil\tests\ConfiguracionSistemaBC.Tests\bin\Debug\net9.0\ConfiguracionSistemaBC.Tests.dll&#xD;
-   NUnit3TestExecutor discovered 11 of 11 NUnit test cases using Current Discovery mode, Non-Explicit run&#xD;
+Running selected tests in C:\ProyectoFacturaFacil\tests\ConfiguracionSistemaBC.Tests\bin\Debug\net9.0\ConfiguracionSistemaBC.Tests.dll&#xD;
+   NUnit3TestExecutor discovered 6 of 6 NUnit test cases using Current Discovery mode, Non-Explicit run&#xD;
 NUnit Adapter 4.6.0.0: Test execution complete&#xD;
 </StdOut>
     </Output>

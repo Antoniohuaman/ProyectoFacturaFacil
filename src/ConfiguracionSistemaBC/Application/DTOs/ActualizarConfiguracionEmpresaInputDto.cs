@@ -1,31 +1,42 @@
 using System.Collections.Generic;
-using ConfiguracionSistemaBC.Domain.ValueObjects;
-using SharedKernel.ValueObjects;
 
-namespace ConfiguracionSistemaBC.Application.UseCases.DTOs
+namespace ConfiguracionSistemaBC.Application.UseCases
 {
     /// <summary>
-    /// Campos opcionales: solo se aplica lo que venga informado.
+    /// Petición para actualizar configuración de la empresa.
+    /// Solo se actualizan los campos provistos (parciales). El RUC no se cambia.
     /// </summary>
-    public sealed record ActualizarConfiguracionEmpresaInputDto(
-        // Identificador actual del agregado
-        string Ruc,
+    public sealed class ActualizarConfiguracionEmpresaInputDto
+    {
+        /// <summary>Empresa destino (GUID-string). Opcional: si no se envía, se toma del ITenantContext.</summary>
+        public string? EmpresaId { get; init; }
 
-        // ---- Datos legales (opcionales) ----
-        string? NuevoRuc = null,
-        string? NuevoRazonSocial = null,
-        DomicilioFiscal? NuevaDireccionFiscal = null,
-        string? NuevoNombreComercial = null,
+        // ---- Datos legales (opcionales; el RUC NO se cambia) ----
+        public string? RazonSocial { get; init; }
+        public string? NombreComercial { get; init; }
+        public DireccionFiscalDto? DireccionFiscal { get; init; }
 
         // ---- Preferencias (opcionales) ----
-        Moneda? NuevaMonedaBase = null,
-        Telefono? NuevoTelefono = null,
-        List<Email>? NuevosEmails = null,
-        PieDePagina? NuevoPieDePagina = null,
-        bool? MostrarImagenEnComprobanteImpresa = null,
+        public string? Telefono { get; init; }
+        public List<string>? Emails { get; init; }   // reemplaza la lista completa (puede vaciarla)
+        public string? PieDePagina { get; init; }
+        public bool? MostrarImagenEnComprobanteImpresa { get; init; }
 
-        // Logo: se controla explícitamente si se quiere reemplazar (para permitir limpiar con null)
-        bool ReemplazarLogo = false,
-        LogoImagen? NuevoLogo = null
-    );
+        // ---- Moneda base (opcional) ----
+        public string? MonedaCodigo { get; init; }   // p.ej. "PEN", "USD"
+
+        // ---- Logo (opcional) ----
+        public bool? EliminarLogo { get; init; }     // true: elimina el logo actual
+        public byte[]? LogoBytes { get; init; }      // si viene, se podría mapear a LogoImagen (ver comentario en UseCase)
+        public string? LogoFileName { get; init; }
+        public string? LogoContentType { get; init; }
+
+        public sealed class DireccionFiscalDto
+        {
+            public string PaisCodigo { get; init; } = "PE";       // fijo PE
+            public string Ubigeo { get; init; } = string.Empty;    // SUNAT
+            public string Direccion { get; init; } = string.Empty; // línea de dirección
+            public string? Referencia { get; init; }
+        }
+    }
 }
