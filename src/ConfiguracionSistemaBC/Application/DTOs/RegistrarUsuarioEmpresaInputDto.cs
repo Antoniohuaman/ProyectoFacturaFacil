@@ -4,35 +4,28 @@ using System.Collections.Generic;
 namespace ConfiguracionSistemaBC.Application.UseCases
 {
     /// <summary>
-    /// Datos para registrar a un usuario (membrete) dentro de una empresa.
-    /// La creación de cuenta/autenticación vive en otro BC (Identidad).
+    /// Datos de entrada para registrar a un usuario dentro de la empresa actual (multiempresa).
     /// </summary>
     public sealed class RegistrarUsuarioEmpresaInputDto
     {
-
-    // El RUC (EmpresaId) siempre se toma del contexto de tenant, nunca del input.
-
-        // ---- Datos personales / contacto (obligatorio lo marcado) ----
-    public string Nombres { get; init; } = string.Empty; // obligatorio
-    public string Apellidos { get; init; } = string.Empty; // obligatorio
-    public string Email { get; init; } = string.Empty;          // obligatorio
-    public string? Telefono { get; init; }
-
-    // Documento eliminado según requerimiento
+        // Identidad / contacto básicos
+        public string Nombres { get; init; } = string.Empty;
+        public string Apellidos { get; init; } = string.Empty;
+        public string Email { get; init; } = string.Empty;
+        public string? Telefono { get; init; }
 
         /// <summary>
-        /// Roles de ámbito empresa (se aplican a todos los establecimientos del usuario).
-        /// Pueden ser roles del sistema (EmpresaId == null) o roles personalizados de esta empresa.
+        /// (Opcional) Roles de ámbito EMPRESA (aplican a todos los establecimientos).
+        /// Se validan como roles de sistema o roles personalizados de ESTA empresa.
         /// </summary>
-    public List<Guid>? RolesEmpresaIds { get; init; }
+        public List<Guid>? RolesEmpresaIds { get; init; }
 
         /// <summary>
-        /// Accesos por establecimiento con roles locales.
-        /// Debe incluir al menos un establecimiento con al menos un rol asignado.
+        /// Accesos por establecimiento (obligatorio al menos uno). Cada acceso debe tener ≥1 rol.
         /// </summary>
-    public List<AccesoEstablecimientoDto> AccesosPorEstablecimiento { get; init; } = new();
+        public List<AccesoIn>? AccesosPorEstablecimiento { get; init; }
 
-        public sealed class AccesoEstablecimientoDto
+        public sealed class AccesoIn
         {
             public Guid EstablecimientoId { get; init; }
             public List<Guid> RolIds { get; init; } = new();

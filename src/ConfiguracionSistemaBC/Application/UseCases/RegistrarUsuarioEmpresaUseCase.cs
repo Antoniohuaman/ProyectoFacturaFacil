@@ -23,7 +23,7 @@ namespace ConfiguracionSistemaBC.Application.UseCases
     /// </summary>
     public sealed class RegistrarUsuarioEmpresaUseCase
     {
-        private readonly ITenantContext? _tenant;
+        private readonly ITenantContext _tenant;
         private readonly IUsuarioEmpresaRepository _usuarioRepo;
         private readonly IConfiguracionEmpresaRepository _configRepo;
         private readonly IRolEmpresaRepository _rolRepo;
@@ -34,38 +34,33 @@ namespace ConfiguracionSistemaBC.Application.UseCases
             IConfiguracionEmpresaRepository configRepo,
             IRolEmpresaRepository rolRepo,
             IUnitOfWork uow,
-            ITenantContext? tenantContext = null)
+            ITenantContext tenantContext)
         {
             _usuarioRepo = usuarioRepo ?? throw new ArgumentNullException(nameof(usuarioRepo));
             _configRepo  = configRepo  ?? throw new ArgumentNullException(nameof(configRepo));
             _rolRepo     = rolRepo     ?? throw new ArgumentNullException(nameof(rolRepo));
             _uow         = uow         ?? throw new ArgumentNullException(nameof(uow));
-            _tenant      = tenantContext; // puede ser null en escenarios backoffice; en ese caso se exige EmpresaId en DTO
+            _tenant      = tenantContext ?? throw new ArgumentNullException(nameof(tenantContext));
         }
 
         public async Task<RegistrarUsuarioEmpresaOutputDto> HandleAsync(
             RegistrarUsuarioEmpresaInputDto input,
             CancellationToken ct = default)
         {
-
             if (input is null) throw new ArgumentNullException(nameof(input));
-            if (input.Nombres is null) throw new ArgumentNullException(nameof(input.Nombres));
-            if (input.Apellidos is null) throw new ArgumentNullException(nameof(input.Apellidos));
-            if (input.Email is null) throw new ArgumentNullException(nameof(input.Email));
+            if (string.IsNullOrWhiteSpace(input.Nombres))   throw new ArgumentNullException(nameof(input.Nombres));
+            if (string.IsNullOrWhiteSpace(input.Apellidos)) throw new ArgumentNullException(nameof(input.Apellidos));
+            if (string.IsNullOrWhiteSpace(input.Email))     throw new ArgumentNullException(nameof(input.Email));
 
-            // 1) Resolver EmpresaId (siempre del contexto de tenant)
-            if (_tenant?.EmpresaId is null)
-                throw new InvalidOperationException("No hay contexto de empresa activo. El usuario no debe ingresar ni seleccionar RUC.");
+            // 1) Resolver EmpresaId (siempre del contexto)
             var empresaId = _tenant.EmpresaId;
 
-            // 2) Mapear VO básicos (convertir primitivos a value objects)
-            var nombre = NombrePersona.Crear(input.Nombres, input.Apellidos);
-            var email = Email.Create(input.Email);
-            var telefono = string.IsNullOrWhiteSpace(input.Telefono) ? null : Telefono.FromTexto(input.Telefono);
-            DocumentoIdentidad? documento = null; // Ya no se recibe documento desde el input DTO
+            // 2) Mapear VO básicos
+            var nombre   = NombrePersona.Crear(input.Nombres.Trim(), input.Apellidos.Trim());
+            var email    = Email.Create(input.Email.Trim());
+            var telefono = string.IsNullOrWhiteSpace(input.Telefono) ? null : Telefono.FromTexto(input.Telefono.Trim());
 
             // 3) Reglas de negocio / Validaciones de existencia
-
             if (await _usuarioRepo.EmailExisteEnEmpresaAsync(empresaId, email, ct))
                 throw new InvalidOperationException("Ya existe un usuario con ese email en la empresa.");
 
@@ -74,15 +69,18 @@ namespace ConfiguracionSistemaBC.Application.UseCases
 
             // Valida establecimientos y construye tuplas de accesos (VOs)
             var accesosTuplas = new List<(EstablecimientoId EstablecimientoId, IEnumerable<Guid> RolIds)>();
-            var estIdsVistos = new HashSet<EstablecimientoId>();
+            var estIdsVistos = new HashSet<Guid>();
 
             foreach (var a in input.AccesosPorEstablecimiento)
             {
                 if (a is null) continue;
-                var estId = EstablecimientoId.From(a.EstablecimientoId);
-                if (!estIdsVistos.Add(estId))
+                if (a.EstablecimientoId == Guid.Empty)
+                    throw new ArgumentNullException(nameof(a.EstablecimientoId), "EstablecimientoId inválido.");
+
+                if (!estIdsVistos.Add(a.EstablecimientoId))
                     throw new InvalidOperationException("No puede repetir el mismo establecimiento en los accesos.");
 
+                var estId = EstablecimientoId.From(a.EstablecimientoId);
                 var existe = await _configRepo.EstablecimientoExisteAsync(empresaId, estId, ct);
                 if (!existe)
                     throw new KeyNotFoundException("Establecimiento no encontrado en la empresa.");
@@ -103,13 +101,12 @@ namespace ConfiguracionSistemaBC.Application.UseCases
                 await AsegurarRolValidoParaEmpresaAsync(rolId, empresaId, ct);
 
             // 4) Crear el agregado en estado Invitado
-
             var usuarioId = UsuarioId.New();
 
             var agregado = UsuarioEmpresa.Crear(
                 empresaId: empresaId,
                 usuarioId: usuarioId,
-                documento: documento, // opcional
+                documento: null, // opcional en tu UX
                 nombre: nombre,
                 emailContacto: email,
                 telefonoContacto: telefono,
@@ -124,14 +121,11 @@ namespace ConfiguracionSistemaBC.Application.UseCases
             // 6) Salida
             return new RegistrarUsuarioEmpresaOutputDto
             {
-                EmpresaId = Guid.TryParse(empresaId.Value, out var eid) ? eid : Guid.Empty,
                 UsuarioId = usuarioId.Value,
                 Estado = agregado.Estado.ToString(),
-                Nombres = nombre.Nombres,
-                Apellidos = nombre.Apellidos,
+                NombreCompleto = nombre.Completo,
                 Email = email.Value,
-                Telefono = telefono?.UnirParaMostrar(),
-                // TipoDocumento y NumeroDocumento eliminados del output según requerimiento
+                Telefono = telefono?.UnirParaMostrar() ?? string.Empty,
                 Accesos = agregado.Accesos.Select(a => new RegistrarUsuarioEmpresaOutputDto.AccesoOut
                 {
                     EstablecimientoId = a.EstablecimientoId.Value,
@@ -142,14 +136,6 @@ namespace ConfiguracionSistemaBC.Application.UseCases
         }
 
         // -------------------- Helpers internos --------------------
-
-        private static EmpresaId MapEmpresaIdFromDto(string? raw)
-        {
-            if (raw is null)
-                throw new ArgumentNullException(nameof(raw), "EmpresaId es obligatorio si no hay contexto de tenant.");
-            return EmpresaId.From(raw);
-        }
-
         private async Task AsegurarRolValidoParaEmpresaAsync(Guid rolId, EmpresaId empresaId, CancellationToken ct)
         {
             var rol = await _rolRepo.GetByIdAsync(rolId, ct);
