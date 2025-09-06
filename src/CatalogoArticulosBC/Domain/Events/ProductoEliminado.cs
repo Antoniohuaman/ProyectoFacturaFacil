@@ -7,7 +7,7 @@ namespace CatalogoArticulosBC.Domain.Events
 	/// Evento de dominio que indica que un producto ha sido eliminado del catálogo.
 	/// </summary>
 	
-	public sealed class ProductoEliminado : IDomainEvent
+	public sealed class ProductoEliminado : DomainEvent
 	{
 		/// <summary>Identificador único del producto eliminado (SKU).</summary>
 		public string Sku { get; }
@@ -18,20 +18,12 @@ namespace CatalogoArticulosBC.Domain.Events
 		/// <summary>Usuario que realizó la eliminación.</summary>
 		public string Usuario { get; }
 
-		/// <summary>Fecha y hora de la eliminación.</summary>
-		public DateTime EliminadoEn { get; }
-
-		public Guid EventId { get; }
-		public DateTime OccurredOn { get; }
-
-		public ProductoEliminado(string sku, string usuario, DateTime eliminadoEn, string? motivo = null)
+		public ProductoEliminado(string sku, string usuario, string? motivo = null, Guid? eventId = null, DateTime? occurredOnUtc = null)
+			: base(eventId, occurredOnUtc)
 		{
 			Sku = sku ?? throw new ArgumentNullException(nameof(sku));
 			Usuario = usuario ?? throw new ArgumentNullException(nameof(usuario));
-			EliminadoEn = eliminadoEn;
 			Motivo = motivo;
-			EventId = Guid.NewGuid();
-			OccurredOn = DateTime.UtcNow;
 		}
 	}
 }

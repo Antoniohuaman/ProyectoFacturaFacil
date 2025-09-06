@@ -45,8 +45,8 @@ namespace CatalogoArticulosBC.Domain.Events
     public Peso? Peso { get; }
     // ...existing code...
     public TipoExistencia TipoExistencia { get; }
-        public IReadOnlyCollection<Guid> AlmacenesAsignados { get; }
-        public bool AsignarATodosLosAlmacenes { get; }
+    public IReadOnlyCollection<EstablecimientoId> EstablecimientosAsignados { get; }
+    public bool AsignarATodosLosEstablecimientos { get; }
 
         // Multimedia
         public Guid? ImagenPrincipalId { get; }
@@ -86,8 +86,8 @@ namespace CatalogoArticulosBC.Domain.Events
             Peso = producto.Peso;
             // ...existing code...
             TipoExistencia = producto.TipoExistencia;
-            AlmacenesAsignados = producto.AlmacenesAsignados.AsReadOnly();
-            AsignarATodosLosAlmacenes = producto.AsignarATodosLosAlmacenes;
+            EstablecimientosAsignados = producto.EstablecimientosAsignados.AsReadOnly();
+            AsignarATodosLosEstablecimientos = producto.AsignarATodosLosEstablecimientos;
 
             ImagenPrincipalId = producto.ImagenPrincipalId;
         }

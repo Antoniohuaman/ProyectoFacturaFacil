@@ -4,16 +4,16 @@ using System;
 
 namespace CatalogoArticulosBC.Domain.Events
 {
-    public class SkuCambiado : IDomainEvent
+    public class SkuActualizado : DomainEvent
     {
         public Guid ProductoId { get; }
         public Sku NuevoSku { get; }
-        public DateTime Fecha { get; }
-        public SkuCambiado(Guid productoId, Sku nuevoSku)
+
+        public SkuActualizado(Guid productoId, Sku nuevoSku, Guid? eventId = null, DateTime? occurredOnUtc = null)
+            : base(eventId, occurredOnUtc)
         {
             ProductoId = productoId;
             NuevoSku = nuevoSku;
-            Fecha = DateTime.UtcNow;
         }
     }
 }

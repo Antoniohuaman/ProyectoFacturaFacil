@@ -4,19 +4,17 @@ using System.Collections.Generic;
 
 namespace CatalogoArticulosBC.Domain.Events
 {
-    public class ProductosImportadosMasivamente : IDomainEvent
+    public class ProductosImportadosMasivamente : DomainEvent
     {
         public IReadOnlyList<Guid> ProductoIds { get; }
         public int Cantidad { get; }
         public string Usuario { get; }
-        public DateTime Fecha { get; }
-
-        public ProductosImportadosMasivamente(IReadOnlyList<Guid> productoIds, int cantidad, string usuario, DateTime fecha)
+        public ProductosImportadosMasivamente(IReadOnlyList<Guid> productoIds, int cantidad, string usuario, Guid? eventId = null, DateTime? occurredOnUtc = null)
+            : base(eventId, occurredOnUtc)
         {
             ProductoIds = productoIds;
             Cantidad = cantidad;
             Usuario = usuario;
-            Fecha = fecha;
         }
     }
 }

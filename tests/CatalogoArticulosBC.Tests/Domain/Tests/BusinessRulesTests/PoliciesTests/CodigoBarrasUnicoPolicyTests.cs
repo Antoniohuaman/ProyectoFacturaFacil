@@ -21,8 +21,9 @@ namespace CatalogoArticulosBC.Tests.Domain.Tests.BusinessRulesTests.PoliciesTest
                 nombre: new NombreProducto("Producto 3"),
                 unidadMedida: UnidadDeMedida.NIU,
                 afectacionImpuesto: AfectacionImpuesto.Gravado_10,
+                tasaImpuesto: TasaImpuesto.IGV10,
                 categoria: new Categoria("GRAVADO"),
-                almacenesAsignados: new List<Guid> { Guid.NewGuid() },
+                establecimientosAsignados: new List<EstablecimientoId> { EstablecimientoId.New() },
                 codigoBarras: new CodigoBarras("1234567890128")
             );
             var existentes = new List<ProductoSimple>();
@@ -41,8 +42,9 @@ namespace CatalogoArticulosBC.Tests.Domain.Tests.BusinessRulesTests.PoliciesTest
                 nombre: new NombreProducto("Producto 4"),
                 unidadMedida: UnidadDeMedida.NIU,
                 afectacionImpuesto: AfectacionImpuesto.Gravado_10,
+                tasaImpuesto: TasaImpuesto.IGV10,
                 categoria: new Categoria("GRAVADO"),
-                almacenesAsignados: new List<Guid> { Guid.NewGuid() },
+                establecimientosAsignados: new List<EstablecimientoId> { EstablecimientoId.New() },
                 codigoBarras: codigoBarras
             );
             var producto = new ProductoSimple(
@@ -51,8 +53,9 @@ namespace CatalogoArticulosBC.Tests.Domain.Tests.BusinessRulesTests.PoliciesTest
                 nombre: new NombreProducto("Producto 5"),
                 unidadMedida: UnidadDeMedida.NIU,
                 afectacionImpuesto: AfectacionImpuesto.Gravado_10,
+                tasaImpuesto: TasaImpuesto.IGV10,
                 categoria: new Categoria("GRAVADO"),
-                almacenesAsignados: new List<Guid> { Guid.NewGuid() },
+                establecimientosAsignados: new List<EstablecimientoId> { EstablecimientoId.New() },
                 codigoBarras: codigoBarras
             );
             // Aserción extra para depuración

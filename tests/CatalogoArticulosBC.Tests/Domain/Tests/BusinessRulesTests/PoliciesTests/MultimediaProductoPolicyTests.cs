@@ -22,8 +22,9 @@ namespace CatalogoArticulosBC.Tests.Domain.Tests.BusinessRulesTests.PoliciesTest
                 nombre: new NombreProducto("Producto 6"),
                 unidadMedida: UnidadDeMedida.NIU,
                 afectacionImpuesto: AfectacionImpuesto.Gravado_10,
+                tasaImpuesto: TasaImpuesto.IGV10,
                 categoria: new Categoria("GRAVADO"),
-                almacenesAsignados: new List<Guid> { Guid.NewGuid() }
+                establecimientosAsignados: new List<EstablecimientoId> { EstablecimientoId.New() }
             );
             var multimedia = new MultimediaProducto(
                 multimediaId: Guid.NewGuid(),
@@ -48,8 +49,9 @@ namespace CatalogoArticulosBC.Tests.Domain.Tests.BusinessRulesTests.PoliciesTest
                 nombre: new NombreProducto("Producto 7"),
                 unidadMedida: UnidadDeMedida.NIU,
                 afectacionImpuesto: AfectacionImpuesto.Gravado_10,
+                tasaImpuesto: TasaImpuesto.IGV10,
                 categoria: new Categoria("GRAVADO"),
-                almacenesAsignados: new List<Guid> { Guid.NewGuid() }
+                establecimientosAsignados: new List<EstablecimientoId> { EstablecimientoId.New() }
             );
             var policy = new MultimediaProductoPolicy();
             Assert.That(policy.TieneMultimediaValida(producto), Is.False);

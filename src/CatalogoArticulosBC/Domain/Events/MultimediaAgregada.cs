@@ -1,18 +1,18 @@
+
 using SharedKernel.Events;
 using System;
 
 namespace CatalogoArticulosBC.Domain.Events
 {
-    public class MultimediaAgregada : IDomainEvent
+    public class MultimediaAgregada : DomainEvent
     {
         public Guid ProductoId { get; }
         public Guid MultimediaId { get; }
-        public DateTime Fecha { get; }
-        public MultimediaAgregada(Guid productoId, Guid multimediaId)
+        public MultimediaAgregada(Guid productoId, Guid multimediaId, Guid? eventId = null, DateTime? occurredOnUtc = null)
+            : base(eventId, occurredOnUtc)
         {
             ProductoId = productoId;
             MultimediaId = multimediaId;
-            Fecha = DateTime.UtcNow;
         }
     }
 }

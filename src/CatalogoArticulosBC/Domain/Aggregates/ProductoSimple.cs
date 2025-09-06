@@ -21,7 +21,7 @@ namespace CatalogoArticulosBC.Domain.Aggregates
     {
         // Identidad y estado
         public Guid ProductoId { get; private set; }
-    public bool Habilitado { get; private set; } = true;
+        public bool Habilitado { get; private set; } = true;
 
         // Clave de negocio
         public Sku Sku { get; private set; }
@@ -31,6 +31,12 @@ namespace CatalogoArticulosBC.Domain.Aggregates
         public string Descripcion { get; private set; }
         public UnidadDeMedida UnidadMedida { get; private set; }
         public AfectacionImpuesto AfectacionImpuesto { get; private set; }
+        /// <summary>
+        /// Tasa de impuesto explícita seleccionada por el usuario.
+        /// Ejemplo: IGV 18% (gravado general), IGV 10% (gravado especial restaurantes/hoteles), 0% (exonerado/inafecto).
+        /// Nota: IVAP no aplica aquí.
+        /// </summary>
+        public TasaImpuesto TasaImpuesto { get; private set; }
         public Categoria Categoria { get; private set; }
         public Marca? Marca { get; private set; }
 
@@ -53,8 +59,8 @@ namespace CatalogoArticulosBC.Domain.Aggregates
         // ...existing code...
         public TipoExistencia TipoExistencia { get; private set; }
         // ...existing code...
-        public List<Guid> AlmacenesAsignados { get; private set; }
-        public bool AsignarATodosLosAlmacenes { get; private set; }
+    public List<EstablecimientoId> EstablecimientosAsignados { get; private set; }
+    public bool AsignarATodosLosEstablecimientos { get; private set; }
 
         // Multimedia
         private readonly List<MultimediaProducto> _multimedia = new();
@@ -82,14 +88,15 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             NombreProducto nombre,
             UnidadDeMedida unidadMedida,
             AfectacionImpuesto afectacionImpuesto,
+            TasaImpuesto tasaImpuesto,
             Categoria categoria,
-            List<Guid>? almacenesAsignados,
+            List<EstablecimientoId>? establecimientosAsignados,
             string? descripcion = null,
             Marca? marca = null,
             PrecioVenta? precioVenta = null,
             // bool tieneDetraccion eliminado
             CodigoSUNAT? codigoSunat = null,
-            SharedKernel.ValueObjects.CentroDeCosto? centroDeCosto = null,
+            CentroDeCosto? centroDeCosto = null,
             Peso? peso = null,
             // ...existing code...
             CodigoBarras? codigoBarras = null,
@@ -98,7 +105,7 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             TipoProducto tipo = TipoProducto.Bien,
             TipoExistencia tipoExistencia = TipoExistencia.ProductosTerminados,
             // ...existing code...
-            bool asignarATodosLosAlmacenes = false,
+            bool asignarATodosLosEstablecimientos = false,
             Guid? imagenPrincipalId = null)
         {
             // Validaciones de parámetros obligatorios
@@ -109,10 +116,18 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             AfectacionImpuesto = afectacionImpuesto ?? throw new ArgumentNullException(nameof(afectacionImpuesto));
             Categoria = categoria ?? throw new ArgumentNullException(nameof(categoria));
 
-            
+            if (establecimientosAsignados == null || !establecimientosAsignados.Any())
+                throw new ArgumentException("Debe asignar al menos un establecimiento.", nameof(establecimientosAsignados));
 
-            if (almacenesAsignados == null || !almacenesAsignados.Any())
-                throw new ArgumentException("Debe asignar al menos un almacén.", nameof(almacenesAsignados));
+
+            // Validación de coherencia entre afectación y tasa
+            if (!afectacionImpuesto.GravaImpuesto && !tasaImpuesto.EsCero)
+                throw new ArgumentException("Si la afectación no grava impuesto, la tasa debe ser 0%.");
+            if (afectacionImpuesto.GravaImpuesto && tasaImpuesto.EsCero)
+                throw new ArgumentException("Si la afectación grava impuesto, la tasa no puede ser 0%.");
+            // Solo se permiten tasas gravadas de 18% (IGV general) o 10% (IGV especial restaurantes/hoteles)
+            if (afectacionImpuesto.GravaImpuesto && tasaImpuesto.Fraccion != 0.18m && tasaImpuesto.Fraccion != 0.10m)
+                throw new ArgumentException("Solo se permite IGV 18% o IGV 10% como tasas gravadas en este contexto.");
 
             // Asignaciones
             ProductoId = Guid.NewGuid();
@@ -120,22 +135,16 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             Marca = marca;
             PrecioVenta = precioVenta;
             Moneda = moneda ?? throw new ArgumentNullException(nameof(moneda), "La moneda debe provenir de la configuración de empresa.");
-            // TieneDetraccion eliminado
-            // CodigoDetraccion eliminado
             CodigoSunat = codigoSunat;
-            // BaseImponibleVentas eliminado
             CentroDeCosto = centroDeCosto;
-                Habilitado = true;
-            // ...existing code...
             CodigoBarras = codigoBarras;
             CodigoFabrica = codigoFabrica;
-            // ...existing code...
             Tipo = tipo;
             TipoExistencia = tipoExistencia;
-            // ...existing code...
-            AlmacenesAsignados = almacenesAsignados;
-            AsignarATodosLosAlmacenes = asignarATodosLosAlmacenes;
+            EstablecimientosAsignados = establecimientosAsignados;
+            AsignarATodosLosEstablecimientos = asignarATodosLosEstablecimientos;
             ImagenPrincipalId = imagenPrincipalId;
+            TasaImpuesto = tasaImpuesto ?? throw new ArgumentNullException(nameof(tasaImpuesto));
 
             // Evento de dominio
             var ev = new ProductoCreado(this);
@@ -150,6 +159,7 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             NombreProducto nombre,
             UnidadDeMedida unidadMedida,
             AfectacionImpuesto afectacionImpuesto,
+            TasaImpuesto tasaImpuesto,
             Categoria categoria,
             Marca? marca,
             PrecioVenta? precioVenta,
@@ -159,8 +169,8 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             CodigoFabrica? codigoFabrica,
             TipoProducto tipo,
             CodigoSUNAT? codigoSunat = null,
-            List<Guid>? almacenesAsignados = null,
-            bool asignarATodosLosAlmacenes = false,
+            List<EstablecimientoId>? establecimientosAsignados = null,
+            bool asignarATodosLosEstablecimientos = false,
             Guid? imagenPrincipalId = null,
             string? descripcion = null,
             TipoExistencia tipoExistencia = TipoExistencia.ProductosTerminados)
@@ -172,10 +182,18 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             AfectacionImpuesto = afectacionImpuesto ?? throw new ArgumentNullException(nameof(afectacionImpuesto));
             Categoria = categoria ?? throw new ArgumentNullException(nameof(categoria));
 
-            // Si aplica detracción, ya no se requiere código
+            if (establecimientosAsignados == null || !establecimientosAsignados.Any())
+                throw new ArgumentException("Debe asignar al menos un establecimiento.", nameof(establecimientosAsignados));
 
-            if (almacenesAsignados == null || !almacenesAsignados.Any())
-                throw new ArgumentException("Debe asignar al menos un almacén.", nameof(almacenesAsignados));
+
+            // Validación de coherencia entre afectación y tasa
+            if (!afectacionImpuesto.GravaImpuesto && !tasaImpuesto.EsCero)
+                throw new ArgumentException("Si la afectación no grava impuesto, la tasa debe ser 0%.");
+            if (afectacionImpuesto.GravaImpuesto && tasaImpuesto.EsCero)
+                throw new ArgumentException("Si la afectación grava impuesto, la tasa no puede ser 0%.");
+            // Solo se permiten tasas gravadas de 18% (IGV general) o 10% (IGV especial restaurantes/hoteles)
+            if (afectacionImpuesto.GravaImpuesto && tasaImpuesto.Fraccion != 0.18m && tasaImpuesto.Fraccion != 0.10m)
+                throw new ArgumentException("Solo se permite IGV 18% o IGV 10% como tasas gravadas en este contexto.");
 
             // Asignaciones
             Marca = marca;
@@ -187,9 +205,10 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             CodigoFabrica = codigoFabrica;
             Tipo = tipo;
             TipoExistencia = tipoExistencia;
-            AlmacenesAsignados = almacenesAsignados;
-            AsignarATodosLosAlmacenes = asignarATodosLosAlmacenes;
+            EstablecimientosAsignados = establecimientosAsignados;
+            AsignarATodosLosEstablecimientos = asignarATodosLosEstablecimientos;
             ImagenPrincipalId = imagenPrincipalId;
+            TasaImpuesto = tasaImpuesto ?? throw new ArgumentNullException(nameof(tasaImpuesto));
 
             var ev = new ProductoActualizado(this);
             AddDomainEvent(ev);
@@ -269,7 +288,7 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             if (sku == null) throw new ArgumentNullException(nameof(sku));
             this.Sku = sku;
             // Emitir evento de dominio
-            var ev = new SkuCambiado(ProductoId, sku);
+            var ev = new SkuActualizado(ProductoId, sku);
             AddDomainEvent(ev);
         }
 
@@ -282,7 +301,7 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             var nuevoSku = generator.Generar();
             this.Sku = nuevoSku;
             // Emitir evento de dominio
-            var ev = new SkuCambiado(ProductoId, nuevoSku);
+            var ev = new SkuActualizado(ProductoId, nuevoSku);
             AddDomainEvent(ev);
         }
         /// <summary>

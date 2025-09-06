@@ -24,7 +24,8 @@ namespace CatalogoArticulosBC.Domain.Events
         /// </summary>
         /// <param name="productoId">ID del producto que se inhabilita.</param>
         /// <param name="motivo">Razón de la inhabilitación. No puede ser nulo ni vacío.</param>
-        public ProductoInhabilitado(Guid productoId, string motivo)
+        public ProductoInhabilitado(Guid productoId, string motivo, Guid? eventId = null, DateTime? occurredOnUtc = null)
+            : base(eventId, occurredOnUtc)
         {
             ProductoId = productoId;
             Motivo = string.IsNullOrWhiteSpace(motivo)
