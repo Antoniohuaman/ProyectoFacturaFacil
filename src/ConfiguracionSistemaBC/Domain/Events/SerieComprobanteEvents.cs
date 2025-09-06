@@ -4,6 +4,17 @@ using ConfiguracionSistemaBC.Domain.ValueObjects;     // TipoComprobanteCodigo, 
 
 namespace ConfiguracionSistemaBC.Domain.Events
 {
+    /// <summary>
+    /// Disparado cuando una serie es eliminada físicamente de la empresa.
+    /// Útil para auditoría o sincronización con otros BCs.
+    /// </summary>
+    public sealed record SerieComprobanteEliminada(
+        EmpresaId EmpresaId,
+        Guid SerieComprobanteId,
+        EstablecimientoId EstablecimientoId,
+        TipoComprobanteCodigo Tipo,
+        SerieCodigo Serie
+    ) : IDomainEvent;
     // Creación / cambios de configuración
     public sealed record SerieComprobanteCreada(
         EmpresaId EmpresaId,
