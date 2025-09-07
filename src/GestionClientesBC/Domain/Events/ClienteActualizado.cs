@@ -10,13 +10,10 @@ namespace GestionClientesBC.Domain.Events
     /// </summary>
     public sealed record ClienteActualizado(
         Guid ClienteId,
-        DocumentoIdentidad DocumentoIdentidad,
-        string RazonSocialONombres,
-        Email Correo,
-        string Celular,
-    DomicilioFiscal? DomicilioFiscal,
-        TipoCliente TipoCliente,
-        EstadoCliente Estado,
+        string TipoDocumento,
+        string NumeroDocumento,
+        string RazonSocial,
+        string Nombres,
         DateTime FechaActualizacion
     ) : IDomainEvent;
 }

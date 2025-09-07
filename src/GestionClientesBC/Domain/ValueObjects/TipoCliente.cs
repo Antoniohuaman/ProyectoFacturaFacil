@@ -4,86 +4,144 @@ using SharedKernel.Exceptions; // BusinessRuleException
 namespace GestionClientesBC.Domain.ValueObjects
 {
     /// <summary>
-    /// Tipo de cliente (segmentación comercial): Mayorista, Minorista, Distribuidor, Revendedor, SinDefinir.
-    /// - Value Object con identidad por "Código" (3 letras).
-    /// - Inmutable, comparación por valor (Código).
-    /// - Fábricas desde código o nombre, case-insensitive.
-    /// - Pensado para usarse junto a un "Rol comercial" (cliente/proveedor) que es otro concepto.
+    /// Tipo de cliente: Cliente, Proveedor o ambos.
+    /// Es independiente del "segmento" (mayorista/minorista...).
+    /// - Inmutable, comparación por valor (máscara 0..3)
+    /// - Fábricas desde código y booleanos
+    /// - Guards para operaciones (venta/compra)
     /// </summary>
     public sealed class TipoCliente : IEquatable<TipoCliente>
     {
-        // Códigos canónicos (3 letras). Útiles para persistencia y switches.
-        public const string COD_SIN = "SIN";
-        public const string COD_MAY = "MAY";
-        public const string COD_MIN = "MIN";
-        public const string COD_DIS = "DIS";
-        public const string COD_REV = "REV";
+        // Bits
+        private const int BIT_CLIENTE   = 1; // 01
+        private const int BIT_PROVEEDOR = 2; // 10
 
-        public string Codigo { get; }  // p.ej. "MAY"
-        public string Nombre { get; }  // p.ej. "Mayorista"
+    // Máscara 1, 2, 3
+    public int Mascara { get; }
 
-        // Instancias conocidas (singletons)
-        public static readonly TipoCliente SinDefinir  = new TipoCliente(COD_SIN, "Sin definir");
-        public static readonly TipoCliente Mayorista   = new TipoCliente(COD_MAY, "Mayorista");
-        public static readonly TipoCliente Minorista   = new TipoCliente(COD_MIN, "Minorista");
-        public static readonly TipoCliente Distribuidor= new TipoCliente(COD_DIS, "Distribuidor");
-        public static readonly TipoCliente Revendedor  = new TipoCliente(COD_REV, "Revendedor");
+        // Códigos para persistencia/simple IO
+        // C: cliente | P: proveedor | CP: cliente-proveedor
 
-        // Para EF Core
-        private TipoCliente() { Codigo = null!; Nombre = null!; }
-
-        private TipoCliente(string codigo, string nombre)
+        public string Codigo => Mascara switch
         {
-            Codigo = codigo;
-            Nombre = nombre;
+            BIT_CLIENTE => "C",
+            BIT_PROVEEDOR => "P",
+            BIT_CLIENTE | BIT_PROVEEDOR => "CP",
+            _ => throw new InvalidOperationException("TipoCliente inválido: solo se permiten Cliente, Proveedor o Cliente/Proveedor.")
+        };
+
+        public string Nombre => Mascara switch
+        {
+            BIT_CLIENTE => "Cliente",
+            BIT_PROVEEDOR => "Proveedor",
+            BIT_CLIENTE | BIT_PROVEEDOR => "Cliente/Proveedor",
+            _ => throw new InvalidOperationException("TipoCliente inválido: solo se permiten Cliente, Proveedor o Cliente/Proveedor.")
+        };
+
+
+    public bool EsCliente   => (Mascara & BIT_CLIENTE) != 0;
+    public bool EsProveedor => (Mascara & BIT_PROVEEDOR) != 0;
+    public bool EsAmbos     => Mascara == (BIT_CLIENTE | BIT_PROVEEDOR);
+
+
+    // Instancias estáticas (solo los tres válidos)
+    public static readonly TipoCliente SoloCliente      = new TipoCliente(BIT_CLIENTE);
+    public static readonly TipoCliente SoloProveedor    = new TipoCliente(BIT_PROVEEDOR);
+    public static readonly TipoCliente ClienteProveedor = new TipoCliente(BIT_CLIENTE | BIT_PROVEEDOR);
+
+
+        // EF Core
+        private TipoCliente() { Mascara = BIT_CLIENTE; } // Default a Cliente para EF Core
+        private TipoCliente(int mascara)
+        {
+            if (mascara != BIT_CLIENTE && mascara != BIT_PROVEEDOR && mascara != (BIT_CLIENTE | BIT_PROVEEDOR))
+                throw new InvalidOperationException("TipoCliente inválido: solo se permiten Cliente, Proveedor o Cliente/Proveedor.");
+            Mascara = mascara;
         }
 
+        private static TipoCliente DesdeMascara(int m) => m switch
+        {
+            BIT_CLIENTE => SoloCliente,
+            BIT_PROVEEDOR => SoloProveedor,
+            BIT_CLIENTE | BIT_PROVEEDOR => ClienteProveedor,
+            _ => throw new InvalidOperationException("TipoCliente inválido: solo se permiten Cliente, Proveedor o Cliente/Proveedor.")
+        };
+
         /// <summary>
-        /// Obtiene la instancia conocida a partir de su código (case-insensitive).
+        /// Fábrica desde código: "N", "C", "P", "CP" (case-insensitive, ignora espacios).
         /// </summary>
-        public static TipoCliente DesdeCodigo(string? codigo)
+    public static TipoCliente DesdeCodigo(string? codigo)
         {
             if (string.IsNullOrWhiteSpace(codigo))
-                throw new BusinessRuleException("El código de TipoCliente no puede estar vacío.");
+                throw new BusinessRuleException("El código de tipo de cliente no puede estar vacío.");
 
-            switch (codigo.Trim().ToUpperInvariant())
+            var c = codigo.Trim().ToUpperInvariant();
+            return c switch
             {
-                case COD_SIN: return SinDefinir;
-                case COD_MAY: return Mayorista;
-                case COD_MIN: return Minorista;
-                case COD_DIS: return Distribuidor;
-                case COD_REV: return Revendedor;
-                default:
-                    throw new BusinessRuleException($"Código de TipoCliente inválido: '{codigo}'. Valores: {COD_SIN},{COD_MAY},{COD_MIN},{COD_DIS},{COD_REV}.");
-            }
-        }
-
-        /// <summary>
-        /// Obtiene la instancia conocida desde su nombre (case-insensitive).
-        /// </summary>
-        public static TipoCliente DesdeNombre(string? nombre)
-        {
-            if (string.IsNullOrWhiteSpace(nombre))
-                throw new BusinessRuleException("El nombre de TipoCliente no puede estar vacío.");
-
-            var n = nombre.Trim().ToLowerInvariant();
-            return n switch
-            {
-                "sin definir"  => SinDefinir,
-                "mayorista"    => Mayorista,
-                "minorista"    => Minorista,
-                "distribuidor" => Distribuidor,
-                "revendedor"   => Revendedor,
-                _ => throw new BusinessRuleException($"Nombre de TipoCliente inválido: '{nombre}'.")
+                "C"  => SoloCliente,
+                "P"  => SoloProveedor,
+                "CP" => ClienteProveedor,
+                _ => throw new BusinessRuleException($"Código de tipo de cliente inválido: '{codigo}'. Valores: C, P, CP.")
             };
         }
 
-        public override string ToString() => Nombre;
+        /// <summary>
+        /// Fábrica desde booleanos.
+        /// </summary>
+    public static TipoCliente DesdeBools(bool esCliente, bool esProveedor)
+        {
+            var m = (esCliente ? BIT_CLIENTE : 0) | (esProveedor ? BIT_PROVEEDOR : 0);
+            if (m == 0)
+                throw new BusinessRuleException("Debe seleccionar al menos un tipo: Cliente y/o Proveedor.");
+            return DesdeMascara(m);
+        }
+
+        /// <summary>
+        /// Agrega el rol 'Cliente' (idempotente).
+        /// </summary>
+    public TipoCliente AgregarCliente() => DesdeMascara(Mascara | BIT_CLIENTE);
+
+        /// <summary>
+        /// Agrega el rol 'Proveedor' (idempotente).
+        /// </summary>
+    public TipoCliente AgregarProveedor() => DesdeMascara(Mascara | BIT_PROVEEDOR);
+
+        /// <summary>
+        /// Quita el rol 'Cliente' (idempotente).
+        /// </summary>
+    public TipoCliente QuitarCliente() => DesdeMascara(Mascara & ~BIT_CLIENTE);
+
+        /// <summary>
+        /// Quita el rol 'Proveedor' (idempotente).
+        /// </summary>
+    public TipoCliente QuitarProveedor() => DesdeMascara(Mascara & ~BIT_PROVEEDOR);
+
+        /// <summary>
+        /// Guard: asegura que se pueden realizar operaciones de VENTA (requiere rol Cliente).
+        /// </summary>
+    public void AsegurarPuedeEmitirComprobanteVenta()
+        {
+            if (!EsCliente)
+                throw new BusinessRuleException("El tercero no tiene tipo 'Cliente': no puede emitirse comprobante de venta.");
+        }
+
+        /// <summary>
+        /// Guard: asegura que se pueden registrar COMPRAS (requiere rol Proveedor).
+        /// </summary>
+    public void AsegurarPuedeRegistrarCompra()
+        {
+            if (!EsProveedor)
+                throw new BusinessRuleException("El tercero no tiene tipo 'Proveedor': no puede registrarse una compra.");
+        }
+
+
+
+    public override string ToString() => Nombre;
 
         #region Igualdad por valor
-        public bool Equals(TipoCliente? other) => other is not null && Codigo == other.Codigo;
-        public override bool Equals(object? obj) => obj is TipoCliente t && Equals(t);
-        public override int GetHashCode() => Codigo.GetHashCode(StringComparison.Ordinal);
+    public bool Equals(TipoCliente? other) => other is not null && Mascara == other.Mascara;
+    public override bool Equals(object? obj) => obj is TipoCliente r && Equals(r);
+        public override int GetHashCode() => Mascara.GetHashCode();
         #endregion
     }
 }

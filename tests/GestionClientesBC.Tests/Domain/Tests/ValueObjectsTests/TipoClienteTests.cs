@@ -7,63 +7,119 @@ namespace GestionClientesBC.Tests.ValueObjects
     [TestFixture]
     public class TipoClienteTests
     {
-        [Test]
-        public void Instancias_Basicas_Singletons()
-        {
-            Assert.That(TipoCliente.Mayorista.Codigo, Is.EqualTo(TipoCliente.COD_MAY));
-            Assert.That(TipoCliente.Mayorista.Nombre, Is.EqualTo("Mayorista"));
 
-            Assert.That(TipoCliente.Minorista.Codigo, Is.EqualTo(TipoCliente.COD_MIN));
-            Assert.That(TipoCliente.Distribuidor.Codigo, Is.EqualTo(TipoCliente.COD_DIS));
-            Assert.That(TipoCliente.Revendedor.Codigo, Is.EqualTo(TipoCliente.COD_REV));
-            Assert.That(TipoCliente.SinDefinir.Codigo, Is.EqualTo(TipoCliente.COD_SIN));
+        [Test]
+        public void Instancias_Estandar()
+        {
+            Assert.That(TipoCliente.SoloCliente.Mascara, Is.EqualTo(1));
+            Assert.That(TipoCliente.SoloProveedor.Mascara, Is.EqualTo(2));
+            Assert.That(TipoCliente.ClienteProveedor.Mascara, Is.EqualTo(3));
+
+            Assert.That(TipoCliente.SoloCliente.Nombre, Is.EqualTo("Cliente"));
+            Assert.That(TipoCliente.SoloProveedor.Nombre, Is.EqualTo("Proveedor"));
+            Assert.That(TipoCliente.ClienteProveedor.Nombre, Is.EqualTo("Cliente/Proveedor"));
+
+            Assert.That(TipoCliente.SoloCliente.Codigo, Is.EqualTo("C"));
+            Assert.That(TipoCliente.SoloProveedor.Codigo, Is.EqualTo("P"));
+            Assert.That(TipoCliente.ClienteProveedor.Codigo, Is.EqualTo("CP"));
         }
 
-        [TestCase("may", "Mayorista")]
-        [TestCase("MIN", "Minorista")]
-        [TestCase("dis", "Distribuidor")]
-        [TestCase("REV", "Revendedor")]
-        [TestCase("sin", "Sin definir")]
+
+        [TestCase("C",  "Cliente")]
+        [TestCase("p",  "Proveedor")]
+        [TestCase("cp", "Cliente/Proveedor")]
         public void DesdeCodigo_MapeaCorrectamente(string codigo, string nombreEsperado)
         {
-            var t = TipoCliente.DesdeCodigo(codigo);
-            Assert.That(t.Nombre, Is.EqualTo(nombreEsperado));
+            var r = TipoCliente.DesdeCodigo(codigo);
+            Assert.That(r.Nombre, Is.EqualTo(nombreEsperado));
         }
 
-        [TestCase("Mayorista",   TipoCliente.COD_MAY)]
-        [TestCase("minorista",   TipoCliente.COD_MIN)]
-        [TestCase("Distribuidor",TipoCliente.COD_DIS)]
-        [TestCase("revendedor",  TipoCliente.COD_REV)]
-        [TestCase("Sin definir", TipoCliente.COD_SIN)]
-        public void DesdeNombre_MapeaCorrectamente(string nombre, string codigoEsperado)
+
+        [Test]
+        public void DesdeCodigo_Invalido_Lanza()
         {
-            var t = TipoCliente.DesdeNombre(nombre);
-            Assert.That(t.Codigo, Is.EqualTo(codigoEsperado));
+            Assert.That(() => TipoCliente.DesdeCodigo("x"),
+                Throws.TypeOf<BusinessRuleException>());
+            Assert.That(() => TipoCliente.DesdeCodigo(""),
+                Throws.TypeOf<BusinessRuleException>());
         }
 
-        [TestCase("")]
-        [TestCase(" ")]
-        [TestCase(null)]
-        [TestCase("vip")]
-        public void Invalidos_Lanzan(string? input)
+
+        [TestCase(true,  false, "C")]
+        [TestCase(false, true,  "P")]
+        [TestCase(true,  true,  "CP")]
+        public void DesdeBools_MapeaCorrectamente(bool esCliente, bool esProveedor, string codigo)
         {
-            Assert.That(() => TipoCliente.DesdeCodigo(input!), Throws.TypeOf<BusinessRuleException>());
-            Assert.That(() => TipoCliente.DesdeNombre(input!), Throws.TypeOf<BusinessRuleException>());
+            var r = TipoCliente.DesdeBools(esCliente, esProveedor);
+            Assert.That(r.Codigo, Is.EqualTo(codigo));
         }
 
         [Test]
-        public void IgualdadPorValor_MismoCodigo_Iguales()
+        public void DesdeBools_TodosFalse_Lanza()
         {
-            var a = TipoCliente.DesdeCodigo("MAY");
-            var b = TipoCliente.Mayorista;
+            Assert.That(() => TipoCliente.DesdeBools(false, false),
+                Throws.TypeOf<BusinessRuleException>());
+        }
+
+
+        [Test]
+        public void Agregar_Quitar_Idempotentes_Y_Combinables()
+        {
+            var r = TipoCliente.SoloCliente;
+
+            // Agregar proveedor
+            r = r.AgregarProveedor();
+            Assert.That(r, Is.EqualTo(TipoCliente.ClienteProveedor));
+
+            // Quitar cliente
+            r = r.QuitarCliente();
+            Assert.That(r, Is.EqualTo(TipoCliente.SoloProveedor));
+
+            // Agregar cliente de nuevo
+            r = r.AgregarCliente();
+            Assert.That(r, Is.EqualTo(TipoCliente.ClienteProveedor));
+
+            // Quitar proveedor
+            r = r.QuitarProveedor();
+            Assert.That(r, Is.EqualTo(TipoCliente.SoloCliente));
+
+            // Idempotencia
+            Assert.That(r.AgregarCliente(), Is.EqualTo(TipoCliente.SoloCliente));
+            Assert.That(r.QuitarProveedor(), Is.EqualTo(TipoCliente.SoloCliente));
+        }
+
+
+        [Test]
+        public void Guards_DeOperacion_SegunRol()
+        {
+            // Solo Cliente: venta OK, compra falla
+            var c = TipoCliente.SoloCliente;
+            Assert.That(() => c.AsegurarPuedeEmitirComprobanteVenta(), Throws.Nothing);
+            Assert.That(() => c.AsegurarPuedeRegistrarCompra(), Throws.TypeOf<BusinessRuleException>());
+
+            // Solo Proveedor: venta falla, compra OK
+            var p = TipoCliente.SoloProveedor;
+            Assert.That(() => p.AsegurarPuedeEmitirComprobanteVenta(), Throws.TypeOf<BusinessRuleException>());
+            Assert.That(() => p.AsegurarPuedeRegistrarCompra(), Throws.Nothing);
+
+            // Ambos: todo OK
+            var cp = TipoCliente.ClienteProveedor;
+            Assert.That(() => cp.AsegurarPuedeEmitirComprobanteVenta(), Throws.Nothing);
+            Assert.That(() => cp.AsegurarPuedeRegistrarCompra(), Throws.Nothing);
+        }
+
+
+    // No aplica en TipoCliente: no existe el estado "Ninguno" ni el método AsegurarTieneAlMenosUnRol
+
+
+        [Test]
+        public void IgualdadPorValor()
+        {
+            var a = TipoCliente.DesdeCodigo("cp");
+            var b = TipoCliente.ClienteProveedor;
             Assert.That(a, Is.EqualTo(b));
             Assert.That(a.GetHashCode(), Is.EqualTo(b.GetHashCode()));
-        }
-
-        [Test]
-        public void ToString_RetornaNombre()
-        {
-            Assert.That(TipoCliente.Distribuidor.ToString(), Is.EqualTo("Distribuidor"));
+            Assert.That(a.ToString(), Is.EqualTo("Cliente/Proveedor"));
         }
     }
 }
