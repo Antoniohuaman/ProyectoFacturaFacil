@@ -6,7 +6,6 @@ using GestionClientesBC.Domain.Entities;
 using GestionClientesBC.Domain.Events;
 using SharedKernel.Events;
 using SharedKernel.ValueObjects;
-using ClienteActualizado = GestionClientesBC.Domain.Events.ClienteActualizado;
 
 namespace GestionClientesBC.Domain.Aggregates
 {
@@ -20,10 +19,9 @@ namespace GestionClientesBC.Domain.Aggregates
     // Eliminado: private readonly List<OperacionCliente> _operaciones = new();
 
     public Guid ClienteId { get; }
-    public TipoDocumento TipoDocumento { get; private set; } // Obligatorio
-    public string NumeroDocumento { get; private set; } // Obligatorio
-    public string? RazonSocial { get; private set; } // Obligatorio solo si RUC
-    public string? Nombres { get; private set; } // Obligatorio solo si no es RUC
+    public DocumentoIdentidad Documento { get; private set; } // Obligatorio
+    public NombreCliente? RazonSocial { get; private set; } // Obligatorio solo si RUC
+    public NombreCliente? Nombres { get; private set; } // Obligatorio solo si no es RUC
     public Email? Correo { get; private set; } // Opcional
     public Telefono? Telefono { get; private set; } // Opcional
     public DomicilioFiscal? DomicilioFiscal { get; private set; } // Opcional
@@ -41,10 +39,9 @@ namespace GestionClientesBC.Domain.Aggregates
 
         public Cliente(
             Guid clienteId,
-            TipoDocumento tipoDocumento,
-            string numeroDocumento,
-            string? razonSocial,
-            string? nombres,
+            DocumentoIdentidad documento,
+            NombreCliente? razonSocial,
+            NombreCliente? nombres,
             Email? correo = null,
             Telefono? telefono = null,
             DomicilioFiscal? domicilioFiscal = null,
@@ -52,29 +49,25 @@ namespace GestionClientesBC.Domain.Aggregates
             RolCliente? rolCliente = null,
             EstadoCliente? estado = null)
         {
-
             if (clienteId == Guid.Empty)
                 throw new ArgumentException("El Id no puede ser vacío.", nameof(clienteId));
-            if (!Enum.IsDefined(typeof(TipoDocumento), tipoDocumento))
-                throw new ArgumentException("Tipo de documento inválido.", nameof(tipoDocumento));
-            if (string.IsNullOrWhiteSpace(numeroDocumento))
-                throw new ArgumentNullException(nameof(numeroDocumento), "El número de documento es obligatorio.");
+            if (documento is null)
+                throw new ArgumentNullException(nameof(documento));
 
             // Validación de razón social/nombres según tipo de documento
-            if (tipoDocumento == TipoDocumento.Ruc)
+            if (documento.Tipo == TipoDocumento.Ruc)
             {
-                if (string.IsNullOrWhiteSpace(razonSocial))
+                if (razonSocial is null)
                     throw new ArgumentNullException(nameof(razonSocial), "La razón social es obligatoria para RUC.");
             }
             else
             {
-                if (string.IsNullOrWhiteSpace(nombres))
+                if (nombres is null)
                     throw new ArgumentNullException(nameof(nombres), "El nombre es obligatorio para este tipo de documento.");
             }
 
             ClienteId = clienteId;
-            TipoDocumento = tipoDocumento;
-            NumeroDocumento = numeroDocumento;
+            Documento = documento;
             RazonSocial = razonSocial;
             Nombres = nombres;
             Correo = correo;
@@ -86,14 +79,12 @@ namespace GestionClientesBC.Domain.Aggregates
             FechaRegistro = DateTime.UtcNow;
 
             // Evento de dominio: ClienteCreado (ajustar según nuevos campos)
-            // NOTA: El evento ClienteCreado debe ser actualizado para reflejar la nueva estructura minimalista.
-            // Por ahora, solo se registra el ID y los datos mínimos.
             _domainEvents.Add(new ClienteCreado(
                 ClienteId,
-                tipoDocumento.ToString(),
-                numeroDocumento,
-                razonSocial ?? string.Empty,
-                nombres ?? string.Empty,
+                documento.Tipo.ToString(),
+                documento.Numero,
+                razonSocial?.Valor ?? string.Empty,
+                nombres?.Valor ?? string.Empty,
                 FechaRegistro
             ));
         }
@@ -115,17 +106,17 @@ namespace GestionClientesBC.Domain.Aggregates
             FechaRegistro = DateTime.UtcNow; // Actualiza la fecha internamente
         }
 
-        public void ActualizarNombre(string nuevoNombre)
+        public void ActualizarNombre(NombreCliente nuevoNombre)
         {
-            if (TipoDocumento == TipoDocumento.Ruc)
+            if (Documento.Tipo == TipoDocumento.Ruc)
             {
-                if (string.IsNullOrWhiteSpace(nuevoNombre))
+                if (nuevoNombre is null)
                     throw new ArgumentException("La razón social no puede estar vacía.");
                 RazonSocial = nuevoNombre;
             }
             else
             {
-                if (string.IsNullOrWhiteSpace(nuevoNombre))
+                if (nuevoNombre is null)
                     throw new ArgumentException("El nombre no puede estar vacío.");
                 Nombres = nuevoNombre;
             }
@@ -145,7 +136,9 @@ namespace GestionClientesBC.Domain.Aggregates
 
         public void ActualizarDocumentoIdentidad(DocumentoIdentidad nuevoDocumento)
         {
-            throw new NotSupportedException("La edición de DocumentoIdentidad no es compatible con el nuevo modelo minimalista. Use TipoDocumento y NumeroDocumento.");
+            if (nuevoDocumento is null)
+                throw new ArgumentNullException(nameof(nuevoDocumento));
+            Documento = nuevoDocumento;
         }
 
         public void RegistrarModificacion(IDictionary<string, (object? anterior, object? nuevo)> cambios)
@@ -153,10 +146,10 @@ namespace GestionClientesBC.Domain.Aggregates
             // Evento de dominio: ClienteActualizado (ajustar según nuevos campos)
             _domainEvents.Add(new ClienteActualizado(
                 ClienteId,
-                TipoDocumento.ToString(),
-                NumeroDocumento,
-                RazonSocial ?? string.Empty,
-                Nombres ?? string.Empty,
+                Documento.Tipo.ToString(),
+                Documento.Numero,
+                RazonSocial?.Valor ?? string.Empty,
+                Nombres?.Valor ?? string.Empty,
                 DateTime.UtcNow
             ));
         }
