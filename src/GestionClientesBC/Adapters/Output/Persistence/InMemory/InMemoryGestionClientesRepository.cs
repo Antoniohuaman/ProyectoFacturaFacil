@@ -84,7 +84,7 @@ namespace GestionClientesBC.Adapters.Output.Persistence.InMemory
 				   query = query.Where(c =>
 					   (c.Documento.Numero != null && c.Documento.Numero.Contains(filtro, StringComparison.OrdinalIgnoreCase)) ||
 					   (c.RazonSocial != null && c.RazonSocial.Valor != null && c.RazonSocial.Valor.Contains(filtro, StringComparison.OrdinalIgnoreCase)) ||
-					   (c.Nombres != null && c.Nombres.Valor != null && c.Nombres.Valor.Contains(filtro, StringComparison.OrdinalIgnoreCase))
+					   (c.Nombres != null && c.Nombres.Completo != null && c.Nombres.Completo.Contains(filtro, StringComparison.OrdinalIgnoreCase))
 				   );
 			   }
 			   if (skip.HasValue) query = query.Skip(skip.Value);

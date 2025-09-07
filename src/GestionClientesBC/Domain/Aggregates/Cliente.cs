@@ -22,8 +22,8 @@ namespace GestionClientesBC.Domain.Aggregates
     public Guid ClienteId { get; }
     public EmpresaId EmpresaId { get; } // Multi-empresa: obligatorio
     public DocumentoIdentidad Documento { get; private set; } // Obligatorio
-    public NombreCliente? RazonSocial { get; private set; } // Obligatorio solo si RUC
-    public NombreCliente? Nombres { get; private set; } // Obligatorio solo si no es RUC
+    public RazonSocial? RazonSocial { get; private set; } // Obligatorio solo si RUC
+    public NombrePersona? Nombres { get; private set; } // Obligatorio solo si no es RUC
     public Email? Correo { get; private set; } // Opcional
     public Telefono? Telefono { get; private set; } // Opcional
     public DomicilioFiscal? DomicilioFiscal { get; private set; } // Opcional
@@ -40,18 +40,18 @@ namespace GestionClientesBC.Domain.Aggregates
         private readonly List<IDomainEvent> _domainEvents = new();
         public IReadOnlyCollection<IDomainEvent> DomainEvents => _domainEvents.AsReadOnly();
 
-        public Cliente(
-        Guid clienteId,
-        EmpresaId empresaId,
-        DocumentoIdentidad documento,
-        NombreCliente? razonSocial,
-        NombreCliente? nombres,
-        Email? correo = null,
-        Telefono? telefono = null,
-        DomicilioFiscal? domicilioFiscal = null,
-        TipoCliente? tipoCliente = null,
-        RolCliente? rolCliente = null,
-        EstadoCliente? estado = null)
+    public Cliente(
+    Guid clienteId,
+    EmpresaId empresaId,
+    DocumentoIdentidad documento,
+    RazonSocial? razonSocial,
+    NombrePersona? nombres,
+    Email? correo = null,
+    Telefono? telefono = null,
+    DomicilioFiscal? domicilioFiscal = null,
+    TipoCliente? tipoCliente = null,
+    RolCliente? rolCliente = null,
+    EstadoCliente? estado = null)
         {
             if (clienteId == Guid.Empty)
                 throw new ArgumentException("El Id no puede ser vacío.", nameof(clienteId));
@@ -92,7 +92,7 @@ namespace GestionClientesBC.Domain.Aggregates
                 documento.Tipo.ToString(),
                 documento.Numero,
                 razonSocial?.Valor ?? string.Empty,
-                nombres?.Valor ?? string.Empty,
+                nombres?.Completo ?? string.Empty,
                 FechaRegistro
             ));
         }
@@ -127,19 +127,19 @@ namespace GestionClientesBC.Domain.Aggregates
             FechaUltimaModificacion = DateTime.UtcNow;
         }
 
-        public void ActualizarNombre(NombreCliente nuevoNombre)
+        public void ActualizarNombre(object nuevoNombre)
         {
             if (Documento.Tipo == TipoDocumento.Ruc)
             {
-                if (nuevoNombre is null)
-                    throw new ArgumentException("La razón social no puede estar vacía.");
-                RazonSocial = nuevoNombre;
+                if (nuevoNombre is not RazonSocial razonSocial)
+                    throw new ArgumentException("Debe proporcionar una RazonSocial para RUC.", nameof(nuevoNombre));
+                RazonSocial = razonSocial;
             }
             else
             {
-                if (nuevoNombre is null)
-                    throw new ArgumentException("El nombre no puede estar vacío.");
-                Nombres = nuevoNombre;
+                if (nuevoNombre is not NombrePersona nombrePersona)
+                    throw new ArgumentException("Debe proporcionar un NombrePersona para este tipo de documento.", nameof(nuevoNombre));
+                Nombres = nombrePersona;
             }
             FechaUltimaModificacion = DateTime.UtcNow;
         }
@@ -169,7 +169,7 @@ namespace GestionClientesBC.Domain.Aggregates
             }
             else
             {
-                if (Nombres == null || string.IsNullOrWhiteSpace(Nombres?.Valor ?? string.Empty))
+                if (Nombres == null || string.IsNullOrWhiteSpace(Nombres?.Completo ?? string.Empty))
                     throw new BusinessRuleException("Para documentos distintos de RUC se requieren nombres válidos.");
             }
 
@@ -186,7 +186,7 @@ namespace GestionClientesBC.Domain.Aggregates
                 Documento.Tipo.ToString(),
                 Documento.Numero,
                 RazonSocial?.Valor ?? string.Empty,
-                Nombres?.Valor ?? string.Empty,
+                Nombres?.Completo ?? string.Empty,
                 DateTime.UtcNow
             ));
         }
@@ -194,10 +194,11 @@ namespace GestionClientesBC.Domain.Aggregates
         public void Deshabilitar(string? motivo, DateTime fecha)
         {
             Estado = EstadoCliente.Inhabilitado;
-            FechaDeshabilitacion = fecha;
+            var fechaUtc = fecha.Kind == DateTimeKind.Utc ? fecha : fecha.ToUniversalTime();
+            FechaDeshabilitacion = fechaUtc;
             MotivoDeshabilitacion = motivo;
-                FechaUltimaModificacion = DateTime.UtcNow;
-            RegistrarEvento(new ClienteDeshabilitado(ClienteId, EmpresaId, motivo, fecha));
+            FechaUltimaModificacion = DateTime.UtcNow;
+            RegistrarEvento(new ClienteDeshabilitado(ClienteId, EmpresaId, motivo, fechaUtc));
         }
 
         public void RegistrarDeshabilitacion(string? motivo, DateTime fecha)
