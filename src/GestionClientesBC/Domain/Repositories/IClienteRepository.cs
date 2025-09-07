@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using GestionClientesBC.Domain.Aggregates;
+using SharedKernel.ValueObjects;
 
 namespace GestionClientesBC.Domain.Repositories
 {
@@ -10,11 +11,11 @@ namespace GestionClientesBC.Domain.Repositories
 	/// </summary>
 	public interface IClienteRepository
 	{
-		// Obtiene un cliente por su Id
-		Task<Cliente?> GetByIdAsync(Guid clienteId);
+		// Obtiene un cliente por su Id y empresa
+		Task<Cliente?> GetByIdAsync(EmpresaId empresaId, Guid clienteId);
 
-		// Obtiene todos los clientes (paginado opcional)
-		Task<IReadOnlyList<Cliente>> GetAllAsync(int? skip = null, int? take = null);
+		// Obtiene todos los clientes de una empresa (paginado opcional)
+		Task<IReadOnlyList<Cliente>> GetAllAsync(EmpresaId empresaId, int? skip = null, int? take = null);
 
 		// Agrega un nuevo cliente
 		Task AddAsync(Cliente cliente);
@@ -22,16 +23,16 @@ namespace GestionClientesBC.Domain.Repositories
 		// Actualiza un cliente existente
 		Task UpdateAsync(Cliente cliente);
 
-		// Elimina un cliente por Id (soft o hard delete según implementación)
-		Task DeleteAsync(Guid clienteId);
+		// Elimina un cliente por Id y empresa
+		Task DeleteAsync(EmpresaId empresaId, Guid clienteId);
 
-		// Elimina una lista de clientes por sus Ids
-		Task DeleteManyAsync(IEnumerable<Guid> clienteIds);
+		// Elimina una lista de clientes por sus Ids y empresa
+		Task DeleteManyAsync(EmpresaId empresaId, IEnumerable<Guid> clienteIds);
 
-		// Elimina todos los clientes (operación masiva, usar con precaución)
-		Task DeleteAllAsync();
+		// Elimina todos los clientes de una empresa (operación masiva, usar con precaución)
+		Task DeleteAllAsync(EmpresaId empresaId);
 
-		// Búsqueda flexible (por ejemplo, por documento, nombre, etc.)
-		Task<IReadOnlyList<Cliente>> SearchAsync(string? filtro, int? skip = null, int? take = null);
+		// Búsqueda flexible (por ejemplo, por documento, nombre, etc.) dentro de una empresa
+		Task<IReadOnlyList<Cliente>> SearchAsync(EmpresaId empresaId, string? filtro, int? skip = null, int? take = null);
 	}
 }

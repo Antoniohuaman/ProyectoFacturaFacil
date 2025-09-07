@@ -20,6 +20,7 @@ namespace GestionClientesBC.Domain.Aggregates
     // Eliminado: private readonly List<OperacionCliente> _operaciones = new();
 
     public Guid ClienteId { get; }
+    public EmpresaId EmpresaId { get; } // Multi-empresa: obligatorio
     public DocumentoIdentidad Documento { get; private set; } // Obligatorio
     public NombreCliente? RazonSocial { get; private set; } // Obligatorio solo si RUC
     public NombreCliente? Nombres { get; private set; } // Obligatorio solo si no es RUC
@@ -34,24 +35,28 @@ namespace GestionClientesBC.Domain.Aggregates
     public DateTime? FechaDeshabilitacion { get; private set; } // Opcional
     public IReadOnlyCollection<ContactoCliente> Contactos => _contactos.AsReadOnly();
     public IReadOnlyCollection<AdjuntoCliente> Adjuntos => _adjuntos.AsReadOnly();
+    public DateTime? FechaUltimaModificacion { get; private set; } // Nueva: fecha de última modificación
 
         private readonly List<IDomainEvent> _domainEvents = new();
         public IReadOnlyCollection<IDomainEvent> DomainEvents => _domainEvents.AsReadOnly();
 
         public Cliente(
-            Guid clienteId,
-            DocumentoIdentidad documento,
-            NombreCliente? razonSocial,
-            NombreCliente? nombres,
-            Email? correo = null,
-            Telefono? telefono = null,
-            DomicilioFiscal? domicilioFiscal = null,
-            TipoCliente? tipoCliente = null,
-            RolCliente? rolCliente = null,
-            EstadoCliente? estado = null)
+        Guid clienteId,
+        EmpresaId empresaId,
+        DocumentoIdentidad documento,
+        NombreCliente? razonSocial,
+        NombreCliente? nombres,
+        Email? correo = null,
+        Telefono? telefono = null,
+        DomicilioFiscal? domicilioFiscal = null,
+        TipoCliente? tipoCliente = null,
+        RolCliente? rolCliente = null,
+        EstadoCliente? estado = null)
         {
             if (clienteId == Guid.Empty)
                 throw new ArgumentException("El Id no puede ser vacío.", nameof(clienteId));
+            if (empresaId is null || empresaId.IsEmpty)
+                throw new ArgumentNullException(nameof(empresaId), "El EmpresaId es obligatorio.");
             if (documento is null)
                 throw new ArgumentNullException(nameof(documento));
 
@@ -68,6 +73,7 @@ namespace GestionClientesBC.Domain.Aggregates
             }
 
             ClienteId = clienteId;
+            EmpresaId = empresaId;
             Documento = documento;
             RazonSocial = razonSocial;
             Nombres = nombres;
@@ -82,6 +88,7 @@ namespace GestionClientesBC.Domain.Aggregates
             // Evento de dominio: ClienteCreado (ajustar según nuevos campos)
             _domainEvents.Add(new ClienteCreado(
                 ClienteId,
+                EmpresaId,
                 documento.Tipo.ToString(),
                 documento.Numero,
                 razonSocial?.Valor ?? string.Empty,
@@ -96,7 +103,7 @@ namespace GestionClientesBC.Domain.Aggregates
                 throw new BusinessRuleException("El cliente ya está habilitado.");
 
             Estado = EstadoCliente.Habilitado;
-            RegistrarEvento(new ClienteHabilitado(ClienteId));
+            RegistrarEvento(new ClienteHabilitado(ClienteId, EmpresaId));
         }
 
         public void ActualizarDatosContacto(Email nuevoCorreo, string nuevoCelular)
@@ -117,7 +124,7 @@ namespace GestionClientesBC.Domain.Aggregates
             if (nuevaDireccion == null)
                 throw new ArgumentNullException(nameof(nuevaDireccion));
             DomicilioFiscal = nuevaDireccion;
-            FechaRegistro = DateTime.UtcNow; // Actualiza la fecha internamente
+            FechaUltimaModificacion = DateTime.UtcNow;
         }
 
         public void ActualizarNombre(NombreCliente nuevoNombre)
@@ -134,25 +141,40 @@ namespace GestionClientesBC.Domain.Aggregates
                     throw new ArgumentException("El nombre no puede estar vacío.");
                 Nombres = nuevoNombre;
             }
+            FechaUltimaModificacion = DateTime.UtcNow;
         }
 
         public void ActualizarTipoCliente(TipoCliente nuevoTipo)
         {
             TipoCliente = nuevoTipo;
+            FechaUltimaModificacion = DateTime.UtcNow;
         }
 
         public void ActualizarRolCliente(RolCliente? nuevoRol)
         {
-            if (nuevoRol is null)
-                throw new ArgumentNullException(nameof(nuevoRol));
             RolCliente = nuevoRol;
+            FechaUltimaModificacion = DateTime.UtcNow;
         }
 
         public void ActualizarDocumentoIdentidad(DocumentoIdentidad nuevoDocumento)
         {
-            if (nuevoDocumento is null)
-                throw new ArgumentNullException(nameof(nuevoDocumento));
-            Documento = nuevoDocumento;
+            if (nuevoDocumento == null) throw new ArgumentNullException(nameof(nuevoDocumento));
+            if (this.Documento != null && this.Documento.Equals(nuevoDocumento)) return;
+
+            // Revalidar nombre según el tipo de documento
+            if (nuevoDocumento.EsRuc)
+            {
+                if (RazonSocial == null || string.IsNullOrWhiteSpace(RazonSocial.Valor))
+                    throw new BusinessRuleException("Para RUC se requiere una razón social válida.");
+            }
+            else
+            {
+                if (Nombres == null || string.IsNullOrWhiteSpace(Nombres?.Valor ?? string.Empty))
+                    throw new BusinessRuleException("Para documentos distintos de RUC se requieren nombres válidos.");
+            }
+
+            this.Documento = nuevoDocumento;
+            FechaUltimaModificacion = DateTime.UtcNow;
         }
 
         public void RegistrarModificacion(IDictionary<string, (object? anterior, object? nuevo)> cambios)
@@ -160,6 +182,7 @@ namespace GestionClientesBC.Domain.Aggregates
             // Evento de dominio: ClienteActualizado (ajustar según nuevos campos)
             _domainEvents.Add(new ClienteActualizado(
                 ClienteId,
+                EmpresaId,
                 Documento.Tipo.ToString(),
                 Documento.Numero,
                 RazonSocial?.Valor ?? string.Empty,
@@ -173,7 +196,8 @@ namespace GestionClientesBC.Domain.Aggregates
             Estado = EstadoCliente.Inhabilitado;
             FechaDeshabilitacion = fecha;
             MotivoDeshabilitacion = motivo;
-            RegistrarEvento(new ClienteDeshabilitado(ClienteId, motivo, fecha));
+                FechaUltimaModificacion = DateTime.UtcNow;
+            RegistrarEvento(new ClienteDeshabilitado(ClienteId, EmpresaId, motivo, fecha));
         }
 
         public void RegistrarDeshabilitacion(string? motivo, DateTime fecha)
@@ -200,7 +224,7 @@ namespace GestionClientesBC.Domain.Aggregates
                     "Ya existe un contacto igual para este cliente.");
             }
             _contactos.Add(contacto);
-            RegistrarEvento(new ContactoAgregado(ClienteId, contacto));
+            RegistrarEvento(new ContactoAgregado(ClienteId, EmpresaId, contacto));
         }
 
         /// <summary>
@@ -212,7 +236,7 @@ namespace GestionClientesBC.Domain.Aggregates
             if (contacto == null)
                 throw new BusinessRuleException("Contacto no encontrado.");
             _contactos.Remove(contacto);
-            RegistrarEvento(new ContactoEliminado(ClienteId, contactoId));
+            RegistrarEvento(new ContactoEliminado(ClienteId, EmpresaId, contactoId));
         }
 
     // Método EditarContacto eliminado: ahora los datos de contacto pueden ser editados directamente en la entidad ContactoCliente.
@@ -226,7 +250,7 @@ namespace GestionClientesBC.Domain.Aggregates
         {
             _adjuntos.Add(adjunto);
             // Registrar evento de dominio
-            _domainEvents.Add(new AdjuntoAgregado(ClienteId, adjunto));
+            _domainEvents.Add(new AdjuntoAgregado(ClienteId, EmpresaId, adjunto));
         }
 
         public void EliminarAdjunto(Guid adjuntoId)
@@ -236,7 +260,7 @@ namespace GestionClientesBC.Domain.Aggregates
             {
                 _adjuntos.Remove(adjunto);
                 // Registrar evento de dominio
-                _domainEvents.Add(new AdjuntoEliminado(ClienteId, adjuntoId));
+                _domainEvents.Add(new AdjuntoEliminado(ClienteId, EmpresaId, adjuntoId));
             }
         }
     // Eliminado: método AgregarOperacion(OperacionCliente operacion)
@@ -249,7 +273,7 @@ namespace GestionClientesBC.Domain.Aggregates
         /// </summary>
         public void EliminarCliente()
         {
-            RegistrarEvento(new ClienteEliminado(ClienteId));
+            RegistrarEvento(new ClienteEliminado(ClienteId, EmpresaId));
         }
     }
 }

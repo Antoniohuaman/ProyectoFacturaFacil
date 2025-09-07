@@ -1,3 +1,4 @@
+
 using System;
 using SharedKernel.Events;
 using SharedKernel.ValueObjects;
@@ -11,6 +12,7 @@ namespace GestionClientesBC.Domain.Events
     public sealed class ClienteActualizado : DomainEvent
     {
         public Guid ClienteId { get; }
+        public EmpresaId EmpresaId { get; }
         public string TipoDocumento { get; }
         public string NumeroDocumento { get; }
         public string RazonSocial { get; }
@@ -19,6 +21,7 @@ namespace GestionClientesBC.Domain.Events
 
         public ClienteActualizado(
             Guid clienteId,
+            EmpresaId empresaId,
             string tipoDocumento,
             string numeroDocumento,
             string razonSocial,
@@ -29,6 +32,7 @@ namespace GestionClientesBC.Domain.Events
             : base(eventId, occurredOnUtc)
         {
             ClienteId = clienteId;
+            EmpresaId = empresaId;
             TipoDocumento = tipoDocumento;
             NumeroDocumento = numeroDocumento;
             RazonSocial = razonSocial;

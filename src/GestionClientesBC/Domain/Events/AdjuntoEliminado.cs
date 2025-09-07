@@ -1,6 +1,8 @@
+
 using System;
 using SharedKernel.Events;
 using GestionClientesBC.Domain.Entities;
+using SharedKernel.ValueObjects;
 
 namespace GestionClientesBC.Domain.Events
 {
@@ -10,12 +12,14 @@ namespace GestionClientesBC.Domain.Events
 	public sealed class AdjuntoEliminado : DomainEvent
 	{
 		public Guid ClienteId { get; }
+		public EmpresaId EmpresaId { get; }
 		public Guid AdjuntoId { get; }
 
-		public AdjuntoEliminado(Guid clienteId, Guid adjuntoId, Guid? eventId = null, DateTime? occurredOnUtc = null)
+		public AdjuntoEliminado(Guid clienteId, EmpresaId empresaId, Guid adjuntoId, Guid? eventId = null, DateTime? occurredOnUtc = null)
 			: base(eventId, occurredOnUtc)
 		{
 			ClienteId = clienteId;
+			EmpresaId = empresaId;
 			AdjuntoId = adjuntoId;
 		}
 	}
