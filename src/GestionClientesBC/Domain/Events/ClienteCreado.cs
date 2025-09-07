@@ -5,7 +5,7 @@ using SharedKernel.Events;
 
 namespace GestionClientesBC.Domain.Events
 {
-    public class ClienteCreado : IDomainEvent
+    public sealed class ClienteCreado : DomainEvent
     {
         public Guid ClienteId { get; }
         public string TipoDocumento { get; }
@@ -13,7 +13,6 @@ namespace GestionClientesBC.Domain.Events
         public string RazonSocial { get; }
         public string Nombres { get; }
         public DateTime FechaRegistro { get; }
-        public DateTime OccurredOn { get; }
 
         public ClienteCreado(
             Guid clienteId,
@@ -21,7 +20,10 @@ namespace GestionClientesBC.Domain.Events
             string numeroDocumento,
             string razonSocial,
             string nombres,
-            DateTime fechaRegistro)
+            DateTime fechaRegistro,
+            Guid? eventId = null,
+            DateTime? occurredOnUtc = null)
+            : base(eventId, occurredOnUtc)
         {
             ClienteId = clienteId;
             TipoDocumento = tipoDocumento;
@@ -29,7 +31,6 @@ namespace GestionClientesBC.Domain.Events
             RazonSocial = razonSocial;
             Nombres = nombres;
             FechaRegistro = fechaRegistro;
-            OccurredOn = DateTime.UtcNow;
         }
     }
 }

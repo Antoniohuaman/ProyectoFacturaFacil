@@ -9,7 +9,6 @@ namespace GestionClientesBC.Domain.Entities
         public string Ruta { get; private set; }
         public DateTime FechaSubida { get; private set; }
         public string? Comentario { get; private set; }
-        public bool Activo { get; private set; }
 
         public AdjuntoCliente(Guid adjuntoId, string nombreArchivo, string ruta, DateTime fechaSubida, string? comentario)
         {
@@ -18,12 +17,6 @@ namespace GestionClientesBC.Domain.Entities
             Ruta = ruta;
             FechaSubida = fechaSubida;
             Comentario = comentario;
-            Activo = true;
-        }
-
-        public void MarcarInactivo()
-        {
-            Activo = false;
         }
     }
 }

@@ -1,3 +1,4 @@
+        // ...existing code...
 using System;
 using GestionClientesBC.Domain.ValueObjects;
 using System.Collections.Generic;
@@ -5,6 +6,7 @@ using System.Linq;
 using GestionClientesBC.Domain.Entities;
 using GestionClientesBC.Domain.Events;
 using SharedKernel.Events;
+using SharedKernel.Exceptions;
 using SharedKernel.ValueObjects;
 
 namespace GestionClientesBC.Domain.Aggregates
@@ -73,9 +75,9 @@ namespace GestionClientesBC.Domain.Aggregates
             Correo = correo;
             Telefono = telefono;
             DomicilioFiscal = domicilioFiscal;
-            TipoCliente = tipoCliente;
+            TipoCliente = tipoCliente ?? TipoCliente.Cliente;
             RolCliente = rolCliente;
-            Estado = estado;
+            Estado = estado ?? EstadoCliente.Habilitado;
             FechaRegistro = DateTime.UtcNow;
 
             // Evento de dominio: ClienteCreado (ajustar según nuevos campos)
@@ -89,11 +91,24 @@ namespace GestionClientesBC.Domain.Aggregates
             ));
         }
 
+        public void Habilitar()
+        {
+            if (Estado == EstadoCliente.Habilitado)
+                throw new BusinessRuleException("El cliente ya está habilitado.");
+
+            Estado = EstadoCliente.Habilitado;
+            RegistrarEvento(new ClienteHabilitado(ClienteId));
+        }
+
         public void ActualizarDatosContacto(Email nuevoCorreo, string nuevoCelular)
         {
             if (nuevoCorreo == null)
                 throw new ArgumentNullException(nameof(nuevoCorreo));
+            if (string.IsNullOrWhiteSpace(nuevoCelular))
+                throw new ArgumentNullException(nameof(nuevoCelular));
+
             Correo = nuevoCorreo;
+            Telefono = Telefono.FromTexto(nuevoCelular);
         }
 
         // --- Métodos de edición para el caso de uso EditarCliente ---
@@ -159,11 +174,12 @@ namespace GestionClientesBC.Domain.Aggregates
             Estado = EstadoCliente.Inhabilitado;
             FechaDeshabilitacion = fecha;
             MotivoDeshabilitacion = motivo;
+            RegistrarEvento(new ClienteDeshabilitado(ClienteId, motivo, fecha));
         }
 
         public void RegistrarDeshabilitacion(string? motivo, DateTime fecha)
         {
-            _domainEvents.Add(new ClienteDeshabilitado(ClienteId, motivo, fecha));
+            // Obsoleto: ahora el evento se registra en Deshabilitar()
         }
 
         /// <summary>
@@ -173,9 +189,19 @@ namespace GestionClientesBC.Domain.Aggregates
         {
             if (contacto == null)
                 throw new ArgumentNullException(nameof(contacto));
-            if (_contactos.Any(c => c.Tipo == contacto.Tipo && c.Valor.Equals(contacto.Valor, StringComparison.OrdinalIgnoreCase)))
-                throw new InvalidOperationException("Ya existe un contacto igual para este cliente.");
+            // Validar duplicidad: mismo nombre y mismos emails y mismos teléfonos
+            if (_contactos.Any(c =>
+                c.NombreContacto.Equals(contacto.NombreContacto)
+                && c.Emails.SequenceEqual(contacto.Emails)
+                && c.Telefonos.SequenceEqual(contacto.Telefonos)
+                && string.Equals(c.Direccion, contacto.Direccion, StringComparison.OrdinalIgnoreCase)
+                ))
+            {
+                throw new BusinessRuleException(
+                    "Ya existe un contacto igual para este cliente.");
+            }
             _contactos.Add(contacto);
+            RegistrarEvento(new ContactoAgregado(ClienteId, contacto));
         }
 
         /// <summary>
@@ -185,20 +211,12 @@ namespace GestionClientesBC.Domain.Aggregates
         {
             var contacto = _contactos.FirstOrDefault(c => c.ContactoId == contactoId);
             if (contacto == null)
-                throw new InvalidOperationException("Contacto no encontrado.");
+                throw new BusinessRuleException("Contacto no encontrado.");
             _contactos.Remove(contacto);
+            RegistrarEvento(new ContactoEliminado(ClienteId, contactoId));
         }
 
-        /// <summary>
-        /// Edita el valor de un contacto secundario existente.
-        /// </summary>
-        public void EditarContacto(Guid contactoId, string nuevoValor)
-        {
-            var contacto = _contactos.FirstOrDefault(c => c.ContactoId == contactoId);
-            if (contacto == null)
-                throw new InvalidOperationException("Contacto no encontrado.");
-            contacto.ActualizarValor(nuevoValor);
-        }
+    // Método EditarContacto eliminado: ahora los datos de contacto pueden ser editados directamente en la entidad ContactoCliente.
         public void RegistrarEvento(IDomainEvent domainEvent)
         {
             if (domainEvent == null)
@@ -208,18 +226,31 @@ namespace GestionClientesBC.Domain.Aggregates
         public void AgregarAdjunto(AdjuntoCliente adjunto)
         {
             _adjuntos.Add(adjunto);
+            // Registrar evento de dominio
+            _domainEvents.Add(new AdjuntoAgregado(ClienteId, adjunto));
         }
 
         public void EliminarAdjunto(Guid adjuntoId)
         {
-            var adjunto = _adjuntos.FirstOrDefault(a => a.AdjuntoId == adjuntoId && a.Activo);
+            var adjunto = _adjuntos.FirstOrDefault(a => a.AdjuntoId == adjuntoId);
             if (adjunto != null)
-                adjunto.MarcarInactivo();
+            {
+                _adjuntos.Remove(adjunto);
+                // Registrar evento de dominio
+                _domainEvents.Add(new AdjuntoEliminado(ClienteId, adjuntoId));
+            }
         }
     // Eliminado: método AgregarOperacion(OperacionCliente operacion)
 
         
 
         // Métodos de comportamiento (crear, editar, deshabilitar, eliminar, etc.) se agregan aquí
+        /// <summary>
+        /// Marca el cliente como eliminado y registra el evento correspondiente.
+        /// </summary>
+        public void EliminarCliente()
+        {
+            RegistrarEvento(new ClienteEliminado(ClienteId));
+        }
     }
 }

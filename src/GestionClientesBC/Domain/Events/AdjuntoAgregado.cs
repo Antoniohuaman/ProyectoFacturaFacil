@@ -8,14 +8,19 @@ namespace GestionClientesBC.Domain.Events
     /// <summary>
     /// Evento de dominio que indica que se ha agregado un adjunto a un cliente.
     /// </summary>
-    public sealed record AdjuntoAgregado(
-        Guid ClienteId,
-        AdjuntoCliente Adjunto
-    ) : IDomainEvent
+    /// <summary>
+    /// Evento de dominio que indica que se ha agregado un adjunto a un cliente.
+    /// </summary>
+    public sealed class AdjuntoAgregado : DomainEvent
     {
-        /// <summary>
-        /// Fecha y hora en que ocurrió el evento (UTC).
-        /// </summary>
-        public DateTime OccurredOn { get; } = DateTime.UtcNow;
+        public Guid ClienteId { get; }
+        public AdjuntoCliente Adjunto { get; }
+
+        public AdjuntoAgregado(Guid clienteId, AdjuntoCliente adjunto, Guid? eventId = null, DateTime? occurredOnUtc = null)
+            : base(eventId, occurredOnUtc)
+        {
+            ClienteId = clienteId;
+            Adjunto = adjunto;
+        }
     }
 }

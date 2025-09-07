@@ -49,6 +49,9 @@ namespace GestionClientesBC.Domain.ValueObjects
     public static readonly TipoCliente SoloProveedor    = new TipoCliente(BIT_PROVEEDOR);
     public static readonly TipoCliente ClienteProveedor = new TipoCliente(BIT_CLIENTE | BIT_PROVEEDOR);
 
+    // Alias para el valor por defecto (Cliente)
+    public static TipoCliente Cliente => SoloCliente;
+
 
         // EF Core
         private TipoCliente() { Mascara = BIT_CLIENTE; } // Default a Cliente para EF Core
