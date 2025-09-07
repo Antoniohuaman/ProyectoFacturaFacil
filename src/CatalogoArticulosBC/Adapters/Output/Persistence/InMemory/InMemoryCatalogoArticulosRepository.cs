@@ -203,28 +203,56 @@ namespace CatalogoArticulosBC.Adapters.Output.Persistence.InMemory
             return Task.FromResult(Enumerable.Empty<MultimediaProducto>());
         }
 
-            public async Task<int> DeleteAllAsync(EmpresaId empresaId, CancellationToken ct = default)
+        public async Task<int> DeleteAllAsync(EmpresaId empresaId, CancellationToken ct = default)
+        {
+            if (empresaId == null) throw new ArgumentNullException(nameof(empresaId));
+            int removed = 0;
+            await Task.Run(() =>
             {
-                if (empresaId == null) throw new ArgumentNullException(nameof(empresaId));
-                int removed = 0;
-                await Task.Run(() =>
+                lock (_gate)
                 {
-                    lock (_gate)
+                    var productosToRemove = _productos.Values
+                        .Where(p => p.EmpresaId == empresaId)
+                        .ToList();
+                    foreach (var producto in productosToRemove)
                     {
-                        var productosToRemove = _productos.Values
-                            .Where(p => p.EmpresaId == empresaId)
-                            .ToList();
-                        foreach (var producto in productosToRemove)
+                        if (_productos.TryRemove(producto.Sku, out _))
                         {
-                            if (_productos.TryRemove(producto.Sku, out _))
+                            _indexById.TryRemove(producto.ProductoId, out _);
+                            removed++;
+                        }
+                    }
+                }
+            }, ct);
+            return removed;
+        }
+            
+        public async Task<int> DeleteManyAsync(IReadOnlyCollection<Guid> productoIds, EmpresaId empresaId, CancellationToken ct = default)
+        {
+            if (productoIds == null) throw new ArgumentNullException(nameof(productoIds));
+            if (empresaId == null) throw new ArgumentNullException(nameof(empresaId));
+            int removed = 0;
+            await Task.Run(() =>
+            {
+                lock (_gate)
+                {
+                    foreach (var id in productoIds)
+                    {
+                        if (_indexById.TryGetValue(id, out var sku) && _productos.TryGetValue(sku, out var producto))
+                        {
+                            if (producto.EmpresaId == empresaId)
                             {
-                                _indexById.TryRemove(producto.ProductoId, out _);
-                                removed++;
+                                if (_productos.TryRemove(sku, out _))
+                                {
+                                    _indexById.TryRemove(id, out _);
+                                    removed++;
+                                }
                             }
                         }
                     }
-                }, ct);
-                return removed;
-            }
+                }
+            }, ct);
+            return removed;
+        }
     }
 }

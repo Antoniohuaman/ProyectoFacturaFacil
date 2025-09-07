@@ -55,6 +55,15 @@ namespace CatalogoArticulosBC.Domain.Repositories
         /// <param name="producto">La entidad a eliminar.</param>
         Task DeleteAsync(ProductoSimple producto);
         Task<int> DeleteAllAsync(EmpresaId empresaId, CancellationToken ct = default);
+        /// <summary>
+        /// Elimina múltiples productos por sus IDs para una empresa específica.
+        /// </summary>
+        /// <param name="productoIds">IDs de los productos a eliminar.</param>
+        /// <param name="empresaId">Empresa a la que pertenecen los productos.</param>
+        /// <param name="ct">Token de cancelación.</param>
+        /// <returns>Cantidad de productos eliminados.</returns>
+        Task<int> DeleteManyAsync(IReadOnlyCollection<Guid> productoIds, EmpresaId empresaId, System.Threading.CancellationToken ct = default);
+        
 
     // Consultas especializadas
         Task<ProductoSimple?> GetByCodigoBarrasAsync(string codigoBarras);
