@@ -10,9 +10,6 @@ namespace GestionClientesBC.Domain.Events
     /// <summary>
     /// Evento de dominio que indica que se ha agregado un adjunto a un cliente.
     /// </summary>
-    /// <summary>
-    /// Evento de dominio que indica que se ha agregado un adjunto a un cliente.
-    /// </summary>
     public sealed class AdjuntoAgregado : DomainEvent
     {
         public Guid ClienteId { get; }
