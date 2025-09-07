@@ -13,7 +13,7 @@ using SharedKernel.Application.Interfaces;
 using SharedKernel.Exceptions;
 using SharedKernel.ValueObjects;
 
-namespace CatalogoArticulosBC.Tests.Application.UseCases
+namespace CatalogoArticulosBC.Tests.Application
 {
     [TestFixture]
     public class ConsultarProductoUseCaseTests
