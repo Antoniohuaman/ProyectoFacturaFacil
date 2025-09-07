@@ -67,7 +67,9 @@ namespace CatalogoArticulosBC.Application.UseCases.ConsultarProducto
             if (input.IncluirMultimedia)
             {
                 var list = await _repo.GetMultimediaByProductoIdAsync(producto.ProductoId);
-                multimedia = list?.ToList() ?? new List<MultimediaProducto>();
+                if (list != null)
+                    multimedia = list.ToList();
+                // Si list es null, multimedia ya está inicializado vacío
             }
 
             // Construir DTO de salida

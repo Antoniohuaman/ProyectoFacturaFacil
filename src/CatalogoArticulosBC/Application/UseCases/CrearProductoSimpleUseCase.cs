@@ -86,7 +86,6 @@ namespace CatalogoArticulosBC.Application.UseCases.CrearProductoSimple
             CentroDeCosto? centroDeCosto = null;
             if (!string.IsNullOrWhiteSpace(input.CentroDeCostoCodigo) || !string.IsNullOrWhiteSpace(input.CentroDeCostoNombre))
             {
-                // VO exige ambos campos
                 if (string.IsNullOrWhiteSpace(input.CentroDeCostoCodigo) || string.IsNullOrWhiteSpace(input.CentroDeCostoNombre))
                     throw new ArgumentException("Centro de costo requiere 'Código' y 'Nombre'.");
                 centroDeCosto = new CentroDeCosto(input.CentroDeCostoCodigo!, input.CentroDeCostoNombre!);

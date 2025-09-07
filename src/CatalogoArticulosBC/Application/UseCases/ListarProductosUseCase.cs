@@ -50,7 +50,7 @@ namespace CatalogoArticulosBC.Application.UseCases.ListarProductos
             };
 
             // Obtener desde repositorio (filtrado básico en origen)
-            var productos = await _repo.BuscarPorFiltroAsync(filtro);
+            var productos = await _repo.BuscarPorFiltroAsync(filtro) ?? new List<ProductoSimple>();
 
             // Ordenamiento en aplicación
             bool desc = string.Equals(input.Direccion, "desc", StringComparison.OrdinalIgnoreCase);
@@ -59,18 +59,18 @@ namespace CatalogoArticulosBC.Application.UseCases.ListarProductos
             IOrderedEnumerable<ProductoSimple> ordered = ordenarPor switch
             {
                 "sku" => desc
-                    ? productos.OrderByDescending(p => p.Sku?.Valor)
-                    : productos.OrderBy(p => p.Sku?.Valor),
+                    ? productos.OrderByDescending(p => p.Sku?.Valor ?? string.Empty)
+                    : productos.OrderBy(p => p.Sku?.Valor ?? string.Empty),
                 "categoria" => desc
-                    ? productos.OrderByDescending(p => p.Categoria?.Nombre)
-                    : productos.OrderBy(p => p.Categoria?.Nombre),
+                    ? productos.OrderByDescending(p => p.Categoria?.Nombre ?? string.Empty)
+                    : productos.OrderBy(p => p.Categoria?.Nombre ?? string.Empty),
                 "habilitado" => desc
                     ? productos.OrderByDescending(p => p.Habilitado)
                     : productos.OrderBy(p => p.Habilitado),
                 // default: nombre
                 _ => desc
-                    ? productos.OrderByDescending(p => p.Nombre?.Valor)
-                    : productos.OrderBy(p => p.Nombre?.Valor),
+                    ? productos.OrderByDescending(p => p.Nombre?.Valor ?? string.Empty)
+                    : productos.OrderBy(p => p.Nombre?.Valor ?? string.Empty),
             };
 
             var total = ordered.Count();
@@ -87,7 +87,7 @@ namespace CatalogoArticulosBC.Application.UseCases.ListarProductos
                 Sku = p.Sku?.Valor ?? string.Empty,
                 Nombre = p.Nombre?.Valor ?? string.Empty,
                 Categoria = p.Categoria?.Nombre ?? string.Empty,
-                Marca = p.Marca?.Nombre ?? p.Marca?.ToString(),
+                Marca = p.Marca?.Nombre ?? p.Marca?.ToString() ?? string.Empty,
                 PrecioVenta = p.PrecioVenta?.Monto,
                 Moneda = p.Moneda?.ToString() ?? string.Empty,
                 TipoProducto = p.Tipo.ToString(),

@@ -57,10 +57,9 @@ namespace CatalogoArticulosBC.Application.UseCases.EditarProductoSimple
             CentroDeCosto? centroCosto = null;
             if (!string.IsNullOrWhiteSpace(input.CentroDeCostoCodigo) || !string.IsNullOrWhiteSpace(input.CentroDeCostoNombre))
             {
-                // En tu VO ambos son obligatorios si se informa alguno
-                centroCosto = new CentroDeCosto(
-                    code: input.CentroDeCostoCodigo ?? throw new ArgumentException("CentroDeCostoCodigo es obligatorio si se envía CentroDeCostoNombre."),
-                    name: input.CentroDeCostoNombre ?? throw new ArgumentException("CentroDeCostoNombre es obligatorio si se envía CentroDeCostoCodigo."));
+                if (string.IsNullOrWhiteSpace(input.CentroDeCostoCodigo) || string.IsNullOrWhiteSpace(input.CentroDeCostoNombre))
+                    throw new ArgumentException("Centro de costo requiere 'Código' y 'Nombre'.");
+                centroCosto = new CentroDeCosto(input.CentroDeCostoCodigo!, input.CentroDeCostoNombre!);
             }
 
             // PrecioVenta opcional; si viene, usar Moneda del agregado + nueva afectación
