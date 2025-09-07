@@ -66,26 +66,27 @@ namespace CatalogoArticulosBC.Tests.Domain.Aggregates
         )
         {
             return new ProductoSimple(
-                moneda ?? PEN(),
-                sku ?? SKU(),
-                nombre ?? NOMBRE(),
-                udm ?? UDM(),
-                afect ?? AfectG(),
-                tasa ?? Tasa18(),
-                categoria ?? CAT(),
-                ests ?? Estabs1(),
-                descripcion,
-                marca,
-                precio,
-                codigoSunat,
-                cc,
-                peso,
-                barras,
-                fabrica,
-                tipo,
-                tipoExistencia,
-                asignarATodos,
-                imgId
+                empresaId: EmpresaId.From("20123456789"),
+                moneda: moneda ?? PEN(),
+                sku: sku ?? SKU(),
+                nombre: nombre ?? NOMBRE(),
+                unidadMedida: udm ?? UDM(),
+                afectacionImpuesto: afect ?? AfectG(),
+                tasaImpuesto: tasa ?? Tasa18(),
+                categoria: categoria ?? CAT(),
+                establecimientosAsignados: ests ?? Estabs1(),
+                descripcion: descripcion,
+                marca: marca,
+                precioVenta: precio,
+                codigoSunat: codigoSunat,
+                centroDeCosto: cc,
+                peso: peso,
+                codigoBarras: barras,
+                codigoFabrica: fabrica,
+                tipo: tipo,
+                tipoExistencia: tipoExistencia,
+                asignarATodosLosEstablecimientos: asignarATodos,
+                imagenPrincipalId: imgId
             );
         }
 
@@ -164,7 +165,16 @@ namespace CatalogoArticulosBC.Tests.Domain.Aggregates
             {
                 // Construcción explícita con moneda null para validar excepción real del ctor
                 _ = new ProductoSimple(
-                    null!, SKU(), NOMBRE(), UDM(), AfectG(), Tasa18(), CAT(), Estabs1());
+                    empresaId: EmpresaId.From("20123456789"),
+                    moneda: null!,
+                    sku: SKU(),
+                    nombre: NOMBRE(),
+                    unidadMedida: UDM(),
+                    afectacionImpuesto: AfectG(),
+                    tasaImpuesto: Tasa18(),
+                    categoria: CAT(),
+                    establecimientosAsignados: Estabs1()
+                );
             }, Throws.TypeOf<ArgumentNullException>());
         }
 

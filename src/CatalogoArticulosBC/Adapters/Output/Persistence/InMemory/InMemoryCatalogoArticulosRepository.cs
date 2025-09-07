@@ -202,5 +202,29 @@ namespace CatalogoArticulosBC.Adapters.Output.Persistence.InMemory
             // Stub: retorna lista vacía; implementar según modelo real si lo necesitas en tests.
             return Task.FromResult(Enumerable.Empty<MultimediaProducto>());
         }
+
+            public async Task<int> DeleteAllAsync(EmpresaId empresaId, CancellationToken ct = default)
+            {
+                if (empresaId == null) throw new ArgumentNullException(nameof(empresaId));
+                int removed = 0;
+                await Task.Run(() =>
+                {
+                    lock (_gate)
+                    {
+                        var productosToRemove = _productos.Values
+                            .Where(p => p.EmpresaId == empresaId)
+                            .ToList();
+                        foreach (var producto in productosToRemove)
+                        {
+                            if (_productos.TryRemove(producto.Sku, out _))
+                            {
+                                _indexById.TryRemove(producto.ProductoId, out _);
+                                removed++;
+                            }
+                        }
+                    }
+                }, ct);
+                return removed;
+            }
     }
 }

@@ -17,6 +17,7 @@ namespace CatalogoArticulosBC.Tests.Domain.Tests.BusinessRulesTests.PoliciesTest
         public void TieneMultimediaValida_ConMultimedia_ReturnsTrue()
         {
             var producto = new ProductoSimple(
+                empresaId: EmpresaId.From("20123456789"),
                 moneda: Moneda.PEN(),
                 sku: Sku.Crear("SKU-006"),
                 nombre: new NombreProducto("Producto 6"),
@@ -44,6 +45,7 @@ namespace CatalogoArticulosBC.Tests.Domain.Tests.BusinessRulesTests.PoliciesTest
         public void TieneMultimediaValida_SinMultimedia_ReturnsFalse()
         {
             var producto = new ProductoSimple(
+                empresaId: EmpresaId.From("20123456789"),
                 moneda: Moneda.PEN(),
                 sku: Sku.Crear("SKU-007"),
                 nombre: new NombreProducto("Producto 7"),

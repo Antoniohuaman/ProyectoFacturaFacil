@@ -104,6 +104,7 @@ namespace CatalogoArticulosBC.Application.UseCases.CrearProductoSimple
 
             // ------------------- Construcción del agregado -------------------
             var producto = new ProductoSimple(
+                empresaId,
                 moneda: moneda,
                 sku: sku,
                 nombre: nombre,

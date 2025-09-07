@@ -24,6 +24,7 @@ namespace CatalogoArticulosBC.Tests.Application.UseCases
         {
             e1 = EstablecimientoId.New();
             var producto = new ProductoSimple(
+                empresaId: EmpresaId.From("20123456789"),
                 moneda: PEN(),
                 sku: Sku.Crear("SKU-BASE-001"),
                 nombre: new NombreProducto("AGUA 625 ML"),

@@ -16,6 +16,7 @@ namespace CatalogoArticulosBC.Tests.Domain.Tests.BusinessRulesTests.PoliciesTest
         public void EsCodigoUnico_CodigoNoExiste_ReturnsTrue()
         {
             var producto = new ProductoSimple(
+                empresaId: EmpresaId.From("20123456789"),
                 moneda: Moneda.PEN(),
                 sku: Sku.Crear("SKU-003"),
                 nombre: new NombreProducto("Producto 3"),
@@ -37,6 +38,7 @@ namespace CatalogoArticulosBC.Tests.Domain.Tests.BusinessRulesTests.PoliciesTest
             var codigoValido = "1234567890128";
             var codigoBarras = new CodigoBarras(codigoValido);
             var productoExistente = new ProductoSimple(
+                empresaId: EmpresaId.From("20123456789"),
                 moneda: Moneda.PEN(),
                 sku: Sku.Crear("SKU-004"),
                 nombre: new NombreProducto("Producto 4"),
@@ -48,6 +50,7 @@ namespace CatalogoArticulosBC.Tests.Domain.Tests.BusinessRulesTests.PoliciesTest
                 codigoBarras: codigoBarras
             );
             var producto = new ProductoSimple(
+                empresaId: EmpresaId.From("20123456789"),
                 moneda: Moneda.PEN(),
                 sku: Sku.Crear("SKU-005"),
                 nombre: new NombreProducto("Producto 5"),

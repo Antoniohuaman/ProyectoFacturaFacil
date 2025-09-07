@@ -19,9 +19,13 @@ namespace CatalogoArticulosBC.Domain.Aggregates
 
     public class ProductoSimple
     {
-        // Identidad y estado
-        public Guid ProductoId { get; private set; }
-        public bool Habilitado { get; private set; } = true;
+    // Identidad y estado
+    public Guid ProductoId { get; private set; }
+    public bool Habilitado { get; private set; } = true;
+    /// <summary>
+    /// Empresa (tenant) propietaria del producto.
+    /// </summary>
+    public EmpresaId EmpresaId { get; private set; }
 
         // Clave de negocio
         public Sku Sku { get; private set; }
@@ -83,6 +87,7 @@ namespace CatalogoArticulosBC.Domain.Aggregates
         /// Constructor principal para crear un ProductoSimple con todos sus VOs.
         /// </summary>
         public ProductoSimple(
+            EmpresaId empresaId,
             Moneda moneda,
             Sku sku,
             NombreProducto nombre,
@@ -109,6 +114,7 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             Guid? imagenPrincipalId = null)
         {
             // Validaciones de parámetros obligatorios
+            EmpresaId = empresaId ?? throw new ArgumentNullException(nameof(empresaId));
             Sku = sku ?? throw new ArgumentNullException(nameof(sku));
             Nombre = nombre ?? throw new ArgumentNullException(nameof(nombre));
             Descripcion = descripcion?.Trim() ?? string.Empty;

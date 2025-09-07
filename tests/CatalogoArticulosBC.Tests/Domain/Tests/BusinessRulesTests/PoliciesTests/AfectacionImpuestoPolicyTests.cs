@@ -16,6 +16,7 @@ namespace CatalogoArticulosBC.Tests.Domain.Tests.BusinessRulesTests.PoliciesTest
         public void EsAfectadoPorImpuesto_CategoriaGravado_ReturnsTrue()
         {
             var producto = new ProductoSimple(
+                empresaId: EmpresaId.From("20123456789"),
                 moneda: Moneda.PEN(),
                 sku: Sku.Crear("SKU-001"),
                 nombre: new NombreProducto("Producto 1"),
@@ -33,6 +34,7 @@ namespace CatalogoArticulosBC.Tests.Domain.Tests.BusinessRulesTests.PoliciesTest
         public void EsAfectadoPorImpuesto_CategoriaNoGravado_ReturnsFalse()
         {
             var producto = new ProductoSimple(
+                empresaId: EmpresaId.From("20123456789"),
                 moneda: Moneda.PEN(),
                 sku: Sku.Crear("SKU-002"),
                 nombre: new NombreProducto("Producto 2"),

@@ -28,7 +28,7 @@ namespace CatalogoArticulosBC.Domain.Repositories
     /// </summary>
     /// <param name="sku">El SKU del producto.</param>
     /// <returns>El producto o null si no existe.</returns>
-    Task<ProductoSimple?> GetBySkuAsync(Sku sku);
+        Task<ProductoSimple?> GetBySkuAsync(Sku sku);
 
         /// <summary>
         /// Devuelve todos los productos del catálogo.
@@ -41,7 +41,7 @@ namespace CatalogoArticulosBC.Domain.Repositories
     /// </summary>
     /// <param name="producto">La entidad a agregar.</param>
     /// <param name="ct">Token de cancelación.</param>
-    Task AddAsync(ProductoSimple producto, System.Threading.CancellationToken ct);
+        Task AddAsync(ProductoSimple producto, System.Threading.CancellationToken ct);
 
         /// <summary>
         /// Actualiza un <see cref="ProductoSimple"/> existente.
@@ -54,32 +54,33 @@ namespace CatalogoArticulosBC.Domain.Repositories
         /// </summary>
         /// <param name="producto">La entidad a eliminar.</param>
         Task DeleteAsync(ProductoSimple producto);
+        Task<int> DeleteAllAsync(EmpresaId empresaId, CancellationToken ct = default);
 
     // Consultas especializadas
-    Task<ProductoSimple?> GetByCodigoBarrasAsync(string codigoBarras);
-    Task<ProductoSimple?> GetByCodigoFabricaAsync(string codigoFabrica);
-    Task<ProductoSimple?> GetByNombreAsync(string nombre);
-    Task<IEnumerable<ProductoSimple>> ListarPorCategoriaAsync(Categoria categoria);
-    Task<IEnumerable<ProductoSimple>> ListarHabilitadosAsync();
-    Task<IEnumerable<ProductoSimple>> ListarDeshabilitadosAsync();
-    Task<IEnumerable<ProductoSimple>> BuscarPorFiltroAsync(FiltroProducto filtro);
+        Task<ProductoSimple?> GetByCodigoBarrasAsync(string codigoBarras);
+        Task<ProductoSimple?> GetByCodigoFabricaAsync(string codigoFabrica);
+        Task<ProductoSimple?> GetByNombreAsync(string nombre);
+        Task<IEnumerable<ProductoSimple>> ListarPorCategoriaAsync(Categoria categoria);
+        Task<IEnumerable<ProductoSimple>> ListarHabilitadosAsync();
+        Task<IEnumerable<ProductoSimple>> ListarDeshabilitadosAsync();
+        Task<IEnumerable<ProductoSimple>> BuscarPorFiltroAsync(FiltroProducto filtro);
 
     // Verificaciones
-    Task<bool> ExistsByCodigoAsync(string codigo);
-    Task<bool> ExistsByNombreAsync(string nombre);
-    /// <summary>
-    /// Verifica si existe un SKU para una empresa específica.
-    /// </summary>
-    /// <param name="sku">SKU a verificar.</param>
-    /// <param name="empresaId">Empresa a la que pertenece el SKU.</param>
-    /// <param name="ct">Token de cancelación.</param>
-    Task<bool> ExisteSkuAsync(Sku sku, EmpresaId empresaId, System.Threading.CancellationToken ct);
+        Task<bool> ExistsByCodigoAsync(string codigo);
+        Task<bool> ExistsByNombreAsync(string nombre);
+        /// <summary>
+        /// Verifica si existe un SKU para una empresa específica.
+        /// </summary>
+        /// <param name="sku">SKU a verificar.</param>
+        /// <param name="empresaId">Empresa a la que pertenece el SKU.</param>
+        /// <param name="ct">Token de cancelación.</param>
+        Task<bool> ExisteSkuAsync(Sku sku, EmpresaId empresaId, System.Threading.CancellationToken ct);
 
-    // Operaciones de importación/exportación
-    Task ImportarProductosAsync(IEnumerable<ProductoSimple> productos);
-    Task<IEnumerable<ProductoSimple>> ExportarProductosAsync(FiltroExportacion filtro);
+        // Operaciones de importación/exportación
+        Task ImportarProductosAsync(IEnumerable<ProductoSimple> productos);
+        Task<IEnumerable<ProductoSimple>> ExportarProductosAsync(FiltroExportacion filtro);
 
-    // Multimedia asociada
-    Task<IEnumerable<MultimediaProducto>> GetMultimediaByProductoIdAsync(Guid productoId);
+        // Multimedia asociada
+        Task<IEnumerable<MultimediaProducto>> GetMultimediaByProductoIdAsync(Guid productoId);
     }
 }
