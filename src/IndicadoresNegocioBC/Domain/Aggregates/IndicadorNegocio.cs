@@ -29,7 +29,6 @@ namespace IndicadoresNegocioBC.Domain.Aggregates
     /// </summary>
     // Enum para tipo de comprobante (Boleta/Factura)
 
-
     public sealed class IndicadorNegocio
     // ...existing code...
     {
@@ -63,13 +62,12 @@ namespace IndicadoresNegocioBC.Domain.Aggregates
         private readonly Dictionary<Guid, RankingClienteEntrada> _rankingClientes = new();
         public IReadOnlyCollection<RankingClienteEntrada> RankingClientes => _rankingClientes.Values.ToList().AsReadOnly();
 
+        // Ticket promedio
+        public TicketPromedio TicketPromedio { get; private set; }
 
-    // Ticket promedio
-    public TicketPromedio TicketPromedio { get; private set; }
-
-    // Ranking vendedores (por vendedorId)
-    private readonly Dictionary<UsuarioId, RankingVendedorEntrada> _rankingVendedores = new();
-    public IReadOnlyCollection<RankingVendedorEntrada> RankingVendedores => _rankingVendedores.Values.ToList().AsReadOnly();
+        // Ranking vendedores (por vendedorId)
+        private readonly Dictionary<UsuarioId, RankingVendedorEntrada> _rankingVendedores = new();
+        public IReadOnlyCollection<RankingVendedorEntrada> RankingVendedores => _rankingVendedores.Values.ToList().AsReadOnly();
 
         // Idempotencia: ventas aplicadas por ComprobanteId (y su detalle) para permitir reversión
         private readonly Dictionary<Guid, VentaRegistrada> _ventasPorComprobante = new();
@@ -118,13 +116,17 @@ namespace IndicadoresNegocioBC.Domain.Aggregates
         /// - La fecha está fuera del Periodo,
         /// - La moneda del comprobante no coincide con Segmento.Moneda.
         /// </summary>
-    public void RegistrarVentaAceptada(ComprobanteVenta venta)
+        public void RegistrarVentaAceptada(ComprobanteVenta venta)
         {
             if (venta is null) throw new ArgumentNullException(nameof(venta));
             AsegurarPermiteMutaciones();
 
             // Moneda y periodo
             AsegurarMismaMoneda(venta.Total);
+            AsegurarMismaMoneda(venta.Igv);                    // <-- ajuste
+            foreach (var it in venta.Items)                    // <-- ajuste
+                AsegurarMismaMoneda(it.Subtotal);              // <-- ajuste
+
             if (!Periodo.Contiene(venta.Fecha))
                 throw new InvalidOperationException("La venta no pertenece al periodo del indicador.");
 
@@ -179,7 +181,8 @@ namespace IndicadoresNegocioBC.Domain.Aggregates
                 rv.Acumular(venta.Total);
             }
 
-            // Registrar para reversión
+            // Registrar para reversión (normalizamos el tipo de comprobante)  <-- ajuste
+            var tipoNorm = NormalizarTipo(venta.TipoComprobante);
             _ventasPorComprobante.Add(venta.ComprobanteId, new VentaRegistrada(
                 venta.ComprobanteId,
                 venta.Fecha,
@@ -188,7 +191,7 @@ namespace IndicadoresNegocioBC.Domain.Aggregates
                 venta.Igv,
                 venta.Items.Select(i => new ItemRegistrado(i.ProductoId, i.Cantidad, i.Subtotal)),
                 venta.VendedorId,
-                venta.TipoComprobante,
+                tipoNorm,
                 venta.EstablecimientoId
             ));
 
@@ -203,28 +206,40 @@ namespace IndicadoresNegocioBC.Domain.Aggregates
         /// Obtiene el total de ventas filtrando por tipo de comprobante (boleta o factura) y rango de fechas.
         /// Si no se especifica rango, usa todo el periodo del aggregate.
         /// </summary>
-    public Dinero ObtenerTotalPorTipoComprobante(string tipoComprobante, DateOnly? desde = null, DateOnly? hasta = null, EstablecimientoId? establecimientoId = null)
+        public Dinero ObtenerTotalPorTipoComprobante(string tipoComprobante, DateOnly? desde = null, DateOnly? hasta = null, EstablecimientoId? establecimientoId = null)
         {
+            var tipoNorm = NormalizarTipo(tipoComprobante); // <-- ajuste
+
             var ventas = _ventasPorComprobante.Values
-                .Where(v => !v.Anulada && v.TipoComprobante == tipoComprobante);
-            if (desde.HasValue && hasta.HasValue)
-                ventas = ventas.Where(v => v.Fecha >= desde.Value && v.Fecha <= hasta.Value);
+                .Where(v => !v.Anulada && v.TipoComprobante == tipoNorm);
+
+            // filtros flexibles de rango  <-- ajuste
+            if (desde.HasValue) ventas = ventas.Where(v => v.Fecha >= desde.Value);
+            if (hasta.HasValue) ventas = ventas.Where(v => v.Fecha <= hasta.Value);
+
             if (establecimientoId != null)
                 ventas = ventas.Where(v => v.EstablecimientoId == establecimientoId);
+
             return ventas.Select(v => v.Total).Aggregate(Dinero.Cero(Segmento.Moneda), (a, b) => a.Sumar(b));
         }
 
         /// <summary>
         /// Obtiene el número de comprobantes filtrando por tipo de comprobante y rango de fechas.
         /// </summary>
-    public int ObtenerCantidadPorTipoComprobante(string tipoComprobante, DateOnly? desde = null, DateOnly? hasta = null, EstablecimientoId? establecimientoId = null)
+        public int ObtenerCantidadPorTipoComprobante(string tipoComprobante, DateOnly? desde = null, DateOnly? hasta = null, EstablecimientoId? establecimientoId = null)
         {
+            var tipoNorm = NormalizarTipo(tipoComprobante); // <-- ajuste
+
             var ventas = _ventasPorComprobante.Values
-                .Where(v => !v.Anulada && v.TipoComprobante == tipoComprobante);
-            if (desde.HasValue && hasta.HasValue)
-                ventas = ventas.Where(v => v.Fecha >= desde.Value && v.Fecha <= hasta.Value);
+                .Where(v => !v.Anulada && v.TipoComprobante == tipoNorm);
+
+            // filtros flexibles de rango  <-- ajuste
+            if (desde.HasValue) ventas = ventas.Where(v => v.Fecha >= desde.Value);
+            if (hasta.HasValue) ventas = ventas.Where(v => v.Fecha <= hasta.Value);
+
             if (establecimientoId != null)
                 ventas = ventas.Where(v => v.EstablecimientoId == establecimientoId);
+
             return ventas.Count();
         }
 
@@ -283,6 +298,7 @@ namespace IndicadoresNegocioBC.Domain.Aggregates
             venta.MarcarAnulada();
             Version++;
         }
+
         /// <summary>Entrada de ranking de vendedores.</summary>
         public sealed class RankingVendedorEntrada
         {
@@ -347,7 +363,7 @@ namespace IndicadoresNegocioBC.Domain.Aggregates
                 .ToList();
         }
 
-        // ================== NUEVO: Consultas flexibles por rango de fechas ==================
+        // ================== Consultas flexibles por rango de fechas ==================
 
         /// <summary>
         /// Obtiene todas las ventas registradas en el rango de fechas (inclusive).
@@ -428,8 +444,6 @@ namespace IndicadoresNegocioBC.Domain.Aggregates
             return limite != null ? clientes.Take(limite.Valor).ToList() : clientes;
         }
 
-
-
         // ------------------ Helpers de dominio ------------------
 
         private void AsegurarPermiteMutaciones()
@@ -440,7 +454,8 @@ namespace IndicadoresNegocioBC.Domain.Aggregates
 
         private void TransicionarA(EstadoIndicador destino)
         {
-            if (!ReferenceEquals(Estado, destino))
+            // tolera igualdad por referencia o por valor (sin romper tu smart-enum)  <-- ajuste
+            if (!ReferenceEquals(Estado, destino) && !Equals(Estado, destino))
                 EstadoIndicador.AsegurarTransicionValida(Estado, destino);
             Estado = destino;
         }
@@ -450,8 +465,16 @@ namespace IndicadoresNegocioBC.Domain.Aggregates
 
         private void AsegurarMismaMoneda(Dinero dinero)
         {
+            if (dinero is null) throw new ArgumentNullException(nameof(dinero));
             if (!Equals(dinero.Moneda, Segmento.Moneda))
                 throw new InvalidOperationException($"Moneda distinta a la del segmento: {dinero.Moneda} ≠ {Segmento.Moneda}.");
+        }
+
+        private static string NormalizarTipo(string tipoComprobante)
+        {
+            if (string.IsNullOrWhiteSpace(tipoComprobante))
+                throw new ArgumentNullException(nameof(tipoComprobante));
+            return tipoComprobante.Trim().ToUpperInvariant();
         }
 
         // ================== Tipos internos del agregado ==================
@@ -620,7 +643,7 @@ namespace IndicadoresNegocioBC.Domain.Aggregates
             public void MarcarAnulada() => Anulada = true;
         }
 
-    public sealed record ItemRegistrado(string ProductoId, decimal Cantidad, Dinero Subtotal);
+        public sealed record ItemRegistrado(string ProductoId, decimal Cantidad, Dinero Subtotal);
 
         // ------------------ DTO de entrada (desde Application) ------------------
 
@@ -629,50 +652,48 @@ namespace IndicadoresNegocioBC.Domain.Aggregates
         /// con los mínimos necesarios para mutar el agregado. Todos los Dinero deben venir en la
         /// misma moneda que Segmento.Moneda.
         /// </summary>
-            public sealed class ComprobanteVenta
+        public sealed class ComprobanteVenta
+        {
+            public string TipoComprobante { get; }
+            public Guid ComprobanteId { get; }
+            public DateOnly Fecha { get; }
+            public Guid? ClienteId { get; }
+            public Dinero Total { get; }
+            public Dinero Igv { get; }
+            public IReadOnlyList<Item> Items { get; }
+            public UsuarioId? VendedorId { get; }
+            public EstablecimientoId EstablecimientoId { get; }
+
+            public ComprobanteVenta(
+                Guid comprobanteId,
+                DateOnly fecha,
+                Guid? clienteId,
+                Dinero total,
+                Dinero igv,
+                IEnumerable<Item> items,
+                UsuarioId? vendedorId,
+                string tipoComprobante,
+                EstablecimientoId establecimientoId)
             {
-                public string TipoComprobante { get; }
-                public Guid ComprobanteId { get; }
-                public DateOnly Fecha { get; }
-                public Guid? ClienteId { get; }
-                public Dinero Total { get; }
-                public Dinero Igv { get; }
-                public IReadOnlyList<Item> Items { get; }
-                public UsuarioId? VendedorId { get; }
-                public EstablecimientoId EstablecimientoId { get; }
+                if (comprobanteId == Guid.Empty) throw new ArgumentException("ComprobanteId vacío.", nameof(comprobanteId));
+                if (items is null) throw new ArgumentNullException(nameof(items));
+                var lista = items.ToList();
+                if (lista.Count == 0) throw new ArgumentException("La venta debe contener al menos un ítem.", nameof(items));
+                if (total is null) throw new ArgumentNullException(nameof(total));
+                if (igv is null) throw new ArgumentNullException(nameof(igv));
+                if (string.IsNullOrWhiteSpace(tipoComprobante)) throw new ArgumentNullException(nameof(tipoComprobante));
+                if (establecimientoId is null) throw new ArgumentNullException(nameof(establecimientoId));
 
-                public ComprobanteVenta(
-                    Guid comprobanteId,
-                    DateOnly fecha,
-                    Guid? clienteId,
-                    Dinero total,
-                    Dinero igv,
-                    IEnumerable<Item> items,
-                    UsuarioId? vendedorId,
-                    string tipoComprobante,
-                    EstablecimientoId establecimientoId)
-                {
-                    if (comprobanteId == Guid.Empty) throw new ArgumentException("ComprobanteId vacío.", nameof(comprobanteId));
-                    if (items is null) throw new ArgumentNullException(nameof(items));
-                    var lista = items.ToList();
-                    if (lista.Count == 0) throw new ArgumentException("La venta debe contener al menos un ítem.", nameof(items));
-                    if (total is null) throw new ArgumentNullException(nameof(total));
-                    if (igv is null) throw new ArgumentNullException(nameof(igv));
-                    if (string.IsNullOrWhiteSpace(tipoComprobante)) throw new ArgumentNullException(nameof(tipoComprobante));
-                    if (establecimientoId is null) throw new ArgumentNullException(nameof(establecimientoId));
-
-                    ComprobanteId = comprobanteId;
-                    Fecha = fecha;
-                    ClienteId = clienteId;
-                    Total = total;
-                    Igv = igv;
-                    Items = lista;
-                    VendedorId = vendedorId;
-                    TipoComprobante = tipoComprobante;
-                    EstablecimientoId = establecimientoId;
-                }
-
-
+                ComprobanteId = comprobanteId;
+                Fecha = fecha;
+                ClienteId = clienteId;
+                Total = total;
+                Igv = igv;
+                Items = lista;
+                VendedorId = vendedorId;
+                TipoComprobante = tipoComprobante;
+                EstablecimientoId = establecimientoId;
+            }
 
             public sealed class Item
             {
