@@ -3,9 +3,9 @@ using System;
 namespace GestionClientesBC.Application.Clientes.Deshabilitar
 {
     /// <summary>
-    /// Entrada para deshabilitar un cliente.
+    /// Entrada para deshabilitar un cliente existente.
     /// </summary>
-    public sealed class DeshabilitarInputDto
+    public sealed class DeshabilitarClienteInputDto
     {
         /// <summary>Identificador del cliente a deshabilitar.</summary>
         public Guid ClienteId { get; init; }
