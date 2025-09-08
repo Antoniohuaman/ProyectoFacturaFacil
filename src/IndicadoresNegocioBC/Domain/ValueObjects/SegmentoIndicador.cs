@@ -26,57 +26,51 @@ namespace IndicadoresNegocioBC.Domain.ValueObjects
         /// <summary>Identificador de la empresa (tenant) a la que pertenece el segmento.</summary>
         public Guid EmpresaId { get; }
 
-        /// <summary>
-        /// Establecimiento específico (opcional). Si es null, el segmento aplica a TODOS
-        /// los establecimientos de la empresa.
-        /// </summary>
-        public Establecimiento? Establecimiento { get; }
+    /// <summary>
+    /// Identificador de establecimiento específico (opcional). Si es null, el segmento aplica a TODOS
+    /// los establecimientos de la empresa.
+    /// </summary>
+    public EstablecimientoId? EstablecimientoId { get; }
 
         /// <summary>Moneda de trabajo (VO Moneda). Obligatoria.</summary>
     public SharedKernel.ValueObjects.Moneda Moneda { get; }
 
         /// <summary>Indica si el segmento abarca a toda la empresa (sin establecimiento específico).</summary>
-        public bool EsEmpresaCompleta => Establecimiento is null;
+    public bool EsEmpresaCompleta => EstablecimientoId is null;
 
-    private SegmentoIndicador(Guid empresaId, Establecimiento? establecimiento, SharedKernel.ValueObjects.Moneda moneda)
+    private SegmentoIndicador(Guid empresaId, EstablecimientoId? establecimientoId, SharedKernel.ValueObjects.Moneda moneda)
         {
             if (empresaId == Guid.Empty)
                 throw new ArgumentException("EmpresaId no puede ser vacío.", nameof(empresaId));
 
             Moneda = moneda ?? throw new ArgumentNullException(nameof(moneda));
 
-            if (establecimiento is not null && establecimiento.EmpresaId != empresaId)
-                throw new InvalidOperationException("El Establecimiento no pertenece a la Empresa indicada.");
-
             EmpresaId = empresaId;
-            Establecimiento = establecimiento;
+            EstablecimientoId = establecimientoId;
         }
 
         /// <summary>
         /// Crea un segmento para TODOS los establecimientos de la empresa en la moneda indicada.
         /// </summary>
         public static SegmentoIndicador ParaEmpresa(Guid empresaId, SharedKernel.ValueObjects.Moneda moneda) =>
-            new(empresaId, establecimiento: null, moneda);
+            new(empresaId, establecimientoId: null, moneda);
 
         /// <summary>
-        /// Crea un segmento para un establecimiento específico (usa su EmpresaId) y la moneda indicada.
+        /// Crea un segmento para un establecimiento específico y la moneda indicada.
         /// </summary>
-        public static SegmentoIndicador ParaEstablecimiento(Establecimiento establecimiento, SharedKernel.ValueObjects.Moneda moneda)
+        public static SegmentoIndicador ParaEstablecimiento(Guid empresaId, EstablecimientoId establecimientoId, SharedKernel.ValueObjects.Moneda moneda)
         {
-            if (establecimiento is null) throw new ArgumentNullException(nameof(establecimiento));
-            return new(establecimiento.EmpresaId, establecimiento, moneda);
+            if (establecimientoId is null) throw new ArgumentNullException(nameof(establecimientoId));
+            return new(empresaId, establecimientoId, moneda);
         }
 
         /// <summary>
-        /// Devuelve una copia del segmento fijando/actualizando el Establecimiento.
-        /// Valida pertenencia a la misma Empresa.
+        /// Devuelve una copia del segmento fijando/actualizando el EstablecimientoId.
         /// </summary>
-        public SegmentoIndicador ConEstablecimiento(Establecimiento establecimiento)
+        public SegmentoIndicador ConEstablecimiento(EstablecimientoId establecimientoId)
         {
-            if (establecimiento is null) throw new ArgumentNullException(nameof(establecimiento));
-            if (establecimiento.EmpresaId != EmpresaId)
-                throw new InvalidOperationException("El Establecimiento no pertenece a la Empresa del segmento.");
-            return new SegmentoIndicador(EmpresaId, establecimiento, Moneda);
+            if (establecimientoId is null) throw new ArgumentNullException(nameof(establecimientoId));
+            return new SegmentoIndicador(EmpresaId, establecimientoId, Moneda);
         }
 
         /// <summary>
@@ -89,7 +83,7 @@ namespace IndicadoresNegocioBC.Domain.ValueObjects
         {
             var scope = EsEmpresaCompleta
                 ? "Empresa"
-                : $"Establecimiento:{Establecimiento!.EstablecimientoId}";
+                : $"Establecimiento:{EstablecimientoId}";
             return $"{scope} | {Moneda.Codigo}";
         }
     }
