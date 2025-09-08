@@ -12,6 +12,16 @@ namespace IndicadoresNegocioBC.Domain.Repositories
     public interface IIndicadorNegocioRepository
     {
         /// <summary>
+        /// Obtiene un agregado por su Guid (Identidad interna).
+        /// </summary>
+        Task<IndicadorNegocio?> GetByIdAsync(Guid indicadorId, CancellationToken ct = default);
+
+        /// <summary>
+        /// Elimina un agregado por su Guid (Identidad interna).
+        /// </summary>
+        Task DeleteAsync(Guid indicadorId, CancellationToken ct = default);
+
+        /// <summary>
         /// Obtiene un agregado por su clave natural; null si no existe.
         /// </summary>
         Task<IndicadorNegocio?> GetByClaveAsync(
