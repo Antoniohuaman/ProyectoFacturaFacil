@@ -9,7 +9,7 @@ namespace IndicadoresNegocioBC.Application.Contracts.Inbound
     public sealed record ComprobanteAnulado(
         Guid ComprobanteId,
         DateTimeOffset FechaAnulacionUtc,
-        Guid EmpresaId,
+        string EmpresaId,
         Guid? EstablecimientoId,
         string Moneda,
         string? Motivo = null

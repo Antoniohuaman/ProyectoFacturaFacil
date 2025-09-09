@@ -10,7 +10,7 @@ namespace IndicadoresNegocioBC.Application.Contracts.Inbound
     public sealed record ComprobanteEmitidoAceptado(
         Guid ComprobanteId,
         DateTimeOffset FechaEmisionUtc,
-        Guid EmpresaId,
+        string EmpresaId,
         Guid? EstablecimientoId,
         string Moneda,                                     // "PEN", "USD", ...
         Guid? ClienteId,
