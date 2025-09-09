@@ -150,17 +150,30 @@ namespace IndicadoresNegocioBC.Tests.Domain
         [Test]
         public void DebeEnviarEn_RespetaActivoVigenciaYDia()
         {
+            // Configurar horario explícito: 9:00 AM UTC
+            var horarioFijo = new HorarioNotificacion(new TimeSpan(9, 0, 0));
             var ni = CrearNotificacionIndicadorActiva();
+            // Cambiar el horario de la notificación al horario fijo
+            ni.CambiarHorario(horarioFijo);
             ni.CambiarDiasSemana(new[] { DayOfWeek.Monday, DayOfWeek.Tuesday });
-            ni.CambiarRangoFechas(DateTimeOffset.UtcNow.AddDays(-1), DateTimeOffset.UtcNow.AddDays(1));
+            // Rango de fechas: de ayer a pasado mañana para asegurar que el lunes esté incluido
+            var hoy = DateTimeOffset.UtcNow.Date;
+            var fechaInicio = hoy.AddDays(-1);
+            var fechaFin = hoy.AddDays(2);
+            ni.CambiarRangoFechas(fechaInicio, fechaFin);
 
-            var lunes = Proximo(DayOfWeek.Monday);
+            var lunes = Proximo(DayOfWeek.Monday, horarioFijo, fechaInicio, fechaFin);
+            // Logging temporal para depuración
+            TestContext.WriteLine($"lunes: {lunes:O}, FechaInicio: {fechaInicio:O}, FechaFin: {fechaFin:O}, Horario: {horarioFijo.Hora}");
+            TestContext.WriteLine($"ni.DiasSemana: {string.Join(",", ni.DiasSemana ?? Array.Empty<DayOfWeek>())}");
+            TestContext.WriteLine($"ni.FechaInicio: {ni.FechaInicio:O}, ni.FechaFin: {ni.FechaFin:O}");
             Assert.That(ni.DebeEnviarEn(lunes), Is.True, "Lunes dentro de vigencia y día permitido");
 
             // Si hay miércoles en el rango, probarlo; si no, simplemente confirmar que no se debe enviar ese día
             try
             {
-                var miercoles = Proximo(DayOfWeek.Wednesday);
+                var miercoles = Proximo(DayOfWeek.Wednesday, horarioFijo, fechaInicio, fechaFin);
+                TestContext.WriteLine($"miercoles: {miercoles:O}");
                 Assert.That(ni.DebeEnviarEn(miercoles), Is.False, "Miércoles fuera de días configurados");
             }
             catch (InvalidOperationException)
@@ -191,16 +204,15 @@ namespace IndicadoresNegocioBC.Tests.Domain
 
         // ======================== Helpers ========================
 
-        private static DateTimeOffset Proximo(DayOfWeek dia)
+        private static DateTimeOffset Proximo(DayOfWeek dia, HorarioNotificacion horario, DateTimeOffset fechaInicio, DateTimeOffset fechaFin)
         {
-            var hoy = DateTimeOffset.UtcNow;
-            var fechaInicio = hoy.AddDays(-1).Date; // igual que en el test
-            var fechaFin = hoy.AddDays(1).Date;
-            for (var d = fechaInicio; d <= fechaFin; d = d.AddDays(1))
+            // Busca el próximo día específico dentro del rango, con la hora exacta del horario y zona UTC
+            for (var d = fechaInicio.Date; d <= fechaFin.Date; d = d.AddDays(1))
             {
                 if (d.DayOfWeek == dia)
                 {
-                    return new DateTimeOffset(d.Year, d.Month, d.Day, 9, 0, 0, hoy.Offset);
+                    // Usar la hora y minutos del horario configurado, segundos y milisegundos en cero
+                    return new DateTimeOffset(d.Year, d.Month, d.Day, horario.Hora.Hours, horario.Hora.Minutes, 0, 0, TimeSpan.Zero);
                 }
             }
             throw new InvalidOperationException($"No se encontró el día {dia} dentro del rango de vigencia configurado para la prueba.");
