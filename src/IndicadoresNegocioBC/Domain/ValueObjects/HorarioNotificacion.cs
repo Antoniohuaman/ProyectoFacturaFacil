@@ -27,6 +27,10 @@
 
 					public static HorarioNotificacion FromHorasMinutos(int horas, int minutos)
 					{
+						if (horas < 0 || horas > 23)
+							throw new ArgumentOutOfRangeException(nameof(horas), "Las horas deben estar entre 0 y 23.");
+						if (minutos < 0 || minutos > 59)
+							throw new ArgumentOutOfRangeException(nameof(minutos), "Los minutos deben estar entre 0 y 59.");
 						return new HorarioNotificacion(new TimeSpan(horas, minutos, 0));
 					}
 
