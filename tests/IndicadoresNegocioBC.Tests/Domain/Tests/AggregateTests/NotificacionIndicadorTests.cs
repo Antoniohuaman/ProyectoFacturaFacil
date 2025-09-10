@@ -156,10 +156,14 @@ namespace IndicadoresNegocioBC.Tests.Domain
             // Cambiar el horario de la notificación al horario fijo
             ni.CambiarHorario(horarioFijo);
             ni.CambiarDiasSemana(new[] { DayOfWeek.Monday, DayOfWeek.Tuesday });
-            // Rango de fechas: de ayer a pasado mañana para asegurar que el lunes esté incluido
+
+            // Buscar el lunes más próximo (puede ser hoy o el siguiente)
             var hoy = DateTimeOffset.UtcNow.Date;
-            var fechaInicio = hoy.AddDays(-1);
-            var fechaFin = hoy.AddDays(2);
+            int diasHastaLunes = ((int)DayOfWeek.Monday - (int)hoy.DayOfWeek + 7) % 7;
+            var proximoLunes = hoy.AddDays(diasHastaLunes);
+            // Rango: desde el domingo anterior hasta el martes siguiente al lunes
+            var fechaInicio = proximoLunes.AddDays(-1); // domingo
+            var fechaFin = proximoLunes.AddDays(2);     // martes
             ni.CambiarRangoFechas(fechaInicio, fechaFin);
 
             var lunes = Proximo(DayOfWeek.Monday, horarioFijo, fechaInicio, fechaFin);
