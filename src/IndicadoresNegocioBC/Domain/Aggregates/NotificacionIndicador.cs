@@ -4,6 +4,8 @@ using System.Linq;
 using SharedKernel.ValueObjects;
 using IndicadoresNegocioBC.Domain.ValueObjects;
 using IndicadoresNegocioBC.Domain.Entities;
+using IndicadoresNegocioBC.Domain.Events;
+using SharedKernel.Events;
 
 namespace IndicadoresNegocioBC.Domain.Aggregates
 {
@@ -12,8 +14,12 @@ namespace IndicadoresNegocioBC.Domain.Aggregates
     /// Permite definir a qué hora, por qué medio y a quién se enviará el resumen diario de ventas.
     /// Incluye soporte para notificación por establecimiento y usuario.
     /// </summary>
+    
     public class NotificacionIndicador
     {
+        // Eventos de dominio generados por este agregado
+        private readonly List<IDomainEvent> _domainEvents = new();
+        public IReadOnlyCollection<IDomainEvent> DomainEvents => _domainEvents.AsReadOnly();
         // Identidad, alcance y metadatos
         public Guid Id { get; }
         public EmpresaId EmpresaId { get; }
@@ -97,6 +103,9 @@ namespace IndicadoresNegocioBC.Domain.Aggregates
             {
                 Activo = false;
             }
+
+            // Registrar evento de creación
+            _domainEvents.Add(new IndicadoresNegocioBC.Domain.Events.NotificacionIndicadorCreada(Id, IndicadorId));
         }
 
         public void CambiarAsunto(string nuevoAsunto)
@@ -106,6 +115,7 @@ namespace IndicadoresNegocioBC.Domain.Aggregates
 
             Asunto = nuevoAsunto.Trim();
             FechaUltimaModificacion = DateTimeOffset.UtcNow;
+            _domainEvents.Add(new NotificacionIndicadorAsuntoCambiado(Id, Asunto));
         }
 
         public void CambiarHorario(HorarioNotificacion nuevoHorario)
@@ -113,6 +123,7 @@ namespace IndicadoresNegocioBC.Domain.Aggregates
             HorarioEnvio = nuevoHorario ?? throw new ArgumentNullException(nameof(nuevoHorario));
             FechaUltimaModificacion = DateTimeOffset.UtcNow;
             if (Activo) ValidarCompletitud();
+            _domainEvents.Add(new NotificacionIndicadorHorarioCambiado(Id, HorarioEnvio.ToString()));
         }
 
         /// <summary>
@@ -126,6 +137,7 @@ namespace IndicadoresNegocioBC.Domain.Aggregates
             FechaInicio = fechaInicio;
             FechaFin = fechaFin;
             FechaUltimaModificacion = DateTimeOffset.UtcNow;
+            _domainEvents.Add(new NotificacionIndicadorRangoFechasCambiado(Id, FechaInicio, FechaFin));
         }
 
         /// <summary>
@@ -139,6 +151,7 @@ namespace IndicadoresNegocioBC.Domain.Aggregates
 
             DiasSemana = diasSemana;
             FechaUltimaModificacion = DateTimeOffset.UtcNow;
+            _domainEvents.Add(new NotificacionIndicadorDiasSemanaCambiados(Id, DiasSemana ?? Array.Empty<DayOfWeek>()));
         }
 
         internal void CambiarMedio(MedioNotificacion nuevoMedio)
@@ -146,13 +159,15 @@ namespace IndicadoresNegocioBC.Domain.Aggregates
             Medio = nuevoMedio ?? throw new ArgumentNullException(nameof(nuevoMedio));
             FechaUltimaModificacion = DateTimeOffset.UtcNow;
             if (Activo) ValidarCompletitud();
+            _domainEvents.Add(new NotificacionIndicadorMedioCambiado(Id, Medio.Valor));
         }
 
-    public void CambiarDestinatario(DestinatarioNotificacion nuevoDestinatario)
+        public void CambiarDestinatario(DestinatarioNotificacion nuevoDestinatario)
         {
             Destinatario = nuevoDestinatario ?? throw new ArgumentNullException(nameof(nuevoDestinatario));
             FechaUltimaModificacion = DateTimeOffset.UtcNow;
             if (Activo) ValidarCompletitud();
+            _domainEvents.Add(new NotificacionIndicadorDestinatarioCambiado(Id, Destinatario.ToString()));
         }
 
         public void Activar()
@@ -164,12 +179,14 @@ namespace IndicadoresNegocioBC.Domain.Aggregates
             ValidarCompletitud();
             Activo = true;
             FechaUltimaModificacion = DateTimeOffset.UtcNow;
+            _domainEvents.Add(new NotificacionIndicadorActivado(Id));
         }
 
         public void Desactivar()
         {
             Activo = false;
             FechaUltimaModificacion = DateTimeOffset.UtcNow;
+            _domainEvents.Add(new NotificacionIndicadorDesactivado(Id));
         }
 
         // === Reglas de dominio auxiliares ===
@@ -254,6 +271,7 @@ namespace IndicadoresNegocioBC.Domain.Aggregates
             // if (_notificaciones.Any(n => n.Equals(notificacion))) return;
 
             _notificaciones.Add(notificacion);
+            _domainEvents.Add(new NotificacionIndicadorNotificacionAgregada(Id, notificacion.Id));
         }
     }
 }
