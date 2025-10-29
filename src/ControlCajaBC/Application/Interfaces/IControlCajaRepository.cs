@@ -13,9 +13,10 @@ namespace ControlCajaBC.Application.Interfaces
     public interface IControlCajaRepository
     {
         /// <summary>
-        /// Obtiene el turno de caja abierto para la caja indicada, o null si no hay ninguno.
-        /// </summary>
-        Task<TurnoCaja?> GetTurnoAbiertoAsync(CodigoCaja codigoCaja);
+    /// Obtiene el turno de caja abierto para la caja indicada, o null si no hay ninguno.
+    /// Filtrado por EmpresaId (y opcionalmente EstablecimientoId).
+    /// </summary>
+    Task<TurnoCaja?> GetTurnoAbiertoAsync(CodigoCaja codigoCaja, SharedKernel.ValueObjects.EmpresaId empresaId, SharedKernel.ValueObjects.EstablecimientoId? establecimientoId = null);
 
         /// <summary>
         /// Agrega un nuevo Turno de Caja.
@@ -28,13 +29,15 @@ namespace ControlCajaBC.Application.Interfaces
         Task UpdateTurnoCajaAsync(TurnoCaja turno);
 
         /// <summary>
-        /// Obtiene todos los movimientos (ingresos/egresos) de un turno.
-        /// </summary>
-        Task<IReadOnlyCollection<MovimientoCaja>> GetMovimientosAsync(CodigoCaja codigoCaja);
+    /// Obtiene todos los movimientos (ingresos/egresos) de un turno.
+    /// Filtrado por EmpresaId (y opcionalmente EstablecimientoId).
+    /// </summary>
+    Task<IReadOnlyCollection<MovimientoCaja>> GetMovimientosAsync(CodigoCaja codigoCaja, SharedKernel.ValueObjects.EmpresaId empresaId, SharedKernel.ValueObjects.EstablecimientoId? establecimientoId = null);
         /// <summary>
-        /// Obtiene el turno de caja cerrado para la caja indicada, o null si no hay ninguno.
-        /// </summary>
-        Task<TurnoCaja?> GetTurnoCerradoAsync(CodigoCaja codigoCaja);
+    /// Obtiene el turno de caja cerrado para la caja indicada, o null si no hay ninguno.
+    /// Filtrado por EmpresaId (y opcionalmente EstablecimientoId).
+    /// </summary>
+    Task<TurnoCaja?> GetTurnoCerradoAsync(CodigoCaja codigoCaja, SharedKernel.ValueObjects.EmpresaId empresaId, SharedKernel.ValueObjects.EstablecimientoId? establecimientoId = null);
 
     }
 }

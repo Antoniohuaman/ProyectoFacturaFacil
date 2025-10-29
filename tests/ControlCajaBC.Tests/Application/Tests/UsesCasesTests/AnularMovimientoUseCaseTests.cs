@@ -6,6 +6,9 @@ using ControlCajaBC.Application.UseCases;
 using ControlCajaBC.Domain.ValueObjects;
 using ControlCajaBC.Domain.Entities;
 using ControlCajaBC.Domain.Aggregates;
+using Moq;
+using SharedKernel.Application.Interfaces;
+using SharedKernel.ValueObjects;
 
 namespace ControlCajaBC.Tests.UnitTests.UseCases
 {
@@ -17,16 +20,18 @@ namespace ControlCajaBC.Tests.UnitTests.UseCases
             // Arrange
             var repo = new InMemoryControlCajaRepository();
             var uow  = new InMemoryUnitOfWork();
+            var tenant = new Mock<ITenantContext>(MockBehavior.Loose);
+            tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("20111111111"));
             var codigo = CodigoCaja.New();
             var apertura = new FechaHora(DateTime.UtcNow);
             var respApertura = new ResponsableCaja(Guid.NewGuid(), "Ana");
             var saldoInicial = new Monto(0m);
 
             // Creo y agrego un turno vacío
-            var turno = new TurnoCaja(codigo, apertura, respApertura, saldoInicial);
+            var turno = new TurnoCaja(codigo, tenant.Object.EmpresaId, null, apertura, respApertura, saldoInicial);
             await repo.AddTurnoCajaAsync(turno);
 
-            var useCase = new AnularMovimientoUseCase(repo, uow);
+            var useCase = new AnularMovimientoUseCase(repo, uow, tenant.Object);
             var fakeId  = Guid.NewGuid();
 
             // Act & Assert: debe lanzar InvalidOperationException y contener el mensaje
@@ -43,13 +48,15 @@ namespace ControlCajaBC.Tests.UnitTests.UseCases
             // Arrange
             var repo = new InMemoryControlCajaRepository();
             var uow  = new InMemoryUnitOfWork();
+            var tenant = new Mock<ITenantContext>(MockBehavior.Loose);
+            tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("20111111111"));
             var codigo = CodigoCaja.New();
             var apertura = new FechaHora(DateTime.UtcNow);
             var respApertura = new ResponsableCaja(Guid.NewGuid(), "Ana");
             var saldoInicial = new Monto(0m);
 
             // Creo y agrego un turno
-            var turno = new TurnoCaja(codigo, apertura, respApertura, saldoInicial);
+            var turno = new TurnoCaja(codigo, tenant.Object.EmpresaId, null, apertura, respApertura, saldoInicial);
 
             // Inserto un movimiento
             var movId     = Guid.NewGuid();
@@ -61,13 +68,13 @@ namespace ControlCajaBC.Tests.UnitTests.UseCases
             turno.RegistrarMovimiento(movimiento);
             await repo.AddTurnoCajaAsync(turno);
 
-            var useCase = new AnularMovimientoUseCase(repo, uow);
+            var useCase = new AnularMovimientoUseCase(repo, uow, tenant.Object);
 
             // Act
             await useCase.HandleAsync(codigo, movId);
 
             // Assert: ya no aparece en la lista de movimientos
-            var cargado = await repo.GetTurnoAbiertoAsync(codigo);
+            var cargado = await repo.GetTurnoAbiertoAsync(codigo, tenant.Object.EmpresaId, null);
             Assert.That(cargado, Is.Not.Null, "El turno debería seguir abierto.");
 
             var movimientos = cargado!.Movimientos;

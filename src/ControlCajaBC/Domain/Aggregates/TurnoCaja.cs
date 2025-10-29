@@ -6,6 +6,7 @@ using System.Linq;
 using ControlCajaBC.Domain.Entities;
 using ControlCajaBC.Domain.Events;
 using ControlCajaBC.Domain.ValueObjects;
+using SharedKernel.ValueObjects;
 
 namespace ControlCajaBC.Domain.Aggregates
 {
@@ -17,6 +18,10 @@ namespace ControlCajaBC.Domain.Aggregates
         private readonly List<MovimientoCaja> _movimientos = new();
 
         public CodigoCaja CodigoCaja { get; }
+        /// <summary>Empresa (tenant) propietaria de la caja.</summary>
+        public EmpresaId EmpresaId { get; }
+        /// <summary>Establecimiento (sede) de la caja; opcional si no aplica.</summary>
+        public EstablecimientoId? EstablecimientoId { get; }
         public FechaHora FechaApertura { get; }
         public ResponsableCaja ResponsableApertura { get; }
         public Monto SaldoInicial { get; private set; }
@@ -57,16 +62,20 @@ namespace ControlCajaBC.Domain.Aggregates
 
         public TurnoCaja(
             CodigoCaja codigoCaja,
+            EmpresaId empresaId,
+            EstablecimientoId? establecimientoId,
             FechaHora fechaApertura,
             ResponsableCaja responsable,
             Monto saldoInicial)
         {
             CodigoCaja = codigoCaja  ?? throw new ArgumentNullException(nameof(codigoCaja));
+            EmpresaId = empresaId ?? throw new ArgumentNullException(nameof(empresaId));
+            EstablecimientoId = establecimientoId; // puede ser null si no aplica
             FechaApertura = fechaApertura  ?? throw new ArgumentNullException(nameof(fechaApertura));
             ResponsableApertura = responsable  ?? throw new ArgumentNullException(nameof(responsable));
             SaldoInicial = saldoInicial  ?? throw new ArgumentNullException(nameof(saldoInicial));
 
-            var abierto = new TurnoCajaAbierto(codigoCaja, fechaApertura, responsable, saldoInicial);
+            var abierto = new TurnoCajaAbierto(codigoCaja, empresaId, establecimientoId, fechaApertura, responsable, saldoInicial);
             // aquí publicas 'abierto' (IDomainEventDispatcher.Dispatch(abierto))
         }
 
@@ -80,7 +89,7 @@ namespace ControlCajaBC.Domain.Aggregates
 
             _movimientos.Add(movimiento);
 
-            var registrado = new MovimientoRegistrado(movimiento);
+            var registrado = new MovimientoRegistrado(EmpresaId, EstablecimientoId, movimiento);
             // Dispatch(registrado)
         }
 
@@ -122,7 +131,7 @@ namespace ControlCajaBC.Domain.Aggregates
             ResponsableCierre = responsableCierre  ?? throw new ArgumentNullException(nameof(responsableCierre));
             EstaAbierto = false;
 
-            var cerrado = new TurnoCajaCerrado(CodigoCaja, fechaCierre, responsableCierre, SaldoActual);
+            var cerrado = new TurnoCajaCerrado(CodigoCaja, EmpresaId, EstablecimientoId, fechaCierre, responsableCierre, SaldoActual);
             // Dispatch(cerrado)
         }
 

@@ -15,6 +15,9 @@ using ControlCajaBC.Adapters.Output.Persistence.InMemory;
 using ControlCajaBC.Domain.Aggregates;
 using ControlCajaBC.Domain.Entities;
 using ControlCajaBC.Domain.ValueObjects;
+using Moq;
+using SharedKernel.Application.Interfaces;
+using SharedKernel.ValueObjects;
 
 namespace ControlCajaBC.Tests.UnitTests.UseCases
 {
@@ -33,7 +36,9 @@ namespace ControlCajaBC.Tests.UnitTests.UseCases
             // Arrange
             var repo = new InMemoryControlCajaRepository();
             var pdfGen = new FakePdfGen();
-            var useCase = new DescargarReporteUseCase(repo, pdfGen);
+            var tenant = new Mock<ITenantContext>(MockBehavior.Loose);
+            tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("20111111111"));
+            var useCase = new DescargarReporteUseCase(repo, pdfGen, tenant.Object);
             var codigo = CodigoCaja.New();
 
             // Act & Assert
@@ -52,12 +57,14 @@ namespace ControlCajaBC.Tests.UnitTests.UseCases
             // Arrange: preparamos un turno YA cerrado en el repo
             var repo         = new InMemoryControlCajaRepository();
             var pdfGen       = new FakePdfGen();
+            var tenant       = new Mock<ITenantContext>(MockBehavior.Loose);
+            tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("20111111111"));
             var codigo       = CodigoCaja.New();
             var apertura     = FechaHora.NowUtc();
             var aperturaResp = new ResponsableCaja(Guid.NewGuid(), "Ana");
 
             // Creamos el turno y le añadimos un movimiento
-            var turno = new TurnoCaja(codigo, apertura, aperturaResp, new Monto(100m));
+            var turno = new TurnoCaja(codigo, tenant.Object.EmpresaId, null, apertura, aperturaResp, new Monto(100m));
             turno.RegistrarMovimiento(new MovimientoCaja(
                 Guid.NewGuid(),
                 codigo,
@@ -73,7 +80,7 @@ namespace ControlCajaBC.Tests.UnitTests.UseCases
             );
 
             await repo.AddTurnoCajaAsync(turno);
-            var useCase = new DescargarReporteUseCase(repo, pdfGen);
+            var useCase = new DescargarReporteUseCase(repo, pdfGen, tenant.Object);
 
             // Act
             var dto = await useCase.HandleAsync(codigo);

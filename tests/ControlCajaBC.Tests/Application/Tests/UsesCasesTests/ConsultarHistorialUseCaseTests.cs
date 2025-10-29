@@ -7,6 +7,9 @@ using ControlCajaBC.Application.UseCases;
 using ControlCajaBC.Domain.Aggregates;
 using ControlCajaBC.Domain.Entities;
 using ControlCajaBC.Domain.ValueObjects;
+using Moq;
+using SharedKernel.Application.Interfaces;
+using SharedKernel.ValueObjects;
 
 namespace ControlCajaBC.Tests.UnitTests.UseCases
 {
@@ -17,10 +20,12 @@ namespace ControlCajaBC.Tests.UnitTests.UseCases
         {
             // Arrange
             var repo        = new InMemoryControlCajaRepository();
+            var tenant      = new Mock<ITenantContext>(MockBehavior.Loose);
+            tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("20177777777"));
             var codigo      = CodigoCaja.New();
             var apertura    = FechaHora.NowUtc();
             var responsable = new ResponsableCaja(Guid.NewGuid(), "Ana");
-            var turno       = new TurnoCaja(codigo, apertura, responsable, new Monto(100m));
+            var turno       = new TurnoCaja(codigo, tenant.Object.EmpresaId, null, apertura, responsable, new Monto(100m));
 
             // Registro dos movimientos
             var id1 = Guid.NewGuid();
@@ -31,7 +36,7 @@ namespace ControlCajaBC.Tests.UnitTests.UseCases
                 id2, codigo, FechaHora.NowUtc(), new Monto(15m), TipoMovimiento.Egreso));
 
             await repo.AddTurnoCajaAsync(turno);
-            var useCase = new ConsultarHistorialUseCase(repo);
+            var useCase = new ConsultarHistorialUseCase(repo, tenant.Object);
 
             // Act
             var dtos = await useCase.HandleAsync(codigo);
@@ -57,7 +62,9 @@ namespace ControlCajaBC.Tests.UnitTests.UseCases
         {
             // Arrange
             var repo    = new InMemoryControlCajaRepository();
-            var useCase = new ConsultarHistorialUseCase(repo);
+            var tenant  = new Mock<ITenantContext>(MockBehavior.Loose);
+            tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("20177777777"));
+            var useCase = new ConsultarHistorialUseCase(repo, tenant.Object);
             var codigo  = CodigoCaja.New();
 
             // Act & Assert: no hay turno abierto

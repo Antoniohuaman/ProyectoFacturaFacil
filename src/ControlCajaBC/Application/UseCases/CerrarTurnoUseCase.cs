@@ -4,6 +4,8 @@ using ControlCajaBC.Application.Interfaces;
 using ControlCajaBC.Domain.Aggregates;
 using ControlCajaBC.Domain.Entities; 
 using ControlCajaBC.Domain.ValueObjects;
+using SharedKernel.Application.Interfaces;
+using SharedKernel.ValueObjects;
 
 namespace ControlCajaBC.Application.UseCases
 {
@@ -12,15 +14,18 @@ namespace ControlCajaBC.Application.UseCases
     /// </summary>
     public class CerrarTurnoUseCase
     {
-        private readonly IControlCajaRepository _repo;
-        private readonly IUnitOfWork _uow;
+    private readonly IControlCajaRepository _repo;
+    private readonly IUnitOfWork _uow;
+    private readonly ITenantContext _tenant;
 
         public CerrarTurnoUseCase(
             IControlCajaRepository repo,
-            IUnitOfWork uow)
+            IUnitOfWork uow,
+            ITenantContext tenant)
         {
             _repo = repo;
             _uow = uow;
+            _tenant = tenant ?? throw new ArgumentNullException(nameof(tenant));
         }
 
         /// <summary>
@@ -35,7 +40,9 @@ namespace ControlCajaBC.Application.UseCases
             ResponsableCaja responsableCierre)
         {
             // 1. Obtener turno abierto
-            var turno = await _repo.GetTurnoAbiertoAsync(codigoCaja)
+         var empresaId = _tenant.EmpresaId ?? throw new InvalidOperationException("EmpresaId del contexto es obligatorio.");
+         EstablecimientoId? establecimientoId = null;
+         var turno = await _repo.GetTurnoAbiertoAsync(codigoCaja, empresaId, establecimientoId)
                          ?? throw new InvalidOperationException(
                                 $"No existe un turno abierto para la caja {codigoCaja.Value}.");
 

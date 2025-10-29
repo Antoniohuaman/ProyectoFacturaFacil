@@ -4,6 +4,8 @@ using System;
 using System.Threading.Tasks;
 using ControlCajaBC.Application.Interfaces;
 using ControlCajaBC.Domain.ValueObjects;
+using SharedKernel.Application.Interfaces;
+using SharedKernel.ValueObjects;
 
 namespace ControlCajaBC.Application.UseCases
 {
@@ -13,10 +15,11 @@ namespace ControlCajaBC.Application.UseCases
     public class ConsultarBalanceUseCase
     {
         private readonly IControlCajaRepository _repo;
-
-        public ConsultarBalanceUseCase(IControlCajaRepository repo)
+        private readonly ITenantContext _tenant;
+        public ConsultarBalanceUseCase(IControlCajaRepository repo, ITenantContext tenant)
         {
             _repo = repo ?? throw new ArgumentNullException(nameof(repo));
+            _tenant = tenant ?? throw new ArgumentNullException(nameof(tenant));
         }
 
         /// <summary>
@@ -25,7 +28,10 @@ namespace ControlCajaBC.Application.UseCases
         public async Task<BalanceDto> HandleAsync(CodigoCaja codigoCaja)
         {
             // 1. Obtener turno abierto o fallar
-            var turno = await _repo.GetTurnoAbiertoAsync(codigoCaja)
+         var empresaId = _tenant.EmpresaId ?? throw new InvalidOperationException("EmpresaId del contexto es obligatorio.");
+         EstablecimientoId? establecimientoId = null; // No disponible en este contexto
+
+         var turno = await _repo.GetTurnoAbiertoAsync(codigoCaja, empresaId, establecimientoId)
                         ?? throw new InvalidOperationException(
                                $"No existe un turno abierto para la caja {codigoCaja.Value}.");
 

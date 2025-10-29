@@ -8,5 +8,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Domain\ControlCajaBC.Domain.csproj" />
+    <ProjectReference Include="..\..\SharedKernel\SharedKernel.csproj" />
   </ItemGroup>
 </Project>

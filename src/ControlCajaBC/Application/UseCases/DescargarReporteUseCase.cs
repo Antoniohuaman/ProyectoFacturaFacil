@@ -2,6 +2,8 @@ using System;
 using System.Threading.Tasks;
 using ControlCajaBC.Application.Interfaces;
 using ControlCajaBC.Domain.ValueObjects;
+using SharedKernel.Application.Interfaces;
+using SharedKernel.ValueObjects;
 
 namespace ControlCajaBC.Application.UseCases
 {
@@ -10,15 +12,18 @@ namespace ControlCajaBC.Application.UseCases
     /// </summary>
     public class DescargarReporteUseCase
     {
-        private readonly IControlCajaRepository _repo;
-        private readonly IReportGenerator       _pdfGen;
+    private readonly IControlCajaRepository _repo;
+    private readonly IReportGenerator       _pdfGen;
+    private readonly ITenantContext _tenant;
 
         public DescargarReporteUseCase(
             IControlCajaRepository repo,
-            IReportGenerator pdfGen)
+            IReportGenerator pdfGen,
+            ITenantContext tenant)
         {
             _repo  = repo  ?? throw new ArgumentNullException(nameof(repo));
             _pdfGen = pdfGen ?? throw new ArgumentNullException(nameof(pdfGen));
+            _tenant = tenant ?? throw new ArgumentNullException(nameof(tenant));
         }
 
         /// <summary>
@@ -27,7 +32,9 @@ namespace ControlCajaBC.Application.UseCases
         public async Task<ReporteDto> HandleAsync(CodigoCaja codigoCaja)
         {
             // 1. Obtener turno cerrado
-            var turno = await _repo.GetTurnoCerradoAsync(codigoCaja)
+         var empresaId = _tenant.EmpresaId ?? throw new InvalidOperationException("EmpresaId del contexto es obligatorio.");
+         EstablecimientoId? establecimientoId = null;
+         var turno = await _repo.GetTurnoCerradoAsync(codigoCaja, empresaId, establecimientoId)
                         ?? throw new InvalidOperationException(
                                $"No existe un turno cerrado para la caja {codigoCaja.Value}.");
 

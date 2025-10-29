@@ -4,6 +4,8 @@ using ControlCajaBC.Application.Interfaces;
 using ControlCajaBC.Domain.Aggregates;
 using ControlCajaBC.Domain.Entities;
 using ControlCajaBC.Domain.ValueObjects;
+using SharedKernel.Application.Interfaces;
+using SharedKernel.ValueObjects;
 
 namespace ControlCajaBC.Application.UseCases
 {
@@ -14,11 +16,13 @@ namespace ControlCajaBC.Application.UseCases
     {
         private readonly IControlCajaRepository _repo;
         private readonly IUnitOfWork            _uow;
+        private readonly ITenantContext _tenant;
 
-        public RegistrarMovimientoUseCase(IControlCajaRepository repo, IUnitOfWork uow)
+        public RegistrarMovimientoUseCase(IControlCajaRepository repo, IUnitOfWork uow, ITenantContext tenant)
         {
             _repo = repo;
             _uow  = uow;
+            _tenant = tenant ?? throw new ArgumentNullException(nameof(tenant));
         }
 
         /// <summary>
@@ -32,7 +36,11 @@ namespace ControlCajaBC.Application.UseCases
             TipoMovimiento tipo)
         {
             // 1) Recuperar turno abierto
-            var turno = await _repo.GetTurnoAbiertoAsync(codigoCaja)
+         // Derivación de EmpresaId/EstablecimientoId desde el contexto actual.
+         var empresaId = _tenant.EmpresaId ?? throw new InvalidOperationException("EmpresaId del contexto es obligatorio.");
+         EstablecimientoId? establecimientoId = null; // Establecimiento no disponible en contexto de este BC
+
+         var turno = await _repo.GetTurnoAbiertoAsync(codigoCaja, empresaId, establecimientoId)
                         ?? throw new InvalidOperationException(
                                $"No existe un turno abierto para la caja {codigoCaja.Value}.");
 

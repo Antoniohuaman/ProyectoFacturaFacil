@@ -3,6 +3,8 @@ using ControlCajaBC.Application.Interfaces;
 using ControlCajaBC.Domain.Aggregates;
 using ControlCajaBC.Domain.Entities;
 using ControlCajaBC.Domain.ValueObjects;
+using SharedKernel.Application.Interfaces; // ITenantContext
+using SharedKernel.ValueObjects;            // EmpresaId, EstablecimientoId
 
 namespace ControlCajaBC.Application.UseCases
 {
@@ -13,11 +15,13 @@ namespace ControlCajaBC.Application.UseCases
     {
         private readonly IControlCajaRepository _repo;
         private readonly IUnitOfWork _uow;
+        private readonly ITenantContext _tenant;
 
-        public AperturaTurnoUseCase(IControlCajaRepository repo, IUnitOfWork uow)
+        public AperturaTurnoUseCase(IControlCajaRepository repo, IUnitOfWork uow, ITenantContext tenant)
         {
             _repo = repo;
             _uow  = uow;
+            _tenant = tenant ?? throw new System.ArgumentNullException(nameof(tenant));
         }
 
         /// <summary>
@@ -30,8 +34,15 @@ namespace ControlCajaBC.Application.UseCases
             Monto            saldoInicial)
         {
             // Construyo el agregado con el código que me pasan
+            // Derivación de EmpresaId/EstablecimientoId: se obtiene de ITenantContext.
+            // Nota: EstablecimientoId no está disponible en el contexto actual de este BC; se pasa null (no aplica por ahora).
+            var empresaId = _tenant.EmpresaId ?? throw new System.InvalidOperationException("EmpresaId del contexto es obligatorio.");
+            EstablecimientoId? establecimientoId = null; // ver nota arriba
+
             var turno = new TurnoCaja(
                 codigo,
+                empresaId,
+                establecimientoId,
                 fechaApertura,
                 responsable,
                 saldoInicial);
