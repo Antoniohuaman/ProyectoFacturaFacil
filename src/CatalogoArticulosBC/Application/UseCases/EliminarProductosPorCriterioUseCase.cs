@@ -55,6 +55,7 @@ namespace CatalogoArticulosBC.Application.UseCases.EliminarProductosPorCriterio
             // Construir filtro del dominio.
             var filtro = new FiltroProducto
             {
+                EmpresaId = _tenant.EmpresaId,
                 Nombre = input.NombreContiene?.Trim(),
                 Categoria = string.IsNullOrWhiteSpace(input.CategoriaNombre) ? null : new Categoria(input.CategoriaNombre!.Trim()),
                 Habilitado = input.Habilitado,

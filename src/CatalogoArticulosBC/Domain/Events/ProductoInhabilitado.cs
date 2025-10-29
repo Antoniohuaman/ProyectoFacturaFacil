@@ -1,5 +1,6 @@
 using System;
 using SharedKernel.Events;
+using SharedKernel.ValueObjects;
 
 namespace CatalogoArticulosBC.Domain.Events
 {
@@ -15,6 +16,11 @@ namespace CatalogoArticulosBC.Domain.Events
         public Guid ProductoId { get; }
 
         /// <summary>
+        /// Empresa (tenant) a la que pertenece el producto.
+        /// </summary>
+        public EmpresaId EmpresaId { get; }
+
+        /// <summary>
         /// Motivo o descripción de la inhabilitación.
         /// </summary>
         public string Motivo { get; }
@@ -24,10 +30,11 @@ namespace CatalogoArticulosBC.Domain.Events
         /// </summary>
         /// <param name="productoId">ID del producto que se inhabilita.</param>
         /// <param name="motivo">Razón de la inhabilitación. No puede ser nulo ni vacío.</param>
-        public ProductoInhabilitado(Guid productoId, string motivo, Guid? eventId = null, DateTime? occurredOnUtc = null)
+        public ProductoInhabilitado(Guid productoId, EmpresaId empresaId, string motivo, Guid? eventId = null, DateTime? occurredOnUtc = null)
             : base(eventId, occurredOnUtc)
         {
             ProductoId = productoId;
+            EmpresaId = empresaId;
             Motivo = string.IsNullOrWhiteSpace(motivo)
                 ? throw new ArgumentException("El motivo de inhabilitación no puede estar vacío.", nameof(motivo))
                 : motivo.Trim();

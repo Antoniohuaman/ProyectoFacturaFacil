@@ -224,7 +224,7 @@ namespace CatalogoArticulosBC.Domain.Aggregates
         public void Deshabilitar(string motivo)
         {
             Habilitado = false;
-            var ev = new ProductoInhabilitado(ProductoId, motivo);
+            var ev = new ProductoInhabilitado(ProductoId, EmpresaId, motivo);
             AddDomainEvent(ev);
             // Dispatch(ev);
         }
@@ -232,7 +232,7 @@ namespace CatalogoArticulosBC.Domain.Aggregates
         public void Habilitar(string usuario, string? motivo = null)
         {
             Habilitado = true;
-            var ev = new ProductoHabilitado(ProductoId, usuario, motivo);
+            var ev = new ProductoHabilitado(ProductoId, EmpresaId, usuario, motivo);
             AddDomainEvent(ev);
             // Dispatch(ev);
         }
@@ -243,7 +243,7 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             var categoriaAnterior = Categoria?.Nombre ?? string.Empty;
             var categoriaNueva = nuevaCategoria.Nombre;
             Categoria = nuevaCategoria;
-            var ev = new ProductoCategoriaCambiada(ProductoId, categoriaAnterior, categoriaNueva, usuario);
+            var ev = new ProductoCategoriaCambiada(ProductoId, EmpresaId, categoriaAnterior, categoriaNueva, usuario);
             AddDomainEvent(ev);
             // Dispatch(ev);
         }
@@ -263,7 +263,7 @@ namespace CatalogoArticulosBC.Domain.Aggregates
                 throw new MultimediaInvalidaException("Tipo no permitido.");
             _multimedia.Add(media);
             // Emitir evento de dominio
-            var ev = new MultimediaAgregada(ProductoId, media.MultimediaId);
+            var ev = new MultimediaAgregada(ProductoId, EmpresaId, media.MultimediaId);
             AddDomainEvent(ev);
         }
 
@@ -273,7 +273,7 @@ namespace CatalogoArticulosBC.Domain.Aggregates
                         ?? throw new InvalidOperationException("Multimedia no encontrada.");
             _multimedia.Remove(media);
             // Emitir evento de dominio
-            var ev = new MultimediaEliminada(ProductoId, multimediaId);
+            var ev = new MultimediaEliminada(ProductoId, EmpresaId, multimediaId);
             AddDomainEvent(ev);
         }
 
@@ -294,7 +294,7 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             if (sku == null) throw new ArgumentNullException(nameof(sku));
             this.Sku = sku;
             // Emitir evento de dominio
-            var ev = new SkuActualizado(ProductoId, sku);
+            var ev = new SkuActualizado(ProductoId, EmpresaId, sku);
             AddDomainEvent(ev);
         }
 
@@ -307,7 +307,7 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             var nuevoSku = generator.Generar();
             this.Sku = nuevoSku;
             // Emitir evento de dominio
-            var ev = new SkuActualizado(ProductoId, nuevoSku);
+            var ev = new SkuActualizado(ProductoId, EmpresaId, nuevoSku);
             AddDomainEvent(ev);
         }
         /// <summary>

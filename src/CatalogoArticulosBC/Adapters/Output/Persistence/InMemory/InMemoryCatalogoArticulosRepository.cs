@@ -94,8 +94,9 @@ namespace CatalogoArticulosBC.Adapters.Output.Persistence.InMemory
 
         public Task<bool> ExisteSkuAsync(Sku sku, EmpresaId empresaId, CancellationToken ct = default)
         {
-            // En memoria ignoramos empresaId (tenant) y validamos por SKU solamente.
-            var exists = _productos.Values.Any(p => p.Sku.Equals(sku));
+            if (sku is null) throw new ArgumentNullException(nameof(sku));
+            if (empresaId is null) throw new ArgumentNullException(nameof(empresaId));
+            var exists = _productos.Values.Any(p => p.EmpresaId.Equals(empresaId) && p.Sku.Equals(sku));
             return Task.FromResult(exists);
         }
 
@@ -149,7 +150,20 @@ namespace CatalogoArticulosBC.Adapters.Output.Persistence.InMemory
 
         public Task<IEnumerable<ProductoSimple>> BuscarPorFiltroAsync(FiltroProducto filtro)
         {
+            if (filtro is null) throw new ArgumentNullException(nameof(filtro));
             var query = _productos.Values.AsQueryable();
+
+            // Filtro obligatorio por EmpresaId para evitar cruce entre tenants
+            if (filtro.EmpresaId is not null)
+            {
+                var empresaId = filtro.EmpresaId;
+                query = query.Where(p => p.EmpresaId.Equals(empresaId));
+            }
+            else
+            {
+                // Sin EmpresaId no se devuelve nada para prevenir fuga de datos
+                return Task.FromResult(Enumerable.Empty<ProductoSimple>());
+            }
 
             if (!string.IsNullOrWhiteSpace(filtro.Nombre))
                 query = query.Where(p => p.Nombre != null && p.Nombre.Valor.Contains(filtro.Nombre, StringComparison.OrdinalIgnoreCase));

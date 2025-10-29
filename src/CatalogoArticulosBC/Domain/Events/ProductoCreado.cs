@@ -15,6 +15,7 @@ namespace CatalogoArticulosBC.Domain.Events
     {
         // Identidad
     public Guid ProductoId { get; }
+    public EmpresaId EmpresaId { get; }
     public Sku Sku { get; }
         public TipoProducto TipoProducto { get; }
 
@@ -60,6 +61,7 @@ namespace CatalogoArticulosBC.Domain.Events
             if (producto == null) throw new ArgumentNullException(nameof(producto));
 
             ProductoId = producto.ProductoId;
+            EmpresaId = producto.EmpresaId;
             Sku = producto.Sku;
             TipoProducto = producto.Tipo;
 

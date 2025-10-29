@@ -1,5 +1,6 @@
 using SharedKernel.Events;
 using System;
+using SharedKernel.ValueObjects;
 
 namespace CatalogoArticulosBC.Domain.Events
 {
@@ -12,6 +13,9 @@ namespace CatalogoArticulosBC.Domain.Events
 		/// <summary>Identificador único del producto.</summary>
 		public Guid ProductoId { get; }
 
+		/// <summary>Empresa (tenant) del producto.</summary>
+		public EmpresaId EmpresaId { get; }
+
 		/// <summary>Categoría anterior del producto.</summary>
 		public string CategoriaAnterior { get; }
 
@@ -21,10 +25,11 @@ namespace CatalogoArticulosBC.Domain.Events
 		/// <summary>Usuario que realizó el cambio.</summary>
 		public string Usuario { get; }
 
-		public ProductoCategoriaCambiada(Guid productoId, string categoriaAnterior, string categoriaNueva, string usuario, Guid? eventId = null, DateTime? occurredOnUtc = null)
+		public ProductoCategoriaCambiada(Guid productoId, EmpresaId empresaId, string categoriaAnterior, string categoriaNueva, string usuario, Guid? eventId = null, DateTime? occurredOnUtc = null)
 			: base(eventId, occurredOnUtc)
 		{
 			ProductoId = productoId;
+			EmpresaId = empresaId;
 			CategoriaAnterior = categoriaAnterior ?? string.Empty;
 			CategoriaNueva = categoriaNueva ?? string.Empty;
 			Usuario = usuario ?? string.Empty;

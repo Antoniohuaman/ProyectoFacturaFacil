@@ -42,6 +42,7 @@ namespace CatalogoArticulosBC.Application.UseCases.ListarProductos
             // Mapear a filtro de dominio
             var filtro = new FiltroProducto
             {
+                EmpresaId = _tenant.EmpresaId,
                 Nombre = string.IsNullOrWhiteSpace(input.Nombre) ? null : input.Nombre!.Trim(),
                 Categoria = string.IsNullOrWhiteSpace(input.Categoria) ? null : new Categoria(input.Categoria!.Trim()),
                 Habilitado = input.Habilitado,
