@@ -107,7 +107,7 @@ namespace CatalogoArticulosBC.Application.UseCases.EditarProductoSimple
                 imagenPrincipalId: input.ImagenPrincipalId,
                 descripcion: input.Descripcion,
                 tipoExistencia: tipoExistencia,
-                precioCompraDecimal: input.PrecioCompra,
+                precioCompraDecimal: input.PrecioCompraMonto,
                 porcentajeGananciaDecimal: input.PorcentajeGanancia,
                 alias: input.Alias
             );
@@ -147,7 +147,11 @@ namespace CatalogoArticulosBC.Application.UseCases.EditarProductoSimple
                 PrecioIncluyeIGV = producto.PrecioVenta?.IncluyeIGV,
                 MonedaCodigo = producto.Moneda.Codigo,
                 TipoExistencia = producto.TipoExistencia,
-                EstablecimientosAsignados = establecimientos.Select(e => (Guid)e).ToList()
+                EstablecimientosAsignados = establecimientos.Select(e => (Guid)e).ToList(),
+                PrecioCompraMonto = producto.PrecioCompra?.Monto,
+                PrecioCompraMoneda = producto.PrecioCompra?.Moneda?.Codigo,
+                PorcentajeGanancia = producto.PorcentajeGanancia?.Valor,
+                Alias = producto.Alias?.Valor
             };
         }
     }

@@ -87,7 +87,8 @@ namespace CatalogoArticulosBC.Tests.Application.UseCases
             // assert
             Assert.Multiple(() =>
             {
-                Assert.That(dto.PrecioCompra, Is.EqualTo(8.75m));
+                Assert.That(dto.PrecioCompraMonto, Is.EqualTo(8.75m));
+                Assert.That(dto.PrecioCompraMoneda, Is.EqualTo("PEN"));
                 Assert.That(dto.PorcentajeGanancia, Is.EqualTo(20m));
                 Assert.That(dto.Alias, Is.EqualTo("Alias Comercial"));
             });
@@ -124,7 +125,8 @@ namespace CatalogoArticulosBC.Tests.Application.UseCases
             // assert
             Assert.Multiple(() =>
             {
-                Assert.That(dto.PrecioCompra, Is.Null);
+                Assert.That(dto.PrecioCompraMonto, Is.Null);
+                Assert.That(dto.PrecioCompraMoneda, Is.Null);
                 Assert.That(dto.PorcentajeGanancia, Is.Null);
                 Assert.That(dto.Alias, Is.Null);
             });

@@ -57,8 +57,12 @@ namespace CatalogoArticulosBC.Application.UseCases.CrearProductoSimple
         public Guid? ImagenPrincipalId { get; init; }
 
         // Nuevos opcionales (compatibilidad hacia afuera)
-        public decimal? PrecioCompra { get; init; }          // en PEN u otra Moneda del producto
+        public decimal? PrecioCompraMonto { get; init; }      // Monto de compra
+        public string? PrecioCompraMoneda { get; init; }      // Código ISO-4217, si no se envía se usa MonedaCodigoIso4217
         public decimal? PorcentajeGanancia { get; init; }     // 0..100
         public string? Alias { get; init; }
+
+        // Backward-compat: campos antiguos (si existieran payloads previos). No documentar públicamente.
+        public decimal? PrecioCompra { get; init; }
     }
 }

@@ -57,7 +57,7 @@ namespace CatalogoArticulosBC.Tests.Application.UseCases
                 PrecioVentaMonto = 12.50m,
                 PrecioIncluyeIGV = true,
                 // Nuevos
-                PrecioCompra = 7.40m,
+                PrecioCompraMonto = 7.40m,
                 PorcentajeGanancia = 15.50m,
                 Alias = " Mi  Alias  Limpio "
             };
@@ -90,7 +90,8 @@ namespace CatalogoArticulosBC.Tests.Application.UseCases
                 Assert.That(capturado.PorcentajeGanancia!.Valor, Is.EqualTo(15.50m));
                 Assert.That(capturado.Alias!.Valor, Is.EqualTo("Mi Alias Limpio")); // colapsado/trimmed
 
-                Assert.That(result.PrecioCompra, Is.EqualTo(7.40m));
+                Assert.That(result.PrecioCompraMonto, Is.EqualTo(7.40m));
+                Assert.That(result.PrecioCompraMoneda, Is.EqualTo("PEN"));
                 Assert.That(result.PorcentajeGanancia, Is.EqualTo(15.50m));
                 Assert.That(result.Alias, Is.EqualTo("Mi Alias Limpio"));
             });

@@ -36,7 +36,8 @@ namespace CatalogoArticulosBC.Application.UseCases.ConsultarProducto
         public string Moneda { get; init; } = string.Empty;
 
     // Nuevos opcionales
-    public decimal? PrecioCompra { get; init; }          // en PEN u otra Moneda del producto
+    public decimal? PrecioCompraMonto { get; init; }
+    public string? PrecioCompraMoneda { get; init; }
     public decimal? PorcentajeGanancia { get; init; }     // 0..100
     public string? Alias { get; init; }
 
@@ -102,7 +103,8 @@ namespace CatalogoArticulosBC.Application.UseCases.ConsultarProducto
                 // Precios y moneda
                 PrecioVenta = p.PrecioVenta?.Monto,
                 Moneda = p.Moneda?.ToString() ?? string.Empty,
-                PrecioCompra = p.PrecioCompra?.Monto,
+                PrecioCompraMonto = p.PrecioCompra?.Monto,
+                PrecioCompraMoneda = p.PrecioCompra?.Moneda?.Codigo,
                 PorcentajeGanancia = p.PorcentajeGanancia?.Valor,
                 Alias = p.Alias?.Valor,
 

@@ -23,5 +23,11 @@ namespace CatalogoArticulosBC.Application.UseCases.EditarProductoSimple
         public string MonedaCodigo { get; init; } = default!;
         public TipoExistencia TipoExistencia { get; init; }
         public List<Guid> EstablecimientosAsignados { get; init; } = new();
+
+        // Nuevos campos opcionales
+        public decimal? PrecioCompraMonto { get; init; }
+        public string? PrecioCompraMoneda { get; init; }
+        public decimal? PorcentajeGanancia { get; init; }
+        public string? Alias { get; init; }
     }
 }

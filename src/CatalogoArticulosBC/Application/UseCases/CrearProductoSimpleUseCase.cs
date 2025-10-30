@@ -124,7 +124,7 @@ namespace CatalogoArticulosBC.Application.UseCases.CrearProductoSimple
                 tipoExistencia: tipoExistencia,
                 asignarATodosLosEstablecimientos: input.AsignarATodosLosEstablecimientos,
                 imagenPrincipalId: input.ImagenPrincipalId,
-                precioCompraDecimal: input.PrecioCompra,
+                precioCompraDecimal: (input.PrecioCompraMonto ?? input.PrecioCompra),
                 porcentajeGananciaDecimal: input.PorcentajeGanancia,
                 alias: input.Alias
             );
@@ -155,8 +155,9 @@ namespace CatalogoArticulosBC.Application.UseCases.CrearProductoSimple
                 TasaImpuestoPercent = producto.TasaImpuesto.Porcentaje,
                 Establecimientos = producto.EstablecimientosAsignados.Select(e => e.Value).ToList(),
                 AsignarATodosLosEstablecimientos = producto.AsignarATodosLosEstablecimientos,
-                ImagenPrincipalId = producto.ImagenPrincipalId
-                ,PrecioCompra = producto.PrecioCompra?.Monto
+                ImagenPrincipalId = producto.ImagenPrincipalId,
+                PrecioCompraMonto = producto.PrecioCompra?.Monto,
+                PrecioCompraMoneda = producto.PrecioCompra?.Moneda?.Codigo
                 ,PorcentajeGanancia = producto.PorcentajeGanancia?.Valor
                 ,Alias = producto.Alias?.Valor
             };

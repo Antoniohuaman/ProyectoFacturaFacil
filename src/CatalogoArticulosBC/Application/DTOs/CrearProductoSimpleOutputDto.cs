@@ -36,7 +36,8 @@ namespace CatalogoArticulosBC.Application.UseCases.CrearProductoSimple
         public Guid? ImagenPrincipalId { get; init; }
 
         // Nuevos opcionales
-        public decimal? PrecioCompra { get; init; }          // en PEN u otra Moneda del producto
+        public decimal? PrecioCompraMonto { get; init; }     // en la Moneda del producto
+        public string? PrecioCompraMoneda { get; init; }
         public decimal? PorcentajeGanancia { get; init; }     // 0..100
         public string? Alias { get; init; }
     }
