@@ -24,7 +24,7 @@ namespace IndicadoresNegocioBC.Domain.ValueObjects
     public sealed record SegmentoIndicador
     {
         /// <summary>Identificador de la empresa (tenant) a la que pertenece el segmento.</summary>
-        public Guid EmpresaId { get; }
+        public EmpresaId EmpresaId { get; }
 
     /// <summary>
     /// Identificador de establecimiento específico (opcional). Si es null, el segmento aplica a TODOS
@@ -38,10 +38,10 @@ namespace IndicadoresNegocioBC.Domain.ValueObjects
         /// <summary>Indica si el segmento abarca a toda la empresa (sin establecimiento específico).</summary>
     public bool EsEmpresaCompleta => EstablecimientoId is null;
 
-    private SegmentoIndicador(Guid empresaId, EstablecimientoId? establecimientoId, SharedKernel.ValueObjects.Moneda moneda)
+    private SegmentoIndicador(EmpresaId empresaId, EstablecimientoId? establecimientoId, SharedKernel.ValueObjects.Moneda moneda)
         {
-            if (empresaId == Guid.Empty)
-                throw new ArgumentException("EmpresaId no puede ser vacío.", nameof(empresaId));
+            if (empresaId is null)
+                throw new ArgumentNullException(nameof(empresaId));
 
             Moneda = moneda ?? throw new ArgumentNullException(nameof(moneda));
 
@@ -52,13 +52,13 @@ namespace IndicadoresNegocioBC.Domain.ValueObjects
         /// <summary>
         /// Crea un segmento para TODOS los establecimientos de la empresa en la moneda indicada.
         /// </summary>
-        public static SegmentoIndicador ParaEmpresa(Guid empresaId, SharedKernel.ValueObjects.Moneda moneda) =>
+        public static SegmentoIndicador ParaEmpresa(EmpresaId empresaId, SharedKernel.ValueObjects.Moneda moneda) =>
             new(empresaId, establecimientoId: null, moneda);
 
         /// <summary>
         /// Crea un segmento para un establecimiento específico y la moneda indicada.
         /// </summary>
-        public static SegmentoIndicador ParaEstablecimiento(Guid empresaId, EstablecimientoId establecimientoId, SharedKernel.ValueObjects.Moneda moneda)
+        public static SegmentoIndicador ParaEstablecimiento(EmpresaId empresaId, EstablecimientoId establecimientoId, SharedKernel.ValueObjects.Moneda moneda)
         {
             if (establecimientoId is null) throw new ArgumentNullException(nameof(establecimientoId));
             return new(empresaId, establecimientoId, moneda);

@@ -26,7 +26,7 @@ namespace IndicadoresNegocioBC.Tests.Domain
         private static SegmentoIndicador SegmentoSoles()
         {
             // Usamos empresaId dummy para test, puedes ajustar si tienes un valor fijo
-            var empresaId = Guid.NewGuid();
+            var empresaId = EmpresaId.From(Guid.NewGuid().ToString());
             return SegmentoIndicador.ParaEmpresa(empresaId, PEN());
         }
 

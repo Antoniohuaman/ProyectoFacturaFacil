@@ -8,6 +8,7 @@ using IndicadoresNegocioBC.Domain.ValueObjects;
 using SharedKernel.Events;
 using SharedKernel.Exceptions;
 using SharedKernel.ValueObjects;
+using SharedKernel.Application.Interfaces;
 
 namespace IndicadoresNegocioBC.Application.UseCases.IndicadorNegocio
 {
@@ -17,15 +18,18 @@ namespace IndicadoresNegocioBC.Application.UseCases.IndicadorNegocio
     /// </summary>
     public sealed class CrearIndicadorNegocioUseCase
     {
-        private readonly IIndicadorNegocioRepository _repository;
+    private readonly IIndicadorNegocioRepository _repository;
         private readonly IEventBus _eventBus;
+    private readonly ITenantContext _tenant;
 
         public CrearIndicadorNegocioUseCase(
             IIndicadorNegocioRepository repository,
-            IEventBus eventBus)
+            IEventBus eventBus,
+            ITenantContext tenant)
         {
             _repository = repository ?? throw new ArgumentNullException(nameof(repository));
             _eventBus = eventBus ?? throw new ArgumentNullException(nameof(eventBus));
+            _tenant = tenant ?? throw new ArgumentNullException(nameof(tenant));
         }
 
         public async Task<CrearIndicadorNegocioOutputDto> ExecuteAsync(
@@ -34,18 +38,10 @@ namespace IndicadoresNegocioBC.Application.UseCases.IndicadorNegocio
         {
             if (input is null) throw new ArgumentNullException(nameof(input));
 
-            // 1) Verificar existencia por clave natural (con o sin EmpresaId)
-            Domain.Aggregates.IndicadorNegocio? existente;
-            if (input.EmpresaId is not null)
-            {
-                existente = await _repository.GetByClaveAsync(
-                    input.Tipo, input.Periodo, input.Segmento, input.EmpresaId, ct);
-            }
-            else
-            {
-                existente = await _repository.GetByClaveAsync(
-                    input.Tipo, input.Periodo, input.Segmento, ct);
-            }
+            // 1) Verificar existencia por clave natural dentro del scope de empresa del tenant
+            var empresaId = _tenant.EmpresaId;
+            Domain.Aggregates.IndicadorNegocio? existente = await _repository.GetByClaveAsync(
+                input.Tipo, input.Periodo, input.Segmento, empresaId, ct);
 
             if (existente is not null)
             {

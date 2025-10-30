@@ -10,6 +10,7 @@ using IndicadoresNegocioBC.Domain.ValueObjects;
 using SharedKernel.Exceptions;
 using SharedKernel.ValueObjects;
 using System.Linq;
+using SharedKernel.Application.Interfaces;
 
 namespace IndicadoresNegocioBC.Tests.Application.UseCases
 {
@@ -17,9 +18,9 @@ namespace IndicadoresNegocioBC.Tests.Application.UseCases
     public class ObtenerCantidadPorTipoComprobanteUseCaseTests
     {
         // ====== Helpers mínimos (ajusta a tus factories reales si difieren) ======
-        private static Moneda PEN() => Moneda.PEN();
-        private static Dinero Money(decimal m) => new Dinero(m, PEN());
-        private static SegmentoIndicador SegmentoSoles() => SegmentoIndicador.ParaEmpresa(Guid.NewGuid(), PEN());
+    private static Moneda PEN() => Moneda.PEN();
+    private static Dinero Money(decimal m) => new Dinero(m, PEN());
+    private static SegmentoIndicador SegmentoSoles() => SegmentoIndicador.ParaEmpresa(EmpresaId.From(Guid.NewGuid().ToString()), PEN());
         private static Periodo PeriodoMes(int year, int month)
         {
             var desde = new DateOnly(year, month, 1);
@@ -59,11 +60,12 @@ namespace IndicadoresNegocioBC.Tests.Application.UseCases
         {
             // Arrange
             var repo = new Mock<IIndicadorNegocioRepository>(MockBehavior.Strict);
-            var uc = new ObtenerCantidadPorTipoComprobanteUseCase(repo.Object);
+            var tenant = new Mock<ITenantContext>(MockBehavior.Strict);
 
             var tipo = IndicadorNegocio.TipoIndicador.VentaDiaria;
             var periodo = PeriodoMes(2025, 1);
             var segmento = SegmentoSoles();
+            var empresa = EmpresaId.From(Guid.NewGuid().ToString());
 
             var agg = IndicadorNegocio.Crear(tipo, periodo, segmento);
 
@@ -79,7 +81,10 @@ namespace IndicadoresNegocioBC.Tests.Application.UseCases
             RegistrarVenta(agg, Guid.NewGuid(), new DateOnly(2025, 1, 12), "Boleta",  200m, estA);
             RegistrarVenta(agg, Guid.NewGuid(), new DateOnly(2025, 1, 20), "Factura", 80m,  estA);
 
-            repo.Setup(r => r.GetByClaveAsync(tipo, periodo, segmento, It.IsAny<CancellationToken>()))
+            tenant.SetupGet(t => t.EmpresaId).Returns(empresa);
+            var uc = new ObtenerCantidadPorTipoComprobanteUseCase(repo.Object, tenant.Object);
+
+            repo.Setup(r => r.GetByClaveAsync(tipo, periodo, segmento, empresa, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(agg);
 
             var input = new ObtenerCantidadPorTipoComprobanteInputDto(
@@ -98,7 +103,7 @@ namespace IndicadoresNegocioBC.Tests.Application.UseCases
             // Assert
             // Solo debe contar: 10/01 Factura estA => 1
             Assert.That(output.Cantidad, Is.EqualTo(1));
-            repo.Verify(r => r.GetByClaveAsync(tipo, periodo, segmento, It.IsAny<CancellationToken>()), Times.Once);
+            repo.Verify(r => r.GetByClaveAsync(tipo, periodo, segmento, empresa, It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Test]
@@ -106,11 +111,12 @@ namespace IndicadoresNegocioBC.Tests.Application.UseCases
         {
             // Arrange
             var repo = new Mock<IIndicadorNegocioRepository>(MockBehavior.Strict);
-            var uc = new ObtenerCantidadPorTipoComprobanteUseCase(repo.Object);
+            var tenant = new Mock<ITenantContext>(MockBehavior.Strict);
 
             var tipo = IndicadorNegocio.TipoIndicador.VentaDiaria;
             var periodo = PeriodoMes(2025, 2);
             var segmento = SegmentoSoles();
+            var empresa = EmpresaId.From(Guid.NewGuid().ToString());
 
             var agg = IndicadorNegocio.Crear(tipo, periodo, segmento);
 
@@ -120,7 +126,10 @@ namespace IndicadoresNegocioBC.Tests.Application.UseCases
             RegistrarVenta(agg, Guid.NewGuid(), new DateOnly(2025, 2, 15), "Boleta",  20m);
             RegistrarVenta(agg, Guid.NewGuid(), new DateOnly(2025, 2, 25), "Factura",  80m);
 
-            repo.Setup(r => r.GetByClaveAsync(tipo, periodo, segmento, It.IsAny<CancellationToken>()))
+            tenant.SetupGet(t => t.EmpresaId).Returns(empresa);
+            var uc = new ObtenerCantidadPorTipoComprobanteUseCase(repo.Object, tenant.Object);
+
+            repo.Setup(r => r.GetByClaveAsync(tipo, periodo, segmento, empresa, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(agg);
 
             var input = new ObtenerCantidadPorTipoComprobanteInputDto(
@@ -142,13 +151,17 @@ namespace IndicadoresNegocioBC.Tests.Application.UseCases
         {
             // Arrange
             var repo = new Mock<IIndicadorNegocioRepository>(MockBehavior.Strict);
-            var uc = new ObtenerCantidadPorTipoComprobanteUseCase(repo.Object);
+            var tenant = new Mock<ITenantContext>(MockBehavior.Strict);
 
             var tipo = IndicadorNegocio.TipoIndicador.VentaDiaria;
             var periodo = PeriodoMes(2025, 3);
             var segmento = SegmentoSoles();
+            var empresa = EmpresaId.From(Guid.NewGuid().ToString());
 
-            repo.Setup(r => r.GetByClaveAsync(tipo, periodo, segmento, It.IsAny<CancellationToken>()))
+            tenant.SetupGet(t => t.EmpresaId).Returns(empresa);
+            var uc = new ObtenerCantidadPorTipoComprobanteUseCase(repo.Object, tenant.Object);
+
+            repo.Setup(r => r.GetByClaveAsync(tipo, periodo, segmento, empresa, It.IsAny<CancellationToken>()))
                 .ReturnsAsync((IndicadorNegocio?)null);
 
             var input = new ObtenerCantidadPorTipoComprobanteInputDto(
@@ -164,7 +177,7 @@ namespace IndicadoresNegocioBC.Tests.Application.UseCases
             Assert.That(async () => await uc.ExecuteAsync(input, CancellationToken.None),
                 Throws.Exception.TypeOf<NotFoundException>());
 
-            repo.Verify(r => r.GetByClaveAsync(tipo, periodo, segmento, It.IsAny<CancellationToken>()), Times.Once);
+            repo.Verify(r => r.GetByClaveAsync(tipo, periodo, segmento, empresa, It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Test]
@@ -172,12 +185,15 @@ namespace IndicadoresNegocioBC.Tests.Application.UseCases
         {
             // Arrange
             var repo = new Mock<IIndicadorNegocioRepository>(MockBehavior.Strict);
-            var uc = new ObtenerCantidadPorTipoComprobanteUseCase(repo.Object);
+            var tenant = new Mock<ITenantContext>(MockBehavior.Strict);
 
             var tipo = IndicadorNegocio.TipoIndicador.VentaDiaria;
             var periodo = PeriodoMes(2025, 4);
             var segmento = SegmentoSoles();
             var empresa = EmpresaId.From(Guid.NewGuid().ToString());
+
+            tenant.SetupGet(t => t.EmpresaId).Returns(empresa);
+            var uc = new ObtenerCantidadPorTipoComprobanteUseCase(repo.Object, tenant.Object);
 
             var agg = IndicadorNegocio.Crear(tipo, periodo, segmento);
             RegistrarVenta(agg, Guid.NewGuid(), new DateOnly(2025, 4, 2), "Factura", 50m);

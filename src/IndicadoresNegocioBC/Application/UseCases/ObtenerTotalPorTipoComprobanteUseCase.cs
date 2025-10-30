@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using IndicadoresNegocioBC.Domain.Repositories;
 using IndicadoresNegocioBC.Domain.ValueObjects;
 using SharedKernel.Exceptions;
+using SharedKernel.Application.Interfaces;
 
 namespace IndicadoresNegocioBC.Application.UseCases.IndicadorNegocio
 {
@@ -15,10 +16,12 @@ namespace IndicadoresNegocioBC.Application.UseCases.IndicadorNegocio
     public sealed class ObtenerTotalPorTipoComprobanteUseCase
     {
         private readonly IIndicadorNegocioRepository _repository;
+        private readonly ITenantContext _tenant;
 
-        public ObtenerTotalPorTipoComprobanteUseCase(IIndicadorNegocioRepository repository)
+        public ObtenerTotalPorTipoComprobanteUseCase(IIndicadorNegocioRepository repository, ITenantContext tenant)
         {
             _repository = repository ?? throw new ArgumentNullException(nameof(repository));
+            _tenant = tenant ?? throw new ArgumentNullException(nameof(tenant));
         }
 
         public async Task<ObtenerTotalPorTipoComprobanteOutputDto> ExecuteAsync(
@@ -27,11 +30,10 @@ namespace IndicadoresNegocioBC.Application.UseCases.IndicadorNegocio
         {
             if (input is null) throw new ArgumentNullException(nameof(input));
 
-            // 1) Cargar agregado por clave natural (usar overload con EmpresaId si viene)
+            // 1) Cargar agregado por clave natural dentro del scope de empresa del tenant
+            var empresaId = _tenant.EmpresaId;
             Domain.Aggregates.IndicadorNegocio? agregado =
-                input.EmpresaId is not null
-                    ? await _repository.GetByClaveAsync(input.Tipo, input.Periodo, input.Segmento, input.EmpresaId, ct)
-                    : await _repository.GetByClaveAsync(input.Tipo, input.Periodo, input.Segmento, ct);
+                await _repository.GetByClaveAsync(input.Tipo, input.Periodo, input.Segmento, empresaId, ct);
 
             if (agregado is null)
             {

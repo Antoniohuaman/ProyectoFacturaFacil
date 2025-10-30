@@ -75,7 +75,7 @@ namespace IndicadoresNegocioBC.Tests.Domain.ValueObjects
         [Test]
         public void ParaEmpresa_Deberia_Crear_Segmento_De_EmpresaCompleta()
         {
-            var empresaId = Guid.NewGuid();
+            var empresaId = EmpresaId.From(Guid.NewGuid().ToString());
             var moneda = TryGetMoneda("PEN") ?? throw new InconclusiveException("No se pudo construir Moneda (PEN).");
             var codigo = GetMonedaCodigo(moneda);
 
@@ -94,7 +94,7 @@ namespace IndicadoresNegocioBC.Tests.Domain.ValueObjects
         [Test]
         public void ParaEstablecimiento_Deberia_Crear_Segmento_Con_Establecimiento()
         {
-            var empresaId = Guid.NewGuid();
+            var empresaId = EmpresaId.From(Guid.NewGuid().ToString());
             var moneda = TryGetMoneda("PEN") ?? throw new InconclusiveException("No se pudo construir Moneda.");
             var estId = TryBuildEstablecimientoId(Guid.NewGuid()) ?? throw new InconclusiveException("No se pudo construir EstablecimientoId.");
 
@@ -113,7 +113,7 @@ namespace IndicadoresNegocioBC.Tests.Domain.ValueObjects
         [Test]
         public void ConEstablecimiento_Deberia_Ser_Inmutable_Y_Establecer_Id()
         {
-            var empresaId = Guid.NewGuid();
+            var empresaId = EmpresaId.From(Guid.NewGuid().ToString());
             var moneda = TryGetMoneda("USD") ?? TryGetMoneda("PEN") ?? throw new InconclusiveException("No se pudo construir Moneda.");
             var estId = TryBuildEstablecimientoId(Guid.NewGuid()) ?? throw new InconclusiveException("No se pudo construir EstablecimientoId.");
 
@@ -137,7 +137,7 @@ namespace IndicadoresNegocioBC.Tests.Domain.ValueObjects
         [Test]
         public void ParaTodaLaEmpresa_Deberia_Quitar_Establecimiento_Manteniendo_EmpresaYMoneda()
         {
-            var empresaId = Guid.NewGuid();
+            var empresaId = EmpresaId.From(Guid.NewGuid().ToString());
             var moneda = TryGetMoneda("PEN") ?? throw new InconclusiveException("No se pudo construir Moneda.");
             var estId = TryBuildEstablecimientoId(Guid.NewGuid()) ?? throw new InconclusiveException("No se pudo construir EstablecimientoId.");
 
@@ -156,24 +156,24 @@ namespace IndicadoresNegocioBC.Tests.Domain.ValueObjects
             var moneda = TryGetMoneda("PEN") ?? throw new InconclusiveException("No se pudo construir Moneda.");
             var estId = TryBuildEstablecimientoId(Guid.NewGuid()) ?? throw new InconclusiveException("No se pudo construir EstablecimientoId.");
 
-            // EmpresaId vacío
-            Assert.That(() => SegmentoIndicador.ParaEmpresa(Guid.Empty, moneda),
-                Throws.Exception.TypeOf<ArgumentException>());
-            Assert.That(() => SegmentoIndicador.ParaEstablecimiento(Guid.Empty, estId, moneda),
-                Throws.Exception.TypeOf<ArgumentException>());
+            // EmpresaId nulo
+            Assert.That(() => SegmentoIndicador.ParaEmpresa(null!, moneda),
+                Throws.Exception.TypeOf<ArgumentNullException>());
+            Assert.That(() => SegmentoIndicador.ParaEstablecimiento(null!, estId, moneda),
+                Throws.Exception.TypeOf<ArgumentNullException>());
 
             // Moneda nula
-            Assert.That(() => SegmentoIndicador.ParaEmpresa(Guid.NewGuid(), null!),
+            Assert.That(() => SegmentoIndicador.ParaEmpresa(EmpresaId.From(Guid.NewGuid().ToString()), null!),
                 Throws.Exception.TypeOf<ArgumentNullException>());
-            Assert.That(() => SegmentoIndicador.ParaEstablecimiento(Guid.NewGuid(), estId, null!),
+            Assert.That(() => SegmentoIndicador.ParaEstablecimiento(EmpresaId.From(Guid.NewGuid().ToString()), estId, null!),
                 Throws.Exception.TypeOf<ArgumentNullException>());
 
             // Establecimiento nulo (nota: firma no-nullable, pero runtime permite null y la fábrica lo valida)
-            Assert.That(() => SegmentoIndicador.ParaEstablecimiento(Guid.NewGuid(), null!, moneda),
+            Assert.That(() => SegmentoIndicador.ParaEstablecimiento(EmpresaId.From(Guid.NewGuid().ToString()), null!, moneda),
                 Throws.Exception.TypeOf<ArgumentNullException>());
 
             // ConEstablecimiento con nulo
-            var segEmpresa = SegmentoIndicador.ParaEmpresa(Guid.NewGuid(), moneda);
+            var segEmpresa = SegmentoIndicador.ParaEmpresa(EmpresaId.From(Guid.NewGuid().ToString()), moneda);
             Assert.That(() => segEmpresa.ConEstablecimiento(null!),
                 Throws.Exception.TypeOf<ArgumentNullException>());
         }
@@ -181,7 +181,7 @@ namespace IndicadoresNegocioBC.Tests.Domain.ValueObjects
         [Test]
         public void Igualdad_Por_Valor_Deberia_Considerar_Empresa_Establecimiento_Y_Moneda()
         {
-            var empresaId = Guid.NewGuid();
+            var empresaId = EmpresaId.From(Guid.NewGuid().ToString());
             var pen1 = TryGetMoneda("PEN") ?? throw new InconclusiveException("No se pudo construir Moneda.");
             var pen2 = TryGetMoneda("PEN") ?? pen1; // misma moneda (mismo valor)
             var usd  = TryGetMoneda("USD") ?? pen1; // si no hay USD, reusa PEN para no romper

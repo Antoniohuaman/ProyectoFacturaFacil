@@ -7,6 +7,7 @@ using IndicadoresNegocioBC.Domain.Aggregates;
 using IndicadoresNegocioBC.Domain.Repositories;
 using IndicadoresNegocioBC.Domain.ValueObjects;
 using SharedKernel.Events;
+using SharedKernel.Application.Interfaces;
 
 namespace IndicadoresNegocioBC.Application.UseCases.IndicadorNegocio
 {
@@ -21,13 +22,16 @@ namespace IndicadoresNegocioBC.Application.UseCases.IndicadorNegocio
     {
         private readonly IIndicadorNegocioRepository _repository;
         private readonly IEventBus _eventBus;
+        private readonly ITenantContext _tenant;
 
         public RegistrarVentaAceptadaUseCase(
             IIndicadorNegocioRepository repository,
-            IEventBus eventBus)
+            IEventBus eventBus,
+            ITenantContext tenant)
         {
             _repository = repository ?? throw new ArgumentNullException(nameof(repository));
             _eventBus = eventBus ?? throw new ArgumentNullException(nameof(eventBus));
+            _tenant = tenant ?? throw new ArgumentNullException(nameof(tenant));
         }
 
         public async Task<RegistrarVentaAceptadaOutputDto> ExecuteAsync(
@@ -36,11 +40,10 @@ namespace IndicadoresNegocioBC.Application.UseCases.IndicadorNegocio
         {
             if (input is null) throw new ArgumentNullException(nameof(input));
 
-            // 1) Cargar por clave natural (con o sin empresa)
+            // 1) Cargar por clave natural dentro del scope de empresa del tenant
+            var empresaId = _tenant.EmpresaId;
             Domain.Aggregates.IndicadorNegocio? agregado =
-                input.EmpresaId is not null
-                    ? await _repository.GetByClaveAsync(input.Tipo, input.Periodo, input.Segmento, input.EmpresaId, ct)
-                    : await _repository.GetByClaveAsync(input.Tipo, input.Periodo, input.Segmento, ct);
+                await _repository.GetByClaveAsync(input.Tipo, input.Periodo, input.Segmento, empresaId, ct);
 
             bool esNuevo = agregado is null;
             if (esNuevo)

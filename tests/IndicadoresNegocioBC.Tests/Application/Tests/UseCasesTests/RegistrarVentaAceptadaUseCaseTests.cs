@@ -10,6 +10,7 @@ using IndicadoresNegocioBC.Domain.Repositories;
 using IndicadoresNegocioBC.Domain.ValueObjects;
 using SharedKernel.Events;
 using SharedKernel.ValueObjects;
+using SharedKernel.Application.Interfaces;
 
 namespace IndicadoresNegocioBC.Tests.Application.UseCases
 {
@@ -20,7 +21,7 @@ namespace IndicadoresNegocioBC.Tests.Application.UseCases
         private static Moneda PEN() => Moneda.Create("PEN");
         private static Dinero Money(decimal m) => new Dinero(m, PEN());
         private static SegmentoIndicador SegmentoSoles(Guid? empresaId = null)
-            => SegmentoIndicador.ParaEmpresa(empresaId ?? Guid.NewGuid(), PEN());
+            => SegmentoIndicador.ParaEmpresa(EmpresaId.From((empresaId ?? Guid.NewGuid()).ToString()), PEN());
         private static Periodo PeriodoMesActual()
         {
             var hoy = DateTime.UtcNow;
@@ -79,15 +80,19 @@ namespace IndicadoresNegocioBC.Tests.Application.UseCases
             // Arrange
             var repo = new Mock<IIndicadorNegocioRepository>(MockBehavior.Strict);
             var bus  = new Mock<IEventBus>(MockBehavior.Strict);
-            var uc   = new RegistrarVentaAceptadaUseCase(repo.Object, bus.Object);
+            var tenant = new Mock<ITenantContext>(MockBehavior.Strict);
 
             var tipo = IndicadorNegocio.TipoIndicador.VentaDiaria;
             var periodo = PeriodoMesActual();
             var segmento = SegmentoSoles();
+            var empresa = EmpresaId.From(Guid.NewGuid().ToString());
 
             var agregado = IndicadorNegocio.Crear(tipo, periodo, segmento); // Estado = Creado, Version = 0
 
-            repo.Setup(r => r.GetByClaveAsync(tipo, periodo, segmento, It.IsAny<CancellationToken>()))
+            tenant.SetupGet(t => t.EmpresaId).Returns(empresa);
+            var uc   = new RegistrarVentaAceptadaUseCase(repo.Object, bus.Object, tenant.Object);
+
+            repo.Setup(r => r.GetByClaveAsync(tipo, periodo, segmento, empresa, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(agregado);
 
             repo.Setup(r => r.UpdateAsync(agregado, It.IsAny<CancellationToken>()))
@@ -112,7 +117,7 @@ namespace IndicadoresNegocioBC.Tests.Application.UseCases
             Assert.That(output.TotalVentas.Monto, Is.GreaterThan(0m));
             Assert.That(output.Version, Is.EqualTo(1));
 
-            repo.Verify(r => r.GetByClaveAsync(tipo, periodo, segmento, It.IsAny<CancellationToken>()), Times.Once);
+            repo.Verify(r => r.GetByClaveAsync(tipo, periodo, segmento, empresa, It.IsAny<CancellationToken>()), Times.Once);
             repo.Verify(r => r.UpdateAsync(agregado, It.IsAny<CancellationToken>()), Times.Once);
             repo.Verify(r => r.AddAsync(It.IsAny<IndicadorNegocio>(), It.IsAny<CancellationToken>()), Times.Never);
 
@@ -128,13 +133,17 @@ namespace IndicadoresNegocioBC.Tests.Application.UseCases
             // Arrange
             var repo = new Mock<IIndicadorNegocioRepository>(MockBehavior.Strict);
             var bus  = new Mock<IEventBus>(MockBehavior.Strict);
-            var uc   = new RegistrarVentaAceptadaUseCase(repo.Object, bus.Object);
+            var tenant = new Mock<ITenantContext>(MockBehavior.Strict);
 
             var tipo = IndicadorNegocio.TipoIndicador.VentaDiaria;
             var periodo = PeriodoMesActual();
             var segmento = SegmentoSoles();
+            var empresa = EmpresaId.From(Guid.NewGuid().ToString());
 
-            repo.Setup(r => r.GetByClaveAsync(tipo, periodo, segmento, It.IsAny<CancellationToken>()))
+            tenant.SetupGet(t => t.EmpresaId).Returns(empresa);
+            var uc   = new RegistrarVentaAceptadaUseCase(repo.Object, bus.Object, tenant.Object);
+
+            repo.Setup(r => r.GetByClaveAsync(tipo, periodo, segmento, empresa, It.IsAny<CancellationToken>()))
                 .ReturnsAsync((IndicadorNegocio?)null);
 
             repo.Setup(r => r.AddAsync(It.IsAny<IndicadorNegocio>(), It.IsAny<CancellationToken>()))
@@ -155,7 +164,7 @@ namespace IndicadoresNegocioBC.Tests.Application.UseCases
             Assert.That(output.TotalComprobantes, Is.EqualTo(1));
             Assert.That(output.Version, Is.EqualTo(1));
 
-            repo.Verify(r => r.GetByClaveAsync(tipo, periodo, segmento, It.IsAny<CancellationToken>()), Times.Once);
+            repo.Verify(r => r.GetByClaveAsync(tipo, periodo, segmento, empresa, It.IsAny<CancellationToken>()), Times.Once);
             repo.Verify(r => r.AddAsync(It.IsAny<IndicadorNegocio>(), It.IsAny<CancellationToken>()), Times.Once);
             repo.Verify(r => r.UpdateAsync(It.IsAny<IndicadorNegocio>(), It.IsAny<CancellationToken>()), Times.Never);
 
@@ -170,15 +179,18 @@ namespace IndicadoresNegocioBC.Tests.Application.UseCases
             // Arrange
             var repo = new Mock<IIndicadorNegocioRepository>(MockBehavior.Strict);
             var bus  = new Mock<IEventBus>(MockBehavior.Strict);
-            var uc   = new RegistrarVentaAceptadaUseCase(repo.Object, bus.Object);
+            var tenant = new Mock<ITenantContext>(MockBehavior.Strict);
 
             var tipo = IndicadorNegocio.TipoIndicador.VentaDiaria;
             var periodo = PeriodoMesActual();
             var segmento = SegmentoSoles();
+            var empresa = EmpresaId.From(Guid.NewGuid().ToString());
 
             var agregado = IndicadorNegocio.Crear(tipo, periodo, segmento);
+            tenant.SetupGet(t => t.EmpresaId).Returns(empresa);
+            var uc   = new RegistrarVentaAceptadaUseCase(repo.Object, bus.Object, tenant.Object);
 
-            repo.SetupSequence(r => r.GetByClaveAsync(tipo, periodo, segmento, It.IsAny<CancellationToken>()))
+            repo.SetupSequence(r => r.GetByClaveAsync(tipo, periodo, segmento, empresa, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(agregado)   // primera llamada
                 .ReturnsAsync(agregado);  // segunda llamada
 
@@ -218,14 +230,18 @@ namespace IndicadoresNegocioBC.Tests.Application.UseCases
             // Arrange
             var repo = new Mock<IIndicadorNegocioRepository>(MockBehavior.Strict);
             var bus  = new Mock<IEventBus>(MockBehavior.Strict);
-            var uc   = new RegistrarVentaAceptadaUseCase(repo.Object, bus.Object);
+            var tenant = new Mock<ITenantContext>(MockBehavior.Strict);
 
             var tipo = IndicadorNegocio.TipoIndicador.VentaDiaria;
             var periodo = PeriodoMesActual();
             var segmento = SegmentoSoles();
+            var empresa = EmpresaId.From(Guid.NewGuid().ToString());
 
             var agregado = IndicadorNegocio.Crear(tipo, periodo, segmento);
-            repo.Setup(r => r.GetByClaveAsync(tipo, periodo, segmento, It.IsAny<CancellationToken>()))
+            tenant.SetupGet(t => t.EmpresaId).Returns(empresa);
+            var uc   = new RegistrarVentaAceptadaUseCase(repo.Object, bus.Object, tenant.Object);
+
+            repo.Setup(r => r.GetByClaveAsync(tipo, periodo, segmento, empresa, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(agregado);
 
             var usd = Moneda.Create("USD");
@@ -255,14 +271,18 @@ namespace IndicadoresNegocioBC.Tests.Application.UseCases
             // Arrange
             var repo = new Mock<IIndicadorNegocioRepository>(MockBehavior.Strict);
             var bus  = new Mock<IEventBus>(MockBehavior.Strict);
-            var uc   = new RegistrarVentaAceptadaUseCase(repo.Object, bus.Object);
+            var tenant = new Mock<ITenantContext>(MockBehavior.Strict);
 
             var tipo = IndicadorNegocio.TipoIndicador.VentaDiaria;
             var periodo = PeriodoMesActual();
             var segmento = SegmentoSoles();
+            var empresa = EmpresaId.From(Guid.NewGuid().ToString());
 
             var agregado = IndicadorNegocio.Crear(tipo, periodo, segmento);
-            repo.Setup(r => r.GetByClaveAsync(tipo, periodo, segmento, It.IsAny<CancellationToken>()))
+            tenant.SetupGet(t => t.EmpresaId).Returns(empresa);
+            var uc   = new RegistrarVentaAceptadaUseCase(repo.Object, bus.Object, tenant.Object);
+
+            repo.Setup(r => r.GetByClaveAsync(tipo, periodo, segmento, empresa, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(agregado);
 
             var fechaFuera = periodo.FinInclusive.AddDays(1); // fuera del periodo
@@ -282,12 +302,15 @@ namespace IndicadoresNegocioBC.Tests.Application.UseCases
             // Arrange
             var repo = new Mock<IIndicadorNegocioRepository>(MockBehavior.Strict);
             var bus  = new Mock<IEventBus>(MockBehavior.Strict);
-            var uc   = new RegistrarVentaAceptadaUseCase(repo.Object, bus.Object);
+            var tenant = new Mock<ITenantContext>(MockBehavior.Strict);
 
             var tipo = IndicadorNegocio.TipoIndicador.VentaDiaria;
             var periodo = PeriodoMesActual();
             var segmento = SegmentoSoles();
             var empresa = EmpresaId.From("empresa-demo");
+
+            tenant.SetupGet(t => t.EmpresaId).Returns(empresa);
+            var uc   = new RegistrarVentaAceptadaUseCase(repo.Object, bus.Object, tenant.Object);
 
             var agregado = IndicadorNegocio.Crear(tipo, periodo, segmento);
             repo.Setup(r => r.GetByClaveAsync(tipo, periodo, segmento, empresa, It.IsAny<CancellationToken>()))

@@ -10,6 +10,7 @@ using IndicadoresNegocioBC.Domain.ValueObjects;
 using SharedKernel.Events;
 using SharedKernel.Exceptions;
 using SharedKernel.ValueObjects;
+using SharedKernel.Application.Interfaces;
 
 namespace IndicadoresNegocioBC.Tests.Application.UseCases
 {
@@ -18,7 +19,7 @@ namespace IndicadoresNegocioBC.Tests.Application.UseCases
     {
         // ====== Builders mínimos (ajusta a tus factories reales si difieren) ======
     private static Moneda PEN() => Moneda.PEN();
-    private static SegmentoIndicador SegmentoSoles() => SegmentoIndicador.ParaEmpresa(Guid.NewGuid(), PEN());
+    private static SegmentoIndicador SegmentoSoles() => SegmentoIndicador.ParaEmpresa(EmpresaId.From(Guid.NewGuid().ToString()), PEN());
         private static Periodo PeriodoMes(int year, int month)
         {
             var desde = new DateOnly(year, month, 1);
@@ -53,16 +54,20 @@ namespace IndicadoresNegocioBC.Tests.Application.UseCases
             // Arrange
             var repo = new Mock<IIndicadorNegocioRepository>(MockBehavior.Strict);
             var bus  = new Mock<IEventBus>(MockBehavior.Strict);
-            var uc   = new ConsolidarIndicadorUseCase(repo.Object, bus.Object);
+            var tenant = new Mock<ITenantContext>(MockBehavior.Strict);
 
             var tipo = IndicadorNegocio.TipoIndicador.VentaDiaria;
             var periodo = PeriodoMes(2025, 1);
             var segmento = SegmentoSoles();
+            var empresa = EmpresaId.From(Guid.NewGuid().ToString());
 
             var agg = IndicadorNegocio.Crear(tipo, periodo, segmento);
             RegistrarVenta(agg, Guid.NewGuid(), new DateOnly(2025, 1, 10), 100m); // Version = 1
 
-            repo.Setup(r => r.GetByClaveAsync(tipo, periodo, segmento, It.IsAny<CancellationToken>()))
+            tenant.SetupGet(t => t.EmpresaId).Returns(empresa);
+            var uc   = new ConsolidarIndicadorUseCase(repo.Object, bus.Object, tenant.Object);
+
+            repo.Setup(r => r.GetByClaveAsync(tipo, periodo, segmento, empresa, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(agg);
 
             repo.Setup(r => r.UpdateAsync(agg, It.IsAny<CancellationToken>()))
@@ -93,17 +98,21 @@ namespace IndicadoresNegocioBC.Tests.Application.UseCases
             // Arrange
             var repo = new Mock<IIndicadorNegocioRepository>(MockBehavior.Strict);
             var bus  = new Mock<IEventBus>(MockBehavior.Strict);
-            var uc   = new ConsolidarIndicadorUseCase(repo.Object, bus.Object);
+            var tenant = new Mock<ITenantContext>(MockBehavior.Strict);
 
             var tipo = IndicadorNegocio.TipoIndicador.VentaDiaria;
             var periodo = PeriodoMes(2025, 2);
             var segmento = SegmentoSoles();
+            var empresa = EmpresaId.From(Guid.NewGuid().ToString());
 
             var agg = IndicadorNegocio.Crear(tipo, periodo, segmento);
             // Consolidar una vez de manera directa para preparar el estado
             agg.ConsolidarPeriodo(new DateTimeOffset(2025, 2, 28, 23, 59, 59, TimeSpan.Zero));
 
-            repo.Setup(r => r.GetByClaveAsync(tipo, periodo, segmento, It.IsAny<CancellationToken>()))
+            tenant.SetupGet(t => t.EmpresaId).Returns(empresa);
+            var uc   = new ConsolidarIndicadorUseCase(repo.Object, bus.Object, tenant.Object);
+
+            repo.Setup(r => r.GetByClaveAsync(tipo, periodo, segmento, empresa, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(agg);
 
             var input = new ConsolidarIndicadorInputDto(tipo, periodo, segmento);
@@ -126,13 +135,17 @@ namespace IndicadoresNegocioBC.Tests.Application.UseCases
             // Arrange
             var repo = new Mock<IIndicadorNegocioRepository>(MockBehavior.Strict);
             var bus  = new Mock<IEventBus>(MockBehavior.Strict);
-            var uc   = new ConsolidarIndicadorUseCase(repo.Object, bus.Object);
+            var tenant = new Mock<ITenantContext>(MockBehavior.Strict);
 
             var tipo = IndicadorNegocio.TipoIndicador.VentaDiaria;
             var periodo = PeriodoMes(2025, 3);
             var segmento = SegmentoSoles();
+            var empresa = EmpresaId.From(Guid.NewGuid().ToString());
 
-            repo.Setup(r => r.GetByClaveAsync(tipo, periodo, segmento, It.IsAny<CancellationToken>()))
+            tenant.SetupGet(t => t.EmpresaId).Returns(empresa);
+            var uc   = new ConsolidarIndicadorUseCase(repo.Object, bus.Object, tenant.Object);
+
+            repo.Setup(r => r.GetByClaveAsync(tipo, periodo, segmento, empresa, It.IsAny<CancellationToken>()))
                 .ReturnsAsync((IndicadorNegocio?)null);
 
             var input = new ConsolidarIndicadorInputDto(tipo, periodo, segmento);
@@ -151,12 +164,15 @@ namespace IndicadoresNegocioBC.Tests.Application.UseCases
             // Arrange
             var repo = new Mock<IIndicadorNegocioRepository>(MockBehavior.Strict);
             var bus  = new Mock<IEventBus>(MockBehavior.Strict);
-            var uc   = new ConsolidarIndicadorUseCase(repo.Object, bus.Object);
+            var tenant = new Mock<ITenantContext>(MockBehavior.Strict);
 
             var tipo = IndicadorNegocio.TipoIndicador.VentaDiaria;
             var periodo = PeriodoMes(2025, 4);
             var segmento = SegmentoSoles();
             var empresa = EmpresaId.From(Guid.NewGuid().ToString());
+
+            tenant.SetupGet(t => t.EmpresaId).Returns(empresa);
+            var uc   = new ConsolidarIndicadorUseCase(repo.Object, bus.Object, tenant.Object);
 
             var agg = IndicadorNegocio.Crear(tipo, periodo, segmento);
 
