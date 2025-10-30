@@ -38,7 +38,7 @@ namespace CatalogoArticulosBC.Application.UseCases.EditarProductoSimple
             if (input is null) throw new ArgumentNullException(nameof(input));
 
             // 1) Cargar agregado
-            var producto = await _repo.GetByIdAsync(input.ProductoId);
+            var producto = await _repo.GetByIdAsync(input.ProductoId, _tenant.EmpresaId);
             if (producto is null)
                 throw new NotFoundException(nameof(ProductoSimple), input.ProductoId.ToString());
 

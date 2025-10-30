@@ -5,6 +5,6 @@ namespace CatalogoArticulosBC.Domain.Specifications
     /// </summary>
     public interface IValidadorUnicidadSku
     {
-        bool EsUnico(string sku);
+        bool EsUnico(string sku, SharedKernel.ValueObjects.EmpresaId empresaId);
     }
 }

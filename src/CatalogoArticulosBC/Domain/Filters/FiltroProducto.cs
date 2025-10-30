@@ -8,7 +8,7 @@ namespace CatalogoArticulosBC.Domain.Filters
         /// <summary>
         /// Empresa (tenant) sobre la que se ejecuta la consulta. Obligatorio para evitar fuga entre empresas.
         /// </summary>
-        public EmpresaId? EmpresaId { get; set; }
+    public EmpresaId EmpresaId { get; set; } = null!;
         public string? Nombre { get; set; }
         public Categoria? Categoria { get; set; }
         public bool? Habilitado { get; set; }

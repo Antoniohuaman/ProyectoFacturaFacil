@@ -25,26 +25,32 @@ namespace CatalogoArticulosBC.Adapters.Output.Persistence.InMemory
 
         // ===== CRUD básico =====
 
-        public Task<ProductoSimple?> GetByIdAsync(Guid id)
+        public Task<ProductoSimple?> GetByIdAsync(Guid id, EmpresaId empresaId)
         {
             lock (_gate)
             {
                 if (_indexById.TryGetValue(id, out var sku) && _productos.TryGetValue(sku, out var p))
-                    return Task.FromResult<ProductoSimple?>(p);
+                {
+                    if (p.EmpresaId.Equals(empresaId))
+                        return Task.FromResult<ProductoSimple?>(p);
+                    return Task.FromResult<ProductoSimple?>(null);
+                }
 
                 return Task.FromResult<ProductoSimple?>(null);
             }
         }
 
-        public Task<ProductoSimple?> GetBySkuAsync(Sku sku)
+        public Task<ProductoSimple?> GetBySkuAsync(Sku sku, EmpresaId empresaId)
         {
             _productos.TryGetValue(sku, out var producto);
-            return Task.FromResult(producto);
+            if (producto is not null && producto.EmpresaId.Equals(empresaId))
+                return Task.FromResult(producto);
+            return Task.FromResult<ProductoSimple?>(null);
         }
 
-        public Task<IReadOnlyCollection<ProductoSimple>> GetAllAsync()
+        public Task<IReadOnlyCollection<ProductoSimple>> GetAllAsync(EmpresaId empresaId)
         {
-            var list = _productos.Values.ToList();
+            var list = _productos.Values.Where(p => p.EmpresaId.Equals(empresaId)).ToList();
             return Task.FromResult((IReadOnlyCollection<ProductoSimple>)list);
         }
 
@@ -112,39 +118,39 @@ namespace CatalogoArticulosBC.Adapters.Output.Persistence.InMemory
             return Task.FromResult(exists);
         }
 
-        public Task<ProductoSimple?> GetByCodigoBarrasAsync(string codigoBarras)
+        public Task<ProductoSimple?> GetByCodigoBarrasAsync(string codigoBarras, EmpresaId empresaId)
         {
-            var producto = _productos.Values.FirstOrDefault(p => p.CodigoBarras?.Valor == codigoBarras);
+            var producto = _productos.Values.FirstOrDefault(p => p.CodigoBarras?.Valor == codigoBarras && p.EmpresaId.Equals(empresaId));
             return Task.FromResult(producto);
         }
 
-        public Task<ProductoSimple?> GetByCodigoFabricaAsync(string codigoFabrica)
+        public Task<ProductoSimple?> GetByCodigoFabricaAsync(string codigoFabrica, EmpresaId empresaId)
         {
-            var producto = _productos.Values.FirstOrDefault(p => p.CodigoFabrica?.Valor == codigoFabrica);
+            var producto = _productos.Values.FirstOrDefault(p => p.CodigoFabrica?.Valor == codigoFabrica && p.EmpresaId.Equals(empresaId));
             return Task.FromResult(producto);
         }
 
-        public Task<ProductoSimple?> GetByNombreAsync(string nombre)
+        public Task<ProductoSimple?> GetByNombreAsync(string nombre, EmpresaId empresaId)
         {
-            var producto = _productos.Values.FirstOrDefault(p => p.Nombre != null && p.Nombre.Valor == nombre);
+            var producto = _productos.Values.FirstOrDefault(p => p.Nombre != null && p.Nombre.Valor == nombre && p.EmpresaId.Equals(empresaId));
             return Task.FromResult(producto);
         }
 
-        public Task<IEnumerable<ProductoSimple>> ListarPorCategoriaAsync(Categoria categoria)
+        public Task<IEnumerable<ProductoSimple>> ListarPorCategoriaAsync(Categoria categoria, EmpresaId empresaId)
         {
-            var productos = _productos.Values.Where(p => p.Categoria != null && p.Categoria.Equals(categoria));
+            var productos = _productos.Values.Where(p => p.Categoria != null && p.Categoria.Equals(categoria) && p.EmpresaId.Equals(empresaId));
             return Task.FromResult(productos);
         }
 
-        public Task<IEnumerable<ProductoSimple>> ListarHabilitadosAsync()
+        public Task<IEnumerable<ProductoSimple>> ListarHabilitadosAsync(EmpresaId empresaId)
         {
-            var productos = _productos.Values.Where(p => p.Habilitado);
+            var productos = _productos.Values.Where(p => p.Habilitado && p.EmpresaId.Equals(empresaId));
             return Task.FromResult(productos);
         }
 
-        public Task<IEnumerable<ProductoSimple>> ListarDeshabilitadosAsync()
+        public Task<IEnumerable<ProductoSimple>> ListarDeshabilitadosAsync(EmpresaId empresaId)
         {
-            var productos = _productos.Values.Where(p => !p.Habilitado);
+            var productos = _productos.Values.Where(p => !p.Habilitado && p.EmpresaId.Equals(empresaId));
             return Task.FromResult(productos);
         }
 
@@ -153,17 +159,9 @@ namespace CatalogoArticulosBC.Adapters.Output.Persistence.InMemory
             if (filtro is null) throw new ArgumentNullException(nameof(filtro));
             var query = _productos.Values.AsQueryable();
 
-            // Filtro obligatorio por EmpresaId para evitar cruce entre tenants
-            if (filtro.EmpresaId is not null)
-            {
-                var empresaId = filtro.EmpresaId;
-                query = query.Where(p => p.EmpresaId.Equals(empresaId));
-            }
-            else
-            {
-                // Sin EmpresaId no se devuelve nada para prevenir fuga de datos
-                return Task.FromResult(Enumerable.Empty<ProductoSimple>());
-            }
+            // Filtro obligatorio por EmpresaId (no-nullable)
+            var empresaId = filtro.EmpresaId;
+            query = query.Where(p => p.EmpresaId.Equals(empresaId));
 
             if (!string.IsNullOrWhiteSpace(filtro.Nombre))
                 query = query.Where(p => p.Nombre != null && p.Nombre.Valor.Contains(filtro.Nombre, StringComparison.OrdinalIgnoreCase));

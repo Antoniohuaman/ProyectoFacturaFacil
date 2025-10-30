@@ -19,9 +19,9 @@ namespace CatalogoArticulosBC.Application.UseCases.HabilitarProducto
     /// </summary>
     public sealed class HabilitarProductoUseCase : IHabilitarProductoUseCase
     {
-        private readonly IProductoRepository _repo;
-        private readonly IUnitOfWork _uow;
-        private readonly ITenantContext _tenant;
+    private readonly IProductoRepository _repo;
+    private readonly IUnitOfWork _uow;
+    private readonly ITenantContext _tenant;
 
         public HabilitarProductoUseCase(
             IProductoRepository repo,
@@ -43,7 +43,7 @@ namespace CatalogoArticulosBC.Application.UseCases.HabilitarProducto
             if (string.IsNullOrWhiteSpace(input.Usuario))
                 throw new BusinessRuleException("El usuario es obligatorio para habilitar el producto.");
 
-            var producto = await _repo.GetByIdAsync(input.ProductoId);
+            var producto = await _repo.GetByIdAsync(input.ProductoId, _tenant.EmpresaId);
             if (producto is null)
                 throw new NotFoundException($"No se encontró el producto con Id '{input.ProductoId}'.");
 

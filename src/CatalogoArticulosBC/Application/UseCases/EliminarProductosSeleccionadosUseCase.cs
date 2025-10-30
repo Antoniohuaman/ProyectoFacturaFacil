@@ -67,7 +67,7 @@ namespace CatalogoArticulosBC.Application.UseCases.EliminarProductosSeleccionado
                     continue;
                 }
 
-                var p = await _repo.GetBySkuAsync(skuVo!);
+                var p = await _repo.GetBySkuAsync(skuVo!, empresaId);
                 if (p is null)
                 {
                     skusNoEncontrados.Add(skuVo!.Valor);

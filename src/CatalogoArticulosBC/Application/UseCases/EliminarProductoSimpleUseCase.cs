@@ -20,11 +20,13 @@ namespace CatalogoArticulosBC.Application.UseCases.EliminarProductoSimple
     {
         private readonly IProductoRepository _repo;
         private readonly IUnitOfWork _uow;
+        private readonly ITenantContext _tenant;
 
-        public EliminarProductoSimpleUseCase(IProductoRepository repo, IUnitOfWork uow)
+        public EliminarProductoSimpleUseCase(IProductoRepository repo, IUnitOfWork uow, ITenantContext tenant)
         {
             _repo = repo ?? throw new ArgumentNullException(nameof(repo));
             _uow = uow ?? throw new ArgumentNullException(nameof(uow));
+            _tenant = tenant ?? throw new ArgumentNullException(nameof(tenant));
         }
 
         public async Task<EliminarProductoSimpleOutputDto> ExecuteAsync(EliminarProductoSimpleInputDto input, CancellationToken ct = default)
@@ -33,7 +35,7 @@ namespace CatalogoArticulosBC.Application.UseCases.EliminarProductoSimple
             if (input.ProductoId == Guid.Empty) throw new ArgumentException("ProductoId inválido.", nameof(input.ProductoId));
 
             // 1) Buscar agregado
-            var producto = await _repo.GetByIdAsync(input.ProductoId);
+            var producto = await _repo.GetByIdAsync(input.ProductoId, _tenant.EmpresaId);
             if (producto is null)
                 throw new NotFoundException(nameof(ProductoSimple), input.ProductoId.ToString());
 

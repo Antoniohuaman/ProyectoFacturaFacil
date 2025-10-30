@@ -19,9 +19,9 @@ namespace CatalogoArticulosBC.Application.UseCases.InhabilitarProducto
     /// </summary>
     public sealed class InhabilitarProductoUseCase : IInhabilitarProductoUseCase
     {
-        private readonly IProductoRepository _repo;
-        private readonly IUnitOfWork _uow;
-        private readonly ITenantContext _tenant;
+    private readonly IProductoRepository _repo;
+    private readonly IUnitOfWork _uow;
+    private readonly ITenantContext _tenant;
 
         public InhabilitarProductoUseCase(
             IProductoRepository repo,
@@ -43,7 +43,7 @@ namespace CatalogoArticulosBC.Application.UseCases.InhabilitarProducto
             if (string.IsNullOrWhiteSpace(input.Motivo))
                 throw new BusinessRuleException("El motivo de inhabilitación es obligatorio.");
 
-            var producto = await _repo.GetByIdAsync(input.ProductoId);
+            var producto = await _repo.GetByIdAsync(input.ProductoId, _tenant.EmpresaId);
             if (producto is null)
                 throw new NotFoundException($"No se encontró el producto con Id '{input.ProductoId}'.");
 

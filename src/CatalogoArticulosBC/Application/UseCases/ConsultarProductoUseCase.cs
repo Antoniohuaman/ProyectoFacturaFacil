@@ -42,16 +42,16 @@ namespace CatalogoArticulosBC.Application.UseCases.ConsultarProducto
             // Resolución de identificador en orden de prioridad: Id -> SKU -> Nombre
             if (input.ProductoId.HasValue && input.ProductoId.Value != Guid.Empty)
             {
-                producto = await _repo.GetByIdAsync(input.ProductoId.Value);
+                producto = await _repo.GetByIdAsync(input.ProductoId.Value, _tenant.EmpresaId);
             }
             else if (!string.IsNullOrWhiteSpace(input.Sku))
             {
                 var sku = Sku.Crear(input.Sku!.Trim());
-                producto = await _repo.GetBySkuAsync(sku);
+                producto = await _repo.GetBySkuAsync(sku, _tenant.EmpresaId);
             }
             else if (!string.IsNullOrWhiteSpace(input.Nombre))
             {
-                producto = await _repo.GetByNombreAsync(input.Nombre!.Trim());
+                producto = await _repo.GetByNombreAsync(input.Nombre!.Trim(), _tenant.EmpresaId);
             }
             else
             {

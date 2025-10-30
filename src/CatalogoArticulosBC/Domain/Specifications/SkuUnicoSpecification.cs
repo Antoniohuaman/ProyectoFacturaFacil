@@ -20,7 +20,7 @@ namespace CatalogoArticulosBC.Domain.Specifications
             if (candidate == null)
                 return SpecificationResult.Failure("RN-CA-001", "sku", "El producto es nulo.");
 
-            if (_validador.EsUnico(candidate.Sku.Valor))
+            if (_validador.EsUnico(candidate.Sku.Valor, candidate.EmpresaId))
                 return SpecificationResult.Success();
 
             return SpecificationResult.Failure("RN-CA-001", "sku", $"El SKU '{candidate.Sku.Valor}' ya existe en el catálogo (debe ser único).");

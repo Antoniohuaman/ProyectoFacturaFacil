@@ -20,21 +20,22 @@ namespace CatalogoArticulosBC.Domain.Repositories
         /// Obtiene un <see cref="ProductoSimple"/> por su identificador.
         /// </summary>
         /// <param name="id">El Guid del producto.</param>
+        /// <param name="empresaId">Empresa (tenant) a la que debe pertenecer el producto.</param>
         /// <returns>El producto o null si no existe.</returns>
-        Task<ProductoSimple?> GetByIdAsync(Guid id);
+        Task<ProductoSimple?> GetByIdAsync(Guid id, EmpresaId empresaId);
 
     /// <summary>
     /// Obtiene un <see cref="ProductoSimple"/> por su SKU.
     /// </summary>
     /// <param name="sku">El SKU del producto.</param>
     /// <returns>El producto o null si no existe.</returns>
-        Task<ProductoSimple?> GetBySkuAsync(Sku sku);
+        Task<ProductoSimple?> GetBySkuAsync(Sku sku, EmpresaId empresaId);
 
         /// <summary>
         /// Devuelve todos los productos del catálogo.
         /// </summary>
         /// <returns>Una colección de <see cref="ProductoSimple"/>.</returns>
-        Task<IReadOnlyCollection<ProductoSimple>> GetAllAsync();
+        Task<IReadOnlyCollection<ProductoSimple>> GetAllAsync(EmpresaId empresaId);
 
     /// <summary>
     /// Inserta un nuevo <see cref="ProductoSimple"/> en el repositorio.
@@ -47,13 +48,13 @@ namespace CatalogoArticulosBC.Domain.Repositories
         /// Actualiza un <see cref="ProductoSimple"/> existente.
         /// </summary>
         /// <param name="producto">La entidad con los cambios.</param>
-        Task UpdateAsync(ProductoSimple producto);
+    Task UpdateAsync(ProductoSimple producto);
 
         /// <summary>
         /// Elimina un <see cref="ProductoSimple"/> del repositorio.
         /// </summary>
         /// <param name="producto">La entidad a eliminar.</param>
-        Task DeleteAsync(ProductoSimple producto);
+    Task DeleteAsync(ProductoSimple producto);
         Task<int> DeleteAllAsync(EmpresaId empresaId, CancellationToken ct = default);
         /// <summary>
         /// Elimina múltiples productos por sus IDs para una empresa específica.
@@ -66,12 +67,12 @@ namespace CatalogoArticulosBC.Domain.Repositories
         
 
     // Consultas especializadas
-        Task<ProductoSimple?> GetByCodigoBarrasAsync(string codigoBarras);
-        Task<ProductoSimple?> GetByCodigoFabricaAsync(string codigoFabrica);
-        Task<ProductoSimple?> GetByNombreAsync(string nombre);
-        Task<IEnumerable<ProductoSimple>> ListarPorCategoriaAsync(Categoria categoria);
-        Task<IEnumerable<ProductoSimple>> ListarHabilitadosAsync();
-        Task<IEnumerable<ProductoSimple>> ListarDeshabilitadosAsync();
+    Task<ProductoSimple?> GetByCodigoBarrasAsync(string codigoBarras, EmpresaId empresaId);
+    Task<ProductoSimple?> GetByCodigoFabricaAsync(string codigoFabrica, EmpresaId empresaId);
+    Task<ProductoSimple?> GetByNombreAsync(string nombre, EmpresaId empresaId);
+    Task<IEnumerable<ProductoSimple>> ListarPorCategoriaAsync(Categoria categoria, EmpresaId empresaId);
+    Task<IEnumerable<ProductoSimple>> ListarHabilitadosAsync(EmpresaId empresaId);
+    Task<IEnumerable<ProductoSimple>> ListarDeshabilitadosAsync(EmpresaId empresaId);
         Task<IEnumerable<ProductoSimple>> BuscarPorFiltroAsync(FiltroProducto filtro);
 
     // Verificaciones

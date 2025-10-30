@@ -26,22 +26,17 @@ namespace CatalogoArticulosBC.Domain.ValueObjects
             IncluyeIGV         = incluyeIGV;
         }
 
-        public decimal ValorSinIGV =>
-            IncluyeIGV
-                ? Monto / (1 + ObtenerTasa())
-                : Monto;
-
-        public decimal ValorConIGV =>
-            IncluyeIGV
-                ? Monto
-                : Monto * (1 + ObtenerTasa());
-
-        private decimal ObtenerTasa()
+        // Métodos conscientes de la tasa real del producto (18%/10%/0%)
+        public decimal ValorSinIGV(SharedKernel.ValueObjects.TasaImpuesto tasa)
         {
-            // Solo grava impuesto si corresponde
-            return AfectacionImpuesto.GravaImpuesto
-                ? TasaImpuesto.IGV18.Fraccion // Puedes parametrizar la tasa si lo necesitas
-                : 0m;
+            var fraccion = AfectacionImpuesto.GravaImpuesto ? tasa.Fraccion : 0m;
+            return IncluyeIGV ? Monto / (1 + fraccion) : Monto;
+        }
+
+        public decimal ValorConIGV(SharedKernel.ValueObjects.TasaImpuesto tasa)
+        {
+            var fraccion = AfectacionImpuesto.GravaImpuesto ? tasa.Fraccion : 0m;
+            return IncluyeIGV ? Monto : Monto * (1 + fraccion);
         }
 
         public override bool Equals(object? obj) => Equals(obj as PrecioVenta);
@@ -59,9 +54,7 @@ namespace CatalogoArticulosBC.Domain.ValueObjects
         public override string ToString()
         {
             var simbolo = Moneda.Simbolo;
-            var sufijo  = IncluyeIGV
-                ? $" (Inc. {ObtenerTasa():P0})"
-                : $" (+{ObtenerTasa():P0})";
+            var sufijo  = IncluyeIGV ? " (Inc. IGV)" : " (+IGV)";
             return $"{simbolo} {Monto:F2}{sufijo}";
         }
     }
