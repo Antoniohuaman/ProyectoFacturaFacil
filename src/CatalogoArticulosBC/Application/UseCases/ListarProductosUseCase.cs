@@ -91,6 +91,9 @@ namespace CatalogoArticulosBC.Application.UseCases.ListarProductos
                 Marca = p.Marca?.Nombre ?? p.Marca?.ToString() ?? string.Empty,
                 PrecioVenta = p.PrecioVenta?.Monto,
                 Moneda = p.Moneda?.ToString() ?? string.Empty,
+                PrecioCompra = p.PrecioCompra?.Monto,
+                PorcentajeGanancia = p.PorcentajeGanancia?.Valor,
+                Alias = p.Alias?.Valor,
                 TipoProducto = p.Tipo.ToString(),
                 TipoExistencia = p.TipoExistencia.ToString(),
                 ImagenPrincipalId = p.ImagenPrincipalId

@@ -12,6 +12,7 @@ using NUnit.Framework;
 using SharedKernel.Application.Interfaces;
 using SharedKernel.Exceptions;
 using SharedKernel.ValueObjects;
+using CatalogoArticulosBC.Tests.TestUtils;
 
 namespace CatalogoArticulosBC.Tests.Application
 {
@@ -62,16 +63,13 @@ namespace CatalogoArticulosBC.Tests.Application
         {
             // Arrange
             var repo = new Mock<IProductoRepository>(MockBehavior.Strict);
-            var tenant = new Mock<ITenantContext>(MockBehavior.Strict);
-
-
-            var empresaId = EmpresaId.From("20123456789");
-            tenant.Setup(t => t.EmpresaId).Returns(empresaId);
+            var empresaId = TenantTestHelpers.AnyEmpresaId();
+            var tenant = TenantTestHelpers.MockTenant(empresaId);
 
             var producto = CrearProducto(empresaId, "SKU-001", "Coca Cola");
             var media = CrearMultimedia(producto.ProductoId);
 
-            repo.Setup(r => r.GetByIdAsync(producto.ProductoId))
+            repo.Setup(r => r.GetByIdAsync(producto.ProductoId, empresaId))
                 .ReturnsAsync(producto);
             repo.Setup(r => r.GetMultimediaByProductoIdAsync(producto.ProductoId))
                 .ReturnsAsync(media);
@@ -103,15 +101,12 @@ namespace CatalogoArticulosBC.Tests.Application
         {
             // Arrange
             var repo = new Mock<IProductoRepository>(MockBehavior.Strict);
-            var tenant = new Mock<ITenantContext>(MockBehavior.Strict);
-
-
-            var empresaId = EmpresaId.From("20123456789");
-            tenant.Setup(t => t.EmpresaId).Returns(empresaId);
+            var empresaId = TenantTestHelpers.AnyEmpresaId();
+            var tenant = TenantTestHelpers.MockTenant(empresaId);
 
             var producto = CrearProducto(empresaId, "SKU-ABC", "Agua Sin Gas");
 
-            repo.Setup(r => r.GetBySkuAsync(It.Is<Sku>(s => s.Valor == "SKU-ABC")))
+            repo.Setup(r => r.GetBySkuAsync(It.Is<Sku>(s => s.Valor == "SKU-ABC"), empresaId))
                 .ReturnsAsync(producto);
 
             var sut = new ConsultarProductoUseCase(repo.Object, tenant.Object);
@@ -138,15 +133,12 @@ namespace CatalogoArticulosBC.Tests.Application
         {
             // Arrange
             var repo = new Mock<IProductoRepository>(MockBehavior.Strict);
-            var tenant = new Mock<ITenantContext>(MockBehavior.Strict);
-
-
-            var empresaId = EmpresaId.From("20987654321");
-            tenant.Setup(t => t.EmpresaId).Returns(empresaId);
+            var empresaId = TenantTestHelpers.AnyEmpresaId();
+            var tenant = TenantTestHelpers.MockTenant(empresaId);
 
             var producto = CrearProducto(empresaId, "SKU-NOM", "Sprite");
 
-            repo.Setup(r => r.GetByNombreAsync("Sprite"))
+            repo.Setup(r => r.GetByNombreAsync("Sprite", empresaId))
                 .ReturnsAsync(producto);
             repo.Setup(r => r.GetMultimediaByProductoIdAsync(producto.ProductoId))
                 .ReturnsAsync(new List<MultimediaProducto>());
@@ -174,10 +166,8 @@ namespace CatalogoArticulosBC.Tests.Application
         public void Lanza_BusinessRule_si_no_envia_ningun_identificador()
         {
             var repo = new Mock<IProductoRepository>(MockBehavior.Strict);
-            var tenant = new Mock<ITenantContext>(MockBehavior.Strict);
-
-            var empresaId = EmpresaId.From("20123456789");
-            tenant.Setup(t => t.EmpresaId).Returns(empresaId);
+            var empresaId = TenantTestHelpers.AnyEmpresaId();
+            var tenant = TenantTestHelpers.MockTenant(empresaId);
             var sut = new ConsultarProductoUseCase(repo.Object, tenant.Object);
 
             Assert.ThrowsAsync<BusinessRuleException>(async () =>
@@ -188,13 +178,11 @@ namespace CatalogoArticulosBC.Tests.Application
         public void Lanza_NotFound_si_no_existe_el_producto()
         {
             var repo = new Mock<IProductoRepository>(MockBehavior.Strict);
-            var tenant = new Mock<ITenantContext>(MockBehavior.Strict);
+            var empresaId = TenantTestHelpers.AnyEmpresaId();
+            var tenant = TenantTestHelpers.MockTenant(empresaId);
 
-            repo.Setup(r => r.GetByIdAsync(It.IsAny<Guid>()))
+            repo.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), empresaId))
                 .ReturnsAsync((ProductoSimple?)null);
-
-            var empresaId = EmpresaId.From("20123456789");
-            tenant.Setup(t => t.EmpresaId).Returns(empresaId);
             var sut = new ConsultarProductoUseCase(repo.Object, tenant.Object);
 
             Assert.ThrowsAsync<NotFoundException>(async () =>

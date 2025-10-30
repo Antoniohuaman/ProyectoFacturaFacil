@@ -55,5 +55,10 @@ namespace CatalogoArticulosBC.Application.UseCases.CrearProductoSimple
         public string? CodigoBarras { get; init; }
         public string? CodigoFabrica { get; init; }
         public Guid? ImagenPrincipalId { get; init; }
+
+        // Nuevos opcionales (compatibilidad hacia afuera)
+        public decimal? PrecioCompra { get; init; }          // en PEN u otra Moneda del producto
+        public decimal? PorcentajeGanancia { get; init; }     // 0..100
+        public string? Alias { get; init; }
     }
 }

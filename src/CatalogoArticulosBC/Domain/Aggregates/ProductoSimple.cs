@@ -48,6 +48,11 @@ namespace CatalogoArticulosBC.Domain.Aggregates
         public PrecioVenta? PrecioVenta { get; private set; }
         public Moneda Moneda { get; private set; }
 
+    // Nuevos opcionales
+    public PrecioCompra? PrecioCompra { get; private set; }
+    public PorcentajeGanancia? PorcentajeGanancia { get; private set; }
+    public AliasProducto? Alias { get; private set; }
+
         // Impuestos especiales
         // Propiedad TieneDetraccion eliminada
 
@@ -111,7 +116,10 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             TipoExistencia tipoExistencia = TipoExistencia.ProductosTerminados,
             // ...existing code...
             bool asignarATodosLosEstablecimientos = false,
-            Guid? imagenPrincipalId = null)
+            Guid? imagenPrincipalId = null,
+            decimal? precioCompraDecimal = null,
+            decimal? porcentajeGananciaDecimal = null,
+            string? alias = null)
         {
             // Validaciones de parámetros obligatorios
             EmpresaId = empresaId ?? throw new ArgumentNullException(nameof(empresaId));
@@ -141,6 +149,10 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             Marca = marca;
             PrecioVenta = precioVenta;
             Moneda = moneda ?? throw new ArgumentNullException(nameof(moneda), "La moneda debe provenir de la configuración de empresa.");
+            // Mapear nuevos opcionales a VOs
+            PrecioCompra = precioCompraDecimal.HasValue ? PrecioCompra.Desde(precioCompraDecimal.Value, Moneda) : null;
+            PorcentajeGanancia = porcentajeGananciaDecimal.HasValue ? PorcentajeGanancia.Desde(porcentajeGananciaDecimal.Value) : null;
+            Alias = !string.IsNullOrWhiteSpace(alias) ? AliasProducto.Desde(alias) : null;
             CodigoSunat = codigoSunat;
             CentroDeCosto = centroDeCosto;
             CodigoBarras = codigoBarras;
@@ -179,7 +191,10 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             bool asignarATodosLosEstablecimientos = false,
             Guid? imagenPrincipalId = null,
             string? descripcion = null,
-            TipoExistencia tipoExistencia = TipoExistencia.ProductosTerminados)
+            TipoExistencia tipoExistencia = TipoExistencia.ProductosTerminados,
+            decimal? precioCompraDecimal = null,
+            decimal? porcentajeGananciaDecimal = null,
+            string? alias = null)
         {
             // Validaciones
             Nombre = nombre ?? throw new ArgumentNullException(nameof(nombre));
@@ -204,6 +219,10 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             // Asignaciones
             Marca = marca;
             PrecioVenta = precioVenta;
+            // Mapear nuevos opcionales (si vienen) a VOs
+            PrecioCompra = precioCompraDecimal.HasValue ? PrecioCompra.Desde(precioCompraDecimal.Value, Moneda) : null;
+            PorcentajeGanancia = porcentajeGananciaDecimal.HasValue ? PorcentajeGanancia.Desde(porcentajeGananciaDecimal.Value) : null;
+            Alias = !string.IsNullOrWhiteSpace(alias) ? AliasProducto.Desde(alias) : null;
             CodigoSunat = codigoSunat;
             CentroDeCosto = centroDeCosto;
             Peso = peso;

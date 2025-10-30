@@ -12,6 +12,7 @@ using NUnit.Framework;
 using SharedKernel.Application.Interfaces;
 using SharedKernel.Exceptions;
 using SharedKernel.ValueObjects;
+using CatalogoArticulosBC.Tests.TestUtils;
 
 namespace CatalogoArticulosBC.Tests.Application.UseCases
 {
@@ -55,7 +56,8 @@ namespace CatalogoArticulosBC.Tests.Application.UseCases
             // Arrange
             var repo = new Mock<IProductoRepository>(MockBehavior.Strict);
             var uow  = new Mock<IUnitOfWork>(MockBehavior.Strict);
-            var ten  = new Mock<ITenantContext>(MockBehavior.Strict);
+            var empresaId = TenantTestHelpers.AnyEmpresaId();
+            var ten  = TenantTestHelpers.MockTenant(empresaId);
 
             var producto = CrearProductoBaseBien(out var est1);
             var prodId = producto.ProductoId;
@@ -86,9 +88,8 @@ namespace CatalogoArticulosBC.Tests.Application.UseCases
                 ImagenPrincipalId = null
             };
 
-            ten.Setup(x => x.EmpresaId).Returns(EmpresaId.From("20123456789"));
-            repo.Setup(x => x.GetByIdAsync(prodId)).ReturnsAsync(producto);
-            repo.Setup(x => x.ExisteSkuAsync(It.Is<Sku>(s => s.Valor == "SKU-EDIT-001"), ten.Object.EmpresaId, It.IsAny<CancellationToken>()))
+            repo.Setup(x => x.GetByIdAsync(prodId, empresaId)).ReturnsAsync(producto);
+            repo.Setup(x => x.ExisteSkuAsync(It.Is<Sku>(s => s.Valor == "SKU-EDIT-001"), empresaId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(false);
             repo.Setup(x => x.UpdateAsync(producto)).Returns(Task.CompletedTask);
             uow.Setup(x => x.CommitAsync()).Returns(Task.CompletedTask);
@@ -126,7 +127,8 @@ namespace CatalogoArticulosBC.Tests.Application.UseCases
             // Arrange
             var repo = new Mock<IProductoRepository>(MockBehavior.Strict);
             var uow  = new Mock<IUnitOfWork>(MockBehavior.Strict);
-            var ten  = new Mock<ITenantContext>(MockBehavior.Strict);
+            var empresaId = TenantTestHelpers.AnyEmpresaId();
+            var ten  = TenantTestHelpers.MockTenant(empresaId);
 
             var producto = CrearProductoBaseBien(out var est1); // partimos del mismo y lo convertimos en servicio
             var prodId = producto.ProductoId;
@@ -157,8 +159,7 @@ namespace CatalogoArticulosBC.Tests.Application.UseCases
                 ImagenPrincipalId = null
             };
 
-            ten.Setup(x => x.EmpresaId).Returns(EmpresaId.From("20123456789"));
-            repo.Setup(x => x.GetByIdAsync(prodId)).ReturnsAsync(producto);
+            repo.Setup(x => x.GetByIdAsync(prodId, empresaId)).ReturnsAsync(producto);
             // No se consulta ExisteSkuAsync porque no cambia el SKU
             repo.Setup(x => x.UpdateAsync(producto)).Returns(Task.CompletedTask);
             uow.Setup(x => x.CommitAsync()).Returns(Task.CompletedTask);
@@ -188,10 +189,10 @@ namespace CatalogoArticulosBC.Tests.Application.UseCases
         {
             var repo = new Mock<IProductoRepository>();
             var uow  = new Mock<IUnitOfWork>();
-            var ten  = new Mock<ITenantContext>();
+            var ten  = TenantTestHelpers.MockTenant();
 
             var producto = CrearProductoBaseBien(out _);
-            repo.Setup(x => x.GetByIdAsync(producto.ProductoId)).ReturnsAsync(producto);
+            repo.Setup(x => x.GetByIdAsync(producto.ProductoId, ten.Object.EmpresaId)).ReturnsAsync(producto);
 
             var sut = new EditarProductoSimpleUseCase(repo.Object, uow.Object, ten.Object);
 
@@ -215,7 +216,8 @@ namespace CatalogoArticulosBC.Tests.Application.UseCases
             // Arrange
             var repo = new Mock<IProductoRepository>(MockBehavior.Strict);
             var uow  = new Mock<IUnitOfWork>(MockBehavior.Strict);
-            var ten  = new Mock<ITenantContext>(MockBehavior.Strict);
+            var empresaId = TenantTestHelpers.AnyEmpresaId();
+            var ten  = TenantTestHelpers.MockTenant(empresaId);
 
             var producto = CrearProductoBaseBien(out var est1);
             var prodId = producto.ProductoId;
@@ -232,9 +234,8 @@ namespace CatalogoArticulosBC.Tests.Application.UseCases
                 EstablecimientosAsignados = new List<Guid> { (Guid)est1 }
             };
 
-            ten.Setup(x => x.EmpresaId).Returns(EmpresaId.From("20123456789"));
-            repo.Setup(x => x.GetByIdAsync(prodId)).ReturnsAsync(producto);
-            repo.Setup(x => x.ExisteSkuAsync(It.Is<Sku>(s => s.Valor == "SKU-EXISTENTE"), ten.Object.EmpresaId, It.IsAny<CancellationToken>()))
+            repo.Setup(x => x.GetByIdAsync(prodId, empresaId)).ReturnsAsync(producto);
+            repo.Setup(x => x.ExisteSkuAsync(It.Is<Sku>(s => s.Valor == "SKU-EXISTENTE"), empresaId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(true); // ya existe
 
             var sut = new EditarProductoSimpleUseCase(repo.Object, uow.Object, ten.Object);
@@ -251,10 +252,10 @@ namespace CatalogoArticulosBC.Tests.Application.UseCases
         {
             var repo = new Mock<IProductoRepository>();
             var uow  = new Mock<IUnitOfWork>();
-            var ten  = new Mock<ITenantContext>();
+            var ten  = TenantTestHelpers.MockTenant();
 
             var producto = CrearProductoBaseBien(out var est1);
-            repo.Setup(x => x.GetByIdAsync(producto.ProductoId)).ReturnsAsync(producto);
+            repo.Setup(x => x.GetByIdAsync(producto.ProductoId, ten.Object.EmpresaId)).ReturnsAsync(producto);
 
             var sut = new EditarProductoSimpleUseCase(repo.Object, uow.Object, ten.Object);
 

@@ -10,6 +10,7 @@ using NUnit.Framework;
 using SharedKernel.Application.Interfaces;
 using SharedKernel.Exceptions;
 using SharedKernel.ValueObjects;
+using CatalogoArticulosBC.Tests.TestUtils;
 
 namespace CatalogoArticulosBC.Tests.Application.UseCases
 {
@@ -53,13 +54,12 @@ namespace CatalogoArticulosBC.Tests.Application.UseCases
             // Arrange
             var repo = new Mock<IProductoRepository>(MockBehavior.Strict);
             var uow = new Mock<IUnitOfWork>(MockBehavior.Strict);
-            var tenant = new Mock<ITenantContext>(MockBehavior.Strict);
-
-            tenant.Setup(t => t.EmpresaId).Returns(EmpresaId.From("20111111111"));
+            var empresaId = TenantTestHelpers.AnyEmpresaId();
+            var tenant = TenantTestHelpers.MockTenant(empresaId);
 
             var producto = CrearProducto("SKU-001", "Coca Cola", habilitado: false);
 
-            repo.Setup(r => r.GetByIdAsync(producto.ProductoId))
+            repo.Setup(r => r.GetByIdAsync(producto.ProductoId, empresaId))
                 .ReturnsAsync(producto);
             repo.Setup(r => r.UpdateAsync(producto))
                 .Returns(Task.CompletedTask);
@@ -100,13 +100,12 @@ namespace CatalogoArticulosBC.Tests.Application.UseCases
             // Arrange
             var repo = new Mock<IProductoRepository>(MockBehavior.Strict);
             var uow = new Mock<IUnitOfWork>(MockBehavior.Strict);
-            var tenant = new Mock<ITenantContext>(MockBehavior.Strict);
-
-            tenant.Setup(t => t.EmpresaId).Returns(EmpresaId.From("20999999999"));
+            var empresaId = TenantTestHelpers.AnyEmpresaId();
+            var tenant = TenantTestHelpers.MockTenant(empresaId);
 
             var producto = CrearProducto("SKU-999", "Agua Sin Gas", habilitado: true);
 
-            repo.Setup(r => r.GetByIdAsync(producto.ProductoId))
+            repo.Setup(r => r.GetByIdAsync(producto.ProductoId, empresaId))
                 .ReturnsAsync(producto);
 
             var sut = new HabilitarProductoUseCase(repo.Object, uow.Object, tenant.Object);
@@ -138,11 +137,12 @@ namespace CatalogoArticulosBC.Tests.Application.UseCases
             // Arrange
             var repo = new Mock<IProductoRepository>(MockBehavior.Strict);
             var uow = new Mock<IUnitOfWork>(MockBehavior.Strict);
-            var tenant = new Mock<ITenantContext>(MockBehavior.Strict);
+            var empresaId = TenantTestHelpers.AnyEmpresaId();
+            var tenant = TenantTestHelpers.MockTenant(empresaId);
 
             var id = Guid.NewGuid();
 
-            repo.Setup(r => r.GetByIdAsync(id)).ReturnsAsync((ProductoSimple?)null);
+            repo.Setup(r => r.GetByIdAsync(id, empresaId)).ReturnsAsync((ProductoSimple?)null);
 
             var sut = new HabilitarProductoUseCase(repo.Object, uow.Object, tenant.Object);
 

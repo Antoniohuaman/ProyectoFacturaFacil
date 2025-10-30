@@ -123,7 +123,10 @@ namespace CatalogoArticulosBC.Application.UseCases.CrearProductoSimple
                 tipo: input.Tipo,
                 tipoExistencia: tipoExistencia,
                 asignarATodosLosEstablecimientos: input.AsignarATodosLosEstablecimientos,
-                imagenPrincipalId: input.ImagenPrincipalId
+                imagenPrincipalId: input.ImagenPrincipalId,
+                precioCompraDecimal: input.PrecioCompra,
+                porcentajeGananciaDecimal: input.PorcentajeGanancia,
+                alias: input.Alias
             );
 
             // ------------------- Persistencia + publicación de eventos -------------------
@@ -153,6 +156,9 @@ namespace CatalogoArticulosBC.Application.UseCases.CrearProductoSimple
                 Establecimientos = producto.EstablecimientosAsignados.Select(e => e.Value).ToList(),
                 AsignarATodosLosEstablecimientos = producto.AsignarATodosLosEstablecimientos,
                 ImagenPrincipalId = producto.ImagenPrincipalId
+                ,PrecioCompra = producto.PrecioCompra?.Monto
+                ,PorcentajeGanancia = producto.PorcentajeGanancia?.Valor
+                ,Alias = producto.Alias?.Valor
             };
         }
 

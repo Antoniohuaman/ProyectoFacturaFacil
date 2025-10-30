@@ -106,7 +106,10 @@ namespace CatalogoArticulosBC.Application.UseCases.EditarProductoSimple
                 asignarATodosLosEstablecimientos: input.AsignarATodosLosEstablecimientos,
                 imagenPrincipalId: input.ImagenPrincipalId,
                 descripcion: input.Descripcion,
-                tipoExistencia: tipoExistencia
+                tipoExistencia: tipoExistencia,
+                precioCompraDecimal: input.PrecioCompra,
+                porcentajeGananciaDecimal: input.PorcentajeGanancia,
+                alias: input.Alias
             );
 
             // 4) (Opcional) Cambiar SKU si viene y es distinto

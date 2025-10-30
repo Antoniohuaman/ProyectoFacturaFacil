@@ -10,6 +10,7 @@ using NUnit.Framework;
 using SharedKernel.Application.Interfaces;
 using SharedKernel.Exceptions;
 using SharedKernel.ValueObjects;
+using CatalogoArticulosBC.Tests.TestUtils;
 
 namespace CatalogoArticulosBC.Tests.Application.UseCases
 {
@@ -80,13 +81,15 @@ namespace CatalogoArticulosBC.Tests.Application.UseCases
             // Arrange
             var repo = new Mock<IProductoRepository>(MockBehavior.Strict);
             var uow  = new Mock<IUnitOfWork>(MockBehavior.Strict);
+            var empresaId = TenantTestHelpers.AnyEmpresaId();
+            var tenant = TenantTestHelpers.MockTenant(empresaId);
 
             var producto = CrearProductoBien();
-            repo.Setup(r => r.GetByIdAsync(producto.ProductoId)).ReturnsAsync(producto);
+            repo.Setup(r => r.GetByIdAsync(producto.ProductoId, empresaId)).ReturnsAsync(producto);
             repo.Setup(r => r.DeleteAsync(producto)).Returns(Task.CompletedTask);
             uow.Setup(x => x.CommitAsync()).Returns(Task.CompletedTask);
 
-            var sut = new EliminarProductoSimpleUseCase(repo.Object, uow.Object);
+            var sut = new EliminarProductoSimpleUseCase(repo.Object, uow.Object, tenant.Object);
 
             // Act
             var output = await sut.ExecuteAsync(new EliminarProductoSimpleInputDto { ProductoId = producto.ProductoId });
@@ -107,13 +110,15 @@ namespace CatalogoArticulosBC.Tests.Application.UseCases
             // Arrange
             var repo = new Mock<IProductoRepository>(MockBehavior.Strict);
             var uow  = new Mock<IUnitOfWork>(MockBehavior.Strict);
+            var empresaId = TenantTestHelpers.AnyEmpresaId();
+            var tenant = TenantTestHelpers.MockTenant(empresaId);
 
             var producto = CrearProductoServicio();
-            repo.Setup(r => r.GetByIdAsync(producto.ProductoId)).ReturnsAsync(producto);
+            repo.Setup(r => r.GetByIdAsync(producto.ProductoId, empresaId)).ReturnsAsync(producto);
             repo.Setup(r => r.DeleteAsync(producto)).Returns(Task.CompletedTask);
             uow.Setup(x => x.CommitAsync()).Returns(Task.CompletedTask);
 
-            var sut = new EliminarProductoSimpleUseCase(repo.Object, uow.Object);
+            var sut = new EliminarProductoSimpleUseCase(repo.Object, uow.Object, tenant.Object);
 
             // Act
             var output = await sut.ExecuteAsync(new EliminarProductoSimpleInputDto { ProductoId = producto.ProductoId });
@@ -134,11 +139,13 @@ namespace CatalogoArticulosBC.Tests.Application.UseCases
             // Arrange
             var repo = new Mock<IProductoRepository>(MockBehavior.Strict);
             var uow  = new Mock<IUnitOfWork>(MockBehavior.Strict);
+            var empresaId = TenantTestHelpers.AnyEmpresaId();
+            var tenant = TenantTestHelpers.MockTenant(empresaId);
 
             var id = Guid.NewGuid();
-            repo.Setup(r => r.GetByIdAsync(id)).ReturnsAsync((ProductoSimple?)null);
+            repo.Setup(r => r.GetByIdAsync(id, empresaId)).ReturnsAsync((ProductoSimple?)null);
 
-            var sut = new EliminarProductoSimpleUseCase(repo.Object, uow.Object);
+            var sut = new EliminarProductoSimpleUseCase(repo.Object, uow.Object, tenant.Object);
 
             // Act + Assert
             Assert.ThrowsAsync<NotFoundException>(async () =>
@@ -153,7 +160,8 @@ namespace CatalogoArticulosBC.Tests.Application.UseCases
         {
             var repo = new Mock<IProductoRepository>();
             var uow  = new Mock<IUnitOfWork>();
-            var sut = new EliminarProductoSimpleUseCase(repo.Object, uow.Object);
+            var tenant = TenantTestHelpers.MockTenant();
+            var sut = new EliminarProductoSimpleUseCase(repo.Object, uow.Object, tenant.Object);
 
             Assert.ThrowsAsync<ArgumentException>(async () =>
                 await sut.ExecuteAsync(new EliminarProductoSimpleInputDto { ProductoId = Guid.Empty }));

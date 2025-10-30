@@ -35,6 +35,11 @@ namespace CatalogoArticulosBC.Application.UseCases.ConsultarProducto
         public decimal? PrecioVenta { get; init; }
         public string Moneda { get; init; } = string.Empty;
 
+    // Nuevos opcionales
+    public decimal? PrecioCompra { get; init; }          // en PEN u otra Moneda del producto
+    public decimal? PorcentajeGanancia { get; init; }     // 0..100
+    public string? Alias { get; init; }
+
         // Códigos adicionales
         public string? CodigoSunat { get; init; }
         public string? CentroDeCosto { get; init; }
@@ -97,6 +102,9 @@ namespace CatalogoArticulosBC.Application.UseCases.ConsultarProducto
                 // Precios y moneda
                 PrecioVenta = p.PrecioVenta?.Monto,
                 Moneda = p.Moneda?.ToString() ?? string.Empty,
+                PrecioCompra = p.PrecioCompra?.Monto,
+                PorcentajeGanancia = p.PorcentajeGanancia?.Valor,
+                Alias = p.Alias?.Valor,
 
                 // Códigos
                 CodigoSunat = p.CodigoSunat?.ToString(),

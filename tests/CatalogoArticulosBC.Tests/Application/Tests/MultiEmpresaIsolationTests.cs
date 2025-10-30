@@ -43,8 +43,9 @@ namespace CatalogoArticulosBC.Tests.Application.UseCases
 
         private sealed class TestTenant : ITenantContext
         {
+            public TenantId TenantId { get; }
             public EmpresaId EmpresaId { get; }
-            public TestTenant(string ruc) { EmpresaId = EmpresaId.From(ruc); }
+            public TestTenant(string ruc) { EmpresaId = EmpresaId.From(ruc); TenantId = TenantId.New(); }
         }
 
         [Test]

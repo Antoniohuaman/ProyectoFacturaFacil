@@ -12,6 +12,7 @@ using NUnit.Framework;
 using SharedKernel.Application.Interfaces;
 using SharedKernel.Exceptions;
 using SharedKernel.ValueObjects;
+using CatalogoArticulosBC.Tests.TestUtils;
 
 
 namespace CatalogoArticulosBC.Tests.Application.UseCases
@@ -52,10 +53,8 @@ namespace CatalogoArticulosBC.Tests.Application.UseCases
             // Arrange
             var repo   = new Mock<IProductoRepository>(MockBehavior.Strict);
             var uow    = new Mock<IUnitOfWork>(MockBehavior.Strict);
-            var tenant = new Mock<ITenantContext>(MockBehavior.Strict);
-
-            var empresa = EMP();
-            tenant.Setup(t => t.EmpresaId).Returns(empresa);
+            var empresa = TenantTestHelpers.AnyEmpresaId();
+            var tenant = TenantTestHelpers.MockTenant(empresa);
 
             // Preparar 3 productos con el mismo EmpresaId que el tenant
             var p1 = CrearProducto("SKU-001", "P1", empresa);
@@ -68,12 +67,12 @@ namespace CatalogoArticulosBC.Tests.Application.UseCases
             var skus = new List<string> { "SKU-002", "   ", "SKU-XYZ" };
 
             // Resoluciones por ID
-            repo.Setup(r => r.GetByIdAsync(p1.ProductoId)).ReturnsAsync(p1);
-            repo.Setup(r => r.GetByIdAsync(It.Is<Guid>(g => g != p1.ProductoId))).ReturnsAsync((ProductoSimple?)null);
+            repo.Setup(r => r.GetByIdAsync(p1.ProductoId, empresa)).ReturnsAsync(p1);
+            repo.Setup(r => r.GetByIdAsync(It.Is<Guid>(g => g != p1.ProductoId), empresa)).ReturnsAsync((ProductoSimple?)null);
 
             // Resoluciones por SKU
-            repo.Setup(r => r.GetBySkuAsync(It.Is<Sku>(s => s.Valor == "SKU-002"))).ReturnsAsync(p2);
-            repo.Setup(r => r.GetBySkuAsync(It.Is<Sku>(s => s.Valor == "SKU-XYZ"))).ReturnsAsync((ProductoSimple?)null);
+            repo.Setup(r => r.GetBySkuAsync(It.Is<Sku>(s => s.Valor == "SKU-002"), empresa)).ReturnsAsync(p2);
+            repo.Setup(r => r.GetBySkuAsync(It.Is<Sku>(s => s.Valor == "SKU-XYZ"), empresa)).ReturnsAsync((ProductoSimple?)null);
 
 
             // Batch delete: solo p1 y p2 existen, así que se eliminan 2
@@ -115,7 +114,7 @@ namespace CatalogoArticulosBC.Tests.Application.UseCases
         {
             var repo   = new Mock<IProductoRepository>(MockBehavior.Strict);
             var uow    = new Mock<IUnitOfWork>(MockBehavior.Strict);
-            var tenant = new Mock<ITenantContext>(MockBehavior.Strict);
+            var tenant = TenantTestHelpers.MockTenant();
 
             var sut = new EliminarProductosSeleccionadosUseCase(repo.Object, uow.Object, tenant.Object);
 
@@ -155,12 +154,11 @@ namespace CatalogoArticulosBC.Tests.Application.UseCases
         {
             var repo   = new Mock<IProductoRepository>(MockBehavior.Strict);
             var uow    = new Mock<IUnitOfWork>(MockBehavior.Strict);
-            var tenant = new Mock<ITenantContext>(MockBehavior.Strict);
-
-            tenant.Setup(t => t.EmpresaId).Returns(EMP());
+            var empresa = TenantTestHelpers.AnyEmpresaId();
+            var tenant = TenantTestHelpers.MockTenant(empresa);
 
             var idInexistente = Guid.NewGuid();
-            repo.Setup(r => r.GetByIdAsync(idInexistente)).ReturnsAsync((ProductoSimple?)null);
+            repo.Setup(r => r.GetByIdAsync(idInexistente, empresa)).ReturnsAsync((ProductoSimple?)null);
 
 
             // Batch delete: ninguno existe, así que se eliminan 0

@@ -39,6 +39,11 @@ namespace CatalogoArticulosBC.Application.UseCases.ListarProductos
             public decimal? PrecioVenta { get; init; }
             public string Moneda { get; init; } = string.Empty;
 
+            // Nuevos opcionales
+            public decimal? PrecioCompra { get; init; }          // en PEN u otra Moneda del producto
+            public decimal? PorcentajeGanancia { get; init; }     // 0..100
+            public string? Alias { get; init; }
+
             // Tipo / inventario
             public string TipoProducto { get; init; } = string.Empty;
             public string TipoExistencia { get; init; } = string.Empty;
