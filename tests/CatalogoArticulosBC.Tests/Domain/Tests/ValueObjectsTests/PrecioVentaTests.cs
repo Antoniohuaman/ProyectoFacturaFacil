@@ -60,26 +60,26 @@ namespace CatalogoArticulosBC.Domain.Tests.ValueObjects
             Assert.That(p.IncluyeIGV, Is.True);
         }
 
-        // -------------------- Cálculo con IGV gravado (18%) --------------------
+    // -------------------- Cálculo con IGV gravado (18%) --------------------
 
         [Test]
-        public void ConIGV_Gravado_ValorSinIGV_DividePor_1MasTasa()
+        public void ConIGV_Gravado18_ValorSinIGV_DividePor_1MasTasa()
         {
             // 118 con IGV -> base 100 exacto (tasa 18%)
             var p = new PrecioVenta(118m, Moneda.USD(), AfectacionImpuesto.Gravado_10, incluyeIGV: true);
 
-            Assert.That(p.ValorSinIGV, Is.EqualTo(100m));
-            Assert.That(p.ValorConIGV, Is.EqualTo(118m)); // ya incluye IGV
+            Assert.That(p.ValorSinIGV(TasaImpuesto.IGV18), Is.EqualTo(100m));
+            Assert.That(p.ValorConIGV(TasaImpuesto.IGV18), Is.EqualTo(118m)); // ya incluye IGV
         }
 
         [Test]
-        public void SinIGV_Gravado_ValorConIGV_MultiplicaPor_1MasTasa()
+        public void SinIGV_Gravado18_ValorConIGV_MultiplicaPor_1MasTasa()
         {
             // 100 sin IGV -> con IGV 118 exacto
             var p = new PrecioVenta(100m, Moneda.USD(), AfectacionImpuesto.Gravado_10, incluyeIGV: false);
 
-            Assert.That(p.ValorSinIGV, Is.EqualTo(100m));
-            Assert.That(p.ValorConIGV, Is.EqualTo(118m));
+            Assert.That(p.ValorSinIGV(TasaImpuesto.IGV18), Is.EqualTo(100m));
+            Assert.That(p.ValorConIGV(TasaImpuesto.IGV18), Is.EqualTo(118m));
         }
 
         // -------------------- Cálculo exonerado / inafecto (tasa 0) --------------------
@@ -89,8 +89,8 @@ namespace CatalogoArticulosBC.Domain.Tests.ValueObjects
         {
             var p = new PrecioVenta(150m, Moneda.PEN(), AfectacionImpuesto.Exonerado_20, incluyeIGV: true);
 
-            Assert.That(p.ValorSinIGV, Is.EqualTo(150m));
-            Assert.That(p.ValorConIGV, Is.EqualTo(150m));
+            Assert.That(p.ValorSinIGV(TasaImpuesto.Cero), Is.EqualTo(150m));
+            Assert.That(p.ValorConIGV(TasaImpuesto.Cero), Is.EqualTo(150m));
         }
 
         [Test]
@@ -98,28 +98,28 @@ namespace CatalogoArticulosBC.Domain.Tests.ValueObjects
         {
             var p = new PrecioVenta(150m, Moneda.PEN(), AfectacionImpuesto.Exonerado_20, incluyeIGV: false);
 
-            Assert.That(p.ValorSinIGV, Is.EqualTo(150m));
-            Assert.That(p.ValorConIGV, Is.EqualTo(150m));
+            Assert.That(p.ValorSinIGV(TasaImpuesto.Cero), Is.EqualTo(150m));
+            Assert.That(p.ValorConIGV(TasaImpuesto.Cero), Is.EqualTo(150m));
         }
 
         // -------------------- ToString (formato) --------------------
 
         [Test]
-        public void ToString_ConIGV_Gravado_MuestraIncPorcentaje()
+        public void ToString_ConIGV_Gravado_MuestraEtiquetaGenerica()
         {
             var p = new PrecioVenta(118m, Moneda.USD(), AfectacionImpuesto.Gravado_10, incluyeIGV: true);
 
-            // Con cultura Invariant: "$ 118.00 (Inc. 18 %)"
-            Assert.That(p.ToString(), Is.EqualTo("$ 118.00 (Inc. 18 %)"));
+            // Con cultura Invariant: "$ 118.00 (Inc. IGV)"
+            Assert.That(p.ToString(), Is.EqualTo("$ 118.00 (Inc. IGV)"));
         }
 
         [Test]
-        public void ToString_SinIGV_Gravado_MuestraMasPorcentaje()
+        public void ToString_SinIGV_Gravado_MuestraEtiquetaGenerica()
         {
             var p = new PrecioVenta(100m, Moneda.USD(), AfectacionImpuesto.Gravado_10, incluyeIGV: false);
 
-            // Con cultura Invariant: "$ 100.00 (+18 %)"
-            Assert.That(p.ToString(), Is.EqualTo("$ 100.00 (+18 %)"));
+            // Con cultura Invariant: "$ 100.00 (+IGV)"
+            Assert.That(p.ToString(), Is.EqualTo("$ 100.00 (+IGV)"));
         }
 
         [Test]
@@ -128,8 +128,9 @@ namespace CatalogoArticulosBC.Domain.Tests.ValueObjects
             var p1 = new PrecioVenta(100m, Moneda.USD(), AfectacionImpuesto.Exonerado_20, incluyeIGV: true);
             var p2 = new PrecioVenta(100m, Moneda.USD(), AfectacionImpuesto.Exonerado_20, incluyeIGV: false);
 
-            Assert.That(p1.ToString(), Is.EqualTo("$ 100.00 (Inc. 0 %)"));
-            Assert.That(p2.ToString(), Is.EqualTo("$ 100.00 (+0 %)"));
+            // Aunque la afectación es 0%, el formato es genérico
+            Assert.That(p1.ToString(), Is.EqualTo("$ 100.00 (Inc. IGV)"));
+            Assert.That(p2.ToString(), Is.EqualTo("$ 100.00 (+IGV)"));
         }
 
         // -------------------- Igualdad y hash --------------------
@@ -145,7 +146,7 @@ namespace CatalogoArticulosBC.Domain.Tests.ValueObjects
             Assert.That(a.Equals(b), Is.True);
             Assert.That(a.GetHashCode(), Is.EqualTo(b.GetHashCode()));
         }
-    [Test]
+        [Test]
         public void Desigualdad_PorMonto_Moneda_IncluyeIGV_O_Afectacion()
         {
             var baseOk = new PrecioVenta(100m, Moneda.USD(), AfectacionImpuesto.Gravado_10, incluyeIGV: true);
@@ -166,6 +167,34 @@ namespace CatalogoArticulosBC.Domain.Tests.ValueObjects
         {
             var a = new PrecioVenta(10m, Moneda.USD(), AfectacionImpuesto.Gravado_10);
             Assert.That(a.Equals(null), Is.False);
+        }
+
+        // -------------------- Nuevas pruebas de tasas 10% y 0% --------------------
+
+        [Test]
+        public void Gravado10_ConIGV_y_SinIGV_Coherencia()
+        {
+            // Con IGV 10%: 110 -> base 100
+            var conIgv = new PrecioVenta(110m, Moneda.PEN(), AfectacionImpuesto.Gravado_10, incluyeIGV: true);
+            Assert.That(conIgv.ValorSinIGV(TasaImpuesto.IGV10), Is.EqualTo(100m));
+            Assert.That(conIgv.ValorConIGV(TasaImpuesto.IGV10), Is.EqualTo(110m));
+
+            // Sin IGV 10%: 100 -> 110
+            var sinIgv = new PrecioVenta(100m, Moneda.PEN(), AfectacionImpuesto.Gravado_10, incluyeIGV: false);
+            Assert.That(sinIgv.ValorSinIGV(TasaImpuesto.IGV10), Is.EqualTo(100m));
+            Assert.That(sinIgv.ValorConIGV(TasaImpuesto.IGV10), Is.EqualTo(110m));
+        }
+
+        [Test]
+        public void NoGravado_TasaCero_Coherencia()
+        {
+            var conIgv = new PrecioVenta(99.99m, Moneda.PEN(), AfectacionImpuesto.Inafecto_30, incluyeIGV: true);
+            var sinIgv = new PrecioVenta(99.99m, Moneda.PEN(), AfectacionImpuesto.Inafecto_30, incluyeIGV: false);
+
+            Assert.That(conIgv.ValorSinIGV(TasaImpuesto.Cero), Is.EqualTo(99.99m));
+            Assert.That(conIgv.ValorConIGV(TasaImpuesto.Cero), Is.EqualTo(99.99m));
+            Assert.That(sinIgv.ValorSinIGV(TasaImpuesto.Cero), Is.EqualTo(99.99m));
+            Assert.That(sinIgv.ValorConIGV(TasaImpuesto.Cero), Is.EqualTo(99.99m));
         }
     }
 }
