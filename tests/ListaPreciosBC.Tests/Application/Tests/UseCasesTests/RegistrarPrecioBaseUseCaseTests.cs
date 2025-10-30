@@ -10,6 +10,7 @@ using NUnit.Framework;
 using SharedKernel.Exceptions;
 using SharedKernel.ValueObjects; // Sku, Moneda
 using SharedKernel.Application.Interfaces;   // ITenantContext
+using Moq;
 
 namespace ListaPreciosBC.Tests.UnitTests.Application
 {
@@ -42,7 +43,9 @@ namespace ListaPreciosBC.Tests.UnitTests.Application
 
             var precioRepo  = new PrecioProductoRepoInMemory();
             var uow         = new UnitOfWorkInMemory();
-            var uc          = new RegistrarPrecioBaseUseCase(listaRepo, precioRepo, uow, new TenantContextFake());
+            var tenant = new Mock<ITenantContext>();
+            tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
+            var uc          = new RegistrarPrecioBaseUseCase(listaRepo, precioRepo, uow, tenant.Object);
 
             var req = new RegistrarPrecioBaseUseCase.Request(
                 EmpresaId: Guid.NewGuid(),            // no usado por el UC (la lista se resuelve sin ids en tu firma)
@@ -96,7 +99,9 @@ namespace ListaPreciosBC.Tests.UnitTests.Application
             precioRepo.Semilla(agregado);
 
             var uow = new UnitOfWorkInMemory();
-            var uc  = new RegistrarPrecioBaseUseCase(listaRepo, precioRepo, uow, new TenantContextFake());
+            var tenant = new Mock<ITenantContext>();
+            tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
+            var uc  = new RegistrarPrecioBaseUseCase(listaRepo, precioRepo, uow, tenant.Object);
 
             var req = new RegistrarPrecioBaseUseCase.Request(
                 EmpresaId: Guid.NewGuid(),
@@ -130,7 +135,9 @@ namespace ListaPreciosBC.Tests.UnitTests.Application
             var listaRepo  = new ListaPrecioRepoInMemory(); // sin semilla activa
             var precioRepo = new PrecioProductoRepoInMemory();
             var uow        = new UnitOfWorkInMemory();
-            var uc         = new RegistrarPrecioBaseUseCase(listaRepo, precioRepo, uow, new TenantContextFake());
+            var tenant = new Mock<ITenantContext>();
+            tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
+            var uc         = new RegistrarPrecioBaseUseCase(listaRepo, precioRepo, uow, tenant.Object);
 
             var req = new RegistrarPrecioBaseUseCase.Request(
                 EmpresaId: Guid.NewGuid(),
@@ -164,7 +171,9 @@ namespace ListaPreciosBC.Tests.UnitTests.Application
             precioRepo.Semilla(agregado);
 
             var uow = new UnitOfWorkInMemory();
-            var uc  = new RegistrarPrecioBaseUseCase(listaRepo, precioRepo, uow, new TenantContextFake());
+            var tenant = new Mock<ITenantContext>();
+            tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
+            var uc  = new RegistrarPrecioBaseUseCase(listaRepo, precioRepo, uow, tenant.Object);
 
             var req = new RegistrarPrecioBaseUseCase.Request(
                 EmpresaId: Guid.NewGuid(),
@@ -279,11 +288,7 @@ namespace ListaPreciosBC.Tests.UnitTests.Application
             }
         }
 
-        private sealed class TenantContextFake : ITenantContext
-        {
-            public TenantId TenantId { get; } = TenantId.New();
-            public EmpresaId EmpresaId { get; } = EmpresaId.From("TEST-EMPRESA");
-        }
+        
 
         private sealed class UnitOfWorkInMemory : ListaPreciosBC.Application.Interfaces.IUnitOfWork
         {

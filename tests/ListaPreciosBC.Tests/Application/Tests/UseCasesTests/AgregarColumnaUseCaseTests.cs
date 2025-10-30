@@ -7,6 +7,7 @@ using ListaPreciosBC.Domain.Aggregates;
 using ListaPreciosBC.Domain.Repositories;
 using ListaPreciosBC.Domain.ValueObjects;
 using NUnit.Framework;
+using Moq;
 using SharedKernel.Exceptions;
 using SharedKernel.Application.Interfaces;   // ITenantContext
 using SharedKernel.ValueObjects;             // EmpresaId, TenantId
@@ -73,7 +74,9 @@ namespace ListaPreciosBC.Tests.Application.Tests.UseCasesTests
             repo.Semilla(agg);
 
             var uow  = new UnitOfWorkInMemory();
-            var uc   = new AgregarColumnaUseCase(repo, uow, new TenantContextFake());
+            var tenant = new Mock<ITenantContext>();
+            tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
+            var uc   = new AgregarColumnaUseCase(repo, uow, tenant.Object);
 
             var dto  = Dto(listaPrecioId: lpId, numeroColumna: 2, nombre: "Distribuidor", orden: 2);
 
@@ -110,7 +113,9 @@ namespace ListaPreciosBC.Tests.Application.Tests.UseCasesTests
             // Arrange
             var repo = new ListaPrecioRepoInMemory(); // sin semilla
             var uow  = new UnitOfWorkInMemory();
-            var uc   = new AgregarColumnaUseCase(repo, uow, new TenantContextFake());
+            var tenant = new Mock<ITenantContext>();
+            tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
+            var uc   = new AgregarColumnaUseCase(repo, uow, tenant.Object);
 
             var dto  = Dto(listaPrecioId: Guid.NewGuid());
 
@@ -131,7 +136,9 @@ namespace ListaPreciosBC.Tests.Application.Tests.UseCasesTests
             repo.Semilla(agg);
 
             var uow  = new UnitOfWorkInMemory();
-            var uc   = new AgregarColumnaUseCase(repo, uow, new TenantContextFake());
+            var tenant = new Mock<ITenantContext>();
+            tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
+            var uc   = new AgregarColumnaUseCase(repo, uow, tenant.Object);
 
             var dto  = Dto(listaPrecioId: lpId, numeroColumna: 2, nombre: "Mayorista", orden: 2);
 
@@ -205,11 +212,7 @@ namespace ListaPreciosBC.Tests.Application.Tests.UseCasesTests
             }
         }
 
-        private sealed class TenantContextFake : ITenantContext
-        {
-            public TenantId TenantId { get; } = TenantId.New();
-            public EmpresaId EmpresaId { get; } = EmpresaId.From("TEST-EMPRESA");
-        }
+        
 
         private sealed class UnitOfWorkInMemory : ListaPreciosBC.Application.Interfaces.IUnitOfWork
         {

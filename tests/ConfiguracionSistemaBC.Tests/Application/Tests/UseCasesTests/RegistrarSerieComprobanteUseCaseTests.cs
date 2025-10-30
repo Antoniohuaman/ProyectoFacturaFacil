@@ -9,6 +9,7 @@ using ConfiguracionSistemaBC.Domain.Repositories;           // ISerieComprobante
 using ConfiguracionSistemaBC.Domain.ValueObjects;           // TipoComprobanteCodigo, SerieCodigo, TipoOperacion, Correlativo
 using SharedKernel.Application.Interfaces;                   // ITenantContext
 using SharedKernel.ValueObjects;                             // EmpresaId, EstablecimientoId
+using Moq;
 
 namespace ConfiguracionSistemaBC.Tests.Application.Series
 {
@@ -19,14 +20,7 @@ namespace ConfiguracionSistemaBC.Tests.Application.Series
 
         // -------------------- Fakes --------------------
 
-        private sealed class FakeTenantContext : ITenantContext
-        {
-            public EmpresaId EmpresaId { get; }
-            public FakeTenantContext(EmpresaId empresaId) => EmpresaId = empresaId;
-
-            // No se usa en este caso de uso; lo dejamos sin implementar para evitar dependencias.
-            public SharedKernel.ValueObjects.TenantId TenantId => throw new NotImplementedException();
-        }
+        
 
         private sealed class FakeUow : IUnitOfWork
         {
@@ -130,8 +124,9 @@ namespace ConfiguracionSistemaBC.Tests.Application.Series
             FakeConfiguracionEmpresaRepository empresaRepo,
             FakeUow uow)
         {
-            var tenant = new FakeTenantContext(EmpresaId.From(EmpresaCanonica));
-            return new RegistrarSerieComprobanteUseCase(seriesRepo, empresaRepo, uow, tenant);
+            var tenant = new Mock<ITenantContext>();
+            tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From(EmpresaCanonica));
+            return new RegistrarSerieComprobanteUseCase(seriesRepo, empresaRepo, uow, tenant.Object);
         }
 
         private static RegistrarSerieComprobanteInputDto MakeInput(

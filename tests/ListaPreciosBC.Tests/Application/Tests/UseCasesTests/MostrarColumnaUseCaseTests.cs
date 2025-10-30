@@ -11,6 +11,7 @@ using NUnit.Framework;
 using SharedKernel.Exceptions;
 using SharedKernel.Application.Interfaces;   // ITenantContext
 using SharedKernel.ValueObjects;             // EmpresaId, TenantId
+using Moq;
 
 namespace ListaPreciosBC.Tests.Application.UseCases
 {
@@ -85,7 +86,9 @@ namespace ListaPreciosBC.Tests.Application.UseCases
         public async Task MostrarColumna_Exito_DevuelveDatosDeColumna()
         {
             var repo = new InMemoryListaPrecioRepository();
-            var sut = new MostrarColumnaUseCase(repo, new TenantContextFake());
+            var tenant = new Mock<ITenantContext>();
+            tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
+            var sut = new MostrarColumnaUseCase(repo, tenant.Object);
 
             var lista = CrearListaConBaseYExtra();
             repo.Seed(lista);
@@ -105,7 +108,9 @@ namespace ListaPreciosBC.Tests.Application.UseCases
         public async Task MostrarColumna_Exito_ColumnaBase()
         {
             var repo = new InMemoryListaPrecioRepository();
-            var sut = new MostrarColumnaUseCase(repo, new TenantContextFake());
+            var tenant = new Mock<ITenantContext>();
+            tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
+            var sut = new MostrarColumnaUseCase(repo, tenant.Object);
 
             var lista = CrearListaConBaseYExtra();
             repo.Seed(lista);
@@ -125,7 +130,9 @@ namespace ListaPreciosBC.Tests.Application.UseCases
         public void MostrarColumna_Falla_SiNoHayListaActiva()
         {
             var repo = new InMemoryListaPrecioRepository { ListaActiva = null };
-            var sut = new MostrarColumnaUseCase(repo, new TenantContextFake());
+            var tenant = new Mock<ITenantContext>();
+            tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
+            var sut = new MostrarColumnaUseCase(repo, tenant.Object);
 
             var req = new MostrarColumnaUseCase.Request(ColumnaNumero: 1);
 
@@ -137,7 +144,9 @@ namespace ListaPreciosBC.Tests.Application.UseCases
         public void MostrarColumna_Falla_SiColumnaNoExiste()
         {
             var repo = new InMemoryListaPrecioRepository();
-            var sut = new MostrarColumnaUseCase(repo, new TenantContextFake());
+            var tenant = new Mock<ITenantContext>();
+            tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
+            var sut = new MostrarColumnaUseCase(repo, tenant.Object);
 
             var lista = CrearListaConBaseYExtra();
             repo.Seed(lista);
@@ -148,10 +157,6 @@ namespace ListaPreciosBC.Tests.Application.UseCases
                         Throws.TypeOf<NotFoundException>());
         }
 
-        private sealed class TenantContextFake : ITenantContext
-        {
-            public TenantId TenantId { get; } = TenantId.New();
-            public EmpresaId EmpresaId { get; } = EmpresaId.From("TEST-EMPRESA");
-        }
+        
     }
 }

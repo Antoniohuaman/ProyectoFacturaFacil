@@ -8,6 +8,7 @@ using ListaPreciosBC.Domain.Repositories;    // IListaPrecioRepository
 using ListaPreciosBC.Domain.Aggregates;      // ListaPrecio
 using ListaPreciosBC.Domain.ValueObjects;    // IdentificadorColumnaPrecio, NombreColumnaPrecio, ModoValorizacionColumna
 using NUnit.Framework;
+using Moq;
 using SharedKernel.Exceptions;
 using SharedKernel.Application.Interfaces;   // ITenantContext
 using SharedKernel.ValueObjects;             // EmpresaId, TenantId
@@ -34,11 +35,7 @@ namespace ListaPreciosBC.Tests.Application.UseCases
             public void Seed(ListaPrecio lista) => ListaActiva = lista;
         }
 
-        private sealed class TenantContextFake : ITenantContext
-        {
-            public TenantId TenantId { get; } = TenantId.New();
-            public EmpresaId EmpresaId { get; } = EmpresaId.From("TEST-EMPRESA");
-        }
+        
 
         // ---------------------- Builders con invariantes ----------------------
 
@@ -82,7 +79,9 @@ namespace ListaPreciosBC.Tests.Application.UseCases
         public async Task Exportar_Exito_IncluyeTodasLasColumnas_OrdenadasYConHeader()
         {
             var repo = new InMemoryListaPrecioRepository { ListaActiva = CrearListaConBaseVolumenYOcultaYNombreEspecial() };
-            var sut  = new ExportarPlantillaExcelUseCase(repo, new TenantContextFake());
+            var tenant = new Mock<ITenantContext>();
+            tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
+            var sut  = new ExportarPlantillaExcelUseCase(repo, tenant.Object);
 
             var res = await sut.Handle(new ExportarPlantillaExcelUseCase.Request(SoloVisibles: false), CancellationToken.None);
 
@@ -111,7 +110,9 @@ namespace ListaPreciosBC.Tests.Application.UseCases
         public async Task Exportar_Exito_SoloVisibles_ExcluyeOcultas()
         {
             var repo = new InMemoryListaPrecioRepository { ListaActiva = CrearListaConBaseVolumenYOcultaYNombreEspecial() };
-            var sut  = new ExportarPlantillaExcelUseCase(repo, new TenantContextFake());
+            var tenant = new Mock<ITenantContext>();
+            tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
+            var sut  = new ExportarPlantillaExcelUseCase(repo, tenant.Object);
 
             var res = await sut.Handle(new ExportarPlantillaExcelUseCase.Request(SoloVisibles: true), CancellationToken.None);
 
@@ -127,7 +128,9 @@ namespace ListaPreciosBC.Tests.Application.UseCases
         public void Exportar_Falla_SiNoHayListaActiva()
         {
             var repo = new InMemoryListaPrecioRepository { ListaActiva = null };
-            var sut  = new ExportarPlantillaExcelUseCase(repo, new TenantContextFake());
+            var tenant = new Mock<ITenantContext>();
+            tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
+            var sut  = new ExportarPlantillaExcelUseCase(repo, tenant.Object);
 
             Assert.That(
                 async () => await sut.Handle(new ExportarPlantillaExcelUseCase.Request(), CancellationToken.None),

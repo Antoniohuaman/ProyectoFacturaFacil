@@ -12,6 +12,7 @@ using NUnit.Framework;
 using SharedKernel.Exceptions;
 using SharedKernel.ValueObjects;             // Moneda
 using SharedKernel.Application.Interfaces;   // ITenantContext
+using Moq;
 
 namespace ListaPreciosBC.Tests.Application.UseCases
 {
@@ -60,11 +61,7 @@ namespace ListaPreciosBC.Tests.Application.UseCases
             public void Seed(PrecioProducto agg) => _store[agg.Sku.Valor] = agg;
         }
 
-        private sealed class TenantContextFake : ITenantContext
-        {
-            public TenantId TenantId { get; } = TenantId.New();
-            public EmpresaId EmpresaId { get; } = EmpresaId.From("TEST-EMPRESA");
-        }
+        
 
         // ---------------------- Builders con invariantes ----------------------
 
@@ -145,7 +142,9 @@ namespace ListaPreciosBC.Tests.Application.UseCases
             var agg = CrearAggConPrecios(sku);
             precioRepo.Seed(agg);
 
-            var sut = new ExportarPreciosSkuExcelUseCase(listaRepo, precioRepo, new TenantContextFake());
+            var tenant = new Mock<ITenantContext>();
+            tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
+            var sut = new ExportarPreciosSkuExcelUseCase(listaRepo, precioRepo, tenant.Object);
 
             var res = await sut.Handle(new ExportarPreciosSkuExcelUseCase.Request(
                 Sku: sku,
@@ -184,7 +183,9 @@ namespace ListaPreciosBC.Tests.Application.UseCases
             const string sku = "SKU-002";
             precioRepo.Seed(CrearAggConPrecios(sku));
 
-            var sut = new ExportarPreciosSkuExcelUseCase(listaRepo, precioRepo, new TenantContextFake());
+            var tenant = new Mock<ITenantContext>();
+            tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
+            var sut = new ExportarPreciosSkuExcelUseCase(listaRepo, precioRepo, tenant.Object);
 
             var res = await sut.Handle(new ExportarPreciosSkuExcelUseCase.Request(
                 Sku: sku,
@@ -206,7 +207,9 @@ namespace ListaPreciosBC.Tests.Application.UseCases
         {
             var listaRepo  = new InMemoryListaPrecioRepository { ListaActiva = null };
             var precioRepo = new InMemoryPrecioProductoRepository();
-            var sut        = new ExportarPreciosSkuExcelUseCase(listaRepo, precioRepo, new TenantContextFake());
+            var tenant = new Mock<ITenantContext>();
+            tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
+            var sut        = new ExportarPreciosSkuExcelUseCase(listaRepo, precioRepo, tenant.Object);
 
             Assert.That(async () => await sut.Handle(new ExportarPreciosSkuExcelUseCase.Request("SKU-X", 1), CancellationToken.None),
                         Throws.TypeOf<NotFoundException>());
@@ -217,7 +220,9 @@ namespace ListaPreciosBC.Tests.Application.UseCases
         {
             var listaRepo  = new InMemoryListaPrecioRepository { ListaActiva = CrearListaConBaseVolumenYOculta() };
             var precioRepo = new InMemoryPrecioProductoRepository();
-            var sut        = new ExportarPreciosSkuExcelUseCase(listaRepo, precioRepo, new TenantContextFake());
+            var tenant = new Mock<ITenantContext>();
+            tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
+            var sut        = new ExportarPreciosSkuExcelUseCase(listaRepo, precioRepo, tenant.Object);
 
             Assert.That(async () => await sut.Handle(new ExportarPreciosSkuExcelUseCase.Request("SKU-404", 1), CancellationToken.None),
                         Throws.TypeOf<NotFoundException>());

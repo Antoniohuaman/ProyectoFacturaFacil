@@ -14,3 +14,7 @@
   "**/obj": true,
   "**/TestResults": true
 }
+
+# Ignorar resultados de pruebas
+**/TestResults/
+*.trx

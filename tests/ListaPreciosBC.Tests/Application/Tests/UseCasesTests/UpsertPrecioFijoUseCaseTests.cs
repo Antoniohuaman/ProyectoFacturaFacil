@@ -9,6 +9,7 @@ using ListaPreciosBC.Application.Interfaces;
 using ListaPreciosBC.Domain.Repositories;
 using ListaPreciosBC.Domain.ValueObjects;
 using NUnit.Framework;
+using Moq;
 using SharedKernel.Exceptions;
 using SharedKernel.ValueObjects;
 using ListaPreciosBC.Domain.Events;
@@ -109,11 +110,7 @@ namespace ListaPreciosBC.Tests.Application.UseCases
             public Task SaveChangesAsync(CancellationToken ct = default) => Task.CompletedTask;
         }
 
-        private sealed class TenantContextFake : ITenantContext
-        {
-            public TenantId TenantId { get; } = TenantId.New();
-            public EmpresaId EmpresaId { get; } = EmpresaId.From("TEST-EMPRESA");
-        }
+        
 
         // ---------------------- Builders de dominio (usando tu API pública) ----------------------
 
@@ -175,7 +172,9 @@ namespace ListaPreciosBC.Tests.Application.UseCases
 
             var precioRepo = new InMemoryPrecioProductoRepository();
             var uow = new InMemoryUow();
-            var sut = new UpsertPrecioFijoUseCase(precioRepo, listaRepo, uow, new TenantContextFake());
+            var tenant = new Mock<ITenantContext>();
+            tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
+            var sut = new UpsertPrecioFijoUseCase(precioRepo, listaRepo, uow, tenant.Object);
 
             var req = new UpsertPrecioFijoUseCase.Request(
                 "SKU-001",
@@ -211,7 +210,9 @@ namespace ListaPreciosBC.Tests.Application.UseCases
             var listaRepo = new InMemoryListaPrecioRepository { ListaActiva = null };
             var precioRepo = new InMemoryPrecioProductoRepository();
             var uow = new InMemoryUow();
-            var sut = new UpsertPrecioFijoUseCase(precioRepo, listaRepo, uow, new TenantContextFake());
+            var tenant = new Mock<ITenantContext>();
+            tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
+            var sut = new UpsertPrecioFijoUseCase(precioRepo, listaRepo, uow, tenant.Object);
 
             var req = new UpsertPrecioFijoUseCase.Request(
                 "SKU-404",
@@ -237,7 +238,9 @@ namespace ListaPreciosBC.Tests.Application.UseCases
             };
             var precioRepo = new InMemoryPrecioProductoRepository();
             var uow = new InMemoryUow();
-            var sut = new UpsertPrecioFijoUseCase(precioRepo, listaRepo, uow, new TenantContextFake());
+            var tenant = new Mock<ITenantContext>();
+            tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
+            var sut = new UpsertPrecioFijoUseCase(precioRepo, listaRepo, uow, tenant.Object);
 
             var req = new UpsertPrecioFijoUseCase.Request(
                 "SKU-001",
@@ -263,7 +266,9 @@ namespace ListaPreciosBC.Tests.Application.UseCases
             };
             var precioRepo = new InMemoryPrecioProductoRepository();
             var uow = new InMemoryUow();
-            var sut = new UpsertPrecioFijoUseCase(precioRepo, listaRepo, uow, new TenantContextFake());
+            var tenant = new Mock<ITenantContext>();
+            tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
+            var sut = new UpsertPrecioFijoUseCase(precioRepo, listaRepo, uow, tenant.Object);
 
             var req = new UpsertPrecioFijoUseCase.Request(
                 "SKU-001",
@@ -301,7 +306,9 @@ namespace ListaPreciosBC.Tests.Application.UseCases
             precioRepo.Seed(existente);
 
             var uow = new InMemoryUow();
-            var sut = new UpsertPrecioFijoUseCase(precioRepo, listaRepo, uow, new TenantContextFake());
+            var tenant = new Mock<ITenantContext>();
+            tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
+            var sut = new UpsertPrecioFijoUseCase(precioRepo, listaRepo, uow, tenant.Object);
 
             var req = new UpsertPrecioFijoUseCase.Request(
                 "SKU-001",

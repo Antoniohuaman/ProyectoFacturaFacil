@@ -11,6 +11,7 @@ using NUnit.Framework;
 using SharedKernel.Exceptions;
 using SharedKernel.Application.Interfaces;   // ITenantContext
 using SharedKernel.ValueObjects;             // EmpresaId, TenantId
+using Moq;
 
 namespace ListaPreciosBC.Tests.Application.UseCases
 {
@@ -45,11 +46,7 @@ namespace ListaPreciosBC.Tests.Application.UseCases
             }
         }
 
-        private sealed class TenantContextFake : ITenantContext
-        {
-            public TenantId TenantId { get; } = TenantId.New();
-            public EmpresaId EmpresaId { get; } = EmpresaId.From("TEST-EMPRESA");
-        }
+        
 
         // ---------------------- Builders con invariantes ----------------------
 
@@ -90,7 +87,9 @@ namespace ListaPreciosBC.Tests.Application.UseCases
         public async Task ObtenerPlantilla_Exito_DevuelveColumnasOrdenadas_ConUnicaBase()
         {
             var repo = new InMemoryListaPrecioRepository();
-            var sut = new ObtenerPlantillaUseCase(repo, new TenantContextFake());
+            var tenant = new Mock<ITenantContext>();
+            tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
+            var sut = new ObtenerPlantillaUseCase(repo, tenant.Object);
 
             var lista = CrearListaConBaseYDosExtras();
             repo.Seed(lista);
@@ -122,7 +121,9 @@ namespace ListaPreciosBC.Tests.Application.UseCases
         public void ObtenerPlantilla_Falla_SiNoHayListaActiva()
         {
             var repo = new InMemoryListaPrecioRepository { ListaActiva = null };
-            var sut = new ObtenerPlantillaUseCase(repo, new TenantContextFake());
+            var tenant = new Mock<ITenantContext>();
+            tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
+            var sut = new ObtenerPlantillaUseCase(repo, tenant.Object);
 
             Assert.That(async () => await sut.Handle(new ObtenerPlantillaUseCase.Request(), CancellationToken.None),
                         Throws.TypeOf<NotFoundException>());
@@ -132,7 +133,9 @@ namespace ListaPreciosBC.Tests.Application.UseCases
         public async Task ObtenerPlantilla_Exito_SoloBase()
         {
             var repo = new InMemoryListaPrecioRepository();
-            var sut = new ObtenerPlantillaUseCase(repo, new TenantContextFake());
+            var tenant = new Mock<ITenantContext>();
+            tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
+            var sut = new ObtenerPlantillaUseCase(repo, tenant.Object);
 
             // Solo la base
             var baseCfg = ConfiguracionColumnaPrecio.Crear(

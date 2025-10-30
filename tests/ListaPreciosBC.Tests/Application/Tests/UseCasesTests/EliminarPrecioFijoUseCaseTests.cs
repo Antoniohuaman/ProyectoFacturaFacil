@@ -12,6 +12,7 @@ using NUnit.Framework;
 using SharedKernel.Exceptions;
 using SharedKernel.ValueObjects;             // Moneda (para seed)
 using SharedKernel.Application.Interfaces;   // ITenantContext
+using Moq;
 
 namespace ListaPreciosBC.Tests.Application.UseCases
 {
@@ -193,7 +194,9 @@ namespace ListaPreciosBC.Tests.Application.UseCases
             precioRepo.Seed(existente);
 
             var uow = new InMemoryUow();
-            var sut = new EliminarPrecioFijoUseCase(precioRepo, listaRepo, uow, new TenantContextFake());
+            var tenant = new Mock<ITenantContext>();
+            tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
+            var sut = new EliminarPrecioFijoUseCase(precioRepo, listaRepo, uow, tenant.Object);
 
             var req = new EliminarPrecioFijoUseCase.Request(
                 Sku: sku,
@@ -220,7 +223,9 @@ namespace ListaPreciosBC.Tests.Application.UseCases
             var listaRepo = new InMemoryListaPrecioRepository { ListaActiva = null };
             var precioRepo = new InMemoryPrecioProductoRepository();
             var uow = new InMemoryUow();
-            var sut = new EliminarPrecioFijoUseCase(precioRepo, listaRepo, uow, new TenantContextFake());
+            var tenant = new Mock<ITenantContext>();
+            tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
+            var sut = new EliminarPrecioFijoUseCase(precioRepo, listaRepo, uow, tenant.Object);
 
             var req = new EliminarPrecioFijoUseCase.Request(
                 Sku: "SKU-404",
@@ -241,7 +246,9 @@ namespace ListaPreciosBC.Tests.Application.UseCases
 
             var precioRepo = new InMemoryPrecioProductoRepository();
             var uow = new InMemoryUow();
-            var sut = new EliminarPrecioFijoUseCase(precioRepo, listaRepo, uow, new TenantContextFake());
+            var tenant = new Mock<ITenantContext>();
+            tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
+            var sut = new EliminarPrecioFijoUseCase(precioRepo, listaRepo, uow, tenant.Object);
 
             var req = new EliminarPrecioFijoUseCase.Request(
                 Sku: "SKU-001",
@@ -262,7 +269,9 @@ namespace ListaPreciosBC.Tests.Application.UseCases
 
             var precioRepo = new InMemoryPrecioProductoRepository();
             var uow = new InMemoryUow();
-            var sut = new EliminarPrecioFijoUseCase(precioRepo, listaRepo, uow, new TenantContextFake());
+            var tenant = new Mock<ITenantContext>();
+            tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
+            var sut = new EliminarPrecioFijoUseCase(precioRepo, listaRepo, uow, tenant.Object);
 
             var req = new EliminarPrecioFijoUseCase.Request(
                 Sku: "SKU-001",
@@ -284,7 +293,9 @@ namespace ListaPreciosBC.Tests.Application.UseCases
             var precioRepo = new InMemoryPrecioProductoRepository(); // no seed
 
             var uow = new InMemoryUow();
-            var sut = new EliminarPrecioFijoUseCase(precioRepo, listaRepo, uow, new TenantContextFake());
+            var tenant = new Mock<ITenantContext>();
+            tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
+            var sut = new EliminarPrecioFijoUseCase(precioRepo, listaRepo, uow, tenant.Object);
 
             var req = new EliminarPrecioFijoUseCase.Request(
                 Sku: "SKU-NEW",
@@ -321,7 +332,9 @@ namespace ListaPreciosBC.Tests.Application.UseCases
             precioRepo.Seed(existente);
 
             var uow = new InMemoryUow();
-            var sut = new EliminarPrecioFijoUseCase(precioRepo, listaRepo, uow, new TenantContextFake());
+            var tenant = new Mock<ITenantContext>();
+            tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
+            var sut = new EliminarPrecioFijoUseCase(precioRepo, listaRepo, uow, tenant.Object);
 
             var req = new EliminarPrecioFijoUseCase.Request(
                 Sku: sku,
@@ -332,10 +345,6 @@ namespace ListaPreciosBC.Tests.Application.UseCases
 
             Assert.That(async () => await sut.Handle(req, CancellationToken.None), Throws.TypeOf<ConcurrencyException>());
         }
-        private sealed class TenantContextFake : ITenantContext
-        {
-            public TenantId TenantId { get; } = TenantId.New();
-            public EmpresaId EmpresaId { get; } = EmpresaId.From("TEST-EMPRESA");
-        }
+        
     }
 }

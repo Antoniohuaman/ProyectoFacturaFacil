@@ -12,6 +12,7 @@ using NUnit.Framework;
 using SharedKernel.Exceptions;
 using SharedKernel.ValueObjects;             // Moneda, Sku
 using SharedKernel.Application.Interfaces;   // ITenantContext
+using Moq;
 
 namespace ListaPreciosBC.Tests.Application.UseCases
 {
@@ -168,7 +169,9 @@ namespace ListaPreciosBC.Tests.Application.UseCases
 
             var precioRepo = new InMemoryPrecioProductoRepository();
             var uow = new InMemoryUow();
-            var sut = new UpsertMatrizVolumenUseCase(precioRepo, listaRepo, uow, new TenantContextFake());
+            var tenant = new Mock<ITenantContext>();
+            tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
+            var sut = new UpsertMatrizVolumenUseCase(precioRepo, listaRepo, uow, tenant.Object);
 
             var req = new UpsertMatrizVolumenUseCase.Request(
                 Sku: "SKU-001",
@@ -202,7 +205,9 @@ namespace ListaPreciosBC.Tests.Application.UseCases
             var listaRepo = new InMemoryListaPrecioRepository { ListaActiva = null };
             var precioRepo = new InMemoryPrecioProductoRepository();
             var uow = new InMemoryUow();
-            var sut = new UpsertMatrizVolumenUseCase(precioRepo, listaRepo, uow, new TenantContextFake());
+            var tenant = new Mock<ITenantContext>();
+            tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
+            var sut = new UpsertMatrizVolumenUseCase(precioRepo, listaRepo, uow, tenant.Object);
 
             var req = new UpsertMatrizVolumenUseCase.Request(
                 Sku: "SKU-404",
@@ -227,7 +232,9 @@ namespace ListaPreciosBC.Tests.Application.UseCases
 
             var precioRepo = new InMemoryPrecioProductoRepository();
             var uow = new InMemoryUow();
-            var sut = new UpsertMatrizVolumenUseCase(precioRepo, listaRepo, uow, new TenantContextFake());
+            var tenant = new Mock<ITenantContext>();
+            tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
+            var sut = new UpsertMatrizVolumenUseCase(precioRepo, listaRepo, uow, tenant.Object);
 
             var req = new UpsertMatrizVolumenUseCase.Request(
                 Sku: "SKU-001",
@@ -259,7 +266,9 @@ namespace ListaPreciosBC.Tests.Application.UseCases
             var listaRepo = new InMemoryListaPrecioRepository { ListaActiva = lista };
             IPrecioProductoRepository precioRepo = new InMemoryPrecioProductoRepository();
             var uow = new InMemoryUow();
-            var sut = new UpsertMatrizVolumenUseCase(precioRepo, listaRepo, uow, new TenantContextFake());
+            var tenant = new Mock<ITenantContext>();
+            tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
+            var sut = new UpsertMatrizVolumenUseCase(precioRepo, listaRepo, uow, tenant.Object);
 
             var req = new UpsertMatrizVolumenUseCase.Request(
                 Sku: "SKU-001",
@@ -296,7 +305,9 @@ namespace ListaPreciosBC.Tests.Application.UseCases
             precioRepo.Seed(existente);
 
             var uow = new InMemoryUow();
-            var sut = new UpsertMatrizVolumenUseCase(precioRepo, listaRepo, uow, new TenantContextFake());
+            var tenant = new Mock<ITenantContext>();
+            tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
+            var sut = new UpsertMatrizVolumenUseCase(precioRepo, listaRepo, uow, tenant.Object);
 
             var req = new UpsertMatrizVolumenUseCase.Request(
                 Sku: "SKU-001",
@@ -322,7 +333,9 @@ namespace ListaPreciosBC.Tests.Application.UseCases
 
             var precioRepo = new InMemoryPrecioProductoRepository();
             var uow = new InMemoryUow();
-            var sut = new UpsertMatrizVolumenUseCase(precioRepo, listaRepo, uow, new TenantContextFake());
+            var tenant = new Mock<ITenantContext>();
+            tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
+            var sut = new UpsertMatrizVolumenUseCase(precioRepo, listaRepo, uow, tenant.Object);
 
             // Tramos solapados: [1..10] y [8..∞)
             var req = new UpsertMatrizVolumenUseCase.Request(
@@ -339,10 +352,6 @@ namespace ListaPreciosBC.Tests.Application.UseCases
                         Throws.TypeOf<BusinessRuleException>());
         }
 
-        private sealed class TenantContextFake : ITenantContext
-        {
-            public TenantId TenantId { get; } = TenantId.New();
-            public EmpresaId EmpresaId { get; } = EmpresaId.From("TEST-EMPRESA");
-        }
+        
     }
 }

@@ -11,6 +11,7 @@ using NUnit.Framework;
 using SharedKernel.Exceptions;
 using SharedKernel.ValueObjects;             // Moneda
 using SharedKernel.Application.Interfaces;   // ITenantContext
+using Moq;
 
 namespace ListaPreciosBC.Tests.Application.UseCases
 {
@@ -59,11 +60,7 @@ namespace ListaPreciosBC.Tests.Application.UseCases
                 }
         }
 
-        private sealed class TenantContextFake : ITenantContext
-        {
-            public TenantId TenantId { get; } = TenantId.New();
-            public EmpresaId EmpresaId { get; } = EmpresaId.From("TEST-EMPRESA");
-        }
+        
 
         // ---------------------- Builders con invariantes ----------------------
 
@@ -138,7 +135,9 @@ namespace ListaPreciosBC.Tests.Application.UseCases
             // VIP (oculta) — NO definimos precio para probar Monto=null
             precioRepo.Seed(agg);
 
-            var sut = new ListarPreciosDeSkuUseCase(listaRepo, precioRepo, new TenantContextFake());
+            var tenant = new Mock<ITenantContext>();
+            tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
+            var sut = new ListarPreciosDeSkuUseCase(listaRepo, precioRepo, tenant.Object);
 
             var res = await sut.Handle(
                 new ListarPreciosDeSkuUseCase.Request(
@@ -196,7 +195,9 @@ namespace ListaPreciosBC.Tests.Application.UseCases
             );
             precioRepo.Seed(agg);
 
-            var sut = new ListarPreciosDeSkuUseCase(listaRepo, precioRepo, new TenantContextFake());
+            var tenant = new Mock<ITenantContext>();
+            tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
+            var sut = new ListarPreciosDeSkuUseCase(listaRepo, precioRepo, tenant.Object);
 
             var res = await sut.Handle(
                 new ListarPreciosDeSkuUseCase.Request(
@@ -217,7 +218,9 @@ namespace ListaPreciosBC.Tests.Application.UseCases
         {
             var listaRepo = new InMemoryListaPrecioRepository { ListaActiva = null };
             var precioRepo = new InMemoryPrecioProductoRepository();
-            var sut = new ListarPreciosDeSkuUseCase(listaRepo, precioRepo, new TenantContextFake());
+            var tenant = new Mock<ITenantContext>();
+            tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
+            var sut = new ListarPreciosDeSkuUseCase(listaRepo, precioRepo, tenant.Object);
 
             Assert.That(
                 async () => await sut.Handle(new ListarPreciosDeSkuUseCase.Request("SKU-X", 1), CancellationToken.None),
@@ -229,7 +232,9 @@ namespace ListaPreciosBC.Tests.Application.UseCases
         {
             var listaRepo = new InMemoryListaPrecioRepository { ListaActiva = CrearListaConBaseVolumenYExtraOculta() };
             var precioRepo = new InMemoryPrecioProductoRepository();
-            var sut = new ListarPreciosDeSkuUseCase(listaRepo, precioRepo, new TenantContextFake());
+            var tenant = new Mock<ITenantContext>();
+            tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
+            var sut = new ListarPreciosDeSkuUseCase(listaRepo, precioRepo, tenant.Object);
 
             Assert.That(
                 async () => await sut.Handle(new ListarPreciosDeSkuUseCase.Request("SKU-404", 1), CancellationToken.None),
@@ -254,7 +259,9 @@ namespace ListaPreciosBC.Tests.Application.UseCases
             );
             precioRepo.Seed(agg);
 
-            var sut = new ListarPreciosDeSkuUseCase(listaRepo, precioRepo, new TenantContextFake());
+            var tenant = new Mock<ITenantContext>();
+            tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
+            var sut = new ListarPreciosDeSkuUseCase(listaRepo, precioRepo, tenant.Object);
 
             var res = await sut.Handle(
                 new ListarPreciosDeSkuUseCase.Request(

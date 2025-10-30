@@ -12,6 +12,7 @@ using NUnit.Framework;
 using SharedKernel.Exceptions;
 using SharedKernel.Application.Interfaces;   // ITenantContext
 using SharedKernel.ValueObjects;             // EmpresaId, TenantId
+using Moq;
 
 namespace ListaPreciosBC.Tests.Application.UseCases
 {
@@ -115,7 +116,9 @@ namespace ListaPreciosBC.Tests.Application.UseCases
         {
             var repo = new InMemoryListaPrecioRepository();
             var uow = new InMemoryUow();
-            var sut = new EliminarColumnaUseCase(repo, uow, new TenantContextFake());
+            var tenant = new Mock<ITenantContext>();
+            tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
+            var sut = new EliminarColumnaUseCase(repo, uow, tenant.Object);
 
             var lista = CrearListaConBaseYDosExtras();
             repo.Seed(lista);
@@ -146,7 +149,9 @@ namespace ListaPreciosBC.Tests.Application.UseCases
         {
             var repo = new InMemoryListaPrecioRepository { ListaActiva = null };
             var uow = new InMemoryUow();
-            var sut = new EliminarColumnaUseCase(repo, uow, new TenantContextFake());
+            var tenant = new Mock<ITenantContext>();
+            tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
+            var sut = new EliminarColumnaUseCase(repo, uow, tenant.Object);
 
             var req = new EliminarColumnaUseCase.Request(ColumnaNumero: 2);
 
@@ -159,7 +164,9 @@ namespace ListaPreciosBC.Tests.Application.UseCases
         {
             var repo = new InMemoryListaPrecioRepository();
             var uow = new InMemoryUow();
-            var sut = new EliminarColumnaUseCase(repo, uow, new TenantContextFake());
+            var tenant = new Mock<ITenantContext>();
+            tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
+            var sut = new EliminarColumnaUseCase(repo, uow, tenant.Object);
 
             var lista = CrearListaConBaseYDosExtras();
             repo.Seed(lista);
@@ -175,7 +182,9 @@ namespace ListaPreciosBC.Tests.Application.UseCases
         {
             var repo = new InMemoryListaPrecioRepository();
             var uow = new InMemoryUow();
-            var sut = new EliminarColumnaUseCase(repo, uow, new TenantContextFake());
+            var tenant = new Mock<ITenantContext>();
+            tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
+            var sut = new EliminarColumnaUseCase(repo, uow, tenant.Object);
 
             var lista = CrearListaConBaseYDosExtras();
             repo.Seed(lista);
@@ -191,7 +200,9 @@ namespace ListaPreciosBC.Tests.Application.UseCases
         {
             var repo = new InMemoryListaPrecioRepository { SimularConcurrencia = true };
             var uow = new InMemoryUow();
-            var sut = new EliminarColumnaUseCase(repo, uow, new TenantContextFake());
+            var tenant = new Mock<ITenantContext>();
+            tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
+            var sut = new EliminarColumnaUseCase(repo, uow, tenant.Object);
 
             var lista = CrearListaConBaseYDosExtras();
             repo.Seed(lista);
@@ -205,10 +216,6 @@ namespace ListaPreciosBC.Tests.Application.UseCases
                         Throws.TypeOf<ConcurrencyException>());
         }
 
-        private sealed class TenantContextFake : ITenantContext
-        {
-            public TenantId TenantId { get; } = TenantId.New();
-            public EmpresaId EmpresaId { get; } = EmpresaId.From("TEST-EMPRESA");
-        }
+        
     }
 }
