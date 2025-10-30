@@ -7,6 +7,7 @@ using ListaPreciosBC.Domain.Repositories;
 using ListaPreciosBC.Domain.ValueObjects;
 using SharedKernel.Exceptions;
 using SharedKernel.ValueObjects; // Sku, Moneda
+using SharedKernel.Application.Interfaces;   // ITenantContext
 
 namespace ListaPreciosBC.Application.UseCases
 {
@@ -18,18 +19,21 @@ namespace ListaPreciosBC.Application.UseCases
     /// </summary>
     public sealed class RegistrarPrecioBaseUseCase
     {
-        private readonly IListaPrecioRepository _listaRepo;
-        private readonly IPrecioProductoRepository _precioRepo;
-        private readonly Interfaces.IUnitOfWork _uow;
+    private readonly IListaPrecioRepository _listaRepo;
+    private readonly IPrecioProductoRepository _precioRepo;
+    private readonly Interfaces.IUnitOfWork _uow;
+    private readonly ITenantContext _tenant;
 
         public RegistrarPrecioBaseUseCase(
             IListaPrecioRepository listaRepo,
             IPrecioProductoRepository precioRepo,
-            Interfaces.IUnitOfWork uow)
+            Interfaces.IUnitOfWork uow,
+            ITenantContext tenant)
         {
             _listaRepo  = listaRepo  ?? throw new ArgumentNullException(nameof(listaRepo));
             _precioRepo = precioRepo ?? throw new ArgumentNullException(nameof(precioRepo));
             _uow        = uow        ?? throw new ArgumentNullException(nameof(uow));
+            _tenant     = tenant     ?? throw new ArgumentNullException(nameof(tenant));
         }
 
         // DTOs internos para bajo acoplamiento
@@ -59,16 +63,20 @@ namespace ListaPreciosBC.Application.UseCases
         {
             if (req is null) throw new ArgumentNullException(nameof(req));
 
+            // 0) Contexto de empresa
+            var empresaId = _tenant.EmpresaId;
+            if (empresaId is null) throw new InvalidOperationException("EmpresaId del contexto es obligatorio.");
+
             // 1) Resolver columna Base desde la lista activa (empresa/sucursal)
-            var listaActiva = await _listaRepo.ObtenerActivaAsync(ct);
+            var listaActiva = await _listaRepo.ObtenerActivaAsync(empresaId, req.SucursalId, ct);
             if (listaActiva is null)
-                throw new NotFoundException("ListaPrecioActiva", $"{req.EmpresaId}/{req.SucursalId}");
+                throw new NotFoundException("ListaPrecioActiva", $"{empresaId}/{req.SucursalId}");
 
             var idBase = listaActiva.Plantilla.IdColumnaBase; // evita fallback P1 hardcodeado
 
             // 2) Cargar o crear el agregado PrecioProducto del SKU
             var sku = SharedKernel.ValueObjects.Sku.Crear(req.Sku);
-            var agregado = await _precioRepo.ObtenerPorSkuAsync(sku, ct);
+            var agregado = await _precioRepo.ObtenerPorSkuAsync(empresaId, req.SucursalId, sku, ct);
             if (agregado is null)
             {
                 agregado = PrecioProducto.CrearNuevo(sku);
@@ -92,7 +100,7 @@ namespace ListaPreciosBC.Application.UseCases
             );
 
             // 6) Guardar + UoW
-            await _precioRepo.GuardarAsync(agregado, expectedVersion, ct);
+            await _precioRepo.GuardarAsync(agregado, empresaId, req.SucursalId, expectedVersion, ct);
             await _uow.SaveChangesAsync();
 
             return new Response(

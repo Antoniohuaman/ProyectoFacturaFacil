@@ -11,6 +11,7 @@ using ListaPreciosBC.Domain.ValueObjects;    // Sku, IdentificadorColumnaPrecio,
 using NUnit.Framework;
 using SharedKernel.Exceptions;
 using SharedKernel.ValueObjects;             // Moneda (para seed)
+using SharedKernel.Application.Interfaces;   // ITenantContext
 
 namespace ListaPreciosBC.Tests.Application.UseCases
 {
@@ -22,13 +23,13 @@ namespace ListaPreciosBC.Tests.Application.UseCases
         {
             public ListaPrecio? ListaActiva { get; set; }
 
-            public Task<ListaPrecio?> ObtenerActivaAsync(CancellationToken ct = default)
+            public Task<ListaPrecio?> ObtenerActivaAsync(EmpresaId empresaId, Guid? sucursalId = null, CancellationToken ct = default)
                 => Task.FromResult(ListaActiva);
 
             public Task<ListaPrecio?> ObtenerPorIdAsync(Guid id, CancellationToken ct = default)
                 => Task.FromResult(ListaActiva is not null && ListaActiva.Id == id ? ListaActiva : null);
 
-            public Task GuardarAsync(ListaPrecio aggregate, int expectedVersion, CancellationToken ct = default)
+            public Task GuardarAsync(ListaPrecio aggregate, EmpresaId empresaId, Guid? sucursalId, int expectedVersion, CancellationToken ct = default)
                 => Task.CompletedTask;
         }
 
@@ -38,7 +39,7 @@ namespace ListaPreciosBC.Tests.Application.UseCases
             private readonly Dictionary<string, int> _loadedVersion = new();
             public bool SimularConcurrencia { get; set; }
 
-            public Task<PrecioProducto?> ObtenerPorSkuAsync(Sku sku, CancellationToken ct = default)
+            public Task<PrecioProducto?> ObtenerPorSkuAsync(EmpresaId empresaId, Guid? sucursalId, Sku sku, CancellationToken ct = default)
             {
                 if (_store.TryGetValue(sku.Valor, out var agg))
                 {
@@ -47,7 +48,13 @@ namespace ListaPreciosBC.Tests.Application.UseCases
                 }
                 return Task.FromResult<PrecioProducto?>(null);
             }
-                public Task EliminarAsync(Sku sku, int? expectedVersion = null, CancellationToken ct = default)
+            // Helper para asserts en tests
+            public Task<PrecioProducto?> ObtenerPorSkuAsync(Sku sku, CancellationToken ct = default)
+            {
+                _store.TryGetValue(sku.Valor, out var agg);
+                return Task.FromResult<PrecioProducto?>(agg);
+            }
+                public Task EliminarAsync(EmpresaId empresaId, Guid? sucursalId, Sku sku, int? expectedVersion = null, CancellationToken ct = default)
                 {
                     var key = sku.Valor;
                     if (_store.TryGetValue(key, out var agg))
@@ -67,7 +74,7 @@ namespace ListaPreciosBC.Tests.Application.UseCases
                     return Task.CompletedTask;
                 }
 
-            public Task GuardarAsync(PrecioProducto aggregate, int expectedVersion, CancellationToken ct = default)
+            public Task GuardarAsync(PrecioProducto aggregate, EmpresaId empresaId, Guid? sucursalId, int expectedVersion, CancellationToken ct = default)
             {
                 var key = aggregate.Sku.Valor;
 
@@ -186,7 +193,7 @@ namespace ListaPreciosBC.Tests.Application.UseCases
             precioRepo.Seed(existente);
 
             var uow = new InMemoryUow();
-            var sut = new EliminarPrecioFijoUseCase(precioRepo, listaRepo, uow);
+            var sut = new EliminarPrecioFijoUseCase(precioRepo, listaRepo, uow, new TenantContextFake());
 
             var req = new EliminarPrecioFijoUseCase.Request(
                 Sku: sku,
@@ -213,7 +220,7 @@ namespace ListaPreciosBC.Tests.Application.UseCases
             var listaRepo = new InMemoryListaPrecioRepository { ListaActiva = null };
             var precioRepo = new InMemoryPrecioProductoRepository();
             var uow = new InMemoryUow();
-            var sut = new EliminarPrecioFijoUseCase(precioRepo, listaRepo, uow);
+            var sut = new EliminarPrecioFijoUseCase(precioRepo, listaRepo, uow, new TenantContextFake());
 
             var req = new EliminarPrecioFijoUseCase.Request(
                 Sku: "SKU-404",
@@ -234,7 +241,7 @@ namespace ListaPreciosBC.Tests.Application.UseCases
 
             var precioRepo = new InMemoryPrecioProductoRepository();
             var uow = new InMemoryUow();
-            var sut = new EliminarPrecioFijoUseCase(precioRepo, listaRepo, uow);
+            var sut = new EliminarPrecioFijoUseCase(precioRepo, listaRepo, uow, new TenantContextFake());
 
             var req = new EliminarPrecioFijoUseCase.Request(
                 Sku: "SKU-001",
@@ -255,7 +262,7 @@ namespace ListaPreciosBC.Tests.Application.UseCases
 
             var precioRepo = new InMemoryPrecioProductoRepository();
             var uow = new InMemoryUow();
-            var sut = new EliminarPrecioFijoUseCase(precioRepo, listaRepo, uow);
+            var sut = new EliminarPrecioFijoUseCase(precioRepo, listaRepo, uow, new TenantContextFake());
 
             var req = new EliminarPrecioFijoUseCase.Request(
                 Sku: "SKU-001",
@@ -277,7 +284,7 @@ namespace ListaPreciosBC.Tests.Application.UseCases
             var precioRepo = new InMemoryPrecioProductoRepository(); // no seed
 
             var uow = new InMemoryUow();
-            var sut = new EliminarPrecioFijoUseCase(precioRepo, listaRepo, uow);
+            var sut = new EliminarPrecioFijoUseCase(precioRepo, listaRepo, uow, new TenantContextFake());
 
             var req = new EliminarPrecioFijoUseCase.Request(
                 Sku: "SKU-NEW",
@@ -314,7 +321,7 @@ namespace ListaPreciosBC.Tests.Application.UseCases
             precioRepo.Seed(existente);
 
             var uow = new InMemoryUow();
-            var sut = new EliminarPrecioFijoUseCase(precioRepo, listaRepo, uow);
+            var sut = new EliminarPrecioFijoUseCase(precioRepo, listaRepo, uow, new TenantContextFake());
 
             var req = new EliminarPrecioFijoUseCase.Request(
                 Sku: sku,
@@ -324,6 +331,11 @@ namespace ListaPreciosBC.Tests.Application.UseCases
             );
 
             Assert.That(async () => await sut.Handle(req, CancellationToken.None), Throws.TypeOf<ConcurrencyException>());
+        }
+        private sealed class TenantContextFake : ITenantContext
+        {
+            public TenantId TenantId { get; } = TenantId.New();
+            public EmpresaId EmpresaId { get; } = EmpresaId.From("TEST-EMPRESA");
         }
     }
 }

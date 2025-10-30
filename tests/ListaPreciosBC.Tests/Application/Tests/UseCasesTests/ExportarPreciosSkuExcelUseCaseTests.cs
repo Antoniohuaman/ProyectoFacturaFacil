@@ -11,6 +11,7 @@ using ListaPreciosBC.Domain.ValueObjects;    // IdentificadorColumnaPrecio, Nomb
 using NUnit.Framework;
 using SharedKernel.Exceptions;
 using SharedKernel.ValueObjects;             // Moneda
+using SharedKernel.Application.Interfaces;   // ITenantContext
 
 namespace ListaPreciosBC.Tests.Application.UseCases
 {
@@ -22,13 +23,13 @@ namespace ListaPreciosBC.Tests.Application.UseCases
         {
             public ListaPrecio? ListaActiva { get; set; }
 
-            public Task<ListaPrecio?> ObtenerActivaAsync(CancellationToken ct = default)
+            public Task<ListaPrecio?> ObtenerActivaAsync(EmpresaId empresaId, Guid? sucursalId = null, CancellationToken ct = default)
                 => Task.FromResult(ListaActiva);
 
             public Task<ListaPrecio?> ObtenerPorIdAsync(Guid id, CancellationToken ct = default)
                 => Task.FromResult(ListaActiva is not null && ListaActiva.Id == id ? ListaActiva : null);
 
-            public Task GuardarAsync(ListaPrecio aggregate, int expectedVersion, CancellationToken ct = default)
+            public Task GuardarAsync(ListaPrecio aggregate, EmpresaId empresaId, Guid? sucursalId, int expectedVersion, CancellationToken ct = default)
                 => Task.CompletedTask;
 
             public void Seed(ListaPrecio lista) => ListaActiva = lista;
@@ -38,25 +39,31 @@ namespace ListaPreciosBC.Tests.Application.UseCases
         {
             private readonly Dictionary<string, PrecioProducto> _store = new();
 
-            public Task<PrecioProducto?> ObtenerPorSkuAsync(Sku sku, CancellationToken ct = default)
+            public Task<PrecioProducto?> ObtenerPorSkuAsync(EmpresaId empresaId, Guid? sucursalId, Sku sku, CancellationToken ct = default)
             {
                 _store.TryGetValue(sku.Valor, out var agg);
                 return Task.FromResult<PrecioProducto?>(agg);
             }
 
-            public Task GuardarAsync(PrecioProducto aggregate, int expectedVersion, CancellationToken ct = default)
+            public Task GuardarAsync(PrecioProducto aggregate, EmpresaId empresaId, Guid? sucursalId, int expectedVersion, CancellationToken ct = default)
             {
                 _store[aggregate.Sku.Valor] = aggregate;
                 return Task.CompletedTask;
             }
 
-            public Task EliminarAsync(Sku sku, int? expectedVersion = null, CancellationToken ct = default)
+            public Task EliminarAsync(EmpresaId empresaId, Guid? sucursalId, Sku sku, int? expectedVersion = null, CancellationToken ct = default)
             {
                 _store.Remove(sku.Valor);
                 return Task.CompletedTask;
             }
 
             public void Seed(PrecioProducto agg) => _store[agg.Sku.Valor] = agg;
+        }
+
+        private sealed class TenantContextFake : ITenantContext
+        {
+            public TenantId TenantId { get; } = TenantId.New();
+            public EmpresaId EmpresaId { get; } = EmpresaId.From("TEST-EMPRESA");
         }
 
         // ---------------------- Builders con invariantes ----------------------
@@ -138,7 +145,7 @@ namespace ListaPreciosBC.Tests.Application.UseCases
             var agg = CrearAggConPrecios(sku);
             precioRepo.Seed(agg);
 
-            var sut = new ExportarPreciosSkuExcelUseCase(listaRepo, precioRepo);
+            var sut = new ExportarPreciosSkuExcelUseCase(listaRepo, precioRepo, new TenantContextFake());
 
             var res = await sut.Handle(new ExportarPreciosSkuExcelUseCase.Request(
                 Sku: sku,
@@ -177,7 +184,7 @@ namespace ListaPreciosBC.Tests.Application.UseCases
             const string sku = "SKU-002";
             precioRepo.Seed(CrearAggConPrecios(sku));
 
-            var sut = new ExportarPreciosSkuExcelUseCase(listaRepo, precioRepo);
+            var sut = new ExportarPreciosSkuExcelUseCase(listaRepo, precioRepo, new TenantContextFake());
 
             var res = await sut.Handle(new ExportarPreciosSkuExcelUseCase.Request(
                 Sku: sku,
@@ -199,7 +206,7 @@ namespace ListaPreciosBC.Tests.Application.UseCases
         {
             var listaRepo  = new InMemoryListaPrecioRepository { ListaActiva = null };
             var precioRepo = new InMemoryPrecioProductoRepository();
-            var sut        = new ExportarPreciosSkuExcelUseCase(listaRepo, precioRepo);
+            var sut        = new ExportarPreciosSkuExcelUseCase(listaRepo, precioRepo, new TenantContextFake());
 
             Assert.That(async () => await sut.Handle(new ExportarPreciosSkuExcelUseCase.Request("SKU-X", 1), CancellationToken.None),
                         Throws.TypeOf<NotFoundException>());
@@ -210,7 +217,7 @@ namespace ListaPreciosBC.Tests.Application.UseCases
         {
             var listaRepo  = new InMemoryListaPrecioRepository { ListaActiva = CrearListaConBaseVolumenYOculta() };
             var precioRepo = new InMemoryPrecioProductoRepository();
-            var sut        = new ExportarPreciosSkuExcelUseCase(listaRepo, precioRepo);
+            var sut        = new ExportarPreciosSkuExcelUseCase(listaRepo, precioRepo, new TenantContextFake());
 
             Assert.That(async () => await sut.Handle(new ExportarPreciosSkuExcelUseCase.Request("SKU-404", 1), CancellationToken.None),
                         Throws.TypeOf<NotFoundException>());

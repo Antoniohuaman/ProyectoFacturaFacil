@@ -8,6 +8,7 @@ using ListaPreciosBC.Domain.ValueObjects;
 using SharedKernel.Exceptions;
 using SharedKernel.ValueObjects;
 using ListaPreciosBC.Application.Interfaces;
+using SharedKernel.Application.Interfaces;   // ITenantContext
 
 
 namespace ListaPreciosBC.Application.UseCases
@@ -45,24 +46,31 @@ namespace ListaPreciosBC.Application.UseCases
             int Version
         );
 
-        private readonly IPrecioProductoRepository _precioRepo;
-        private readonly IListaPrecioRepository _listaRepo;
-        private readonly IUnitOfWork _uow;
+    private readonly IPrecioProductoRepository _precioRepo;
+    private readonly IListaPrecioRepository _listaRepo;
+    private readonly IUnitOfWork _uow;
+    private readonly ITenantContext _tenant;
 
         public UpsertPrecioFijoUseCase(
             IPrecioProductoRepository precioRepo,
             IListaPrecioRepository listaRepo,
-            IUnitOfWork uow)
+            IUnitOfWork uow,
+            ITenantContext tenant)
         {
             _precioRepo = precioRepo ?? throw new ArgumentNullException(nameof(precioRepo));
             _listaRepo  = listaRepo  ?? throw new ArgumentNullException(nameof(listaRepo));
             _uow        = uow        ?? throw new ArgumentNullException(nameof(uow));
+            _tenant     = tenant     ?? throw new ArgumentNullException(nameof(tenant));
         }
 
         public async Task<Response> Handle(Request req, CancellationToken ct)
         {
+            // 0) Contexto de empresa
+            var empresaId = _tenant.EmpresaId;
+            if (empresaId is null) throw new InvalidOperationException("EmpresaId del contexto es obligatorio.");
+
             // 1) Traer lista activa
-            var lista = await _listaRepo.ObtenerActivaAsync(ct);
+            var lista = await _listaRepo.ObtenerActivaAsync(empresaId, null, ct);
             if (lista is null)
                 throw new NotFoundException("No existe lista de precios activa.");
 
@@ -77,7 +85,7 @@ namespace ListaPreciosBC.Application.UseCases
 
             // 3) Traer o crear agregado PrecioProducto
             var sku = Sku.Crear(req.Sku);
-            var agregado = await _precioRepo.ObtenerPorSkuAsync(sku, ct);
+            var agregado = await _precioRepo.ObtenerPorSkuAsync(empresaId, null, sku, ct);
             if (agregado is null)
             {
                 agregado = PrecioProducto.CrearNuevo(sku);
@@ -96,7 +104,7 @@ namespace ListaPreciosBC.Application.UseCases
             agregado.UpsertPrecioFijo(colId, valor, vig, req.Usuario, cuando);
 
             // 6) Persistencia + UoW
-            await _precioRepo.GuardarAsync(agregado, expectedVersion, ct);
+            await _precioRepo.GuardarAsync(agregado, empresaId, null, expectedVersion, ct);
             await _uow.SaveChangesAsync();
 
             // 7) Respuesta

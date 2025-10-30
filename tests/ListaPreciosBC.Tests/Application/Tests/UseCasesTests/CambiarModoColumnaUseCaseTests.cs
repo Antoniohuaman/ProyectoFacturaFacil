@@ -10,6 +10,8 @@ using ListaPreciosBC.Domain.Aggregates;      // ListaPrecio
 using ListaPreciosBC.Domain.ValueObjects;    // IdentificadorColumnaPrecio, NombreColumnaPrecio, ModoValorizacionColumna
 using NUnit.Framework;
 using SharedKernel.Exceptions;
+using SharedKernel.Application.Interfaces;   // ITenantContext
+using SharedKernel.ValueObjects;             // EmpresaId, TenantId
 
 namespace ListaPreciosBC.Tests.Application.UseCases
 {
@@ -25,12 +27,15 @@ namespace ListaPreciosBC.Tests.Application.UseCases
             public bool SimularConcurrencia { get; set; }
             public ListaPrecio? ListaActiva { get; set; }
 
-            public Task<ListaPrecio?> ObtenerActivaAsync(CancellationToken ct = default)
+            public Task<ListaPrecio?> ObtenerActivaAsync(EmpresaId empresaId, Guid? sucursalId = null, CancellationToken ct = default)
             {
                 if (ListaActiva is not null)
                     _loadedVersion[ListaActiva.Id] = ListaActiva.Version;
                 return Task.FromResult(ListaActiva);
             }
+
+            // Helper extra para los asserts del test (no forma parte de la interfaz)
+            public Task<ListaPrecio?> ObtenerActivaAsync() => Task.FromResult(ListaActiva);
 
             public Task<ListaPrecio?> ObtenerPorIdAsync(Guid id, CancellationToken ct = default)
             {
@@ -39,7 +44,7 @@ namespace ListaPreciosBC.Tests.Application.UseCases
                 return Task.FromResult(lp);
             }
 
-            public Task GuardarAsync(ListaPrecio aggregate, int expectedVersion, CancellationToken ct = default)
+            public Task GuardarAsync(ListaPrecio aggregate, EmpresaId empresaId, Guid? sucursalId, int expectedVersion, CancellationToken ct = default)
             {
                 var id = aggregate.Id;
 
@@ -118,7 +123,7 @@ namespace ListaPreciosBC.Tests.Application.UseCases
         {
             var repo = new InMemoryListaPrecioRepository();
             var uow = new InMemoryUow();
-            var sut = new CambiarModoColumnaUseCase(repo, uow);
+            var sut = new CambiarModoColumnaUseCase(repo, uow, new TenantContextFake());
 
             var lista = CrearListaConBaseYExtra(numeroExtra: 2, modoExtra: ModoValorizacionColumna.Fijo);
             repo.Seed(lista);
@@ -147,7 +152,7 @@ namespace ListaPreciosBC.Tests.Application.UseCases
         {
             var repo = new InMemoryListaPrecioRepository();
             var uow = new InMemoryUow();
-            var sut = new CambiarModoColumnaUseCase(repo, uow);
+            var sut = new CambiarModoColumnaUseCase(repo, uow, new TenantContextFake());
 
             var lista = CrearListaConBaseYExtra(numeroExtra: 3, modoExtra: ModoValorizacionColumna.PorVolumen);
             repo.Seed(lista);
@@ -173,7 +178,7 @@ namespace ListaPreciosBC.Tests.Application.UseCases
         {
             var repo = new InMemoryListaPrecioRepository { ListaActiva = null };
             var uow = new InMemoryUow();
-            var sut = new CambiarModoColumnaUseCase(repo, uow);
+            var sut = new CambiarModoColumnaUseCase(repo, uow, new TenantContextFake());
 
             var req = new CambiarModoColumnaUseCase.Request(
                 ColumnaNumero: 2,
@@ -189,7 +194,7 @@ namespace ListaPreciosBC.Tests.Application.UseCases
         {
             var repo = new InMemoryListaPrecioRepository();
             var uow = new InMemoryUow();
-            var sut = new CambiarModoColumnaUseCase(repo, uow);
+            var sut = new CambiarModoColumnaUseCase(repo, uow, new TenantContextFake());
 
             var lista = CrearListaConBaseYExtra(numeroExtra: 2, modoExtra: ModoValorizacionColumna.Fijo);
             repo.Seed(lista);
@@ -208,7 +213,7 @@ namespace ListaPreciosBC.Tests.Application.UseCases
         {
             var repo = new InMemoryListaPrecioRepository { SimularConcurrencia = true };
             var uow = new InMemoryUow();
-            var sut = new CambiarModoColumnaUseCase(repo, uow);
+            var sut = new CambiarModoColumnaUseCase(repo, uow, new TenantContextFake());
 
             var lista = CrearListaConBaseYExtra(numeroExtra: 2, modoExtra: ModoValorizacionColumna.Fijo);
             repo.Seed(lista);
@@ -221,6 +226,12 @@ namespace ListaPreciosBC.Tests.Application.UseCases
 
             Assert.That(async () => await sut.Handle(req, CancellationToken.None),
                         Throws.TypeOf<ConcurrencyException>());
+        }
+
+        private sealed class TenantContextFake : ITenantContext
+        {
+            public TenantId TenantId { get; } = TenantId.New();
+            public EmpresaId EmpresaId { get; } = EmpresaId.From("TEST-EMPRESA");
         }
     }
 }

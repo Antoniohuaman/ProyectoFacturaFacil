@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using ListaPreciosBC.Domain.Repositories;    // IListaPrecioRepository
 using ListaPreciosBC.Domain.Aggregates;      // ListaPrecio
 using SharedKernel.Exceptions;               // NotFoundException
+using SharedKernel.Application.Interfaces;   // ITenantContext
 
 namespace ListaPreciosBC.Application.UseCases
 {
@@ -33,17 +34,23 @@ namespace ListaPreciosBC.Application.UseCases
             int Version
         );
 
-        private readonly IListaPrecioRepository _listaRepo;
+    private readonly IListaPrecioRepository _listaRepo;
+    private readonly ITenantContext _tenant;
 
-        public ObtenerPlantillaUseCase(IListaPrecioRepository listaRepo)
+        public ObtenerPlantillaUseCase(IListaPrecioRepository listaRepo, ITenantContext tenant)
         {
             _listaRepo = listaRepo ?? throw new ArgumentNullException(nameof(listaRepo));
+            _tenant = tenant ?? throw new ArgumentNullException(nameof(tenant));
         }
 
         public async Task<Response> Handle(Request req, CancellationToken ct)
         {
+            // 0) Contexto de empresa
+            var empresaId = _tenant.EmpresaId;
+            if (empresaId is null) throw new InvalidOperationException("EmpresaId del contexto es obligatorio.");
+
             // 1) Traer lista activa
-            var lista = await _listaRepo.ObtenerActivaAsync(ct);
+            var lista = await _listaRepo.ObtenerActivaAsync(empresaId, null, ct);
             if (lista is null)
                 throw new NotFoundException("No existe lista de precios activa.");
 

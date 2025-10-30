@@ -11,6 +11,7 @@ using ListaPreciosBC.Domain.ValueObjects;    // IdentificadorColumnaPrecio, Nomb
 using NUnit.Framework;
 using SharedKernel.Exceptions;
 using SharedKernel.ValueObjects;             // Moneda, Sku
+using SharedKernel.Application.Interfaces;   // ITenantContext
 
 namespace ListaPreciosBC.Tests.Application.UseCases
 {
@@ -22,13 +23,13 @@ namespace ListaPreciosBC.Tests.Application.UseCases
         {
             public ListaPrecio? ListaActiva { get; set; }
 
-            public Task<ListaPrecio?> ObtenerActivaAsync(CancellationToken ct = default)
+            public Task<ListaPrecio?> ObtenerActivaAsync(EmpresaId empresaId, Guid? sucursalId = null, CancellationToken ct = default)
                 => Task.FromResult(ListaActiva);
 
             public Task<ListaPrecio?> ObtenerPorIdAsync(Guid id, CancellationToken ct = default)
                 => Task.FromResult(ListaActiva is not null && ListaActiva.Id == id ? ListaActiva : null);
 
-            public Task GuardarAsync(ListaPrecio aggregate, int expectedVersion, CancellationToken ct = default)
+            public Task GuardarAsync(ListaPrecio aggregate, EmpresaId empresaId, Guid? sucursalId, int expectedVersion, CancellationToken ct = default)
                 => Task.CompletedTask;
         }
 
@@ -38,7 +39,7 @@ namespace ListaPreciosBC.Tests.Application.UseCases
             private readonly Dictionary<string, int> _loadedVersion = new();
             public bool SimularConcurrencia { get; set; }
 
-            public Task<PrecioProducto?> ObtenerPorSkuAsync(Sku sku, CancellationToken ct = default)
+            public Task<PrecioProducto?> ObtenerPorSkuAsync(EmpresaId empresaId, Guid? sucursalId, Sku sku, CancellationToken ct = default)
             {
                 if (_store.TryGetValue(sku.Valor, out var agg))
                 {
@@ -48,7 +49,11 @@ namespace ListaPreciosBC.Tests.Application.UseCases
                 return Task.FromResult<PrecioProducto?>(null);
             }
 
-            public Task GuardarAsync(PrecioProducto aggregate, int expectedVersion, CancellationToken ct = default)
+            // Helper para tests
+            public Task<PrecioProducto?> ObtenerPorSkuAsync(Sku sku, CancellationToken ct = default)
+                => ObtenerPorSkuAsync(EmpresaId.From("TEST-EMPRESA"), null, sku, ct);
+
+            public Task GuardarAsync(PrecioProducto aggregate, EmpresaId empresaId, Guid? sucursalId, int expectedVersion, CancellationToken ct = default)
             {
                 var key = aggregate.Sku.Valor;
 
@@ -72,25 +77,29 @@ namespace ListaPreciosBC.Tests.Application.UseCases
                 return Task.CompletedTask;
             }
 
-                public Task EliminarAsync(Sku sku, int? expectedVersion = null, CancellationToken ct = default)
+            public Task EliminarAsync(EmpresaId empresaId, Guid? sucursalId, Sku sku, int? expectedVersion = null, CancellationToken ct = default)
+            {
+                var key = sku.Valor;
+                if (_store.TryGetValue(key, out var agg))
                 {
-                    var key = sku.Valor;
-                    if (_store.TryGetValue(key, out var agg))
-                    {
-                        if (expectedVersion.HasValue && agg.Version != expectedVersion.Value)
-                            throw new ConcurrencyException(
-                                "Versión inesperada del agregado al eliminar.",
-                                sku.Valor,
-                                expectedVersion.Value,
-                                agg.Version,
-                                null,
-                                null
-                            );
-                        _store.Remove(key);
-                        _loadedVersion.Remove(key);
-                    }
-                    return Task.CompletedTask;
+                    if (expectedVersion.HasValue && agg.Version != expectedVersion.Value)
+                        throw new ConcurrencyException(
+                            "Versión inesperada del agregado al eliminar.",
+                            sku.Valor,
+                            expectedVersion.Value,
+                            agg.Version,
+                            null,
+                            null
+                        );
+                    _store.Remove(key);
+                    _loadedVersion.Remove(key);
                 }
+                return Task.CompletedTask;
+            }
+
+            // Helper para tests
+            public Task EliminarAsync(Sku sku, int? expectedVersion = null, CancellationToken ct = default)
+                => EliminarAsync(EmpresaId.From("TEST-EMPRESA"), null, sku, expectedVersion, ct);
 
                 public Task<IEnumerable<PrecioProducto>> ObtenerPorSkusAsync(IEnumerable<Sku> skus, CancellationToken ct = default)
                 {
@@ -157,9 +166,9 @@ namespace ListaPreciosBC.Tests.Application.UseCases
                 ListaActiva = CrearListaActivaConBaseYColumnaVolumen(numeroVolumen: 2)
             };
 
-            IPrecioProductoRepository precioRepo = new InMemoryPrecioProductoRepository();
+            var precioRepo = new InMemoryPrecioProductoRepository();
             var uow = new InMemoryUow();
-            var sut = new UpsertMatrizVolumenUseCase(precioRepo, listaRepo, uow);
+            var sut = new UpsertMatrizVolumenUseCase(precioRepo, listaRepo, uow, new TenantContextFake());
 
             var req = new UpsertMatrizVolumenUseCase.Request(
                 Sku: "SKU-001",
@@ -191,9 +200,9 @@ namespace ListaPreciosBC.Tests.Application.UseCases
         public void UpsertMatrizVolumen_Falla_SiNoHayListaActiva()
         {
             var listaRepo = new InMemoryListaPrecioRepository { ListaActiva = null };
-            IPrecioProductoRepository precioRepo = new InMemoryPrecioProductoRepository();
+            var precioRepo = new InMemoryPrecioProductoRepository();
             var uow = new InMemoryUow();
-            var sut = new UpsertMatrizVolumenUseCase(precioRepo, listaRepo, uow);
+            var sut = new UpsertMatrizVolumenUseCase(precioRepo, listaRepo, uow, new TenantContextFake());
 
             var req = new UpsertMatrizVolumenUseCase.Request(
                 Sku: "SKU-404",
@@ -216,9 +225,9 @@ namespace ListaPreciosBC.Tests.Application.UseCases
                 ListaActiva = CrearListaActivaConBaseYColumnaVolumen(numeroVolumen: 2)
             };
 
-            IPrecioProductoRepository precioRepo = new InMemoryPrecioProductoRepository();
+            var precioRepo = new InMemoryPrecioProductoRepository();
             var uow = new InMemoryUow();
-            var sut = new UpsertMatrizVolumenUseCase(precioRepo, listaRepo, uow);
+            var sut = new UpsertMatrizVolumenUseCase(precioRepo, listaRepo, uow, new TenantContextFake());
 
             var req = new UpsertMatrizVolumenUseCase.Request(
                 Sku: "SKU-001",
@@ -250,7 +259,7 @@ namespace ListaPreciosBC.Tests.Application.UseCases
             var listaRepo = new InMemoryListaPrecioRepository { ListaActiva = lista };
             IPrecioProductoRepository precioRepo = new InMemoryPrecioProductoRepository();
             var uow = new InMemoryUow();
-            var sut = new UpsertMatrizVolumenUseCase(precioRepo, listaRepo, uow);
+            var sut = new UpsertMatrizVolumenUseCase(precioRepo, listaRepo, uow, new TenantContextFake());
 
             var req = new UpsertMatrizVolumenUseCase.Request(
                 Sku: "SKU-001",
@@ -273,7 +282,7 @@ namespace ListaPreciosBC.Tests.Application.UseCases
                 ListaActiva = CrearListaActivaConBaseYColumnaVolumen(numeroVolumen: 2)
             };
 
-            IPrecioProductoRepository precioRepo = new InMemoryPrecioProductoRepository { SimularConcurrencia = true };
+            var precioRepo = new InMemoryPrecioProductoRepository { SimularConcurrencia = true };
 
             // Seed: SKU existente con algo en historial (para subir versión)
             var existente = CrearPrecioProducto("SKU-001");
@@ -284,10 +293,10 @@ namespace ListaPreciosBC.Tests.Application.UseCases
                 "seed",
                 DateTimeOffset.UtcNow.AddDays(-10)
             );
-            ((InMemoryPrecioProductoRepository)precioRepo).Seed(existente);
+            precioRepo.Seed(existente);
 
             var uow = new InMemoryUow();
-            var sut = new UpsertMatrizVolumenUseCase(precioRepo, listaRepo, uow);
+            var sut = new UpsertMatrizVolumenUseCase(precioRepo, listaRepo, uow, new TenantContextFake());
 
             var req = new UpsertMatrizVolumenUseCase.Request(
                 Sku: "SKU-001",
@@ -311,9 +320,9 @@ namespace ListaPreciosBC.Tests.Application.UseCases
                 ListaActiva = CrearListaActivaConBaseYColumnaVolumen(numeroVolumen: 2)
             };
 
-            IPrecioProductoRepository precioRepo = new InMemoryPrecioProductoRepository();
+            var precioRepo = new InMemoryPrecioProductoRepository();
             var uow = new InMemoryUow();
-            var sut = new UpsertMatrizVolumenUseCase(precioRepo, listaRepo, uow);
+            var sut = new UpsertMatrizVolumenUseCase(precioRepo, listaRepo, uow, new TenantContextFake());
 
             // Tramos solapados: [1..10] y [8..∞)
             var req = new UpsertMatrizVolumenUseCase.Request(
@@ -328,6 +337,12 @@ namespace ListaPreciosBC.Tests.Application.UseCases
 
             Assert.That(async () => await sut.Handle(req, CancellationToken.None),
                         Throws.TypeOf<BusinessRuleException>());
+        }
+
+        private sealed class TenantContextFake : ITenantContext
+        {
+            public TenantId TenantId { get; } = TenantId.New();
+            public EmpresaId EmpresaId { get; } = EmpresaId.From("TEST-EMPRESA");
         }
     }
 }

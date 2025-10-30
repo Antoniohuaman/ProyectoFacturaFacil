@@ -9,6 +9,7 @@ using ListaPreciosBC.Domain.Aggregates;      // ListaPrecio, PrecioProducto
 using ListaPreciosBC.Domain.ValueObjects;    // IdentificadorColumnaPrecio, ModoValorizacionColumna, ValorPrecio, PeriodoVigencia
 using SharedKernel.Exceptions;               // NotFoundException, BusinessRuleException, ConcurrencyException
 using SharedKernel.ValueObjects;             // Moneda, Sku
+using SharedKernel.Application.Interfaces;   // ITenantContext
 
 namespace ListaPreciosBC.Application.UseCases
 {
@@ -61,18 +62,21 @@ namespace ListaPreciosBC.Application.UseCases
             int AgregadosAfectados
         );
 
-        private readonly IListaPrecioRepository _listaRepo;
-        private readonly IPrecioProductoRepository _precioRepo;
-        private readonly IUnitOfWork _uow;
+    private readonly IListaPrecioRepository _listaRepo;
+    private readonly IPrecioProductoRepository _precioRepo;
+    private readonly IUnitOfWork _uow;
+    private readonly ITenantContext _tenant;
 
         public ImportarPreciosFijosUseCase(
             IListaPrecioRepository listaRepo,
             IPrecioProductoRepository precioRepo,
-            IUnitOfWork uow)
+            IUnitOfWork uow,
+            ITenantContext tenant)
         {
             _listaRepo = listaRepo ?? throw new ArgumentNullException(nameof(listaRepo));
             _precioRepo = precioRepo ?? throw new ArgumentNullException(nameof(precioRepo));
             _uow = uow ?? throw new ArgumentNullException(nameof(uow));
+            _tenant = tenant ?? throw new ArgumentNullException(nameof(tenant));
         }
 
         public async Task<Response> Handle(Request req, CancellationToken ct)
@@ -80,8 +84,12 @@ namespace ListaPreciosBC.Application.UseCases
             if (req.Filas is null || req.Filas.Count == 0)
                 throw new BusinessRuleException("No se recibieron filas para importar.");
 
+            // 0) Contexto
+            var empresaId = _tenant.EmpresaId;
+            if (empresaId is null) throw new InvalidOperationException("EmpresaId del contexto es obligatorio.");
+
             // 1) Lista de precios activa
-            var lista = await _listaRepo.ObtenerActivaAsync(ct);
+            var lista = await _listaRepo.ObtenerActivaAsync(empresaId, null, ct);
             if (lista is null)
                 throw new NotFoundException("No existe lista de precios activa.");
 
@@ -106,7 +114,7 @@ namespace ListaPreciosBC.Application.UseCases
                     continue;
 
                 var skuVo = Sku.Crear(fila.Sku);
-                var agregado = await _precioRepo.ObtenerPorSkuAsync(skuVo, ct);
+                var agregado = await _precioRepo.ObtenerPorSkuAsync(empresaId, null, skuVo, ct);
                 var nuevo = agregado is null;
                 if (nuevo)
                     agregado = PrecioProducto.CrearNuevo(skuVo);
@@ -170,7 +178,7 @@ namespace ListaPreciosBC.Application.UseCases
 
                 if (huboCambiosParaEsteSku)
                 {
-                    await _precioRepo.GuardarAsync(agregado, expectedVersion, ct);
+                    await _precioRepo.GuardarAsync(agregado, empresaId, null, expectedVersion, ct);
                     afectados++;
                 }
             }

@@ -7,6 +7,7 @@ using ListaPreciosBC.Domain.Repositories;    // IListaPrecioRepository
 using ListaPreciosBC.Domain.Aggregates;      // ListaPrecio
 using ListaPreciosBC.Domain.ValueObjects;    // IdentificadorColumnaPrecio
 using SharedKernel.Exceptions;               // NotFoundException, BusinessRuleException
+using SharedKernel.Application.Interfaces;   // ITenantContext
 
 namespace ListaPreciosBC.Application.UseCases
 {
@@ -34,21 +35,28 @@ namespace ListaPreciosBC.Application.UseCases
             int Version
         );
 
-        private readonly IListaPrecioRepository _listaRepo;
-        private readonly IUnitOfWork _uow;
+    private readonly IListaPrecioRepository _listaRepo;
+    private readonly IUnitOfWork _uow;
+    private readonly ITenantContext _tenant;
 
         public CambiarOrdenColumnaUseCase(
             IListaPrecioRepository listaRepo,
-            IUnitOfWork uow)
+            IUnitOfWork uow,
+            ITenantContext tenant)
         {
             _listaRepo = listaRepo ?? throw new ArgumentNullException(nameof(listaRepo));
             _uow = uow ?? throw new ArgumentNullException(nameof(uow));
+            _tenant = tenant ?? throw new ArgumentNullException(nameof(tenant));
         }
 
         public async Task<Response> Handle(Request req, CancellationToken ct)
         {
+            // 0) Contexto
+            var empresaId = _tenant.EmpresaId;
+            if (empresaId is null) throw new InvalidOperationException("EmpresaId del contexto es obligatorio.");
+
             // 1) Traer lista activa
-            var lista = await _listaRepo.ObtenerActivaAsync(ct);
+            var lista = await _listaRepo.ObtenerActivaAsync(empresaId, null, ct);
             if (lista is null)
                 throw new NotFoundException("No existe lista de precios activa.");
 
@@ -71,7 +79,7 @@ namespace ListaPreciosBC.Application.UseCases
             lista.CambiarOrdenColumna(colId, req.NuevoOrden, req.Usuario, cuando);
 
             // 5) Persistencia + UoW
-            await _listaRepo.GuardarAsync(lista, expectedVersion, ct);
+            await _listaRepo.GuardarAsync(lista, empresaId, null, expectedVersion, ct);
             await _uow.SaveChangesAsync(ct);
 
             // 6) Respuesta

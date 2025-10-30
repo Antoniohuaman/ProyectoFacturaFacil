@@ -8,6 +8,7 @@ using ListaPreciosBC.Domain.Repositories;    // IListaPrecioRepository, IPrecioP
 using ListaPreciosBC.Domain.ValueObjects;    // Sku, IdentificadorColumnaPrecio
 using SharedKernel.ValueObjects;             // Sku
 using SharedKernel.Exceptions;               // NotFoundException
+using SharedKernel.Application.Interfaces;   // ITenantContext
 
 namespace ListaPreciosBC.Application.UseCases
 {
@@ -33,27 +34,34 @@ namespace ListaPreciosBC.Application.UseCases
             int VersionAgregado
         );
 
-        private readonly IListaPrecioRepository _listaRepo;
-        private readonly IPrecioProductoRepository _precioRepo;
+    private readonly IListaPrecioRepository _listaRepo;
+    private readonly IPrecioProductoRepository _precioRepo;
+    private readonly ITenantContext _tenant;
 
         public ExportarPreciosSkuExcelUseCase(
             IListaPrecioRepository listaRepo,
-            IPrecioProductoRepository precioRepo)
+            IPrecioProductoRepository precioRepo,
+            ITenantContext tenant)
         {
             _listaRepo = listaRepo ?? throw new ArgumentNullException(nameof(listaRepo));
             _precioRepo = precioRepo ?? throw new ArgumentNullException(nameof(precioRepo));
+            _tenant = tenant ?? throw new ArgumentNullException(nameof(tenant));
         }
 
         public async Task<Response> Handle(Request req, CancellationToken ct)
         {
+            // 0) Contexto
+            var empresaId = _tenant.EmpresaId;
+            if (empresaId is null) throw new InvalidOperationException("EmpresaId del contexto es obligatorio.");
+
             // 1) Lista activa
-            var lista = await _listaRepo.ObtenerActivaAsync(ct);
+            var lista = await _listaRepo.ObtenerActivaAsync(empresaId, null, ct);
             if (lista is null)
                 throw new NotFoundException("No existe lista de precios activa.");
 
             // 2) Agregado del SKU
             var sku = Sku.Crear(req.Sku);
-            var agregado = await _precioRepo.ObtenerPorSkuAsync(sku, ct);
+            var agregado = await _precioRepo.ObtenerPorSkuAsync(empresaId, null, sku, ct);
             if (agregado is null)
                 throw new NotFoundException($"No existe PrecioProducto para el SKU {req.Sku}.");
 

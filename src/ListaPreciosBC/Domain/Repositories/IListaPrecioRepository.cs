@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using ListaPreciosBC.Domain.Aggregates;
+using SharedKernel.ValueObjects; // EmpresaId
 
 namespace ListaPreciosBC.Domain.Repositories
 {
@@ -12,7 +13,7 @@ namespace ListaPreciosBC.Domain.Repositories
     public interface IListaPrecioRepository
     {
         /// <summary>Obtiene la plantilla activa (o null si no existe).</summary>
-        Task<ListaPrecio?> ObtenerActivaAsync(CancellationToken ct = default);
+        Task<ListaPrecio?> ObtenerActivaAsync(EmpresaId empresaId, Guid? sucursalId = null, CancellationToken ct = default);
 
         /// <summary>Obtiene una plantilla por Id (o null si no existe).</summary>
         Task<ListaPrecio?> ObtenerPorIdAsync(Guid id, CancellationToken ct = default);
@@ -22,6 +23,6 @@ namespace ListaPreciosBC.Domain.Repositories
         /// Usa <paramref name="expectedVersion"/> = 0 para altas.
         /// Debe lanzar si la versión actual difiere de la esperada.
         /// </summary>
-        Task GuardarAsync(ListaPrecio agregado, int expectedVersion, CancellationToken ct = default);
+        Task GuardarAsync(ListaPrecio agregado, EmpresaId empresaId, Guid? sucursalId, int expectedVersion, CancellationToken ct = default);
     }
 }

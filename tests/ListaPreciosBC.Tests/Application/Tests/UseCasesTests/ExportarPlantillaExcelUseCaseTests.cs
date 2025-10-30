@@ -9,6 +9,8 @@ using ListaPreciosBC.Domain.Aggregates;      // ListaPrecio
 using ListaPreciosBC.Domain.ValueObjects;    // IdentificadorColumnaPrecio, NombreColumnaPrecio, ModoValorizacionColumna
 using NUnit.Framework;
 using SharedKernel.Exceptions;
+using SharedKernel.Application.Interfaces;   // ITenantContext
+using SharedKernel.ValueObjects;             // EmpresaId, TenantId
 
 namespace ListaPreciosBC.Tests.Application.UseCases
 {
@@ -20,16 +22,22 @@ namespace ListaPreciosBC.Tests.Application.UseCases
         {
             public ListaPrecio? ListaActiva { get; set; }
 
-            public Task<ListaPrecio?> ObtenerActivaAsync(CancellationToken ct = default)
+            public Task<ListaPrecio?> ObtenerActivaAsync(EmpresaId empresaId, Guid? sucursalId = null, CancellationToken ct = default)
                 => Task.FromResult(ListaActiva);
 
             public Task<ListaPrecio?> ObtenerPorIdAsync(Guid id, CancellationToken ct = default)
                 => Task.FromResult(ListaActiva is not null && ListaActiva.Id == id ? ListaActiva : null);
 
-            public Task GuardarAsync(ListaPrecio aggregate, int expectedVersion, CancellationToken ct = default)
+            public Task GuardarAsync(ListaPrecio aggregate, EmpresaId empresaId, Guid? sucursalId, int expectedVersion, CancellationToken ct = default)
                 => Task.CompletedTask;
 
             public void Seed(ListaPrecio lista) => ListaActiva = lista;
+        }
+
+        private sealed class TenantContextFake : ITenantContext
+        {
+            public TenantId TenantId { get; } = TenantId.New();
+            public EmpresaId EmpresaId { get; } = EmpresaId.From("TEST-EMPRESA");
         }
 
         // ---------------------- Builders con invariantes ----------------------
@@ -74,7 +82,7 @@ namespace ListaPreciosBC.Tests.Application.UseCases
         public async Task Exportar_Exito_IncluyeTodasLasColumnas_OrdenadasYConHeader()
         {
             var repo = new InMemoryListaPrecioRepository { ListaActiva = CrearListaConBaseVolumenYOcultaYNombreEspecial() };
-            var sut  = new ExportarPlantillaExcelUseCase(repo);
+            var sut  = new ExportarPlantillaExcelUseCase(repo, new TenantContextFake());
 
             var res = await sut.Handle(new ExportarPlantillaExcelUseCase.Request(SoloVisibles: false), CancellationToken.None);
 
@@ -103,7 +111,7 @@ namespace ListaPreciosBC.Tests.Application.UseCases
         public async Task Exportar_Exito_SoloVisibles_ExcluyeOcultas()
         {
             var repo = new InMemoryListaPrecioRepository { ListaActiva = CrearListaConBaseVolumenYOcultaYNombreEspecial() };
-            var sut  = new ExportarPlantillaExcelUseCase(repo);
+            var sut  = new ExportarPlantillaExcelUseCase(repo, new TenantContextFake());
 
             var res = await sut.Handle(new ExportarPlantillaExcelUseCase.Request(SoloVisibles: true), CancellationToken.None);
 
@@ -119,7 +127,7 @@ namespace ListaPreciosBC.Tests.Application.UseCases
         public void Exportar_Falla_SiNoHayListaActiva()
         {
             var repo = new InMemoryListaPrecioRepository { ListaActiva = null };
-            var sut  = new ExportarPlantillaExcelUseCase(repo);
+            var sut  = new ExportarPlantillaExcelUseCase(repo, new TenantContextFake());
 
             Assert.That(
                 async () => await sut.Handle(new ExportarPlantillaExcelUseCase.Request(), CancellationToken.None),

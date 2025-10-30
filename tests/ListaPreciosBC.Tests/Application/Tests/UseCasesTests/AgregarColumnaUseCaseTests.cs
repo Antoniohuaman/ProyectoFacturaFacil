@@ -8,6 +8,8 @@ using ListaPreciosBC.Domain.Repositories;
 using ListaPreciosBC.Domain.ValueObjects;
 using NUnit.Framework;
 using SharedKernel.Exceptions;
+using SharedKernel.Application.Interfaces;   // ITenantContext
+using SharedKernel.ValueObjects;             // EmpresaId, TenantId
 
 namespace ListaPreciosBC.Tests.Application.Tests.UseCasesTests
 {
@@ -71,7 +73,7 @@ namespace ListaPreciosBC.Tests.Application.Tests.UseCasesTests
             repo.Semilla(agg);
 
             var uow  = new UnitOfWorkInMemory();
-            var uc   = new AgregarColumnaUseCase(repo, uow);
+            var uc   = new AgregarColumnaUseCase(repo, uow, new TenantContextFake());
 
             var dto  = Dto(listaPrecioId: lpId, numeroColumna: 2, nombre: "Distribuidor", orden: 2);
 
@@ -108,7 +110,7 @@ namespace ListaPreciosBC.Tests.Application.Tests.UseCasesTests
             // Arrange
             var repo = new ListaPrecioRepoInMemory(); // sin semilla
             var uow  = new UnitOfWorkInMemory();
-            var uc   = new AgregarColumnaUseCase(repo, uow);
+            var uc   = new AgregarColumnaUseCase(repo, uow, new TenantContextFake());
 
             var dto  = Dto(listaPrecioId: Guid.NewGuid());
 
@@ -129,7 +131,7 @@ namespace ListaPreciosBC.Tests.Application.Tests.UseCasesTests
             repo.Semilla(agg);
 
             var uow  = new UnitOfWorkInMemory();
-            var uc   = new AgregarColumnaUseCase(repo, uow);
+            var uc   = new AgregarColumnaUseCase(repo, uow, new TenantContextFake());
 
             var dto  = Dto(listaPrecioId: lpId, numeroColumna: 2, nombre: "Mayorista", orden: 2);
 
@@ -145,7 +147,7 @@ namespace ListaPreciosBC.Tests.Application.Tests.UseCasesTests
 
         // ---------------------- Dobles InMemory (solo tests) ----------------------
 
-        private sealed class ListaPrecioRepoInMemory : IListaPrecioRepository
+    private sealed class ListaPrecioRepoInMemory : IListaPrecioRepository
         {
             private readonly System.Collections.Generic.Dictionary<Guid, ListaPrecio> _store
                 = new();
@@ -168,11 +170,11 @@ namespace ListaPreciosBC.Tests.Application.Tests.UseCasesTests
             }
 
             // Si tu interfaz también tiene ObtenerActivaAsync, agrégala aquí sin uso.
-            public Task<ListaPrecio?> ObtenerActivaAsync(CancellationToken ct = default)
+            public Task<ListaPrecio?> ObtenerActivaAsync(EmpresaId empresaId, Guid? sucursalId = null, CancellationToken ct = default)
                 => Task.FromResult<ListaPrecio?>(null);
 
             // Save con control de concurrencia optimista
-            public Task GuardarAsync(ListaPrecio agregado, int expectedVersion, CancellationToken ct = default)
+            public Task GuardarAsync(ListaPrecio agregado, EmpresaId empresaId, Guid? sucursalId, int expectedVersion, CancellationToken ct = default)
             {
                 LastExpectedVersion = expectedVersion;
 
@@ -201,6 +203,12 @@ namespace ListaPreciosBC.Tests.Application.Tests.UseCasesTests
 
                 return Task.CompletedTask;
             }
+        }
+
+        private sealed class TenantContextFake : ITenantContext
+        {
+            public TenantId TenantId { get; } = TenantId.New();
+            public EmpresaId EmpresaId { get; } = EmpresaId.From("TEST-EMPRESA");
         }
 
         private sealed class UnitOfWorkInMemory : ListaPreciosBC.Application.Interfaces.IUnitOfWork

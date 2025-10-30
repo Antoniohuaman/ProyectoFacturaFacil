@@ -9,6 +9,8 @@ using ListaPreciosBC.Domain.Aggregates;      // ListaPrecio
 using ListaPreciosBC.Domain.ValueObjects;    // IdentificadorColumnaPrecio, NombreColumnaPrecio, ModoValorizacionColumna
 using NUnit.Framework;
 using SharedKernel.Exceptions;
+using SharedKernel.Application.Interfaces;   // ITenantContext
+using SharedKernel.ValueObjects;             // EmpresaId, TenantId
 
 namespace ListaPreciosBC.Tests.Application.UseCases
 {
@@ -16,12 +18,12 @@ namespace ListaPreciosBC.Tests.Application.UseCases
     {
         // ---------------------- Fake InMemory ----------------------
 
-        private sealed class InMemoryListaPrecioRepository : IListaPrecioRepository
+    private sealed class InMemoryListaPrecioRepository : IListaPrecioRepository
         {
             private readonly Dictionary<Guid, ListaPrecio> _store = new();
             public ListaPrecio? ListaActiva { get; set; }
 
-            public Task<ListaPrecio?> ObtenerActivaAsync(CancellationToken ct = default)
+            public Task<ListaPrecio?> ObtenerActivaAsync(EmpresaId empresaId, Guid? sucursalId = null, CancellationToken ct = default)
                 => Task.FromResult(ListaActiva);
 
             public Task<ListaPrecio?> ObtenerPorIdAsync(Guid id, CancellationToken ct = default)
@@ -30,7 +32,7 @@ namespace ListaPreciosBC.Tests.Application.UseCases
                 return Task.FromResult(lp);
             }
 
-            public Task GuardarAsync(ListaPrecio aggregate, int expectedVersion, CancellationToken ct = default)
+            public Task GuardarAsync(ListaPrecio aggregate, EmpresaId empresaId, Guid? sucursalId, int expectedVersion, CancellationToken ct = default)
             {
                 _store[aggregate.Id] = aggregate;
                 return Task.CompletedTask;
@@ -83,7 +85,7 @@ namespace ListaPreciosBC.Tests.Application.UseCases
         public async Task MostrarColumna_Exito_DevuelveDatosDeColumna()
         {
             var repo = new InMemoryListaPrecioRepository();
-            var sut = new MostrarColumnaUseCase(repo);
+            var sut = new MostrarColumnaUseCase(repo, new TenantContextFake());
 
             var lista = CrearListaConBaseYExtra();
             repo.Seed(lista);
@@ -103,7 +105,7 @@ namespace ListaPreciosBC.Tests.Application.UseCases
         public async Task MostrarColumna_Exito_ColumnaBase()
         {
             var repo = new InMemoryListaPrecioRepository();
-            var sut = new MostrarColumnaUseCase(repo);
+            var sut = new MostrarColumnaUseCase(repo, new TenantContextFake());
 
             var lista = CrearListaConBaseYExtra();
             repo.Seed(lista);
@@ -123,7 +125,7 @@ namespace ListaPreciosBC.Tests.Application.UseCases
         public void MostrarColumna_Falla_SiNoHayListaActiva()
         {
             var repo = new InMemoryListaPrecioRepository { ListaActiva = null };
-            var sut = new MostrarColumnaUseCase(repo);
+            var sut = new MostrarColumnaUseCase(repo, new TenantContextFake());
 
             var req = new MostrarColumnaUseCase.Request(ColumnaNumero: 1);
 
@@ -135,7 +137,7 @@ namespace ListaPreciosBC.Tests.Application.UseCases
         public void MostrarColumna_Falla_SiColumnaNoExiste()
         {
             var repo = new InMemoryListaPrecioRepository();
-            var sut = new MostrarColumnaUseCase(repo);
+            var sut = new MostrarColumnaUseCase(repo, new TenantContextFake());
 
             var lista = CrearListaConBaseYExtra();
             repo.Seed(lista);
@@ -144,6 +146,12 @@ namespace ListaPreciosBC.Tests.Application.UseCases
 
             Assert.That(async () => await sut.Handle(req, CancellationToken.None),
                         Throws.TypeOf<NotFoundException>());
+        }
+
+        private sealed class TenantContextFake : ITenantContext
+        {
+            public TenantId TenantId { get; } = TenantId.New();
+            public EmpresaId EmpresaId { get; } = EmpresaId.From("TEST-EMPRESA");
         }
     }
 }

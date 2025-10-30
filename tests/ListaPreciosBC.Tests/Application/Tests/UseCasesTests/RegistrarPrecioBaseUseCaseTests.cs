@@ -9,6 +9,7 @@ using ListaPreciosBC.Domain.ValueObjects;
 using NUnit.Framework;
 using SharedKernel.Exceptions;
 using SharedKernel.ValueObjects; // Sku, Moneda
+using SharedKernel.Application.Interfaces;   // ITenantContext
 
 namespace ListaPreciosBC.Tests.UnitTests.Application
 {
@@ -41,7 +42,7 @@ namespace ListaPreciosBC.Tests.UnitTests.Application
 
             var precioRepo  = new PrecioProductoRepoInMemory();
             var uow         = new UnitOfWorkInMemory();
-            var uc          = new RegistrarPrecioBaseUseCase(listaRepo, precioRepo, uow);
+            var uc          = new RegistrarPrecioBaseUseCase(listaRepo, precioRepo, uow, new TenantContextFake());
 
             var req = new RegistrarPrecioBaseUseCase.Request(
                 EmpresaId: Guid.NewGuid(),            // no usado por el UC (la lista se resuelve sin ids en tu firma)
@@ -95,7 +96,7 @@ namespace ListaPreciosBC.Tests.UnitTests.Application
             precioRepo.Semilla(agregado);
 
             var uow = new UnitOfWorkInMemory();
-            var uc  = new RegistrarPrecioBaseUseCase(listaRepo, precioRepo, uow);
+            var uc  = new RegistrarPrecioBaseUseCase(listaRepo, precioRepo, uow, new TenantContextFake());
 
             var req = new RegistrarPrecioBaseUseCase.Request(
                 EmpresaId: Guid.NewGuid(),
@@ -129,7 +130,7 @@ namespace ListaPreciosBC.Tests.UnitTests.Application
             var listaRepo  = new ListaPrecioRepoInMemory(); // sin semilla activa
             var precioRepo = new PrecioProductoRepoInMemory();
             var uow        = new UnitOfWorkInMemory();
-            var uc         = new RegistrarPrecioBaseUseCase(listaRepo, precioRepo, uow);
+            var uc         = new RegistrarPrecioBaseUseCase(listaRepo, precioRepo, uow, new TenantContextFake());
 
             var req = new RegistrarPrecioBaseUseCase.Request(
                 EmpresaId: Guid.NewGuid(),
@@ -163,7 +164,7 @@ namespace ListaPreciosBC.Tests.UnitTests.Application
             precioRepo.Semilla(agregado);
 
             var uow = new UnitOfWorkInMemory();
-            var uc  = new RegistrarPrecioBaseUseCase(listaRepo, precioRepo, uow);
+            var uc  = new RegistrarPrecioBaseUseCase(listaRepo, precioRepo, uow, new TenantContextFake());
 
             var req = new RegistrarPrecioBaseUseCase.Request(
                 EmpresaId: Guid.NewGuid(),
@@ -195,14 +196,14 @@ namespace ListaPreciosBC.Tests.UnitTests.Application
             public Task<ListaPrecio?> ObtenerPorIdAsync(Guid id, CancellationToken ct = default)
                 => Task.FromResult<ListaPrecio?>(_activa is not null && _activa.Id == id ? _activa : null);
 
-            public Task<ListaPrecio?> ObtenerActivaAsync(CancellationToken ct = default)
+            public Task<ListaPrecio?> ObtenerActivaAsync(EmpresaId empresaId, Guid? sucursalId = null, CancellationToken ct = default)
                 => Task.FromResult(_activa);
 
-            public Task GuardarAsync(ListaPrecio aggregate, int expectedVersion, CancellationToken ct = default)
+            public Task GuardarAsync(ListaPrecio aggregate, EmpresaId empresaId, Guid? sucursalId, int expectedVersion, CancellationToken ct = default)
                 => Task.CompletedTask;
         }
 
-        private sealed class PrecioProductoRepoInMemory : IPrecioProductoRepository
+    private sealed class PrecioProductoRepoInMemory : IPrecioProductoRepository
         {
             private readonly System.Collections.Generic.Dictionary<string, PrecioProducto> _store = new();
             private readonly System.Collections.Generic.Dictionary<string, int> _versions = new();
@@ -217,13 +218,20 @@ namespace ListaPreciosBC.Tests.UnitTests.Application
                 _versions[key] = agregado.Version;
             }
 
+            public Task<PrecioProducto?> ObtenerPorSkuAsync(EmpresaId empresaId, Guid? sucursalId, Sku sku, CancellationToken ct = default)
+            {
+                _store.TryGetValue(sku.Valor, out var agg);
+                return Task.FromResult(agg);
+            }
+
+            // Helper overload para asserts en tests
             public Task<PrecioProducto?> ObtenerPorSkuAsync(Sku sku, CancellationToken ct = default)
             {
                 _store.TryGetValue(sku.Valor, out var agg);
                 return Task.FromResult(agg);
             }
 
-            public Task GuardarAsync(PrecioProducto aggregate, int expectedVersion, CancellationToken ct = default)
+            public Task GuardarAsync(PrecioProducto aggregate, EmpresaId empresaId, Guid? sucursalId, int expectedVersion, CancellationToken ct = default)
             {
                 LastExpectedVersion = expectedVersion;
                 var key = aggregate.Sku.Valor;
@@ -256,7 +264,7 @@ namespace ListaPreciosBC.Tests.UnitTests.Application
                 return Task.CompletedTask;
             }
 
-            public Task EliminarAsync(Sku sku, int? expectedVersion = null, CancellationToken ct = default)
+            public Task EliminarAsync(EmpresaId empresaId, Guid? sucursalId, Sku sku, int? expectedVersion = null, CancellationToken ct = default)
             {
                 var key = sku.Valor;
                 if (_store.ContainsKey(key))
@@ -269,6 +277,12 @@ namespace ListaPreciosBC.Tests.UnitTests.Application
                 // idempotente: si no existe, no hace nada
                 return Task.CompletedTask;
             }
+        }
+
+        private sealed class TenantContextFake : ITenantContext
+        {
+            public TenantId TenantId { get; } = TenantId.New();
+            public EmpresaId EmpresaId { get; } = EmpresaId.From("TEST-EMPRESA");
         }
 
         private sealed class UnitOfWorkInMemory : ListaPreciosBC.Application.Interfaces.IUnitOfWork

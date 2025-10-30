@@ -7,6 +7,7 @@ using ListaPreciosBC.Application.DTOs;
 using ListaPreciosBC.Application.Interfaces;    // IUnitOfWork
 using ListaPreciosBC.Domain.Repositories;      // IListaPrecioRepository
 using SharedKernel.Exceptions;                 // NotFoundException, ConcurrencyException
+using SharedKernel.Application.Interfaces;     // ITenantContext
 
 namespace ListaPreciosBC.Application.UseCases
 {
@@ -17,11 +18,13 @@ namespace ListaPreciosBC.Application.UseCases
     {
         private readonly IListaPrecioRepository _repository;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly ITenantContext _tenant;
 
-        public AgregarColumnaUseCase(IListaPrecioRepository repository, IUnitOfWork unitOfWork)
+        public AgregarColumnaUseCase(IListaPrecioRepository repository, IUnitOfWork unitOfWork, ITenantContext tenant)
         {
             _repository = repository ?? throw new ArgumentNullException(nameof(repository));
             _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
+            _tenant = tenant ?? throw new ArgumentNullException(nameof(tenant));
         }
 
         /// <summary>
@@ -54,7 +57,9 @@ namespace ListaPreciosBC.Application.UseCases
             listaPrecio.AgregarColumna(nuevaColumna, dto.Usuario, dto.Cuando);
 
             // 5) Guardar + UoW (puede lanzar ConcurrencyException desde la infra)
-            await _repository.GuardarAsync(listaPrecio, expectedVersion, ct);
+            var empresaId = _tenant.EmpresaId;
+            if (empresaId is null) throw new InvalidOperationException("EmpresaId del contexto es obligatorio.");
+            await _repository.GuardarAsync(listaPrecio, empresaId, null, expectedVersion, ct);
             await _unitOfWork.SaveChangesAsync();
 
             // 6) Mapear respuesta (recomendado: primitivos, no VOs)
