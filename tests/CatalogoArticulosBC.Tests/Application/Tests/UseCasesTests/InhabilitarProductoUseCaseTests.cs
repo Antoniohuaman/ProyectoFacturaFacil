@@ -57,7 +57,7 @@ namespace CatalogoArticulosBC.Tests.Application.UseCases
             // Arrange
             var repo = new Mock<IProductoRepository>(MockBehavior.Strict);
             var uow = new Mock<IUnitOfWork>(MockBehavior.Strict);
-            var empresaId = TenantTestHelpers.AnyEmpresaId();
+            var empresaId = EmpresaId.From("20111111111");
             var tenant = TenantTestHelpers.MockTenant(empresaId);
 
             var producto = CrearProducto("SKU-ABC", "Coca Cola", habilitado: true);
@@ -101,7 +101,7 @@ namespace CatalogoArticulosBC.Tests.Application.UseCases
             // Arrange
             var repo = new Mock<IProductoRepository>(MockBehavior.Strict);
             var uow = new Mock<IUnitOfWork>(MockBehavior.Strict);
-            var empresaId = TenantTestHelpers.AnyEmpresaId();
+            var empresaId = EmpresaId.From("20999999999");
             var tenant = TenantTestHelpers.MockTenant(empresaId);
 
             var producto = CrearProducto("SKU-XYZ", "Agua Sin Gas", habilitado: false);
