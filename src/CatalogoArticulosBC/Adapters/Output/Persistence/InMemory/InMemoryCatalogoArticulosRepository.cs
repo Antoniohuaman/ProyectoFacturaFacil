@@ -44,7 +44,7 @@ namespace CatalogoArticulosBC.Adapters.Output.Persistence.InMemory
         {
             _productos.TryGetValue(sku, out var producto);
             if (producto is not null && producto.EmpresaId.Equals(empresaId))
-                return Task.FromResult(producto);
+                return Task.FromResult<ProductoSimple?>(producto);
             return Task.FromResult<ProductoSimple?>(null);
         }
 
@@ -136,10 +136,13 @@ namespace CatalogoArticulosBC.Adapters.Output.Persistence.InMemory
             return Task.FromResult(producto);
         }
 
-        public Task<IEnumerable<ProductoSimple>> ListarPorCategoriaAsync(Categoria categoria, EmpresaId empresaId)
+        public Task<IEnumerable<ProductoSimple>> ListarPorCategoriaAsync(CategoriaId categoriaId, EmpresaId empresaId)
         {
-            var productos = _productos.Values.Where(p => p.Categoria != null && p.Categoria.Equals(categoria) && p.EmpresaId.Equals(empresaId));
-            return Task.FromResult(productos);
+            var productos = _productos.Values.Where(p =>
+                p.EmpresaId.Equals(empresaId)
+                && p.CategoriaId.HasValue
+                && p.CategoriaId.Value.Equals(categoriaId));
+            return Task.FromResult(productos.AsEnumerable());
         }
 
         public Task<IEnumerable<ProductoSimple>> ListarHabilitadosAsync(EmpresaId empresaId)
@@ -166,8 +169,8 @@ namespace CatalogoArticulosBC.Adapters.Output.Persistence.InMemory
             if (!string.IsNullOrWhiteSpace(filtro.Nombre))
                 query = query.Where(p => p.Nombre != null && p.Nombre.Valor.Contains(filtro.Nombre, StringComparison.OrdinalIgnoreCase));
 
-            if (filtro.Categoria != null)
-                query = query.Where(p => p.Categoria != null && p.Categoria.Equals(filtro.Categoria));
+            if (filtro.CategoriaId.HasValue)
+                query = query.Where(p => p.CategoriaId.HasValue && p.CategoriaId.Value.Equals(filtro.CategoriaId.Value));
 
             if (filtro.Habilitado.HasValue)
                 query = query.Where(p => p.Habilitado == filtro.Habilitado.Value);
@@ -200,8 +203,8 @@ namespace CatalogoArticulosBC.Adapters.Output.Persistence.InMemory
         {
             var query = _productos.Values.AsQueryable();
 
-            if (filtro.Categoria != null)
-                query = query.Where(p => p.Categoria != null && p.Categoria.Equals(filtro.Categoria));
+            if (filtro.CategoriaId.HasValue)
+                query = query.Where(p => p.CategoriaId.HasValue && p.CategoriaId.Value.Equals(filtro.CategoriaId.Value));
 
             if (filtro.SoloHabilitados.HasValue && filtro.SoloHabilitados.Value)
                 query = query.Where(p => p.Habilitado);
