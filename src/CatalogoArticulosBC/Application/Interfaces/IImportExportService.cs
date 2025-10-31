@@ -14,5 +14,11 @@ namespace CatalogoArticulosBC.Application.Interfaces
         Task<Stream> ExportarAsync(CancellationToken ct = default);
         Task<ResultadoImportacionDto> ImportarDesdeExcelAsync(string filePath); // <-- cambia aquí
         Task<ResultadoExportacionDto> ExportarProductosAsync(string filePath);   // <-- y aquí
+
+        /// <summary>
+        /// Parsea un archivo (XLSX/CSV) y devuelve las cabeceras detectadas y las filas como diccionarios
+        /// (clave=header, valor=celda). Implementaciones pueden soportar streaming pero aquí devolvemos el conjunto.
+        /// </summary>
+        Task<DTOs.ParsedFileDto> ParseAsync(Stream stream, string fileName, CancellationToken ct = default);
     }
 }
