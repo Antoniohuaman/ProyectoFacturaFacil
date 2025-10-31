@@ -127,7 +127,9 @@ namespace IndicadoresNegocioBC.Domain.Aggregates
             foreach (var it in venta.Items)                    // <-- ajuste
                 AsegurarMismaMoneda(it.Subtotal);              // <-- ajuste
 
-            if (!Periodo.Contiene(venta.Fecha))
+            // Validación de periodo en UTC con soporte para solo-desde / solo-hasta / ambos / ninguno
+            var fechaVentaUtc = venta.FechaEmisionUtc;
+            if (!VentaPerteneceAlPeriodo(fechaVentaUtc))
                 throw new InvalidOperationException("La venta no pertenece al periodo del indicador.");
 
             // Idempotencia: si ya fue aplicada, no hacer nada.
@@ -201,6 +203,19 @@ namespace IndicadoresNegocioBC.Domain.Aggregates
             // bump versión
             Version++;
         }
+
+        private bool VentaPerteneceAlPeriodo(DateTime fechaUtc)
+        {
+            var d = PeriodoDesdeUtc;
+            var h = PeriodoHastaUtc;
+            if (d is null && h is null) return true;
+            if (d is not null && h is null) return fechaUtc >= d.Value;
+            if (d is null && h is not null) return fechaUtc <= h.Value;
+            return fechaUtc >= d!.Value && fechaUtc <= h!.Value;
+        }
+
+        private DateTime? PeriodoDesdeUtc => new DateTime(Periodo.Inicio.Year, Periodo.Inicio.Month, Periodo.Inicio.Day, 0, 0, 0, DateTimeKind.Utc);
+        private DateTime? PeriodoHastaUtc => new DateTime(Periodo.FinInclusive.Year, Periodo.FinInclusive.Month, Periodo.FinInclusive.Day, 23, 59, 59, 999, DateTimeKind.Utc);
 
         /// <summary>
         /// Obtiene el total de ventas filtrando por tipo de comprobante (boleta o factura) y rango de fechas.
@@ -657,6 +672,7 @@ namespace IndicadoresNegocioBC.Domain.Aggregates
             public string TipoComprobante { get; }
             public Guid ComprobanteId { get; }
             public DateOnly Fecha { get; }
+            public DateTime FechaEmisionUtc => DateTime.SpecifyKind(Fecha.ToDateTime(TimeOnly.MinValue), DateTimeKind.Utc);
             public Guid? ClienteId { get; }
             public Dinero Total { get; }
             public Dinero Igv { get; }
