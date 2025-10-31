@@ -24,7 +24,7 @@ namespace CatalogoArticulosBC.Domain.Specifications
             if (producto.AfectacionImpuesto == null)
                 return SpecificationResult.Failure("RN-CA-004", "afectacionImpuesto", "La afectación de impuesto es obligatoria.");
 
-            if (producto.Categoria == null)
+            if (producto.CategoriaId == null)
                 return SpecificationResult.Failure("RN-CA-005", "categoria", "La categoría es obligatoria.");
 
             if (producto.EstablecimientosAsignados == null || !producto.EstablecimientosAsignados.Any())

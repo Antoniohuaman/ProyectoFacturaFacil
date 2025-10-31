@@ -143,8 +143,9 @@ namespace CatalogoArticulosBC.Application.UseCases
                     var nombre = new NombreProducto(dto.Nombre!);
                     var unidad = UnidadDeMedida.From(dto.UnidadMedida!);
                     var afectacion = AfectacionImpuesto.From(dto.AfectacionImpuesto!);
-                    // Categoria: si viene vacía, usar categoría por defecto "OTROS" para tolerancia en import
-                    var categoria = string.IsNullOrWhiteSpace(dto.Categoria) ? new Categoria("OTROS") : new Categoria(dto.Categoria!);
+                    // CategoriaId: ahora se requiere GUID. Si no es válido, se considera error de fila.
+                    if (!CategoriaId.TryParse(dto.Categoria, out var categoriaId))
+                        throw new ArgumentException("CategoriaId inválido o ausente (se espera GUID).", nameof(dto.Categoria));
                     var moneda = string.IsNullOrWhiteSpace(dto.Moneda) ? Moneda.Create("PEN") : Moneda.Create(dto.Moneda);
                     TasaImpuesto tasa = afectacion.GravaImpuesto ? TasaObligatoria(dto, afectacion) : TasaImpuesto.Cero;
 
@@ -194,7 +195,7 @@ namespace CatalogoArticulosBC.Application.UseCases
                                         unidadMedida: unidad,
                                         afectacionImpuesto: afectacion,
                                         tasaImpuesto: tasa,
-                                        categoria: categoria,
+                                        categoriaId: categoriaId,
                                         marca: null,
                                         precioVenta: null,
                                         centroDeCosto: null,
@@ -226,7 +227,7 @@ namespace CatalogoArticulosBC.Application.UseCases
                                 unidadMedida: unidad,
                                 afectacionImpuesto: afectacion,
                                 tasaImpuesto: tasa,
-                                categoria: categoria,
+                                categoriaId: categoriaId,
                                 establecimientosAsignados: establecimientos,
                                 descripcion: dto.Descripcion,
                                 marca: null,
@@ -261,7 +262,7 @@ namespace CatalogoArticulosBC.Application.UseCases
                                     unidadMedida: unidad,
                                     afectacionImpuesto: afectacion,
                                     tasaImpuesto: tasa,
-                                    categoria: categoria,
+                                    categoriaId: categoriaId,
                                     marca: null,
                                     precioVenta: null,
                                     centroDeCosto: null,
@@ -290,7 +291,7 @@ namespace CatalogoArticulosBC.Application.UseCases
                                 unidadMedida: unidad,
                                 afectacionImpuesto: afectacion,
                                 tasaImpuesto: tasa,
-                                categoria: categoria,
+                                categoriaId: categoriaId,
                                 establecimientosAsignados: establecimientos,
                                 descripcion: dto.Descripcion,
                                 marca: null,
@@ -333,7 +334,7 @@ namespace CatalogoArticulosBC.Application.UseCases
                                     unidadMedida: unidad,
                                     afectacionImpuesto: afectacion,
                                     tasaImpuesto: tasa,
-                                    categoria: categoria,
+                                    categoriaId: categoriaId,
                                     marca: null,
                                     precioVenta: null,
                                     centroDeCosto: null,

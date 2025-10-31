@@ -47,7 +47,7 @@ namespace CatalogoArticulosBC.Application.UseCases.EditarProductoSimple
             var unidadMedida     = UnidadDeMedida.From(input.UnidadMedidaCodigo);
             var afectacion       = AfectacionImpuesto.From(input.AfectacionImpuestoCodigo);
             var tasa             = TasaImpuesto.FromPercent(input.TasaImpuestoPorcentaje);
-            var categoria        = new Categoria(input.CategoriaNombre);
+            var categoriaId      = CategoriaId.FromString(input.CategoriaId);
             var marca            = string.IsNullOrWhiteSpace(input.MarcaNombre) ? null : new Marca(input.MarcaNombre);
             var codigoSunat      = string.IsNullOrWhiteSpace(input.CodigoSunat) ? null : new CodigoSUNAT(input.CodigoSunat);
             var codigoBarras     = string.IsNullOrWhiteSpace(input.CodigoBarras) ? null : new CodigoBarras(input.CodigoBarras);
@@ -93,7 +93,7 @@ namespace CatalogoArticulosBC.Application.UseCases.EditarProductoSimple
                 unidadMedida: unidadMedida,
                 afectacionImpuesto: afectacion,
                 tasaImpuesto: tasa,
-                categoria: categoria,
+                categoriaId: categoriaId,
                 marca: marca,
                 precioVenta: precioVenta,
                 centroDeCosto: centroCosto,
@@ -140,7 +140,9 @@ namespace CatalogoArticulosBC.Application.UseCases.EditarProductoSimple
                 Nombre = producto.Nombre.Valor,
                 Habilitado = producto.Habilitado,
                 TipoProducto = producto.Tipo,
-                Categoria = producto.Categoria.Nombre,
+                CategoriaId = producto.CategoriaId?.ToString(),
+                CategoriaNombre = producto.CategoriaNombreSnapshot,
+                CategoriaColor = producto.CategoriaColorSnapshot,
                 AfectacionImpuestoCodigo = producto.AfectacionImpuesto.Codigo,
                 TasaImpuestoFraccion = producto.TasaImpuesto.Fraccion,
                 PrecioVentaMonto = producto.PrecioVenta?.Monto,

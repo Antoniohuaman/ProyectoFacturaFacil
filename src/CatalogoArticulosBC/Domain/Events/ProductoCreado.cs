@@ -24,7 +24,9 @@ namespace CatalogoArticulosBC.Domain.Events
         public string Descripcion { get; }
         public UnidadDeMedida UnidadMedida { get; }
     public AfectacionImpuesto AfectacionImpuesto { get; }
-        public Categoria Categoria { get; }
+        public CategoriaId? CategoriaId { get; }
+        public string? CategoriaNombreSnapshot { get; }
+        public string? CategoriaColorSnapshot { get; }
         public Marca? Marca { get; }
 
         // Precios y moneda
@@ -69,7 +71,9 @@ namespace CatalogoArticulosBC.Domain.Events
             Descripcion = producto.Descripcion;
             UnidadMedida = producto.UnidadMedida;
             AfectacionImpuesto = producto.AfectacionImpuesto;
-            Categoria = producto.Categoria;
+            CategoriaId = producto.CategoriaId;
+            CategoriaNombreSnapshot = producto.CategoriaNombreSnapshot;
+            CategoriaColorSnapshot = producto.CategoriaColorSnapshot;
             Marca = producto.Marca;
 
             PrecioVenta = producto.PrecioVenta;

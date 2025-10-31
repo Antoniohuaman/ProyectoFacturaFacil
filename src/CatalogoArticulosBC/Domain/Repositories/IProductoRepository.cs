@@ -70,7 +70,7 @@ namespace CatalogoArticulosBC.Domain.Repositories
     Task<ProductoSimple?> GetByCodigoBarrasAsync(string codigoBarras, EmpresaId empresaId);
     Task<ProductoSimple?> GetByCodigoFabricaAsync(string codigoFabrica, EmpresaId empresaId);
     Task<ProductoSimple?> GetByNombreAsync(string nombre, EmpresaId empresaId);
-    Task<IEnumerable<ProductoSimple>> ListarPorCategoriaAsync(Categoria categoria, EmpresaId empresaId);
+    Task<IEnumerable<ProductoSimple>> ListarPorCategoriaAsync(CategoriaId categoriaId, EmpresaId empresaId);
     Task<IEnumerable<ProductoSimple>> ListarHabilitadosAsync(EmpresaId empresaId);
     Task<IEnumerable<ProductoSimple>> ListarDeshabilitadosAsync(EmpresaId empresaId);
         Task<IEnumerable<ProductoSimple>> BuscarPorFiltroAsync(FiltroProducto filtro);

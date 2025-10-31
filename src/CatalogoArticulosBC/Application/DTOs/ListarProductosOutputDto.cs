@@ -32,7 +32,9 @@ namespace CatalogoArticulosBC.Application.UseCases.ListarProductos
 
             // Datos
             public string Nombre { get; init; } = string.Empty;
-            public string Categoria { get; init; } = string.Empty;
+            public string? CategoriaId { get; init; }
+            public string? CategoriaNombre { get; init; }
+            public string? CategoriaColor { get; init; }
             public string? Marca { get; init; }
 
             // Precio y moneda

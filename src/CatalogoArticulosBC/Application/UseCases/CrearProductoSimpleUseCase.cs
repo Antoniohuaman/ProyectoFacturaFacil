@@ -66,7 +66,7 @@ namespace CatalogoArticulosBC.Application.UseCases.CrearProductoSimple
             var nombre          = new NombreProducto(input.Nombre);
             var unidad          = UnidadDeMedida.From(input.UnidadMedidaCodigo);
             var afectacion      = AfectacionImpuesto.From(input.AfectacionImpuestoCodigo);
-            var categoria       = new Categoria(input.Categoria);
+            var categoriaId     = CategoriaId.FromString(input.CategoriaId);
             var moneda          = Moneda.Create(input.MonedaCodigoIso4217);
 
             // TasaImpuesto: si no grava -> 0; si grava -> debe venir (10 o 18)
@@ -110,7 +110,7 @@ namespace CatalogoArticulosBC.Application.UseCases.CrearProductoSimple
                 unidadMedida: unidad,
                 afectacionImpuesto: afectacion,
                 tasaImpuesto: tasa,
-                categoria: categoria,
+                categoriaId: categoriaId,
                 establecimientosAsignados: establecimientos,
                 descripcion: input.Descripcion,
                 marca: marca,
@@ -147,7 +147,9 @@ namespace CatalogoArticulosBC.Application.UseCases.CrearProductoSimple
                 TipoExistencia = producto.TipoExistencia,
                 Nombre = producto.Nombre.Valor,
                 Descripcion = producto.Descripcion,
-                Categoria = producto.Categoria.Nombre,
+                CategoriaId = producto.CategoriaId?.ToString(),
+                CategoriaNombre = producto.CategoriaNombreSnapshot,
+                CategoriaColor = producto.CategoriaColorSnapshot,
                 Moneda = producto.Moneda.Codigo,
                 PrecioVentaMonto = producto.PrecioVenta?.Monto,
                 PrecioIncluyeIGV = producto.PrecioVenta?.IncluyeIGV,

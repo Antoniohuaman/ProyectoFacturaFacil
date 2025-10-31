@@ -10,7 +10,7 @@ namespace CatalogoArticulosBC.Domain.Filters
         /// </summary>
     public EmpresaId EmpresaId { get; set; } = null!;
         public string? Nombre { get; set; }
-        public Categoria? Categoria { get; set; }
+        public CategoriaId? CategoriaId { get; set; }
         public bool? Habilitado { get; set; }
         public decimal? PrecioMin { get; set; }
         public decimal? PrecioMax { get; set; }

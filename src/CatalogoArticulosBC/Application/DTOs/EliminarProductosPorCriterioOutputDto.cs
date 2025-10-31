@@ -10,7 +10,7 @@ namespace CatalogoArticulosBC.Application.UseCases.EliminarProductosPorCriterio
         public sealed class CriterioEcho
         {
             public string? NombreContiene { get; init; }
-            public string? CategoriaNombre { get; init; }
+            public string? CategoriaId { get; init; }
             public bool? Habilitado { get; init; }
             public decimal? PrecioMin { get; init; }
             public decimal? PrecioMax { get; init; }

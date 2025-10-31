@@ -14,8 +14,8 @@ namespace CatalogoArticulosBC.Application.UseCases.EliminarProductosPorCriterio
         /// <summary>Nombre que contenga (match contains, sensible a tu repo).</summary>
         public string? NombreContiene { get; init; }
 
-        /// <summary>Nombre de la categoría (se mapeará a VO Categoria si se indica).</summary>
-        public string? CategoriaNombre { get; init; }
+    /// <summary>CategoriaId (GUID en string). Opcional.</summary>
+    public string? CategoriaId { get; init; }
 
         /// <summary>Filtra por habilitado/deshabilitado si se indica.</summary>
         public bool? Habilitado { get; init; }
@@ -31,7 +31,7 @@ namespace CatalogoArticulosBC.Application.UseCases.EliminarProductosPorCriterio
         /// </summary>
         public bool TieneAlMenosUnCriterio() =>
             !string.IsNullOrWhiteSpace(NombreContiene)
-            || !string.IsNullOrWhiteSpace(CategoriaNombre)
+            || !string.IsNullOrWhiteSpace(CategoriaId)
             || Habilitado.HasValue
             || PrecioMin.HasValue
             || PrecioMax.HasValue;

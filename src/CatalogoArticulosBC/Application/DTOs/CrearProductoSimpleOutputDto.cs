@@ -19,9 +19,12 @@ namespace CatalogoArticulosBC.Application.UseCases.CrearProductoSimple
         public TipoExistencia TipoExistencia { get; init; }
 
         public string Nombre { get; init; } = default!;
-        public string Descripcion { get; init; } = string.Empty;
+    public string Descripcion { get; init; } = string.Empty;
 
-        public string Categoria { get; init; } = default!;
+    // Migración: exponer CategoriaId y snapshots
+    public string? CategoriaId { get; init; }
+    public string? CategoriaNombre { get; init; }
+    public string? CategoriaColor { get; init; }
 
         public string Moneda { get; init; } = default!;
         public decimal? PrecioVentaMonto { get; init; }

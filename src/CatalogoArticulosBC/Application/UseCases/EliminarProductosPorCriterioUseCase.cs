@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using CatalogoArticulosBC.Domain.Filters;
 using CatalogoArticulosBC.Domain.Repositories;
 using CatalogoArticulosBC.Domain.ValueObjects;
+using SharedKernel.ValueObjects;
 using SharedKernel.Application.Interfaces;
 using SharedKernel.Exceptions;
 
@@ -57,7 +58,7 @@ namespace CatalogoArticulosBC.Application.UseCases.EliminarProductosPorCriterio
             {
                 EmpresaId = _tenant.EmpresaId,
                 Nombre = input.NombreContiene?.Trim(),
-                Categoria = string.IsNullOrWhiteSpace(input.CategoriaNombre) ? null : new Categoria(input.CategoriaNombre!.Trim()),
+                CategoriaId = string.IsNullOrWhiteSpace(input.CategoriaId) ? null : CategoriaId.FromString(input.CategoriaId!),
                 Habilitado = input.Habilitado,
                 PrecioMin = input.PrecioMin,
                 PrecioMax = input.PrecioMax
@@ -82,7 +83,7 @@ namespace CatalogoArticulosBC.Application.UseCases.EliminarProductosPorCriterio
                 Criterio = new EliminarProductosPorCriterioOutputDto.CriterioEcho
                 {
                     NombreContiene = input.NombreContiene?.Trim(),
-                    CategoriaNombre = input.CategoriaNombre?.Trim(),
+                    CategoriaId = input.CategoriaId?.Trim(),
                     Habilitado = input.Habilitado,
                     PrecioMin = input.PrecioMin,
                     PrecioMax = input.PrecioMax

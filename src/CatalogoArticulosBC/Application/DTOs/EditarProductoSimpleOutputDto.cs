@@ -14,8 +14,10 @@ namespace CatalogoArticulosBC.Application.UseCases.EditarProductoSimple
         public string Sku { get; init; } = default!;
         public string Nombre { get; init; } = default!;
         public bool Habilitado { get; init; }
-        public TipoProducto TipoProducto { get; init; }
-        public string Categoria { get; init; } = default!;
+    public TipoProducto TipoProducto { get; init; }
+    public string? CategoriaId { get; init; }
+    public string? CategoriaNombre { get; init; }
+    public string? CategoriaColor { get; init; }
         public string AfectacionImpuestoCodigo { get; init; } = default!;
         public decimal TasaImpuestoFraccion { get; init; }
         public decimal? PrecioVentaMonto { get; init; }

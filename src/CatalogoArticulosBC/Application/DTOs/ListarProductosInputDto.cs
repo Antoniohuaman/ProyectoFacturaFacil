@@ -8,9 +8,9 @@ namespace CatalogoArticulosBC.Application.UseCases.ListarProductos
     public sealed class ListarProductosInputDto
     {
         // Filtros
-        public string? Nombre { get; init; }
-        /// <summary>Nombre exacto de la categoría (debe mapear a VO Categoria).</summary>
-        public string? Categoria { get; init; }
+    public string? Nombre { get; init; }
+    /// <summary>CategoriaId (GUID en string).</summary>
+    public string? CategoriaId { get; init; }
         public bool? Habilitado { get; init; }
         public decimal? PrecioMin { get; init; }
         public decimal? PrecioMax { get; init; }

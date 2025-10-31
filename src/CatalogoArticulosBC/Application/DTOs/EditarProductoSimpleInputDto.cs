@@ -20,9 +20,12 @@ namespace CatalogoArticulosBC.Application.UseCases.EditarProductoSimple
         public string Nombre { get; init; } = default!;
         public string UnidadMedidaCodigo { get; init; } = default!;
         public string AfectacionImpuestoCodigo { get; init; } = default!;
-        /// <summary>Porcentaje de la tasa (0, 10, 18, etc.). Dominios soportan validación.</summary>
+    /// <summary>Porcentaje de la tasa (0, 10, 18, etc.). Dominios soportan validación.</summary>
         public decimal TasaImpuestoPorcentaje { get; init; }
-        public string CategoriaNombre { get; init; } = default!;
+    // Migración: ahora se espera CategoriaId y snapshots opcionales
+    public string CategoriaId { get; init; } = default!;
+    public string? CategoriaNombreSnapshot { get; init; }
+    public string? CategoriaColorSnapshot { get; init; }
 
         // Datos opcionales
         public string? Descripcion { get; init; }

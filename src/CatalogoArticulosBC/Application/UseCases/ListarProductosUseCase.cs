@@ -7,6 +7,7 @@ using CatalogoArticulosBC.Domain.Aggregates;
 using CatalogoArticulosBC.Domain.Filters;
 using CatalogoArticulosBC.Domain.Repositories;
 using CatalogoArticulosBC.Domain.ValueObjects;
+using SharedKernel.ValueObjects;
 using SharedKernel.Application.Interfaces;
 
 namespace CatalogoArticulosBC.Application.UseCases.ListarProductos
@@ -44,7 +45,7 @@ namespace CatalogoArticulosBC.Application.UseCases.ListarProductos
             {
                 EmpresaId = _tenant.EmpresaId,
                 Nombre = string.IsNullOrWhiteSpace(input.Nombre) ? null : input.Nombre!.Trim(),
-                Categoria = string.IsNullOrWhiteSpace(input.Categoria) ? null : new Categoria(input.Categoria!.Trim()),
+                CategoriaId = string.IsNullOrWhiteSpace(input.CategoriaId) ? null : CategoriaId.FromString(input.CategoriaId!),
                 Habilitado = input.Habilitado,
                 PrecioMin = input.PrecioMin,
                 PrecioMax = input.PrecioMax
@@ -63,8 +64,8 @@ namespace CatalogoArticulosBC.Application.UseCases.ListarProductos
                     ? productos.OrderByDescending(p => p.Sku?.Valor ?? string.Empty)
                     : productos.OrderBy(p => p.Sku?.Valor ?? string.Empty),
                 "categoria" => desc
-                    ? productos.OrderByDescending(p => p.Categoria?.Nombre ?? string.Empty)
-                    : productos.OrderBy(p => p.Categoria?.Nombre ?? string.Empty),
+                    ? productos.OrderByDescending(p => p.CategoriaNombreSnapshot ?? string.Empty)
+                    : productos.OrderBy(p => p.CategoriaNombreSnapshot ?? string.Empty),
                 "habilitado" => desc
                     ? productos.OrderByDescending(p => p.Habilitado)
                     : productos.OrderBy(p => p.Habilitado),
@@ -87,7 +88,9 @@ namespace CatalogoArticulosBC.Application.UseCases.ListarProductos
                 Habilitado = p.Habilitado,
                 Sku = p.Sku?.Valor ?? string.Empty,
                 Nombre = p.Nombre?.Valor ?? string.Empty,
-                Categoria = p.Categoria?.Nombre ?? string.Empty,
+                CategoriaId = p.CategoriaId?.ToString(),
+                CategoriaNombre = p.CategoriaNombreSnapshot,
+                CategoriaColor = p.CategoriaColorSnapshot,
                 Marca = p.Marca?.Nombre ?? p.Marca?.ToString() ?? string.Empty,
                 PrecioVenta = p.PrecioVenta?.Monto,
                 Moneda = p.Moneda?.ToString() ?? string.Empty,

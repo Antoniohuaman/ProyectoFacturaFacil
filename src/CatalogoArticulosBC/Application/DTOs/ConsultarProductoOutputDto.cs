@@ -26,9 +26,11 @@ namespace CatalogoArticulosBC.Application.UseCases.ConsultarProducto
         public string Nombre { get; init; } = string.Empty;
         public string Descripcion { get; init; } = string.Empty;
         public string UnidadMedida { get; init; } = string.Empty;
-        public string AfectacionImpuesto { get; init; } = string.Empty;
-        public decimal TasaImpuestoFraccion { get; init; }
-        public string Categoria { get; init; } = string.Empty;
+    public string AfectacionImpuesto { get; init; } = string.Empty;
+    public decimal TasaImpuestoFraccion { get; init; }
+    public string? CategoriaId { get; init; }
+    public string? CategoriaNombre { get; init; }
+    public string? CategoriaColor { get; init; }
         public string? Marca { get; init; }
 
         // Precios y moneda
@@ -97,7 +99,9 @@ namespace CatalogoArticulosBC.Application.UseCases.ConsultarProducto
                 UnidadMedida = p.UnidadMedida?.ToString() ?? string.Empty,
                 AfectacionImpuesto = p.AfectacionImpuesto?.ToString() ?? string.Empty,
                 TasaImpuestoFraccion = p.TasaImpuesto?.Fraccion ?? 0m,
-                Categoria = p.Categoria?.Nombre ?? string.Empty,
+                CategoriaId = p.CategoriaId?.ToString(),
+                CategoriaNombre = p.CategoriaNombreSnapshot,
+                CategoriaColor = p.CategoriaColorSnapshot,
                 Marca = p.Marca?.Nombre, // si tu VO Marca expone Nombre
 
                 // Precios y moneda

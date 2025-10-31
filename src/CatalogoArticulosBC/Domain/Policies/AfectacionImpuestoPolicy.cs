@@ -12,7 +12,9 @@ namespace CatalogoArticulosBC.Domain.Policies
 		   /// </summary>
 		   public bool EsAfectadoPorImpuesto(ProductoSimple producto)
 		   {
-			   return producto.Categoria.Nombre == "GRAVADO";
+			   // Migración: usar snapshot de nombre de categoría si está disponible.
+			   var nombre = producto.CategoriaNombreSnapshot;
+			   return nombre != null && nombre.Equals("GRAVADO", System.StringComparison.OrdinalIgnoreCase);
 		   }
 	   }
 }

@@ -34,14 +34,17 @@ namespace CatalogoArticulosBC.Domain.Aggregates
         public NombreProducto Nombre { get; private set; }
         public string Descripcion { get; private set; }
         public UnidadDeMedida UnidadMedida { get; private set; }
-        public AfectacionImpuesto AfectacionImpuesto { get; private set; }
+    public AfectacionImpuesto AfectacionImpuesto { get; private set; }
         /// <summary>
         /// Tasa de impuesto explícita seleccionada por el usuario.
         /// Ejemplo: IGV 18% (gravado general), IGV 10% (gravado especial restaurantes/hoteles), 0% (exonerado/inafecto).
         /// Nota: IVAP no aplica aquí.
         /// </summary>
-        public TasaImpuesto TasaImpuesto { get; private set; }
-        public Categoria Categoria { get; private set; }
+    public TasaImpuesto TasaImpuesto { get; private set; }
+    // Migración: Categoria (VO) -> CategoriaId + snapshots
+    public CategoriaId? CategoriaId { get; private set; }
+    public string? CategoriaNombreSnapshot { get; private set; }
+    public string? CategoriaColorSnapshot { get; private set; }
         public Marca? Marca { get; private set; }
 
         // Precios y moneda
@@ -99,7 +102,7 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             UnidadDeMedida unidadMedida,
             AfectacionImpuesto afectacionImpuesto,
             TasaImpuesto tasaImpuesto,
-            Categoria categoria,
+            CategoriaId categoriaId,
             List<EstablecimientoId>? establecimientosAsignados,
             string? descripcion = null,
             Marca? marca = null,
@@ -128,7 +131,7 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             Descripcion = descripcion?.Trim() ?? string.Empty;
             UnidadMedida = unidadMedida ?? throw new ArgumentNullException(nameof(unidadMedida));
             AfectacionImpuesto = afectacionImpuesto ?? throw new ArgumentNullException(nameof(afectacionImpuesto));
-            Categoria = categoria ?? throw new ArgumentNullException(nameof(categoria));
+            CategoriaId = categoriaId; // opcionalmente validar no vacío en capas superiores
 
             if (establecimientosAsignados == null || !establecimientosAsignados.Any())
                 throw new ArgumentException("Debe asignar al menos un establecimiento.", nameof(establecimientosAsignados));
@@ -178,7 +181,7 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             UnidadDeMedida unidadMedida,
             AfectacionImpuesto afectacionImpuesto,
             TasaImpuesto tasaImpuesto,
-            Categoria categoria,
+            CategoriaId categoriaId,
             Marca? marca,
             PrecioVenta? precioVenta,
             CentroDeCosto? centroDeCosto,
@@ -201,7 +204,7 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             Descripcion = descripcion?.Trim() ?? string.Empty;
             UnidadMedida = unidadMedida ?? throw new ArgumentNullException(nameof(unidadMedida));
             AfectacionImpuesto = afectacionImpuesto ?? throw new ArgumentNullException(nameof(afectacionImpuesto));
-            Categoria = categoria ?? throw new ArgumentNullException(nameof(categoria));
+            CategoriaId = categoriaId;
 
             if (establecimientosAsignados == null || !establecimientosAsignados.Any())
                 throw new ArgumentException("Debe asignar al menos un establecimiento.", nameof(establecimientosAsignados));
@@ -256,15 +259,28 @@ namespace CatalogoArticulosBC.Domain.Aggregates
             // Dispatch(ev);
         }
 
-        public void CambiarCategoria(Categoria nuevaCategoria, string usuario)
+        public void CambiarCategoria(CategoriaId categoriaId, string usuario, string? nombreSnapshot = null, string? colorSnapshot = null)
         {
-            if (nuevaCategoria == null) throw new ArgumentNullException(nameof(nuevaCategoria));
-            var categoriaAnterior = Categoria?.Nombre ?? string.Empty;
-            var categoriaNueva = nuevaCategoria.Nombre;
-            Categoria = nuevaCategoria;
+            var categoriaAnterior = CategoriaNombreSnapshot ?? string.Empty;
+            var categoriaNueva = nombreSnapshot ?? string.Empty;
+            AsignarCategoria(categoriaId, nombreSnapshot, colorSnapshot);
             var ev = new ProductoCategoriaCambiada(ProductoId, EmpresaId, categoriaAnterior, categoriaNueva, usuario);
             AddDomainEvent(ev);
             // Dispatch(ev);
+        }
+
+        public void AsignarCategoria(CategoriaId categoriaId, string? nombreSnapshot = null, string? colorSnapshot = null)
+        {
+            CategoriaId = categoriaId;
+            CategoriaNombreSnapshot = nombreSnapshot;
+            CategoriaColorSnapshot = colorSnapshot;
+        }
+
+        public void QuitarCategoria()
+        {
+            CategoriaId = null;
+            CategoriaNombreSnapshot = null;
+            CategoriaColorSnapshot = null;
         }
 
         public void AsignarImagenPrincipal(Guid multimediaId)

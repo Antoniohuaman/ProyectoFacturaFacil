@@ -26,8 +26,11 @@ namespace CatalogoArticulosBC.Application.UseCases.CrearProductoSimple
         /// Si la afectación NO grava impuesto, puede omitirse (se asume 0).
         /// Si la afectación GRAVA impuesto, DEBE ser 10 o 18.
         /// </summary>
-        public decimal? TasaImpuestoPercent { get; init; }
-        public string Categoria { get; init; } = default!;
+    public decimal? TasaImpuestoPercent { get; init; }
+    // Migración: ahora se espera CategoriaId (GUID en string) y snapshots opcionales
+    public string CategoriaId { get; init; } = default!;
+    public string? CategoriaNombreSnapshot { get; init; }
+    public string? CategoriaColorSnapshot { get; init; }
         public string MonedaCodigoIso4217 { get; init; } = "PEN"; // normalmente viene de Configuración
 
         /// <summary>Si es Bien o Servicio.</summary>
