@@ -87,7 +87,7 @@ namespace IndicadoresNegocioBC.Tests.Domain.Entities
                 Destinatario = "jane.doe@acme.com",
                 Horario = "08:00-18:00",
                 Activo = true,
-                FechaCreacion = now,
+                    FechaCreacion = now,
                 FechaUltimaModificacion = null
             };
 
@@ -125,7 +125,7 @@ namespace IndicadoresNegocioBC.Tests.Domain.Entities
             Assert.That(n.FechaUltimaModificacion, Is.Null);
 
             // FechaCreacion es el default de DateTime si no se setea; validamos mutabilidad
-            var now = DateTime.UtcNow;
+                var now = IndicadoresNegocioBC.Tests.TestUtils.TestTime.BaseUtc();
             n.FechaCreacion = now;
             Assert.That(n.FechaCreacion, Is.EqualTo(now));
         }
@@ -143,7 +143,7 @@ namespace IndicadoresNegocioBC.Tests.Domain.Entities
                 Destinatario = "+51999999999",
                 Horario = "09:00-17:00",
                 Activo = false,
-                FechaCreacion = new DateTime(2025, 02, 01, 0, 0, 0, DateTimeKind.Utc),
+                    FechaCreacion = IndicadoresNegocioBC.Tests.TestUtils.TestTime.BaseUtc(),
             };
 
             // Act
@@ -176,7 +176,7 @@ namespace IndicadoresNegocioBC.Tests.Domain.Entities
                 Destinatario = "a@acme.com",
                 Horario = "08:00-18:00",
                 Activo = true,
-                FechaCreacion = DateTime.UtcNow
+                FechaCreacion = IndicadoresNegocioBC.Tests.TestUtils.TestTime.BaseUtc()
             };
 
             var b = new Notificacion
@@ -190,7 +190,7 @@ namespace IndicadoresNegocioBC.Tests.Domain.Entities
                 Destinatario = "+51 900000000",
                 Horario = "10:00-16:00",
                 Activo = false,
-                FechaCreacion = DateTime.UtcNow
+                    FechaCreacion = IndicadoresNegocioBC.Tests.TestUtils.TestTime.BaseUtc()
             };
 
             // Assert

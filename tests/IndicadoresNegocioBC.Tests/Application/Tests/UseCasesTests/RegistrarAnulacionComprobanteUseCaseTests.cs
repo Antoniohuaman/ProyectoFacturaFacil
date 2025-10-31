@@ -24,7 +24,7 @@ namespace IndicadoresNegocioBC.Tests.Application.UseCases
     private static SegmentoIndicador SegmentoSoles() => SegmentoIndicador.ParaEmpresa(EmpresaId.From(Guid.NewGuid().ToString()), PEN());
         private static Periodo PeriodoMesActual()
         {
-            var hoy = DateTime.UtcNow;
+            var hoy = IndicadoresNegocioBC.Tests.TestUtils.TestTime.BaseUtc();
             var inicio = new DateOnly(hoy.Year, hoy.Month, 1);
             var fin = new DateOnly(hoy.Year, hoy.Month, DateTime.DaysInMonth(hoy.Year, hoy.Month));
             return Periodo.Personalizado(inicio, fin);

@@ -21,7 +21,7 @@ namespace IndicadoresNegocioBC.Tests.Application.UseCases
 
     private static Moneda PEN() => Moneda.PEN();
     private static SegmentoIndicador SegmentoSoles() => SegmentoIndicador.ParaEmpresa(EmpresaId.From("11111111-1111-1111-1111-111111111111"), PEN());
-    private static Periodo PeriodoMesActual() => Periodo.PorMes(DateTime.UtcNow.Year, DateTime.UtcNow.Month);
+    private static Periodo PeriodoMesActual() => Periodo.PorMes(IndicadoresNegocioBC.Tests.TestUtils.TestTime.BaseUtc().Year, IndicadoresNegocioBC.Tests.TestUtils.TestTime.BaseUtc().Month);
     private static EmpresaId Empresa() => EmpresaId.From("empresa-demo");
 
         // ======================================================================================

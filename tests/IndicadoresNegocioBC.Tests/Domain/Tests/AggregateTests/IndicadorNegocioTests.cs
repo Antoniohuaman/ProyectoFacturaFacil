@@ -19,7 +19,7 @@ namespace IndicadoresNegocioBC.Tests.Domain
 
         private static Periodo PeriodoMensualActual()
         {
-            var hoy = DateTime.UtcNow;
+            var hoy = IndicadoresNegocioBC.Tests.TestUtils.TestTime.BaseUtc();
             return Periodo.PorMes(hoy.Year, hoy.Month);
         }
 
@@ -46,7 +46,8 @@ namespace IndicadoresNegocioBC.Tests.Domain
             bool conVendedor = true)
         {
             var idVenta = id ?? Guid.NewGuid();
-            var f = fecha ?? new DateOnly(DateTime.UtcNow.Year, DateTime.UtcNow.Month, Math.Min(15, DateTime.UtcNow.Day));
+            var baseUtc = IndicadoresNegocioBC.Tests.TestUtils.TestTime.BaseUtc();
+            var f = fecha ?? new DateOnly(baseUtc.Year, baseUtc.Month, Math.Min(15, baseUtc.Day));
             var sub = Money(subtotal);
             var igv = IgvDe(sub, tasaIgv);
             var total = Money(sub.Monto + igv.Monto);
@@ -90,7 +91,7 @@ namespace IndicadoresNegocioBC.Tests.Domain
         {
             var agg = NuevoIndicador();
 
-            var hoy = DateOnly.FromDateTime(DateTime.UtcNow.Date);
+            var hoy = DateOnly.FromDateTime(IndicadoresNegocioBC.Tests.TestUtils.TestTime.BaseUtc());
             var ayer = hoy.AddDays(-1);
             var manana = hoy.AddDays(1);
 
