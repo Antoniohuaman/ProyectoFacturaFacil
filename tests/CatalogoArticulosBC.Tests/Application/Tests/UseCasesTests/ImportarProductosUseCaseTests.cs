@@ -11,6 +11,9 @@ using CatalogoArticulosBC.Application.Interfaces;
 using CatalogoArticulosBC.Domain.Repositories;
 using NUnit.Framework;
 using SharedKernel.Application.Interfaces;
+using ConfiguracionSistemaBC.Domain.Repositories;
+using ConfiguracionSistemaBC.Domain.Aggregates;
+using ConfiguracionSistemaBC.Domain.ValueObjects;
 using SharedKernel.ValueObjects;
 
 namespace CatalogoArticulosBC.Tests.Application.Tests.UseCasesTests
@@ -22,6 +25,8 @@ namespace CatalogoArticulosBC.Tests.Application.Tests.UseCasesTests
         private InMemoryCatalogoArticulosRepository _repo = null!;
         private InMemoryUnitOfWork _uow = null!;
         private ITenantContext _tenant = null!;
+            private IConfiguracionEmpresaRepository _configRepo = null!;
+            private Guid _registeredEstId;
 
         [SetUp]
         public void SetUp()
@@ -30,6 +35,26 @@ namespace CatalogoArticulosBC.Tests.Application.Tests.UseCasesTests
             _repo = new InMemoryCatalogoArticulosRepository();
             _uow = new InMemoryUnitOfWork();
             _tenant = new FakeTenantContext();
+            // Config repo with a configuration that contains a numeric 4-digit establishment code "0001"
+            var ruc = Ruc.From("20100070970");
+            var config = ConfiguracionEmpresa.RegistrarNueva(ruc, "Empresa Test", DomicilioFiscal.FromPeru("Calle 1", ubigeo: "010101", departamento: "Lima", provincia: "Lima", distrito: "Lima", addressTypeCode: "0000"), Moneda.PEN());
+            _registeredEstId = config.RegistrarEstablecimiento("0001", "Establecimiento 0001", DomicilioFiscal.FromPeru("Calle 1", ubigeo: "010101", departamento: "Lima", provincia: "Lima", distrito: "Lima", addressTypeCode: "0000"));
+            _configRepo = new FakeConfigRepo(config);
+        }
+
+        class FakeConfigRepo : IConfiguracionEmpresaRepository
+        {
+            private readonly ConfiguracionEmpresa _cfg;
+            public FakeConfigRepo(ConfiguracionEmpresa cfg) { _cfg = cfg; }
+            public Task AddAsync(ConfiguracionEmpresa aggregate, System.Threading.CancellationToken ct = default) => throw new NotImplementedException();
+            public Task DeleteAsync(SharedKernel.ValueObjects.EmpresaId empresaId, System.Threading.CancellationToken ct = default) => throw new NotImplementedException();
+            public Task<ConfiguracionEmpresa?> FindByRucAsync(ConfiguracionSistemaBC.Domain.ValueObjects.Ruc ruc, System.Threading.CancellationToken ct = default) => Task.FromResult<ConfiguracionEmpresa?>(_cfg);
+            public Task<ConfiguracionEmpresa?> GetByEmpresaIdAsync(SharedKernel.ValueObjects.EmpresaId empresaId, System.Threading.CancellationToken ct = default) => Task.FromResult<ConfiguracionEmpresa?>(_cfg);
+            public Task<bool> EstablecimientoExisteAsync(SharedKernel.ValueObjects.EmpresaId empresaId, SharedKernel.ValueObjects.EstablecimientoId establecimientoId, System.Threading.CancellationToken ct = default) => Task.FromResult(true);
+            public Task<bool> SerieExisteAsync(SharedKernel.ValueObjects.EmpresaId empresaId, ConfiguracionSistemaBC.Domain.ValueObjects.TipoComprobanteCodigo tipo, ConfiguracionSistemaBC.Domain.ValueObjects.SerieCodigo serie, System.Threading.CancellationToken ct = default) => throw new NotImplementedException();
+            public Task<bool> UnidadDeMedidaExisteAsync(SharedKernel.ValueObjects.EmpresaId empresaId, SharedKernel.ValueObjects.UnidadDeMedida unidad, System.Threading.CancellationToken ct = default) => Task.FromResult(true);
+            public Task UpdateAsync(ConfiguracionEmpresa aggregate, System.Threading.CancellationToken ct = default) => throw new NotImplementedException();
+            public Task<bool> UpdateIfVersionMatchAsync(ConfiguracionEmpresa aggregate, int expectedVersion, System.Threading.CancellationToken ct = default) => throw new NotImplementedException();
         }
 
         class FakeTenantContext : ITenantContext
@@ -70,7 +95,7 @@ namespace CatalogoArticulosBC.Tests.Application.Tests.UseCasesTests
             var parsed = new ParsedFileDto { Headers = headers, Rows = rows };
             var parser = new FakeParser(parsed);
 
-            var uc = new ImportarProductosUseCase(parser, _schemaProvider, _repo, _uow, _tenant);
+            var uc = new ImportarProductosUseCase(parser, _schemaProvider, _repo, _uow, _tenant, _configRepo);
             using var ms = new MemoryStream();
             var req = new ImportarProductosUseCase.Request(ms, "file.xlsx", ImportarProductosUseCase.Mode.CreateOnly, ImportarProductosUseCase.OnSkuConflict.Error, null, false);
             var resp = await uc.Handle(req);
@@ -89,7 +114,7 @@ namespace CatalogoArticulosBC.Tests.Application.Tests.UseCasesTests
             // create existing
             var createParsed = new ParsedFileDto { Headers = headers, Rows = new List<Dictionary<string, string?>> { Row((headers[0], sku1),(headers[1], "P1"),(headers[2], "UND"),(headers[3], "10"),(headers[4], "C"),(headers[5], Guid.NewGuid().ToString())), Row((headers[0], sku2),(headers[1], "P2"),(headers[2], "UND"),(headers[3], "10"),(headers[4], "C"),(headers[5], Guid.NewGuid().ToString())) } };
             var parserCreate = new FakeParser(createParsed);
-            var ucCreate = new ImportarProductosUseCase(parserCreate, _schemaProvider, _repo, _uow, _tenant);
+            var ucCreate = new ImportarProductosUseCase(parserCreate, _schemaProvider, _repo, _uow, _tenant, _configRepo);
             await ucCreate.Handle(new ImportarProductosUseCase.Request(new MemoryStream(), "init.xlsx", ImportarProductosUseCase.Mode.CreateOnly, ImportarProductosUseCase.OnSkuConflict.Error));
 
             // Now upsert with same SKUs but different names
@@ -99,7 +124,7 @@ namespace CatalogoArticulosBC.Tests.Application.Tests.UseCasesTests
             };
             var parsed = new ParsedFileDto { Headers = headers, Rows = rows };
             var parser = new FakeParser(parsed);
-            var uc = new ImportarProductosUseCase(parser, _schemaProvider, _repo, _uow, _tenant);
+            var uc = new ImportarProductosUseCase(parser, _schemaProvider, _repo, _uow, _tenant, _configRepo);
 
             var resp = await uc.Handle(new ImportarProductosUseCase.Request(new MemoryStream(), "file.csv", ImportarProductosUseCase.Mode.Upsert, ImportarProductosUseCase.OnSkuConflict.Update));
             Assert.That(resp.Resumen.Actualizadas, Is.EqualTo(2));
@@ -117,7 +142,7 @@ namespace CatalogoArticulosBC.Tests.Application.Tests.UseCasesTests
             var rows = new List<Dictionary<string, string?>> { Row((headers[0], sku),(headers[1], "M1"),(headers[2], "UND"),(headers[3], "10"),(headers[4], "Cat"),(headers[5], estA+";"+estB+";"+estC)) };
             var parsed = new ParsedFileDto { Headers = headers, Rows = rows };
             var parser = new FakeParser(parsed);
-            var uc = new ImportarProductosUseCase(parser, _schemaProvider, _repo, _uow, _tenant);
+            var uc = new ImportarProductosUseCase(parser, _schemaProvider, _repo, _uow, _tenant, _configRepo);
 
             var resp = await uc.Handle(new ImportarProductosUseCase.Request(new MemoryStream(), "file.xlsx", ImportarProductosUseCase.Mode.CreateOnly, ImportarProductosUseCase.OnSkuConflict.Error));
             Assert.That(resp.Resumen.Creadas, Is.EqualTo(1));
@@ -132,7 +157,7 @@ namespace CatalogoArticulosBC.Tests.Application.Tests.UseCasesTests
             var headers = _schemaProvider.GetBasicaHeaders().Where(h => h != "UnidadMedida").ToArray(); // omit one minimum
             var parsed = new ParsedFileDto { Headers = headers, Rows = new List<Dictionary<string, string?>> { } };
             var parser = new FakeParser(parsed);
-            var uc = new ImportarProductosUseCase(parser, _schemaProvider, _repo, _uow, _tenant);
+            var uc = new ImportarProductosUseCase(parser, _schemaProvider, _repo, _uow, _tenant, _configRepo);
 
             Assert.That(async () => await uc.Handle(new ImportarProductosUseCase.Request(new MemoryStream(), "file.xlsx")), Throws.TypeOf<SharedKernel.Exceptions.BusinessRuleException>());
         }
@@ -145,14 +170,14 @@ namespace CatalogoArticulosBC.Tests.Application.Tests.UseCasesTests
             // create existing
             var createParsed = new ParsedFileDto { Headers = headers, Rows = new List<Dictionary<string, string?>> { Row((headers[0], sku),(headers[1], "P1"),(headers[2], "UND"),(headers[3], "10"),(headers[4], "C"),(headers[5], Guid.NewGuid().ToString())) } };
             var parserCreate = new FakeParser(createParsed);
-            var ucCreate = new ImportarProductosUseCase(parserCreate, _schemaProvider, _repo, _uow, _tenant);
+            var ucCreate = new ImportarProductosUseCase(parserCreate, _schemaProvider, _repo, _uow, _tenant, _configRepo);
             await ucCreate.Handle(new ImportarProductosUseCase.Request(new MemoryStream(), "init.xlsx", ImportarProductosUseCase.Mode.CreateOnly, ImportarProductosUseCase.OnSkuConflict.Error));
 
             // Now attempt import with same SKU but Skip
             var rows = new List<Dictionary<string, string?>> { Row((headers[0], sku),(headers[1], "P1-new"),(headers[2], "UND"),(headers[3], "10"),(headers[4], "C"),(headers[5], Guid.NewGuid().ToString())) };
             var parsed = new ParsedFileDto { Headers = headers, Rows = rows };
             var parser = new FakeParser(parsed);
-            var uc = new ImportarProductosUseCase(parser, _schemaProvider, _repo, _uow, _tenant);
+            var uc = new ImportarProductosUseCase(parser, _schemaProvider, _repo, _uow, _tenant, _configRepo);
             var resp = await uc.Handle(new ImportarProductosUseCase.Request(new MemoryStream(), "file.csv", ImportarProductosUseCase.Mode.CreateOnly, ImportarProductosUseCase.OnSkuConflict.Skip));
             Assert.That(resp.Resumen.Omitidas, Is.EqualTo(1));
         }
@@ -167,7 +192,7 @@ namespace CatalogoArticulosBC.Tests.Application.Tests.UseCasesTests
             };
             var parsed = new ParsedFileDto { Headers = headers, Rows = rows };
             var parser = new FakeParser(parsed);
-            var uc = new ImportarProductosUseCase(parser, _schemaProvider, _repo, _uow, _tenant);
+            var uc = new ImportarProductosUseCase(parser, _schemaProvider, _repo, _uow, _tenant, _configRepo);
             var resp = await uc.Handle(new ImportarProductosUseCase.Request(new MemoryStream(), "file.xlsx", ImportarProductosUseCase.Mode.CreateOnly));
             Assert.That(resp.Resumen.TotalFilas, Is.EqualTo(2));
             Assert.That(resp.Resumen.ConError, Is.EqualTo(1));
@@ -182,12 +207,32 @@ namespace CatalogoArticulosBC.Tests.Application.Tests.UseCasesTests
                 rows.Add(Row((headers[0], "B"+i),(headers[1], "P"+i),(headers[2], "UND"),(headers[3], "10"),(headers[4], "C"),(headers[5], Guid.NewGuid().ToString())));
             var parsed = new ParsedFileDto { Headers = headers, Rows = rows };
             var parser = new FakeParser(parsed);
-            var uc = new ImportarProductosUseCase(parser, _schemaProvider, _repo, _uow, _tenant);
+            var uc = new ImportarProductosUseCase(parser, _schemaProvider, _repo, _uow, _tenant, _configRepo);
 
             var resp = await uc.Handle(new ImportarProductosUseCase.Request(new MemoryStream(), "file.xlsx", ImportarProductosUseCase.Mode.CreateOnly, ImportarProductosUseCase.OnSkuConflict.Error, BatchSize:2));
             Assert.That(resp.Resumen.Creadas, Is.EqualTo(5));
             // InMemoryUnitOfWork marks committed when CommitAsync called; WasCommitted true
             Assert.That(_uow.WasCommitted, Is.True);
+        }
+
+        [Test]
+        public async Task Numeric4DigitEstablishmentCode_IsResolvedAndAssigned()
+        {
+            var headers = _schemaProvider.GetBasicaHeaders().ToArray();
+            var sku = "NUMEST1";
+            // Use the numeric 4-digit code registered in SetUp: "0001"
+            var rows = new List<Dictionary<string, string?>> { Row((headers[0], sku),(headers[1], "Producto"),(headers[2], "UND"),(headers[3], "10"),(headers[4], "Cat"),(headers[5], "0001")) };
+            var parsed = new ParsedFileDto { Headers = headers, Rows = rows };
+            var parser = new FakeParser(parsed);
+
+            var uc = new ImportarProductosUseCase(parser, _schemaProvider, _repo, _uow, _tenant, _configRepo);
+            var resp = await uc.Handle(new ImportarProductosUseCase.Request(new MemoryStream(), "file.xlsx", ImportarProductosUseCase.Mode.CreateOnly));
+
+            Assert.That(resp.Resumen.Creadas, Is.EqualTo(1));
+            var prod = await _repo.GetBySkuAsync(SharedKernel.ValueObjects.Sku.Crear(sku), EmpresaId.From("EMP1"));
+            Assert.That(prod, Is.Not.Null);
+            Assert.That(prod!.EstablecimientosAsignados.Count, Is.EqualTo(1));
+            Assert.That(prod.EstablecimientosAsignados.First().Value, Is.EqualTo(_registeredEstId));
         }
     }
 }

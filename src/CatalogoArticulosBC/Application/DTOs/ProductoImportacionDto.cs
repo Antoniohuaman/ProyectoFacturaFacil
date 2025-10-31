@@ -25,6 +25,7 @@ namespace CatalogoArticulosBC.Application.DTOs
 		public string? AfectacionImpuesto { get; set; }
 		public string? Categoria { get; set; }
 		public List<string>? AlmacenesAsignados { get; set; }
+		public decimal? TasaImpuesto { get; set; }
 		public TipoProductoImportacion TipoProducto { get; set; }
 
 		// Campos opcionales para importación

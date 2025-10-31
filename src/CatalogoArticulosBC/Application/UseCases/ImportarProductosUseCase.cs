@@ -49,19 +49,22 @@ namespace CatalogoArticulosBC.Application.UseCases
         private readonly IProductoRepository _productos;
     private readonly CatalogoArticulosBC.Application.Interfaces.IUnitOfWork _uow;
         private readonly ITenantContext _tenant;
+        private readonly ConfiguracionSistemaBC.Domain.Repositories.IConfiguracionEmpresaRepository _configRepo;
 
         public ImportarProductosUseCase(
             IImportExportService parser,
             IImportSchemaProvider schemaProvider,
             IProductoRepository productos,
             CatalogoArticulosBC.Application.Interfaces.IUnitOfWork uow,
-            ITenantContext tenant)
+            ITenantContext tenant,
+            ConfiguracionSistemaBC.Domain.Repositories.IConfiguracionEmpresaRepository configRepo)
         {
             _parser = parser ?? throw new ArgumentNullException(nameof(parser));
             _schemaProvider = schemaProvider ?? throw new ArgumentNullException(nameof(schemaProvider));
             _productos = productos ?? throw new ArgumentNullException(nameof(productos));
             _uow = uow ?? throw new ArgumentNullException(nameof(uow));
             _tenant = tenant ?? throw new ArgumentNullException(nameof(tenant));
+            _configRepo = configRepo ?? throw new ArgumentNullException(nameof(configRepo));
         }
 
         public async Task<Response> Handle(Request req, CancellationToken ct = default)
@@ -89,6 +92,9 @@ namespace CatalogoArticulosBC.Application.UseCases
             var empresaId = _tenant.EmpresaId ?? throw new InvalidOperationException("EmpresaId del contexto es obligatorio.");
 
             var toCommit = 0;
+            // Cargar configuración de empresa para resolver códigos de establecimiento
+            var configEmpresa = await _configRepo.GetByEmpresaIdAsync(empresaId, ct)
+                                ?? throw new InvalidOperationException("Configuración de empresa no encontrada para resolver establecimientos.");
 
             for (int i = 0; i < rows.Count; i++)
             {
@@ -117,6 +123,7 @@ namespace CatalogoArticulosBC.Application.UseCases
                         PrecioVenta = ParseDecimal(Get("PrecioVenta")),
                         Peso = ParseDecimal(Get("Peso")),
                         Descuento = ParseDecimal(Get("Descuento")),
+                        TasaImpuesto = ParseDecimal(Get("TasaImpuesto")),
                         Moneda = Get("Moneda"),
                         TipoExistencia = Get("TipoExistencia")
                     };
@@ -136,12 +143,35 @@ namespace CatalogoArticulosBC.Application.UseCases
                     var nombre = new NombreProducto(dto.Nombre!);
                     var unidad = UnidadDeMedida.From(dto.UnidadMedida!);
                     var afectacion = AfectacionImpuesto.From(dto.AfectacionImpuesto!);
-                    var categoria = new Categoria(dto.Categoria!);
+                    // Categoria: si viene vacía, usar categoría por defecto "OTROS" para tolerancia en import
+                    var categoria = string.IsNullOrWhiteSpace(dto.Categoria) ? new Categoria("OTROS") : new Categoria(dto.Categoria!);
                     var moneda = string.IsNullOrWhiteSpace(dto.Moneda) ? Moneda.Create("PEN") : Moneda.Create(dto.Moneda);
-                    TasaImpuesto tasa = afectacion.GravaImpuesto ? TasaObligatoria(dto) : TasaImpuesto.Cero;
+                    TasaImpuesto tasa = afectacion.GravaImpuesto ? TasaObligatoria(dto, afectacion) : TasaImpuesto.Cero;
 
-                    var establecimientos = dto.AlmacenesAsignados?.Select(s => EstablecimientoId.FromString(s)).ToList()
-                                           ?? throw new ArgumentException("Al menos un establecimiento asignado es obligatorio.");
+                    // Mapear almacenes: resolver cada código contra la configuración de empresa
+                    var establecimientos = new List<EstablecimientoId>();
+                    if (dto.AlmacenesAsignados != null)
+                    {
+                        foreach (var raw in dto.AlmacenesAsignados)
+                        {
+                            var code = raw?.Trim();
+                            if (string.IsNullOrWhiteSpace(code)) continue;
+                            if (Guid.TryParse(code, out var g) && g != Guid.Empty)
+                            {
+                                establecimientos.Add(EstablecimientoId.From(g));
+                            }
+                            else
+                            {
+                                // Buscar por código en la configuración de empresa
+                                var found = configEmpresa.BuscarEstablecimientoPorCodigo(code);
+                                if (found is null)
+                                    throw new ArgumentException($"Establecimiento '{code}' no existe en la configuración de la empresa.");
+                                establecimientos.Add(EstablecimientoId.From(found.Id));
+                            }
+                        }
+                    }
+                    if (!establecimientos.Any())
+                        throw new ArgumentException("Al menos un establecimiento asignado es obligatorio.");
 
                     // Decide acción según modo y conflicto
                     var exists = await _productos.ExisteSkuAsync(sku, empresaId, ct);
@@ -363,10 +393,31 @@ namespace CatalogoArticulosBC.Application.UseCases
             return cell.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList();
         }
 
-        private static TasaImpuesto TasaObligatoria(ProductoImportacionDto dto)
+        private static TasaImpuesto TasaObligatoria(ProductoImportacionDto dto, AfectacionImpuesto afectacion)
         {
-            // Intenta tomar columna "TasaImpuesto" si existe en DTO (no defined) - por ahora defaults a 18%
-            return TasaImpuesto.FromPercent(18m);
+            // Si el archivo especifica una tasa explícita, usarla (acepta 18 o 10 o fracción 0.18)
+            if (dto.TasaImpuesto.HasValue)
+            {
+                var raw = dto.TasaImpuesto.Value;
+                // Interpretación: si valor > 1 => es porcentaje (ej. 18), si <=1 => fracción (ej. 0.18)
+                try
+                {
+                    var tasa = raw > 1m ? TasaImpuesto.FromPercent(raw) : TasaImpuesto.FromFraction(raw);
+                    // Compatibilizar con afectación: si no grava, se convertirá a 0% internamente
+                    return tasa.CompatibilizarCon(afectacion);
+                }
+                catch
+                {
+                    // En caso de parseo inválido, fallar upstream con excepción para registrar error por fila
+                    throw new ArgumentException($"TasaImpuesto inválida: {raw}");
+                }
+            }
+
+            // Si no hay columna explícita, decidir según la afectación:
+            // - Si no grava impuesto -> 0%
+            // - Si grava -> usar tasa por defecto IGV18 (compatibilizada con la afectación)
+            var defaultTasa = TasaImpuesto.IGV18;
+            return defaultTasa.CompatibilizarCon(afectacion);
         }
 
         private static string GetCellValue(Dictionary<string, string?> row, List<string> detectedHeaders, string header)
