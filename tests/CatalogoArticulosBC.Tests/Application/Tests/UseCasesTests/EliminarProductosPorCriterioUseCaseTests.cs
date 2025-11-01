@@ -21,17 +21,17 @@ namespace CatalogoArticulosBC.Tests.Application.UseCases
         private static Moneda PEN() => Moneda.PEN();
         private static AfectacionImpuesto AIGV() => AfectacionImpuesto.Gravado_10;
         private static TasaImpuesto TIGV18() => TasaImpuesto.IGV18;
-        private static UnidadDeMedida UDM() => UnidadDeMedida.From("NIU");
-        private static Categoria CAT(string n = "GASEOSAS") => new(n);
+    private static UnidadDeMedida UDM() => UnidadDeMedida.From("NIU");
         private static List<EstablecimientoId> ESTS() => new() { EstablecimientoId.New() };
         private static NombreProducto NP(string v) => new(v);
 
         private static ProductoSimple CrearProducto(
             string skuCode,
             string nombre,
-            string categoriaNombre,
+            CategoriaId categoriaId,
             bool habilitado,
-            decimal? precio = null)
+            decimal? precio = null,
+            string? categoriaNombreSnapshot = null)
         {
             var precioVO = precio.HasValue ? new PrecioVenta(precio.Value, PEN(), AIGV(), incluyeIGV: true) : null;
             var empresaId = EmpresaId.From("20123456789");
@@ -43,7 +43,7 @@ namespace CatalogoArticulosBC.Tests.Application.UseCases
                 unidadMedida: UDM(),
                 afectacionImpuesto: AIGV(),
                 tasaImpuesto: TIGV18(),
-                categoria: CAT(categoriaNombre),
+                categoriaId: categoriaId,
                 establecimientosAsignados: ESTS(),
                 descripcion: "d",
                 marca: null,
@@ -56,6 +56,7 @@ namespace CatalogoArticulosBC.Tests.Application.UseCases
                 tipo: TipoProducto.Bien,
                 tipoExistencia: TipoExistencia.Mercaderias
             );
+            p.AsignarCategoria(categoriaId, nombreSnapshot: categoriaNombreSnapshot);
             if (!habilitado)
                 p.Deshabilitar("test");
             return p;
@@ -72,15 +73,17 @@ namespace CatalogoArticulosBC.Tests.Application.UseCases
             tenant.Setup(t => t.EmpresaId).Returns(EmpresaId.From("20123456789"));
 
             // 3 productos: 2 coinciden con filtro (nombre contiene "COLA", cat "GASEOSAS" y precio entre 3 y 6)
-            var p1 = CrearProducto("SKU-001", "COLA 500", "GASEOSAS", true, 3.50m);
-            var p2 = CrearProducto("SKU-002", "COLA ZERO", "GASEOSAS", true, 5.00m);
-            var p3 = CrearProducto("SKU-003", "AGUA 700", "BEBIDAS", true, 2.00m);
+            var catGaseosas = CategoriaId.New();
+            var catBebidas = CategoriaId.New();
+            var p1 = CrearProducto("SKU-001", "COLA 500", catGaseosas, true, 3.50m, "GASEOSAS");
+            var p2 = CrearProducto("SKU-002", "COLA ZERO", catGaseosas, true, 5.00m, "GASEOSAS");
+            var p3 = CrearProducto("SKU-003", "AGUA 700", catBebidas, true, 2.00m, "BEBIDAS");
 
             // Setup búsqueda
             repo
                 .Setup(r => r.BuscarPorFiltroAsync(It.Is<FiltroProducto>(f =>
                     f.Nombre == "COLA"
-                    && f.Categoria != null && f.Categoria.Nombre == "GASEOSAS"
+                    && f.CategoriaId != null && f.CategoriaId == catGaseosas
                     && f.Habilitado == null
                     && f.PrecioMin == 3m
                     && f.PrecioMax == 6m)))
@@ -99,7 +102,7 @@ namespace CatalogoArticulosBC.Tests.Application.UseCases
             {
                 Confirmar = true,
                 NombreContiene = "COLA",
-                CategoriaNombre = "GASEOSAS",
+                CategoriaId = catGaseosas.ToString(),
                 PrecioMin = 3m,
                 PrecioMax = 6m
             });
@@ -111,7 +114,7 @@ namespace CatalogoArticulosBC.Tests.Application.UseCases
             Assert.That(result.CantidadEliminada, Is.EqualTo(2));
             Assert.That(result.IdsEliminados, Is.EquivalentTo(new[] { p1.ProductoId, p2.ProductoId }));
             Assert.That(result.Criterio.NombreContiene, Is.EqualTo("COLA"));
-            Assert.That(result.Criterio.CategoriaNombre, Is.EqualTo("GASEOSAS"));
+            Assert.That(result.Criterio.CategoriaId, Is.EqualTo(catGaseosas.ToString()));
             Assert.That(result.Criterio.PrecioMin, Is.EqualTo(3m));
             Assert.That(result.Criterio.PrecioMax, Is.EqualTo(6m));
 
@@ -184,7 +187,7 @@ namespace CatalogoArticulosBC.Tests.Application.UseCases
             repo
                 .Setup(r => r.BuscarPorFiltroAsync(It.Is<FiltroProducto>(f =>
                     f.Nombre == "NO-EXISTE" &&
-                    f.Categoria == null &&
+                    f.CategoriaId == null &&
                     f.Habilitado == true &&
                     f.PrecioMin == null &&
                     f.PrecioMax == null)))

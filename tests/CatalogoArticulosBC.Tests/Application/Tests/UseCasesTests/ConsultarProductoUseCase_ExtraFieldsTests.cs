@@ -36,7 +36,7 @@ namespace CatalogoArticulosBC.Tests.Application.UseCases
             var unidad = UnidadDeMedida.From("NIU");
             var afectacion = AfectacionImpuesto.From("10");
             var tasa = TasaImpuesto.FromPercent(18);
-            var categoria = new Categoria("CAT");
+            var categoriaId = CategoriaId.New();
             var establecimientos = new List<EstablecimientoId> { EstablecimientoId.From(Guid.NewGuid()) };
 
             var p = new ProductoSimple(
@@ -47,7 +47,7 @@ namespace CatalogoArticulosBC.Tests.Application.UseCases
                 unidad,
                 afectacion,
                 tasa,
-                categoria,
+                categoriaId,
                 establecimientos,
                 descripcion: null,
                 marca: null,
@@ -110,7 +110,7 @@ namespace CatalogoArticulosBC.Tests.Application.UseCases
                 UnidadDeMedida.From("NIU"),
                 AfectacionImpuesto.From("20"),
                 TasaImpuesto.Cero,
-                new Categoria("CAT"),
+                CategoriaId.New(),
                 new List<EstablecimientoId> { EstablecimientoId.From(Guid.NewGuid()) }
             );
 

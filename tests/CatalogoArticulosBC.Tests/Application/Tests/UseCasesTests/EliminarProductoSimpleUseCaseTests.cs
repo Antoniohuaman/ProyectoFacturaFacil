@@ -22,7 +22,7 @@ namespace CatalogoArticulosBC.Tests.Application.UseCases
         private static ProductoSimple CrearProductoBien()
         {
             var est = EstablecimientoId.New();
-            return new ProductoSimple(
+            var p = new ProductoSimple(
                 empresaId: EmpresaId.From("20123456789"),
                 moneda: PEN(),
                 sku: Sku.Crear("SKU-BIEN-001"),
@@ -30,7 +30,7 @@ namespace CatalogoArticulosBC.Tests.Application.UseCases
                 unidadMedida: UnidadDeMedida.NIU,
                 afectacionImpuesto: AfectacionImpuesto.Gravado_10,
                 tasaImpuesto: TasaImpuesto.IGV18,
-                categoria: new Categoria("BEBIDAS"),
+                categoriaId: CategoriaId.New(),
                 establecimientosAsignados: new List<EstablecimientoId> { est },
                 descripcion: "Producto de prueba",
                 marca: new Marca("ACME"),
@@ -45,12 +45,14 @@ namespace CatalogoArticulosBC.Tests.Application.UseCases
                 asignarATodosLosEstablecimientos: false,
                 imagenPrincipalId: null
             );
+            p.AsignarCategoria(p.CategoriaId!.Value, nombreSnapshot: "BEBIDAS");
+            return p;
         }
 
         private static ProductoSimple CrearProductoServicio()
         {
             var est = EstablecimientoId.New();
-            return new ProductoSimple(
+            var p = new ProductoSimple(
                 empresaId: EmpresaId.From("20123456789"),
                 moneda: PEN(),
                 sku: Sku.Crear("SKU-SERV-001"),
@@ -58,7 +60,7 @@ namespace CatalogoArticulosBC.Tests.Application.UseCases
                 unidadMedida: UnidadDeMedida.ZZ, // servicios
                 afectacionImpuesto: AfectacionImpuesto.Gravado_10, // el agregado sólo valida 0% o 10/18%, por simplicidad usamos gravado
                 tasaImpuesto: TasaImpuesto.IGV10,                  // admite 0.10 o 0.18 si grava; 0% si exonerado
-                categoria: new Categoria("SERVICIOS"),
+                categoriaId: CategoriaId.New(),
                 establecimientosAsignados: new List<EstablecimientoId> { est },
                 descripcion: "Servicio de prueba",
                 marca: null,
@@ -73,6 +75,8 @@ namespace CatalogoArticulosBC.Tests.Application.UseCases
                 asignarATodosLosEstablecimientos: true,
                 imagenPrincipalId: null
             );
+            p.AsignarCategoria(p.CategoriaId!.Value, nombreSnapshot: "SERVICIOS");
+            return p;
         }
 
         [Test]

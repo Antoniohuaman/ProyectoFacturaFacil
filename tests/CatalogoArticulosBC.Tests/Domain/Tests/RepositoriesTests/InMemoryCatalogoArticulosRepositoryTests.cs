@@ -22,8 +22,7 @@ namespace CatalogoArticulosBC.Tests.Domain.Repositories
         private static NombreProducto NOMBRE(string v = "Producto Test") => new NombreProducto(v);
         private static UnidadDeMedida UDM() => SharedKernel.ValueObjects.UnidadDeMedida.NIU;
         private static AfectacionImpuesto AfectG() => AfectacionImpuesto.Gravado_10;
-        private static TasaImpuesto Tasa18() => TasaImpuesto.IGV18;
-        private static Categoria CAT(string v = "Varios") => new Categoria(v);
+    private static TasaImpuesto Tasa18() => TasaImpuesto.IGV18;
         private static List<EstablecimientoId> Estabs1() => new() { EstablecimientoId.New() };
 
         private static ProductoSimple NewProducto(EmpresaId empresaId, string skuValor, string nombre = "Producto Test")
@@ -36,7 +35,7 @@ namespace CatalogoArticulosBC.Tests.Domain.Repositories
                 unidadMedida: UDM(),
                 afectacionImpuesto: AfectG(),
                 tasaImpuesto: Tasa18(),
-                categoria: CAT(),
+                categoriaId: CategoriaId.New(),
                 establecimientosAsignados: Estabs1()
             );
         }

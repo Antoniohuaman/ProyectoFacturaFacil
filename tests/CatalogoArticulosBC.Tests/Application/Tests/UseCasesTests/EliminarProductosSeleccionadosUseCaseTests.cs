@@ -26,14 +26,14 @@ namespace CatalogoArticulosBC.Tests.Application.UseCases
         private static UnidadDeMedida UDM(string v = "NIU") => UnidadDeMedida.From(v);
         private static AfectacionImpuesto AIGV() => AfectacionImpuesto.Gravado_10;
         private static TasaImpuesto TIGV18() => TasaImpuesto.IGV18;
-        private static Categoria CAT(string v = "GASEOSAS") => new(v);
+        
         private static List<EstablecimientoId> ESTS()
             => new() { EstablecimientoId.New() };
 
         private static ProductoSimple CrearProducto(string skuCode, string nombre = "Cola 500ml", EmpresaId? empresaId = null)
         {
             var sku = Sku.Crear(skuCode);
-            return new ProductoSimple(
+            var p = new ProductoSimple(
                 empresaId: empresaId ?? EMP(),
                 moneda: PEN(),
                 sku: sku,
@@ -41,10 +41,12 @@ namespace CatalogoArticulosBC.Tests.Application.UseCases
                 unidadMedida: UDM(),
                 afectacionImpuesto: AIGV(),
                 tasaImpuesto: TIGV18(),
-                categoria: CAT("GASEOSAS"),
+                categoriaId: CategoriaId.New(),
                 establecimientosAsignados: ESTS(),
                 descripcion: "Bebida"
             );
+            p.AsignarCategoria(p.CategoriaId!.Value, nombreSnapshot: "GASEOSAS");
+            return p;
         }
 
         [Test]

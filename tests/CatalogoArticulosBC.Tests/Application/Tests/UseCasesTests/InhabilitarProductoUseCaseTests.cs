@@ -21,8 +21,7 @@ namespace CatalogoArticulosBC.Tests.Application.UseCases
         private static Moneda PEN() => Moneda.PEN();
         private static AfectacionImpuesto Afectacion() => AfectacionImpuesto.Gravado_10;
         private static TasaImpuesto IGV18() => TasaImpuesto.IGV18;
-        private static UnidadDeMedida Udm() => UnidadDeMedida.From("NIU");
-        private static Categoria Cat(string nombre = "BEBIDAS") => new(nombre);
+    private static UnidadDeMedida Udm() => UnidadDeMedida.From("NIU");
         private static List<EstablecimientoId> Ests() => new() { EstablecimientoId.New() };
         private static NombreProducto Np(string v) => new(v);
 
@@ -40,7 +39,7 @@ namespace CatalogoArticulosBC.Tests.Application.UseCases
                 unidadMedida: Udm(),
                 afectacionImpuesto: Afectacion(),
                 tasaImpuesto: IGV18(),
-                categoria: Cat(),
+                categoriaId: CategoriaId.New(),
                 establecimientosAsignados: Ests(),
                 descripcion: "desc"
             );

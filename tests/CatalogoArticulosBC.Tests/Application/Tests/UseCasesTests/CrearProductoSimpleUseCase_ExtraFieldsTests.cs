@@ -50,7 +50,7 @@ namespace CatalogoArticulosBC.Tests.Application.UseCases
                 UnidadMedidaCodigo = "NIU",
                 AfectacionImpuestoCodigo = "10",
                 TasaImpuestoPercent = 18m,
-                Categoria = "CAT",
+                CategoriaId = SharedKernel.ValueObjects.CategoriaId.New().ToString(),
                 MonedaCodigoIso4217 = "PEN",
                 Tipo = TipoProducto.Bien,
                 Establecimientos = new List<Guid> { estId },

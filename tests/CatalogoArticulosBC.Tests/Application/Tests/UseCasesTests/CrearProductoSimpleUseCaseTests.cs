@@ -53,7 +53,7 @@ namespace CatalogoArticulosBC.Tests.Application.UseCases
             UnidadMedidaCodigo = "NIU",
             AfectacionImpuestoCodigo = "10",   // Gravado IGV
             TasaImpuestoPercent = 18m,         // 18%
-            Categoria = "BEBIDAS",
+            CategoriaId = SharedKernel.ValueObjects.CategoriaId.New().ToString(),
             MonedaCodigoIso4217 = "PEN",
             Tipo = TipoProducto.Bien,
             TipoExistencia = TipoExistencia.ProductosTerminados,
@@ -78,7 +78,7 @@ namespace CatalogoArticulosBC.Tests.Application.UseCases
             UnidadMedidaCodigo = "ZZ",         // Servicio
             AfectacionImpuestoCodigo = "20",   // Exonerado
             TasaImpuestoPercent = null,        // se asume 0
-            Categoria = "SERVICIOS",
+            CategoriaId = SharedKernel.ValueObjects.CategoriaId.New().ToString(),
             MonedaCodigoIso4217 = "PEN",
             Tipo = TipoProducto.Servicio,
             // TipoExistencia omitido -> Servicios
@@ -124,7 +124,7 @@ namespace CatalogoArticulosBC.Tests.Application.UseCases
                 Assert.That(result.Tipo, Is.EqualTo(TipoProducto.Bien));
                 Assert.That(result.TipoExistencia, Is.EqualTo(TipoExistencia.ProductosTerminados));
                 Assert.That(result.Nombre, Is.EqualTo("Gaseosa 500ml"));
-                Assert.That(result.Categoria, Is.EqualTo("BEBIDAS"));
+                Assert.That(result.CategoriaId, Is.Not.Null);
                 Assert.That(result.Moneda, Is.EqualTo("PEN"));
                 Assert.That(result.PrecioVentaMonto, Is.EqualTo(5.50m));
                 Assert.That(result.AfectacionImpuestoCodigo, Is.EqualTo("10"));
@@ -200,7 +200,7 @@ namespace CatalogoArticulosBC.Tests.Application.UseCases
                 UnidadMedidaCodigo = "NIU",
                 AfectacionImpuestoCodigo = "10",   // gravado
                 TasaImpuestoPercent = null,        // falta
-                Categoria = "CAT",
+                CategoriaId = SharedKernel.ValueObjects.CategoriaId.New().ToString(),
                 MonedaCodigoIso4217 = "PEN",
                 Tipo = TipoProducto.Bien,
                 Establecimientos = new List<Guid> { estId }

@@ -21,13 +21,20 @@ namespace CatalogoArticulosBC.Tests.Application.UseCases
         private static Moneda PEN() => Moneda.PEN();
         private static AfectacionImpuesto Afectacion() => AfectacionImpuesto.Gravado_10;
         private static TasaImpuesto IGV18() => TasaImpuesto.IGV18;
-        private static UnidadDeMedida Udm() => UnidadDeMedida.From("NIU");
-        private static Categoria Cat(string nombre = "BEBIDAS") => new(nombre);
+    private static UnidadDeMedida Udm() => UnidadDeMedida.From("NIU");
+    private static readonly CategoriaId CID_BEBIDAS = CategoriaId.New();
+    private static readonly CategoriaId CID_ABARROTES = CategoriaId.New();
         private static List<EstablecimientoId> Ests() => new() { EstablecimientoId.New() };
         private static NombreProducto Np(string v) => new(v);
 
         private static ProductoSimple P(EmpresaId empresaId, string sku, string nombre, string categoria, bool habilitado = true)
         {
+            var catId = categoria.ToUpperInvariant() switch
+            {
+                "BEBIDAS" => CID_BEBIDAS,
+                "ABARROTES" => CID_ABARROTES,
+                _ => CategoriaId.New()
+            };
             var p = new ProductoSimple(
                 empresaId: empresaId,
                 moneda: PEN(),
@@ -36,10 +43,11 @@ namespace CatalogoArticulosBC.Tests.Application.UseCases
                 unidadMedida: Udm(),
                 afectacionImpuesto: Afectacion(),
                 tasaImpuesto: IGV18(),
-                categoria: new Categoria(categoria),
+                categoriaId: catId,
                 establecimientosAsignados: Ests(),
                 descripcion: "desc"
             );
+            p.AsignarCategoria(catId, nombreSnapshot: categoria);
             if (!habilitado) p.Deshabilitar("test");
             return p;
         }
@@ -76,8 +84,8 @@ namespace CatalogoArticulosBC.Tests.Application.UseCases
                     IEnumerable<ProductoSimple> q = data;
                     if (!string.IsNullOrWhiteSpace(f.Nombre))
                         q = q.Where(p => p.Nombre!.Valor.Contains(f.Nombre!, StringComparison.OrdinalIgnoreCase));
-                    if (f.Categoria != null)
-                        q = q.Where(p => p.Categoria!.Nombre == f.Categoria.Nombre);
+                    if (f.CategoriaId != null)
+                        q = q.Where(p => p.CategoriaId == f.CategoriaId);
                     if (f.Habilitado.HasValue)
                         q = q.Where(p => p.Habilitado == f.Habilitado.Value);
                     if (f.PrecioMin.HasValue)
@@ -129,8 +137,8 @@ namespace CatalogoArticulosBC.Tests.Application.UseCases
                     IEnumerable<ProductoSimple> q = data;
                     if (!string.IsNullOrWhiteSpace(f.Nombre))
                         q = q.Where(p => p.Nombre!.Valor.Contains(f.Nombre!, StringComparison.OrdinalIgnoreCase));
-                    if (f.Categoria != null)
-                        q = q.Where(p => p.Categoria!.Nombre == f.Categoria.Nombre);
+                    if (f.CategoriaId != null)
+                        q = q.Where(p => p.CategoriaId == f.CategoriaId);
                     if (f.Habilitado.HasValue)
                         q = q.Where(p => p.Habilitado == f.Habilitado.Value);
                     return q;
@@ -141,7 +149,7 @@ namespace CatalogoArticulosBC.Tests.Application.UseCases
             var output = await sut.ExecuteAsync(new ListarProductosInputDto
             {
                 Nombre = "a",            // contiene "a"
-                Categoria = "BEBIDAS",
+                CategoriaId = CID_BEBIDAS.ToString(),
                 Habilitado = true,
                 Page = 1,
                 PageSize = 10,

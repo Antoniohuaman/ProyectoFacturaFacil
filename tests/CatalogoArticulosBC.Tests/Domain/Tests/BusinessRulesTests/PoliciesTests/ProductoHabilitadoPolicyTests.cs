@@ -23,7 +23,7 @@ namespace CatalogoArticulosBC.Tests.Domain.Tests.BusinessRulesTests.PoliciesTest
                 unidadMedida: UnidadDeMedida.NIU,
                 afectacionImpuesto: AfectacionImpuesto.Gravado_10,
                 tasaImpuesto: TasaImpuesto.IGV10,
-                categoria: new Categoria("GRAVADO"),
+                categoriaId: CategoriaId.New(),
                 establecimientosAsignados: new List<EstablecimientoId> { EstablecimientoId.New() }
             );
             var policy = new ProductoHabilitadoPolicy();
@@ -41,7 +41,7 @@ namespace CatalogoArticulosBC.Tests.Domain.Tests.BusinessRulesTests.PoliciesTest
                 unidadMedida: UnidadDeMedida.NIU,
                 afectacionImpuesto: AfectacionImpuesto.Gravado_10,
                 tasaImpuesto: TasaImpuesto.IGV10,
-                categoria: new Categoria("GRAVADO"),
+                categoriaId: CategoriaId.New(),
                 establecimientosAsignados: new List<EstablecimientoId> { EstablecimientoId.New() }
             );
             producto.Deshabilitar("Motivo de prueba");

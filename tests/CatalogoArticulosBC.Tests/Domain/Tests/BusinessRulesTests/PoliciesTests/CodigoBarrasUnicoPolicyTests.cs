@@ -23,7 +23,7 @@ namespace CatalogoArticulosBC.Tests.Domain.Tests.BusinessRulesTests.PoliciesTest
                 unidadMedida: UnidadDeMedida.NIU,
                 afectacionImpuesto: AfectacionImpuesto.Gravado_10,
                 tasaImpuesto: TasaImpuesto.IGV10,
-                categoria: new Categoria("GRAVADO"),
+                categoriaId: CategoriaId.New(),
                 establecimientosAsignados: new List<EstablecimientoId> { EstablecimientoId.New() },
                 codigoBarras: new CodigoBarras("1234567890128")
             );
@@ -45,7 +45,7 @@ namespace CatalogoArticulosBC.Tests.Domain.Tests.BusinessRulesTests.PoliciesTest
                 unidadMedida: UnidadDeMedida.NIU,
                 afectacionImpuesto: AfectacionImpuesto.Gravado_10,
                 tasaImpuesto: TasaImpuesto.IGV10,
-                categoria: new Categoria("GRAVADO"),
+                categoriaId: CategoriaId.New(),
                 establecimientosAsignados: new List<EstablecimientoId> { EstablecimientoId.New() },
                 codigoBarras: codigoBarras
             );
@@ -57,7 +57,7 @@ namespace CatalogoArticulosBC.Tests.Domain.Tests.BusinessRulesTests.PoliciesTest
                 unidadMedida: UnidadDeMedida.NIU,
                 afectacionImpuesto: AfectacionImpuesto.Gravado_10,
                 tasaImpuesto: TasaImpuesto.IGV10,
-                categoria: new Categoria("GRAVADO"),
+                categoriaId: CategoriaId.New(),
                 establecimientosAsignados: new List<EstablecimientoId> { EstablecimientoId.New() },
                 codigoBarras: codigoBarras
             );

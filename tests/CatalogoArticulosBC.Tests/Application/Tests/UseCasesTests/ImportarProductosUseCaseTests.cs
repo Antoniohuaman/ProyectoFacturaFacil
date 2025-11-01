@@ -87,9 +87,9 @@ namespace CatalogoArticulosBC.Tests.Application.Tests.UseCasesTests
             var headers = _schemaProvider.GetBasicaHeaders().ToArray();
             var rows = new List<Dictionary<string, string?>>
             {
-                Row((headers[0], "SKU1"),(headers[1], "Prod1"),(headers[2], "UND"),(headers[3], "10"),(headers[4], "Cat1"),(headers[5], Guid.NewGuid().ToString())),
-                Row((headers[0], "SKU2"),(headers[1], "Prod2"),(headers[2], "UND"),(headers[3], "10"),(headers[4], "Cat1"),(headers[5], Guid.NewGuid().ToString())),
-                Row((headers[0], "SKU3"),(headers[1], "Prod3"),(headers[2], "UND"),(headers[3], "10"),(headers[4], "Cat1"),(headers[5], Guid.NewGuid().ToString()))
+                Row((headers[0], "SKU1"),(headers[1], "Prod1"),(headers[2], "UND"),(headers[3], "10"),(headers[4], Guid.NewGuid().ToString()),(headers[5], Guid.NewGuid().ToString())),
+                Row((headers[0], "SKU2"),(headers[1], "Prod2"),(headers[2], "UND"),(headers[3], "10"),(headers[4], Guid.NewGuid().ToString()),(headers[5], Guid.NewGuid().ToString())),
+                Row((headers[0], "SKU3"),(headers[1], "Prod3"),(headers[2], "UND"),(headers[3], "10"),(headers[4], Guid.NewGuid().ToString()),(headers[5], Guid.NewGuid().ToString()))
             };
 
             var parsed = new ParsedFileDto { Headers = headers, Rows = rows };
@@ -112,15 +112,15 @@ namespace CatalogoArticulosBC.Tests.Application.Tests.UseCasesTests
             var headers = _schemaProvider.GetBasicaHeaders().ToArray();
             var sku1 = "EX1"; var sku2 = "EX2";
             // create existing
-            var createParsed = new ParsedFileDto { Headers = headers, Rows = new List<Dictionary<string, string?>> { Row((headers[0], sku1),(headers[1], "P1"),(headers[2], "UND"),(headers[3], "10"),(headers[4], "C"),(headers[5], Guid.NewGuid().ToString())), Row((headers[0], sku2),(headers[1], "P2"),(headers[2], "UND"),(headers[3], "10"),(headers[4], "C"),(headers[5], Guid.NewGuid().ToString())) } };
+            var createParsed = new ParsedFileDto { Headers = headers, Rows = new List<Dictionary<string, string?>> { Row((headers[0], sku1),(headers[1], "P1"),(headers[2], "UND"),(headers[3], "10"),(headers[4], Guid.NewGuid().ToString()),(headers[5], Guid.NewGuid().ToString())), Row((headers[0], sku2),(headers[1], "P2"),(headers[2], "UND"),(headers[3], "10"),(headers[4], Guid.NewGuid().ToString()),(headers[5], Guid.NewGuid().ToString())) } };
             var parserCreate = new FakeParser(createParsed);
             var ucCreate = new ImportarProductosUseCase(parserCreate, _schemaProvider, _repo, _uow, _tenant, _configRepo);
             await ucCreate.Handle(new ImportarProductosUseCase.Request(new MemoryStream(), "init.xlsx", ImportarProductosUseCase.Mode.CreateOnly, ImportarProductosUseCase.OnSkuConflict.Error));
 
             // Now upsert with same SKUs but different names
             var rows = new List<Dictionary<string, string?>> {
-                Row((headers[0], sku1),(headers[1], "P1-updated"),(headers[2], "UND"),(headers[3], "10"),(headers[4], "C"),(headers[5], Guid.NewGuid().ToString())),
-                Row((headers[0], sku2),(headers[1], "P2-updated"),(headers[2], "UND"),(headers[3], "10"),(headers[4], "C"),(headers[5], Guid.NewGuid().ToString()))
+                Row((headers[0], sku1),(headers[1], "P1-updated"),(headers[2], "UND"),(headers[3], "10"),(headers[4], Guid.NewGuid().ToString()),(headers[5], Guid.NewGuid().ToString())),
+                Row((headers[0], sku2),(headers[1], "P2-updated"),(headers[2], "UND"),(headers[3], "10"),(headers[4], Guid.NewGuid().ToString()),(headers[5], Guid.NewGuid().ToString()))
             };
             var parsed = new ParsedFileDto { Headers = headers, Rows = rows };
             var parser = new FakeParser(parsed);
@@ -139,7 +139,7 @@ namespace CatalogoArticulosBC.Tests.Application.Tests.UseCasesTests
             var estB = Guid.NewGuid().ToString();
             var estC = Guid.NewGuid().ToString();
             var sku = "MULTI1";
-            var rows = new List<Dictionary<string, string?>> { Row((headers[0], sku),(headers[1], "M1"),(headers[2], "UND"),(headers[3], "10"),(headers[4], "Cat"),(headers[5], estA+";"+estB+";"+estC)) };
+            var rows = new List<Dictionary<string, string?>> { Row((headers[0], sku),(headers[1], "M1"),(headers[2], "UND"),(headers[3], "10"),(headers[4], Guid.NewGuid().ToString()),(headers[5], estA+";"+estB+";"+estC)) };
             var parsed = new ParsedFileDto { Headers = headers, Rows = rows };
             var parser = new FakeParser(parsed);
             var uc = new ImportarProductosUseCase(parser, _schemaProvider, _repo, _uow, _tenant, _configRepo);
@@ -168,13 +168,13 @@ namespace CatalogoArticulosBC.Tests.Application.Tests.UseCasesTests
             var headers = _schemaProvider.GetBasicaHeaders().ToArray();
             var sku = "SKUSKIP";
             // create existing
-            var createParsed = new ParsedFileDto { Headers = headers, Rows = new List<Dictionary<string, string?>> { Row((headers[0], sku),(headers[1], "P1"),(headers[2], "UND"),(headers[3], "10"),(headers[4], "C"),(headers[5], Guid.NewGuid().ToString())) } };
+            var createParsed = new ParsedFileDto { Headers = headers, Rows = new List<Dictionary<string, string?>> { Row((headers[0], sku),(headers[1], "P1"),(headers[2], "UND"),(headers[3], "10"),(headers[4], Guid.NewGuid().ToString()),(headers[5], Guid.NewGuid().ToString())) } };
             var parserCreate = new FakeParser(createParsed);
             var ucCreate = new ImportarProductosUseCase(parserCreate, _schemaProvider, _repo, _uow, _tenant, _configRepo);
             await ucCreate.Handle(new ImportarProductosUseCase.Request(new MemoryStream(), "init.xlsx", ImportarProductosUseCase.Mode.CreateOnly, ImportarProductosUseCase.OnSkuConflict.Error));
 
             // Now attempt import with same SKU but Skip
-            var rows = new List<Dictionary<string, string?>> { Row((headers[0], sku),(headers[1], "P1-new"),(headers[2], "UND"),(headers[3], "10"),(headers[4], "C"),(headers[5], Guid.NewGuid().ToString())) };
+            var rows = new List<Dictionary<string, string?>> { Row((headers[0], sku),(headers[1], "P1-new"),(headers[2], "UND"),(headers[3], "10"),(headers[4], Guid.NewGuid().ToString()),(headers[5], Guid.NewGuid().ToString())) };
             var parsed = new ParsedFileDto { Headers = headers, Rows = rows };
             var parser = new FakeParser(parsed);
             var uc = new ImportarProductosUseCase(parser, _schemaProvider, _repo, _uow, _tenant, _configRepo);
@@ -187,7 +187,7 @@ namespace CatalogoArticulosBC.Tests.Application.Tests.UseCasesTests
         {
             var headers = _schemaProvider.GetBasicaHeaders().ToArray();
             var rows = new List<Dictionary<string, string?>> {
-                Row((headers[0], "OK1"),(headers[1], "P1"),(headers[2], "UND"),(headers[3], "10"),(headers[4], "C"),(headers[5], Guid.NewGuid().ToString())),
+                Row((headers[0], "OK1"),(headers[1], "P1"),(headers[2], "UND"),(headers[3], "10"),(headers[4], Guid.NewGuid().ToString()),(headers[5], Guid.NewGuid().ToString())),
                 Row((headers[0], ""),(headers[1], "P-invalid"),(headers[2], ""),(headers[3], ""),(headers[4], ""),(headers[5], "")) // invalid missing sku
             };
             var parsed = new ParsedFileDto { Headers = headers, Rows = rows };
@@ -204,7 +204,7 @@ namespace CatalogoArticulosBC.Tests.Application.Tests.UseCasesTests
             var headers = _schemaProvider.GetBasicaHeaders().ToArray();
             var rows = new List<Dictionary<string, string?>>();
             for (int i = 0; i < 5; i++)
-                rows.Add(Row((headers[0], "B"+i),(headers[1], "P"+i),(headers[2], "UND"),(headers[3], "10"),(headers[4], "C"),(headers[5], Guid.NewGuid().ToString())));
+                rows.Add(Row((headers[0], "B"+i),(headers[1], "P"+i),(headers[2], "UND"),(headers[3], "10"),(headers[4], Guid.NewGuid().ToString()),(headers[5], Guid.NewGuid().ToString())));
             var parsed = new ParsedFileDto { Headers = headers, Rows = rows };
             var parser = new FakeParser(parsed);
             var uc = new ImportarProductosUseCase(parser, _schemaProvider, _repo, _uow, _tenant, _configRepo);
@@ -221,7 +221,7 @@ namespace CatalogoArticulosBC.Tests.Application.Tests.UseCasesTests
             var headers = _schemaProvider.GetBasicaHeaders().ToArray();
             var sku = "NUMEST1";
             // Use the numeric 4-digit code registered in SetUp: "0001"
-            var rows = new List<Dictionary<string, string?>> { Row((headers[0], sku),(headers[1], "Producto"),(headers[2], "UND"),(headers[3], "10"),(headers[4], "Cat"),(headers[5], "0001")) };
+            var rows = new List<Dictionary<string, string?>> { Row((headers[0], sku),(headers[1], "Producto"),(headers[2], "UND"),(headers[3], "10"),(headers[4], Guid.NewGuid().ToString()),(headers[5], "0001")) };
             var parsed = new ParsedFileDto { Headers = headers, Rows = rows };
             var parser = new FakeParser(parsed);
 

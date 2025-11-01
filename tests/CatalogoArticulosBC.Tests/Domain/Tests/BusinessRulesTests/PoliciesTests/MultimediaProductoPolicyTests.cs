@@ -24,9 +24,10 @@ namespace CatalogoArticulosBC.Tests.Domain.Tests.BusinessRulesTests.PoliciesTest
                 unidadMedida: UnidadDeMedida.NIU,
                 afectacionImpuesto: AfectacionImpuesto.Gravado_10,
                 tasaImpuesto: TasaImpuesto.IGV10,
-                categoria: new Categoria("GRAVADO"),
+                categoriaId: CategoriaId.New(),
                 establecimientosAsignados: new List<EstablecimientoId> { EstablecimientoId.New() }
             );
+            producto.AsignarCategoria(producto.CategoriaId!.Value, nombreSnapshot: "GRAVADO");
             var multimedia = new MultimediaProducto(
                 multimediaId: Guid.NewGuid(),
                 tipoMime: "image/jpeg",
@@ -52,9 +53,10 @@ namespace CatalogoArticulosBC.Tests.Domain.Tests.BusinessRulesTests.PoliciesTest
                 unidadMedida: UnidadDeMedida.NIU,
                 afectacionImpuesto: AfectacionImpuesto.Gravado_10,
                 tasaImpuesto: TasaImpuesto.IGV10,
-                categoria: new Categoria("GRAVADO"),
+                categoriaId: CategoriaId.New(),
                 establecimientosAsignados: new List<EstablecimientoId> { EstablecimientoId.New() }
             );
+            producto.AsignarCategoria(producto.CategoriaId!.Value, nombreSnapshot: "GRAVADO");
             var policy = new MultimediaProductoPolicy();
             Assert.That(policy.TieneMultimediaValida(producto), Is.False);
         }

@@ -32,7 +32,7 @@ namespace CatalogoArticulosBC.Tests.Application.UseCases
                 unidadMedida: UnidadDeMedida.NIU,
                 afectacionImpuesto: AfectacionImpuesto.Gravado_10,
                 tasaImpuesto: TasaImpuesto.IGV18,
-                categoria: new Categoria("BEBIDAS"),
+                categoriaId: CategoriaId.New(),
                 establecimientosAsignados: new List<EstablecimientoId> { e1 },
                 descripcion: "Producto base",
                 marca: new Marca("ACME"),
@@ -70,7 +70,7 @@ namespace CatalogoArticulosBC.Tests.Application.UseCases
                 UnidadMedidaCodigo = "NIU",
                 AfectacionImpuestoCodigo = "10",   // gravado IGV
                 TasaImpuestoPorcentaje = 18m,
-                CategoriaNombre = "BEBIDAS ISOTÓNICAS",
+                CategoriaId = CategoriaId.New().ToString(),
                 Descripcion = "Nueva presentación",
                 MarcaNombre = "ACME PREMIUM",
                 PrecioVentaMonto = 3.00m,
@@ -103,7 +103,7 @@ namespace CatalogoArticulosBC.Tests.Application.UseCases
             Assert.That(output.ProductoId, Is.EqualTo(prodId));
             Assert.That(output.Sku, Is.EqualTo("SKU-EDIT-001"));
             Assert.That(output.Nombre, Is.EqualTo("AGUA MINERAL 625 ML"));
-            Assert.That(output.Categoria, Is.EqualTo("BEBIDAS ISOTÓNICAS"));
+            Assert.That(output.CategoriaId, Is.Not.Null);
             Assert.That(output.AfectacionImpuestoCodigo, Is.EqualTo("10"));
             Assert.That(output.TasaImpuestoFraccion, Is.EqualTo(0.18m));
             Assert.That(output.PrecioVentaMonto, Is.EqualTo(3.00m));
@@ -141,7 +141,7 @@ namespace CatalogoArticulosBC.Tests.Application.UseCases
                 UnidadMedidaCodigo = "ZZ",          // servicio
                 AfectacionImpuestoCodigo = "20",    // exonerado
                 TasaImpuestoPorcentaje = 0m,        // coherente con exonerado
-                CategoriaNombre = "SERVICIOS",
+                CategoriaId = CategoriaId.New().ToString(),
                 Descripcion = "Instalación en sitio",
                 MarcaNombre = null,
                 PrecioVentaMonto = 150m,
@@ -203,7 +203,7 @@ namespace CatalogoArticulosBC.Tests.Application.UseCases
                 UnidadMedidaCodigo = "NIU",
                 AfectacionImpuestoCodigo = "10",
                 TasaImpuestoPorcentaje = 18m,
-                CategoriaNombre = "Y",
+                CategoriaId = CategoriaId.New().ToString(),
                 EstablecimientosAsignados = new List<Guid>() // vacío
             };
 
@@ -230,7 +230,7 @@ namespace CatalogoArticulosBC.Tests.Application.UseCases
                 UnidadMedidaCodigo = "NIU",
                 AfectacionImpuestoCodigo = "10",
                 TasaImpuestoPorcentaje = 18m,
-                CategoriaNombre = "BEBIDAS",
+                CategoriaId = CategoriaId.New().ToString(),
                 EstablecimientosAsignados = new List<Guid> { (Guid)est1 }
             };
 
@@ -267,7 +267,7 @@ namespace CatalogoArticulosBC.Tests.Application.UseCases
                 UnidadMedidaCodigo = "NIU",
                 AfectacionImpuestoCodigo = "10",
                 TasaImpuestoPorcentaje = 0m,
-                CategoriaNombre = "CAT",
+                CategoriaId = CategoriaId.New().ToString(),
                 EstablecimientosAsignados = new List<Guid> { (Guid)est1 }
             };
 

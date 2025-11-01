@@ -28,9 +28,9 @@ namespace CatalogoArticulosBC.Tests.Domain.Aggregates
         private static AfectacionImpuesto AfectG() => AfectacionImpuesto.Gravado_10;
         private static AfectacionImpuesto AfectNoG() => AfectacionImpuesto.Exonerado_20;
         private static TasaImpuesto Tasa18() => TasaImpuesto.IGV18;
-        private static TasaImpuesto Tasa10() => TasaImpuesto.IGV10;
-        private static TasaImpuesto Tasa0() => TasaImpuesto.Cero;
-        private static Categoria CAT(string v = "Bebidas") => new Categoria(v);
+    private static TasaImpuesto Tasa10() => TasaImpuesto.IGV10;
+    private static TasaImpuesto Tasa0() => TasaImpuesto.Cero;
+    private static CategoriaId CID() => CategoriaId.New();
         private static Marca MARCA(string v = "ACME") => new Marca(v);
         private static List<EstablecimientoId> Estabs1() => new() { EstablecimientoId.New() };
         private static CentroDeCosto CC() => CentroDeCosto.Create("CC01", "Ventas");
@@ -49,7 +49,7 @@ namespace CatalogoArticulosBC.Tests.Domain.Aggregates
             UnidadDeMedida? udm = null,
             AfectacionImpuesto? afect = null,
             TasaImpuesto? tasa = null,
-            Categoria? categoria = null,
+            CategoriaId? categoriaId = null,
             List<EstablecimientoId>? ests = null,
             string? descripcion = "   descripción con trim   ",
             Marca? marca = null,
@@ -65,7 +65,7 @@ namespace CatalogoArticulosBC.Tests.Domain.Aggregates
             Guid? imgId = null
         )
         {
-            return new ProductoSimple(
+            var p = new ProductoSimple(
                 empresaId: EmpresaId.From("20123456789"),
                 moneda: moneda ?? PEN(),
                 sku: sku ?? SKU(),
@@ -73,7 +73,7 @@ namespace CatalogoArticulosBC.Tests.Domain.Aggregates
                 unidadMedida: udm ?? UDM(),
                 afectacionImpuesto: afect ?? AfectG(),
                 tasaImpuesto: tasa ?? Tasa18(),
-                categoria: categoria ?? CAT(),
+                categoriaId: categoriaId ?? CID(),
                 establecimientosAsignados: ests ?? Estabs1(),
                 descripcion: descripcion,
                 marca: marca,
@@ -88,6 +88,10 @@ namespace CatalogoArticulosBC.Tests.Domain.Aggregates
                 asignarATodosLosEstablecimientos: asignarATodos,
                 imagenPrincipalId: imgId
             );
+            // Asignar snapshot por defecto para facilitar algunas aserciones previas basadas en nombre
+            if (p.CategoriaId.HasValue)
+                p.AsignarCategoria(p.CategoriaId.Value, nombreSnapshot: "BEBIDAS");
+            return p;
         }
 
         private static T GetSingleEvent<T>(ProductoSimple p) where T : class
@@ -108,7 +112,7 @@ namespace CatalogoArticulosBC.Tests.Domain.Aggregates
             Assert.That(p.UnidadMedida.Codigo, Is.EqualTo("NIU"));
             Assert.That(p.AfectacionImpuesto.GravaImpuesto, Is.True);
             Assert.That(p.TasaImpuesto.Fraccion, Is.EqualTo(0.18m));
-            Assert.That(p.Categoria.Nombre, Is.EqualTo("BEBIDAS"));
+            Assert.That(p.CategoriaId, Is.Not.Null);
             Assert.That(p.Descripcion, Is.EqualTo("descripción con trim")); // se hace Trim
             Assert.That(p.EstablecimientosAsignados.Count, Is.EqualTo(1));
             Assert.That(p.AsignarATodosLosEstablecimientos, Is.False);
@@ -172,7 +176,7 @@ namespace CatalogoArticulosBC.Tests.Domain.Aggregates
                     unidadMedida: UDM(),
                     afectacionImpuesto: AfectG(),
                     tasaImpuesto: Tasa18(),
-                    categoria: CAT(),
+                    categoriaId: CID(),
                     establecimientosAsignados: Estabs1()
                 );
             }, Throws.TypeOf<ArgumentNullException>());
@@ -190,7 +194,7 @@ namespace CatalogoArticulosBC.Tests.Domain.Aggregates
             var nuevaUdm = SharedKernel.ValueObjects.UnidadDeMedida.LTR;
             var nuevaAfect = AfectG();
             var nuevaTasa = Tasa10(); // permitido cuando grava
-            var nuevaCat = new Categoria("Gaseosas");
+            var nuevaCatId = CategoriaId.New();
             var nuevaMarca = new Marca("Coca-Cola");
             var nuevoPrecio = new PrecioVenta(5.49m, PEN(), nuevaAfect, incluyeIGV: true);
             var nuevoCC = CentroDeCosto.Create("VENTA", "Venta Mostrador");
@@ -206,7 +210,7 @@ namespace CatalogoArticulosBC.Tests.Domain.Aggregates
                 unidadMedida: nuevaUdm,
                 afectacionImpuesto: nuevaAfect,
                 tasaImpuesto: nuevaTasa,
-                categoria: nuevaCat,
+                categoriaId: nuevaCatId,
                 marca: nuevaMarca,
                 precioVenta: nuevoPrecio,
                 centroDeCosto: nuevoCC,
@@ -228,7 +232,7 @@ namespace CatalogoArticulosBC.Tests.Domain.Aggregates
                 Assert.That(p.UnidadMedida, Is.EqualTo(nuevaUdm));
                 Assert.That(p.AfectacionImpuesto, Is.EqualTo(nuevaAfect));
                 Assert.That(p.TasaImpuesto, Is.EqualTo(nuevaTasa));
-                Assert.That(p.Categoria, Is.EqualTo(nuevaCat));
+                Assert.That(p.CategoriaId, Is.EqualTo(nuevaCatId));
                 Assert.That(p.Marca, Is.EqualTo(nuevaMarca));
                 Assert.That(p.PrecioVenta, Is.EqualTo(nuevoPrecio));
                 Assert.That(p.CentroDeCosto, Is.EqualTo(nuevoCC));
@@ -252,7 +256,7 @@ namespace CatalogoArticulosBC.Tests.Domain.Aggregates
             var p = NewProducto();
             Assert.That(() =>
                 p.EditarDatos(
-                    NOMBRE("x"), UDM(), AfectG(), Tasa18(), CAT("OTROS"),
+                    NOMBRE("x"), UDM(), AfectG(), Tasa18(), CID(),
                     marca: null, precioVenta: null, centroDeCosto: null, peso: null,
                     codigoBarras: null, codigoFabrica: null, tipo: TipoProducto.Bien,
                     establecimientosAsignados: new List<EstablecimientoId>()),
@@ -267,7 +271,7 @@ namespace CatalogoArticulosBC.Tests.Domain.Aggregates
             // no grava + tasa != 0
             Assert.That(() =>
                 p.EditarDatos(
-                    NOMBRE("x"), UDM(), AfectNoG(), Tasa18(), CAT("OTROS"),
+                    NOMBRE("x"), UDM(), AfectNoG(), Tasa18(), CID(),
                     marca: null, precioVenta: null, centroDeCosto: null, peso: null,
                     codigoBarras: null, codigoFabrica: null, tipo: TipoProducto.Bien,
                     establecimientosAsignados: Estabs1()),
@@ -276,7 +280,7 @@ namespace CatalogoArticulosBC.Tests.Domain.Aggregates
             // grava + tasa = 0
             Assert.That(() =>
                 p.EditarDatos(
-                    NOMBRE("x"), UDM(), AfectG(), Tasa0(), CAT("OTROS"),
+                    NOMBRE("x"), UDM(), AfectG(), Tasa0(), CID(),
                     marca: null, precioVenta: null, centroDeCosto: null, peso: null,
                     codigoBarras: null, codigoFabrica: null, tipo: TipoProducto.Bien,
                     establecimientosAsignados: Estabs1()),
@@ -285,7 +289,7 @@ namespace CatalogoArticulosBC.Tests.Domain.Aggregates
             // grava + tasa 12% no permitida
             Assert.That(() =>
                 p.EditarDatos(
-                    NOMBRE("x"), UDM(), AfectG(), TasaImpuesto.IGV12, CAT("OTROS"),
+                    NOMBRE("x"), UDM(), AfectG(), TasaImpuesto.IGV12, CID(),
                     marca: null, precioVenta: null, centroDeCosto: null, peso: null,
                     codigoBarras: null, codigoFabrica: null, tipo: TipoProducto.Bien,
                     establecimientosAsignados: Estabs1()),
@@ -313,10 +317,11 @@ namespace CatalogoArticulosBC.Tests.Domain.Aggregates
         public void CambiarCategoria_ActualizaCategoria_Y_EmiteEvento()
         {
             var p = NewProducto();
-            var nueva = new Categoria("Lácteos");
-            p.CambiarCategoria(nueva, "jdoe");
+            var nueva = CategoriaId.New();
+            p.CambiarCategoria(nueva, "jdoe", nombreSnapshot: "Lácteos");
 
-            Assert.That(p.Categoria, Is.EqualTo(nueva));
+            Assert.That(p.CategoriaId, Is.EqualTo(nueva));
+            Assert.That(p.CategoriaNombreSnapshot, Is.EqualTo("Lácteos"));
             Assert.That(p.DomainEvents.OfType<ProductoCategoriaCambiada>().Count(), Is.EqualTo(1));
         }
 
@@ -451,7 +456,7 @@ namespace CatalogoArticulosBC.Tests.Domain.Aggregates
             Assert.That(p.PesoValor, Is.EqualTo(0m));
 
             // actualizar con peso
-            p.EditarDatos(NOMBRE("x"), UDM(), AfectG(), Tasa18(), CAT("OTROS"),
+            p.EditarDatos(NOMBRE("x"), UDM(), AfectG(), Tasa18(), CID(),
                 marca: null, precioVenta: null, centroDeCosto: null, peso: PESO(2.34m),
                 codigoBarras: null, codigoFabrica: null, tipo: TipoProducto.Bien,
                 establecimientosAsignados: Estabs1());
