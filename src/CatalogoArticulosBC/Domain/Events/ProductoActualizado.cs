@@ -14,7 +14,8 @@ namespace CatalogoArticulosBC.Domain.Events
     public sealed class ProductoActualizado : DomainEvent
     {
         // Identidad
-        public Guid ProductoId { get; }
+    public Guid ProductoId { get; }
+    public ProductoId ProductoIdVO => new ProductoId(ProductoId);
         public EmpresaId EmpresaId { get; }
 
     // Clave de negocio (puede cambiar si se permite)

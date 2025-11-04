@@ -21,6 +21,7 @@ namespace CatalogoArticulosBC.Domain.Aggregates
     {
     // Identidad y estado
     public Guid ProductoId { get; private set; }
+    public ProductoId ProductoIdVO => new ProductoId(ProductoId);
     public bool Habilitado { get; private set; } = true;
     /// <summary>
     /// Empresa (tenant) propietaria del producto.

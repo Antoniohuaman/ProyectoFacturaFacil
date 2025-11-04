@@ -12,6 +12,7 @@ namespace CatalogoArticulosBC.Domain.Events
 	{
 		/// <summary>Identificador único del producto.</summary>
 		public Guid ProductoId { get; }
+		public ProductoId ProductoIdVO => new ProductoId(ProductoId);
 
 		/// <summary>Empresa (tenant) del producto.</summary>
 		public EmpresaId EmpresaId { get; }

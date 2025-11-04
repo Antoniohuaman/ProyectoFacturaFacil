@@ -15,6 +15,7 @@ namespace CatalogoArticulosBC.Domain.Events
     {
         // Identidad
     public Guid ProductoId { get; }
+    public ProductoId ProductoIdVO => new ProductoId(ProductoId);
     public EmpresaId EmpresaId { get; }
     public Sku Sku { get; }
         public TipoProducto TipoProducto { get; }

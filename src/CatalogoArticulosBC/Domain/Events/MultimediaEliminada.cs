@@ -8,6 +8,7 @@ namespace CatalogoArticulosBC.Domain.Events
     public class MultimediaEliminada : DomainEvent
     {
         public Guid ProductoId { get; }
+        public ProductoId ProductoIdVO => new ProductoId(ProductoId);
         public EmpresaId EmpresaId { get; }
         public Guid MultimediaId { get; }
         public MultimediaEliminada(Guid productoId, EmpresaId empresaId, Guid multimediaId, Guid? eventId = null, DateTime? occurredOnUtc = null)

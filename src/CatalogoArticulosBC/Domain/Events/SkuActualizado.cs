@@ -7,6 +7,7 @@ namespace CatalogoArticulosBC.Domain.Events
     public class SkuActualizado : DomainEvent
     {
         public Guid ProductoId { get; }
+        public ProductoId ProductoIdVO => new ProductoId(ProductoId);
         public EmpresaId EmpresaId { get; }
         public Sku NuevoSku { get; }
 
