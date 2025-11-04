@@ -1,6 +1,6 @@
 using System;
 using SharedKernel.Exceptions;
-using SharedKernel.ValueObjects; // EmpresaId, EstablecimientoId, AlmacenId, Sku
+using SharedKernel.ValueObjects; // EmpresaId, EstablecimientoId, AlmacenId, ProductoId
 using GestionInventarioBC.Domain.ValueObjects; // CantidadStock, EstadoTransferencia
 
 namespace GestionInventarioBC.Domain.Aggregates
@@ -16,7 +16,7 @@ namespace GestionInventarioBC.Domain.Aggregates
 		public AlmacenId OrigenAlmacenId { get; }
 		public EstablecimientoId DestinoEstablecimientoId { get; }
 		public AlmacenId DestinoAlmacenId { get; }
-		public Sku Sku { get; }
+		public ProductoId ProductoId { get; }
 		public CantidadStock Cantidad { get; }
 		public EstadoTransferencia Estado { get; private set; }
 		public DateTimeOffset CreadoEn { get; }
@@ -28,7 +28,7 @@ namespace GestionInventarioBC.Domain.Aggregates
 			AlmacenId origenAlm,
 			EstablecimientoId destinoEst,
 			AlmacenId destinoAlm,
-			Sku sku,
+			ProductoId productoId,
 			CantidadStock cantidad)
 		{
 			if (id == Guid.Empty) throw new ArgumentException("Id inválido.", nameof(id));
@@ -41,7 +41,7 @@ namespace GestionInventarioBC.Domain.Aggregates
 			OrigenAlmacenId = origenAlm;
 			DestinoEstablecimientoId = destinoEst;
 			DestinoAlmacenId = destinoAlm;
-			Sku = sku ?? throw new ArgumentNullException(nameof(sku));
+			ProductoId = productoId;
 			Cantidad = cantidad;
 			Estado = EstadoTransferencia.Creada;
 			CreadoEn = DateTimeOffset.UtcNow;
@@ -53,9 +53,9 @@ namespace GestionInventarioBC.Domain.Aggregates
 			AlmacenId origenAlm,
 			EstablecimientoId destinoEst,
 			AlmacenId destinoAlm,
-			Sku sku,
+			ProductoId productoId,
 			CantidadStock cantidad)
-			=> new(Guid.NewGuid(), empresaId, origenEst, origenAlm, destinoEst, destinoAlm, sku, cantidad);
+			=> new(Guid.NewGuid(), empresaId, origenEst, origenAlm, destinoEst, destinoAlm, productoId, cantidad);
 
 		public void Confirmar()
 		{

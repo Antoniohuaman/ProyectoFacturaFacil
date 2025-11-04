@@ -1,6 +1,6 @@
 using System;
 using SharedKernel.Events;
-using SharedKernel.ValueObjects; // EmpresaId, EstablecimientoId, AlmacenId, Sku
+using SharedKernel.ValueObjects; // EmpresaId, EstablecimientoId, AlmacenId, ProductoId
 
 namespace GestionInventarioBC.Domain.Events
 {
@@ -11,7 +11,7 @@ namespace GestionInventarioBC.Domain.Events
 		AlmacenId OrigenAlmacenId,
 		EstablecimientoId DestinoEstablecimientoId,
 		AlmacenId DestinoAlmacenId,
-		Sku Sku,
+		ProductoId ProductoId,
 		decimal Cantidad,
 		string? Motivo
 	) : IDomainEvent;

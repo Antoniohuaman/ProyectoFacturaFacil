@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using SharedKernel.ValueObjects; // EmpresaId, EstablecimientoId, AlmacenId, Sku
+using SharedKernel.ValueObjects; // EmpresaId, EstablecimientoId, AlmacenId, ProductoId
 using GestionInventarioBC.Domain.Entities; // LineaMovimiento
 using GestionInventarioBC.Domain.ValueObjects; // TipoMovimiento, MotivoMovimiento
 

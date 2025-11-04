@@ -34,17 +34,20 @@ namespace GestionInventarioBC.Application.UseCases.Transferencias
 
 		private readonly IStockPorAlmacenRepository _stockRepo;
 		private readonly IMovimientoInventarioRepository _movRepo;
+		private readonly ICatalogoReadModel _catalogo;
 		private readonly ITenantContext _tenant;
 		private readonly IUnitOfWork _uow;
 
 		public TransferirEntreAlmacenesUseCase(
 			IStockPorAlmacenRepository stockRepo,
 			IMovimientoInventarioRepository movRepo,
+			ICatalogoReadModel catalogo,
 			ITenantContext tenant,
 			IUnitOfWork uow)
 		{
 			_stockRepo = stockRepo ?? throw new ArgumentNullException(nameof(stockRepo));
 			_movRepo = movRepo ?? throw new ArgumentNullException(nameof(movRepo));
+			_catalogo = catalogo ?? throw new ArgumentNullException(nameof(catalogo));
 			_tenant = tenant ?? throw new ArgumentNullException(nameof(tenant));
 			_uow = uow ?? throw new ArgumentNullException(nameof(uow));
 		}
@@ -70,25 +73,26 @@ namespace GestionInventarioBC.Application.UseCases.Transferencias
 
 			foreach (var l in req.Lineas)
 			{
-				var sku = Sku.Crear(l.Sku);
+				var productoId = await _catalogo.TryGetProductoIdBySkuAsync(empresaId, l.Sku, ct)
+								?? throw new NotFoundException($"No existe producto para SKU {l.Sku}.");
 				var cant = CantidadStock.From(l.Cantidad);
 
-				var stockOrigen = await _stockRepo.ObtenerAsync(empresaId, oEst, oAlm, sku, ct);
+				var stockOrigen = await _stockRepo.ObtenerAsync(empresaId, oEst, oAlm, productoId, ct);
 				if (stockOrigen is null)
-					throw new NotFoundException($"No se encontró stock en el almacén de origen para SKU {sku}.");
+					throw new NotFoundException($"No se encontró stock en el almacén de origen para el producto indicado.");
 
 				// Egresar en origen (lanza si no alcanza)
 				stockOrigen.Egresar(cant);
 				await _stockRepo.GuardarAsync(stockOrigen, ct);
 
 				// Ingresar en destino (crear si no existe)
-				var stockDestino = await _stockRepo.ObtenerAsync(empresaId, dEst, dAlm, sku, ct)
-								  ?? StockPorAlmacen.CrearNuevo(empresaId, dEst, dAlm, sku);
+				var stockDestino = await _stockRepo.ObtenerAsync(empresaId, dEst, dAlm, productoId, ct)
+								  ?? StockPorAlmacen.CrearNuevo(empresaId, dEst, dAlm, productoId);
 				stockDestino.Ingresar(cant);
 				await _stockRepo.GuardarAsync(stockDestino, ct);
 
-				lineasSalida.Add(LineaMovimiento.Crear(sku, cant));
-				lineasEntrada.Add(LineaMovimiento.Crear(sku, cant));
+				lineasSalida.Add(LineaMovimiento.Crear(productoId, cant));
+				lineasEntrada.Add(LineaMovimiento.Crear(productoId, cant));
 			}
 
 			// Registrar movimientos de salida/entrada

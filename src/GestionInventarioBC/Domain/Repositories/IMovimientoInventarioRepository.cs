@@ -16,7 +16,7 @@ namespace GestionInventarioBC.Domain.Repositories
 			AlmacenId almacenId,
 			DateTimeOffset? desde = null,
 			DateTimeOffset? hasta = null,
-			Sku? sku = null,
+			ProductoId? productoId = null,
 			GestionInventarioBC.Domain.ValueObjects.TipoMovimiento? tipo = null,
 			GestionInventarioBC.Domain.ValueObjects.MotivoMovimiento? motivo = null,
 			CancellationToken ct = default);

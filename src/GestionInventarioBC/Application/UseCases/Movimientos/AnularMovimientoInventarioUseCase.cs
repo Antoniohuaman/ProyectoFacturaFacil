@@ -59,10 +59,10 @@ namespace GestionInventarioBC.Application.UseCases.Movimientos
 			var lineasInv = new List<LineaMovimiento>(original.Lineas.Count);
 			foreach (var l in original.Lineas)
 			{
-				var sku = l.Sku;
+				var productoId = l.ProductoId;
 				var cant = l.Cantidad;
-				var stock = await _stockRepo.ObtenerAsync(empresaId, estId, almId, sku, ct)
-						   ?? StockPorAlmacen.CrearNuevo(empresaId, estId, almId, sku);
+				var stock = await _stockRepo.ObtenerAsync(empresaId, estId, almId, productoId, ct)
+					   ?? StockPorAlmacen.CrearNuevo(empresaId, estId, almId, productoId);
 
 				// Aplica inverso en stock
 				switch (original.Tipo)
@@ -79,7 +79,7 @@ namespace GestionInventarioBC.Application.UseCases.Movimientos
 						break;
 				}
 				await _stockRepo.GuardarAsync(stock, ct);
-				lineasInv.Add(LineaMovimiento.Crear(sku, cant));
+				lineasInv.Add(LineaMovimiento.Crear(productoId, cant));
 			}
 
 			var compensatorio = MovimientoInventario.Registrar(

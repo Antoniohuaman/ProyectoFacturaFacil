@@ -36,14 +36,14 @@ namespace GestionInventarioBC.Application.UseCases.Transferencias
 			var t = await _tRepo.ObtenerAsync(empresaId, req.TransferenciaId, ct) ?? throw new NotFoundException("Transferencia no encontrada.");
 
 			// Egreso en origen
-			var stockOrigen = await _stockRepo.ObtenerAsync(empresaId, t.OrigenEstablecimientoId, t.OrigenAlmacenId, t.Sku, ct)
+			var stockOrigen = await _stockRepo.ObtenerAsync(empresaId, t.OrigenEstablecimientoId, t.OrigenAlmacenId, t.ProductoId, ct)
 							 ?? throw new NotFoundException("Stock de origen no encontrado.");
 			stockOrigen.Egresar(t.Cantidad);
 			await _stockRepo.GuardarAsync(stockOrigen, ct);
 
 			// Ingreso en destino
-			var stockDestino = await _stockRepo.ObtenerAsync(empresaId, t.DestinoEstablecimientoId, t.DestinoAlmacenId, t.Sku, ct)
-							  ?? Domain.Aggregates.StockPorAlmacen.CrearNuevo(empresaId, t.DestinoEstablecimientoId, t.DestinoAlmacenId, t.Sku);
+			var stockDestino = await _stockRepo.ObtenerAsync(empresaId, t.DestinoEstablecimientoId, t.DestinoAlmacenId, t.ProductoId, ct)
+							  ?? Domain.Aggregates.StockPorAlmacen.CrearNuevo(empresaId, t.DestinoEstablecimientoId, t.DestinoAlmacenId, t.ProductoId);
 			stockDestino.Ingresar(t.Cantidad);
 			await _stockRepo.GuardarAsync(stockDestino, ct);
 

@@ -1,13 +1,13 @@
 using System;
 using System.Collections.Generic;
 using SharedKernel.Exceptions;
-using SharedKernel.ValueObjects; // EmpresaId, EstablecimientoId, AlmacenId, Sku
+using SharedKernel.ValueObjects; // EmpresaId, EstablecimientoId, AlmacenId, ProductoId
 using GestionInventarioBC.Domain.ValueObjects;
 
 namespace GestionInventarioBC.Domain.Aggregates
 {
 	/// <summary>
-	/// Agregado que modela el stock de un SKU en un almacén específico.
+	/// Agregado que modela el stock de un producto en un almacén específico.
 	/// Garantiza que Reservado <= Real y que ambos son >= 0.
 	/// </summary>
 	public sealed class StockPorAlmacen
@@ -16,7 +16,7 @@ namespace GestionInventarioBC.Domain.Aggregates
 		public EmpresaId EmpresaId { get; }
 		public EstablecimientoId EstablecimientoId { get; }
 		public AlmacenId AlmacenId { get; }
-		public Sku Sku { get; }
+		public ProductoId ProductoId { get; }
 
 		// Estado
 		public CantidadStock Real { get; private set; }
@@ -24,13 +24,13 @@ namespace GestionInventarioBC.Domain.Aggregates
 		public CantidadStock Disponible => CantidadStock.From(Real.Value - Reservado.Value);
 		public int Version { get; private set; }
 
-		private StockPorAlmacen(EmpresaId empresaId, EstablecimientoId establecimientoId, AlmacenId almacenId, Sku sku,
+		private StockPorAlmacen(EmpresaId empresaId, EstablecimientoId establecimientoId, AlmacenId almacenId, ProductoId productoId,
 			CantidadStock real, CantidadStock reservado)
 		{
 			EmpresaId = empresaId ?? throw new ArgumentNullException(nameof(empresaId));
 			EstablecimientoId = establecimientoId;
 			AlmacenId = almacenId;
-			Sku = sku ?? throw new ArgumentNullException(nameof(sku));
+			ProductoId = productoId;
 			if (reservado.Value > real.Value)
 				throw new BusinessRuleException("El stock reservado no puede exceder al stock real.");
 			Real = real;
@@ -38,8 +38,8 @@ namespace GestionInventarioBC.Domain.Aggregates
 			Version = 0;
 		}
 
-		public static StockPorAlmacen CrearNuevo(EmpresaId empresaId, EstablecimientoId establecimientoId, AlmacenId almacenId, Sku sku)
-			=> new(empresaId, establecimientoId, almacenId, sku, CantidadStock.Cero, CantidadStock.Cero);
+		public static StockPorAlmacen CrearNuevo(EmpresaId empresaId, EstablecimientoId establecimientoId, AlmacenId almacenId, ProductoId productoId)
+			=> new(empresaId, establecimientoId, almacenId, productoId, CantidadStock.Cero, CantidadStock.Cero);
 
 		public void Ingresar(CantidadStock cantidad)
 		{

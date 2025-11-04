@@ -15,7 +15,7 @@ namespace GestionInventarioBC.Application.UseCases.OperacionesMasivas
 	public sealed class ExportarListadoStockUseCase
 	{
 		public readonly record struct Request(Guid EstablecimientoId, Guid AlmacenId);
-		public readonly record struct Item(string Sku, decimal Real, decimal Reservado, decimal Disponible);
+		public readonly record struct Item(Guid ProductoId, decimal Real, decimal Reservado, decimal Disponible);
 		public readonly record struct Response(IReadOnlyList<Item> Items);
 
 		private readonly IStockPorAlmacenRepository _repo;
@@ -34,7 +34,7 @@ namespace GestionInventarioBC.Application.UseCases.OperacionesMasivas
 			var almId = AlmacenId.From(req.AlmacenId);
 
 			var lista = await _repo.ListarPorAlmacenAsync(empresaId, estId, almId, ct);
-			var items = lista.Select(s => new Item(s.Sku.Valor, s.Real.Value, s.Reservado.Value, s.Disponible.Value)).ToList();
+			var items = lista.Select(s => new Item(s.ProductoId.Value, s.Real.Value, s.Reservado.Value, s.Disponible.Value)).ToList();
 			return new Response(items);
 		}
 	}

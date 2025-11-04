@@ -38,7 +38,7 @@ namespace GestionInventarioBC.Application.UseCases.Reservas
 
 			var reserva = await _reservaRepo.ObtenerAsync(empresaId, estId, almId, req.ReservaId, ct)
 						  ?? throw new NotFoundException("Reserva no encontrada.");
-			var stock = await _stockRepo.ObtenerAsync(empresaId, estId, almId, reserva.Sku, ct)
+			var stock = await _stockRepo.ObtenerAsync(empresaId, estId, almId, reserva.ProductoId, ct)
 					   ?? throw new NotFoundException("Stock no encontrado para la reserva.");
 
 			// Confirmar reserva y egresar la cantidad. Secuencia: liberar reservado y egresar.

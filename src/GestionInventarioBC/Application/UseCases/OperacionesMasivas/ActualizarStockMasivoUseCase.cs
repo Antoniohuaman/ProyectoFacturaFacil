@@ -21,12 +21,14 @@ namespace GestionInventarioBC.Application.UseCases.OperacionesMasivas
 		public readonly record struct Response(int Procesados);
 
 		private readonly IStockPorAlmacenRepository _repo;
+		private readonly ICatalogoReadModel _catalogo;
 		private readonly ITenantContext _tenant;
 		private readonly IUnitOfWork _uow;
 
-		public ActualizarStockMasivoUseCase(IStockPorAlmacenRepository repo, ITenantContext tenant, IUnitOfWork uow)
+		public ActualizarStockMasivoUseCase(IStockPorAlmacenRepository repo, ICatalogoReadModel catalogo, ITenantContext tenant, IUnitOfWork uow)
 		{
 			_repo = repo ?? throw new ArgumentNullException(nameof(repo));
+			_catalogo = catalogo ?? throw new ArgumentNullException(nameof(catalogo));
 			_tenant = tenant ?? throw new ArgumentNullException(nameof(tenant));
 			_uow = uow ?? throw new ArgumentNullException(nameof(uow));
 		}
@@ -40,11 +42,12 @@ namespace GestionInventarioBC.Application.UseCases.OperacionesMasivas
 			var count = 0;
 			foreach (var l in req.Lineas)
 			{
-				var sku = Sku.Crear(l.Sku);
+				var productoId = await _catalogo.TryGetProductoIdBySkuAsync(empresaId, l.Sku, ct)
+								?? throw new SharedKernel.Exceptions.NotFoundException($"No existe producto para SKU {l.Sku}.");
 				var destino = CantidadStock.From(l.Cantidad);
 
-				var stock = await _repo.ObtenerAsync(empresaId, estId, almId, sku, ct)
-							?? StockPorAlmacen.CrearNuevo(empresaId, estId, almId, sku);
+				var stock = await _repo.ObtenerAsync(empresaId, estId, almId, productoId, ct)
+							?? StockPorAlmacen.CrearNuevo(empresaId, estId, almId, productoId);
 
 				var actual = stock.Real.Value;
 				if (destino.Value > actual)

@@ -26,13 +26,15 @@ namespace GestionInventarioBC.Application.UseCases.Movimientos
 		private readonly IMovimientoInventarioRepository _movRepo;
 		private readonly ITenantContext _tenant;
 		private readonly IUnitOfWork _uow;
+        private readonly ICatalogoReadModel _catalogo;
 
-		public RegistrarAjusteInventarioUseCase(IStockPorAlmacenRepository stockRepo, IMovimientoInventarioRepository movRepo, ITenantContext tenant, IUnitOfWork uow)
+		public RegistrarAjusteInventarioUseCase(IStockPorAlmacenRepository stockRepo, IMovimientoInventarioRepository movRepo, ITenantContext tenant, IUnitOfWork uow, ICatalogoReadModel catalogo)
 		{
 			_stockRepo = stockRepo ?? throw new ArgumentNullException(nameof(stockRepo));
 			_movRepo = movRepo ?? throw new ArgumentNullException(nameof(movRepo));
 			_tenant = tenant ?? throw new ArgumentNullException(nameof(tenant));
 			_uow = uow ?? throw new ArgumentNullException(nameof(uow));
+            _catalogo = catalogo ?? throw new ArgumentNullException(nameof(catalogo));
 		}
 
 		public async Task<Response> Handle(Request req, CancellationToken ct)
@@ -47,11 +49,12 @@ namespace GestionInventarioBC.Application.UseCases.Movimientos
 			foreach (var it in req.Items)
 			{
 				if (it.Delta == 0m) continue;
-				var sku = Sku.Crear(it.Sku);
+				var productoId = await _catalogo.TryGetProductoIdBySkuAsync(empresaId, it.Sku, ct)
+                        ?? throw new NotFoundException($"No existe producto para SKU {it.Sku}.");
 				var valorAbs = Math.Abs(it.Delta);
 				var cant = CantidadStock.From(valorAbs);
-				var stock = await _stockRepo.ObtenerAsync(empresaId, estId, almId, sku, ct)
-						   ?? StockPorAlmacen.CrearNuevo(empresaId, estId, almId, sku);
+				var stock = await _stockRepo.ObtenerAsync(empresaId, estId, almId, productoId, ct)
+					   ?? StockPorAlmacen.CrearNuevo(empresaId, estId, almId, productoId);
 
 				if (it.Delta > 0m)
 				{
@@ -65,7 +68,7 @@ namespace GestionInventarioBC.Application.UseCases.Movimientos
 					tipoMov ??= TipoMovimiento.AjusteNegativo;
 				}
 				await _stockRepo.GuardarAsync(stock, ct);
-				lineas.Add(LineaMovimiento.Crear(sku, cant));
+				lineas.Add(LineaMovimiento.Crear(productoId, cant));
 			}
 
 			if (lineas.Count == 0)

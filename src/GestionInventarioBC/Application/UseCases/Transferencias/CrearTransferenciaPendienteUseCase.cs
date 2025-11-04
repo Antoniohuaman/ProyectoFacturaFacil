@@ -27,12 +27,14 @@ namespace GestionInventarioBC.Application.UseCases.Transferencias
 		public readonly record struct Response(Guid TransferenciaId);
 
 		private readonly ITransferenciaInventarioRepository _repo;
+		private readonly ICatalogoReadModel _catalogo;
 		private readonly ITenantContext _tenant;
 		private readonly IUnitOfWork _uow;
 
-		public CrearTransferenciaPendienteUseCase(ITransferenciaInventarioRepository repo, ITenantContext tenant, IUnitOfWork uow)
+		public CrearTransferenciaPendienteUseCase(ITransferenciaInventarioRepository repo, ICatalogoReadModel catalogo, ITenantContext tenant, IUnitOfWork uow)
 		{
 			_repo = repo ?? throw new ArgumentNullException(nameof(repo));
+			_catalogo = catalogo ?? throw new ArgumentNullException(nameof(catalogo));
 			_tenant = tenant ?? throw new ArgumentNullException(nameof(tenant));
 			_uow = uow ?? throw new ArgumentNullException(nameof(uow));
 		}
@@ -44,10 +46,11 @@ namespace GestionInventarioBC.Application.UseCases.Transferencias
 			var origenAlm = AlmacenId.From(req.OrigenAlmacenId);
 			var destEst = EstablecimientoId.From(req.DestinoEstablecimientoId);
 			var destAlm = AlmacenId.From(req.DestinoAlmacenId);
-			var sku = Sku.Crear(req.Sku);
+			var productoId = await _catalogo.TryGetProductoIdBySkuAsync(empresaId, req.Sku, ct)
+							?? throw new SharedKernel.Exceptions.NotFoundException("No existe producto para el SKU indicado.");
 			var cant = CantidadStock.From(req.Cantidad);
 
-			var t = TransferenciaInventario.Crear(empresaId, origenEst, origenAlm, destEst, destAlm, sku, cant);
+			var t = TransferenciaInventario.Crear(empresaId, origenEst, origenAlm, destEst, destAlm, productoId, cant);
 			await _repo.GuardarAsync(t, ct);
 			await _uow.CommitAsync(ct);
 			return new Response(t.TransferenciaId);

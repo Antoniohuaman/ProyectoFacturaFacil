@@ -27,7 +27,7 @@ namespace GestionInventarioBC.Application.UseCases.Consultas
 			Guid OrigenAlmacenId,
 			Guid DestinoEstablecimientoId,
 			Guid DestinoAlmacenId,
-			string Sku,
+			Guid ProductoId,
 			decimal Cantidad,
 			DateTimeOffset CreadoEn
 		);
@@ -58,7 +58,7 @@ namespace GestionInventarioBC.Application.UseCases.Consultas
 				t.OrigenAlmacenId.Value,
 				t.DestinoEstablecimientoId.Value,
 				t.DestinoAlmacenId.Value,
-				t.Sku.Valor,
+				t.ProductoId.Value,
 				t.Cantidad.Value,
 				t.CreadoEn
 			)).ToList();

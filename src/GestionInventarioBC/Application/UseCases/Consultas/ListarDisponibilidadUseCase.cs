@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using GestionInventarioBC.Domain.Repositories;
 using SharedKernel.Application.Interfaces;
 using SharedKernel.ValueObjects;
+using GestionInventarioBC.Application.Interfaces;
 
 namespace GestionInventarioBC.Application.UseCases.Consultas
 {
@@ -25,13 +26,15 @@ namespace GestionInventarioBC.Application.UseCases.Consultas
 
 		public readonly record struct Response(IReadOnlyList<Item> Items);
 
-		private readonly IStockPorAlmacenRepository _repo;
-		private readonly ITenantContext _tenant;
+	private readonly IStockPorAlmacenRepository _repo;
+	private readonly ITenantContext _tenant;
+	private readonly ICatalogoReadModel _catalogo;
 
-		public ListarDisponibilidadUseCase(IStockPorAlmacenRepository repo, ITenantContext tenant)
+		public ListarDisponibilidadUseCase(IStockPorAlmacenRepository repo, ITenantContext tenant, ICatalogoReadModel catalogo)
 		{
 			_repo = repo ?? throw new ArgumentNullException(nameof(repo));
 			_tenant = tenant ?? throw new ArgumentNullException(nameof(tenant));
+			_catalogo = catalogo ?? throw new ArgumentNullException(nameof(catalogo));
 		}
 
 		public async Task<Response> Handle(Request req, CancellationToken ct)
@@ -44,8 +47,10 @@ namespace GestionInventarioBC.Application.UseCases.Consultas
 
 			if (!string.IsNullOrWhiteSpace(req.FiltroSku))
 			{
-				var filtro = req.FiltroSku.Trim().ToUpperInvariant();
-				lista = lista.Where(s => s.Sku.Valor.Contains(filtro, StringComparison.Ordinal)).ToList();
+				// Traducir filtro SKU a lista de ProductoId
+				var productos = await _catalogo.BuscarProductoIdsAsync(empresaId, req.FiltroSku.Trim(), null, ct);
+				var set = productos.Count > 0 ? new HashSet<Guid>(productos.Select(p => p.Value)) : new();
+				lista = set.Count == 0 ? new List<Domain.Aggregates.StockPorAlmacen>() : lista.Where(s => set.Contains(s.ProductoId.Value)).ToList();
 			}
 
 			if (req.SoloConDisponible)
@@ -54,7 +59,7 @@ namespace GestionInventarioBC.Application.UseCases.Consultas
 			}
 
 			var items = lista.Select(s => new Item(
-				Sku: s.Sku.Valor,
+				Sku: s.ProductoId.Value.ToString(),
 				Real: s.Real.Value,
 				Reservado: s.Reservado.Value,
 				Disponible: s.Disponible.Value

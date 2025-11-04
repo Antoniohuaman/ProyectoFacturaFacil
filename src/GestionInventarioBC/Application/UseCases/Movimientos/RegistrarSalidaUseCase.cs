@@ -27,13 +27,15 @@ namespace GestionInventarioBC.Application.UseCases.Movimientos
 		private readonly IMovimientoInventarioRepository _movRepo;
 		private readonly ITenantContext _tenant;
 		private readonly IUnitOfWork _uow;
+        private readonly ICatalogoReadModel _catalogo;
 
-		public RegistrarSalidaUseCase(IStockPorAlmacenRepository stockRepo, IMovimientoInventarioRepository movRepo, ITenantContext tenant, IUnitOfWork uow)
+		public RegistrarSalidaUseCase(IStockPorAlmacenRepository stockRepo, IMovimientoInventarioRepository movRepo, ITenantContext tenant, IUnitOfWork uow, ICatalogoReadModel catalogo)
 		{
 			_stockRepo = stockRepo ?? throw new ArgumentNullException(nameof(stockRepo));
 			_movRepo = movRepo ?? throw new ArgumentNullException(nameof(movRepo));
 			_tenant = tenant ?? throw new ArgumentNullException(nameof(tenant));
 			_uow = uow ?? throw new ArgumentNullException(nameof(uow));
+            _catalogo = catalogo ?? throw new ArgumentNullException(nameof(catalogo));
 		}
 
 		public async Task<Response> Handle(Request req, CancellationToken ct)
@@ -46,14 +48,15 @@ namespace GestionInventarioBC.Application.UseCases.Movimientos
 
 			foreach (var l in req.Lineas)
 			{
-				var sku = Sku.Crear(l.Sku);
+				var productoId = await _catalogo.TryGetProductoIdBySkuAsync(empresaId, l.Sku, ct)
+                        ?? throw new NotFoundException($"No existe producto para el SKU {l.Sku}.");
 				var cant = CantidadStock.From(l.Cantidad);
-				var stock = await _stockRepo.ObtenerAsync(empresaId, estId, almId, sku, ct);
+				var stock = await _stockRepo.ObtenerAsync(empresaId, estId, almId, productoId, ct);
 				if (stock is null)
-					throw new NotFoundException($"No existe stock para el SKU {l.Sku} en el almacén indicado.");
+					throw new NotFoundException($"No existe stock para el producto derivado del SKU {l.Sku} en el almacén indicado.");
 				stock.Egresar(cant); // valida disponibilidad
 				await _stockRepo.GuardarAsync(stock, ct);
-				lineas.Add(LineaMovimiento.Crear(sku, cant));
+				lineas.Add(LineaMovimiento.Crear(productoId, cant));
 			}
 
 			var movimiento = MovimientoInventario.Registrar(

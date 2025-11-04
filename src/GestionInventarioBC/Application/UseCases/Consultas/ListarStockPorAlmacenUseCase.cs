@@ -17,7 +17,7 @@ namespace GestionInventarioBC.Application.UseCases.Consultas
 		public readonly record struct Request(Guid EstablecimientoId, Guid AlmacenId);
 
 		public readonly record struct Item(
-			string Sku,
+			Guid ProductoId,
 			decimal Real,
 			decimal Reservado,
 			decimal Disponible
@@ -42,7 +42,7 @@ namespace GestionInventarioBC.Application.UseCases.Consultas
 
 			var lista = await _repo.ListarPorAlmacenAsync(empresaId, estId, almId, ct);
 			var items = lista.Select(s => new Item(
-				Sku: s.Sku.Valor,
+				ProductoId: s.ProductoId.Value,
 				Real: s.Real.Value,
 				Reservado: s.Reservado.Value,
 				Disponible: s.Disponible.Value

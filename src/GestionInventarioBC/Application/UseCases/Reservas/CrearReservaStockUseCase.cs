@@ -22,13 +22,15 @@ namespace GestionInventarioBC.Application.UseCases.Reservas
 
 		private readonly IStockPorAlmacenRepository _stockRepo;
 		private readonly IReservaStockRepository _reservaRepo;
+		private readonly ICatalogoReadModel _catalogo;
 		private readonly ITenantContext _tenant;
 		private readonly IUnitOfWork _uow;
 
-		public CrearReservaStockUseCase(IStockPorAlmacenRepository stockRepo, IReservaStockRepository reservaRepo, ITenantContext tenant, IUnitOfWork uow)
+		public CrearReservaStockUseCase(IStockPorAlmacenRepository stockRepo, IReservaStockRepository reservaRepo, ICatalogoReadModel catalogo, ITenantContext tenant, IUnitOfWork uow)
 		{
 			_stockRepo = stockRepo ?? throw new ArgumentNullException(nameof(stockRepo));
 			_reservaRepo = reservaRepo ?? throw new ArgumentNullException(nameof(reservaRepo));
+			_catalogo = catalogo ?? throw new ArgumentNullException(nameof(catalogo));
 			_tenant = tenant ?? throw new ArgumentNullException(nameof(tenant));
 			_uow = uow ?? throw new ArgumentNullException(nameof(uow));
 		}
@@ -38,11 +40,12 @@ namespace GestionInventarioBC.Application.UseCases.Reservas
 			var empresaId = _tenant.EmpresaId ?? throw new InvalidOperationException("EmpresaId del contexto es obligatorio.");
 			var estId = EstablecimientoId.From(req.EstablecimientoId);
 			var almId = AlmacenId.From(req.AlmacenId);
-			var sku = Sku.Crear(req.Sku);
 			var cant = CantidadStock.From(req.Cantidad);
+			var productoId = await _catalogo.TryGetProductoIdBySkuAsync(empresaId, req.Sku, ct)
+							?? throw new NotFoundException("No existe producto para el SKU indicado.");
 
-			var stock = await _stockRepo.ObtenerAsync(empresaId, estId, almId, sku, ct)
-					   ?? StockPorAlmacen.CrearNuevo(empresaId, estId, almId, sku);
+			var stock = await _stockRepo.ObtenerAsync(empresaId, estId, almId, productoId, ct)
+					   ?? StockPorAlmacen.CrearNuevo(empresaId, estId, almId, productoId);
 			var disp = DisponibilidadStock.Crear(stock.Real, stock.Reservado);
 			var eval = PoliticaReserva.Evaluar(disp, cant);
 			if (!eval.IsSatisfied)
@@ -51,7 +54,7 @@ namespace GestionInventarioBC.Application.UseCases.Reservas
 			stock.Reservar(cant);
 			await _stockRepo.GuardarAsync(stock, ct);
 
-			var reserva = ReservaStock.Crear(empresaId, estId, almId, sku, cant, req.VenceEn);
+			var reserva = ReservaStock.Crear(empresaId, estId, almId, productoId, cant, req.VenceEn);
 			await _reservaRepo.GuardarAsync(reserva, ct);
 			await _uow.CommitAsync(ct);
 			return new Response(reserva.ReservaId);

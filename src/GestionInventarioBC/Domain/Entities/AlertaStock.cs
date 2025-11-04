@@ -1,5 +1,5 @@
 using System;
-using SharedKernel.ValueObjects; // Sku
+using SharedKernel.ValueObjects; // ProductoId
 
 namespace GestionInventarioBC.Domain.Entities
 {
@@ -9,22 +9,22 @@ namespace GestionInventarioBC.Domain.Entities
 	public sealed record AlertaStock
 	{
 		public DateTimeOffset Fecha { get; }
-		public Sku Sku { get; }
+		public ProductoId ProductoId { get; }
 		public decimal Disponible { get; }
 		public decimal Minimo { get; }
 		public string? Observacion { get; }
 
-		private AlertaStock(DateTimeOffset fecha, Sku sku, decimal disponible, decimal minimo, string? observacion)
+		private AlertaStock(DateTimeOffset fecha, ProductoId productoId, decimal disponible, decimal minimo, string? observacion)
 		{
 			Fecha = fecha;
-			Sku = sku ?? throw new ArgumentNullException(nameof(sku));
+			ProductoId = productoId;
 			Disponible = disponible;
 			Minimo = minimo;
 			Observacion = observacion;
 		}
 
-		public static AlertaStock Crear(Sku sku, decimal disponible, decimal minimo, string? observacion = null, DateTimeOffset? fecha = null)
-			=> new(fecha ?? DateTimeOffset.UtcNow, sku, disponible, minimo, observacion);
+		public static AlertaStock Crear(ProductoId productoId, decimal disponible, decimal minimo, string? observacion = null, DateTimeOffset? fecha = null)
+			=> new(fecha ?? DateTimeOffset.UtcNow, productoId, disponible, minimo, observacion);
 	}
 }
 
