@@ -1,23 +1,25 @@
+using System;
+using System.Globalization;
 using SharedKernel.Exceptions;
 
 namespace GestionInventarioBC.Domain.ValueObjects
 {
 	/// <summary>
-	/// Umbral mínimo de stock (no negativo).
+	/// Stock mínimo recomendado (no negativo), redondeado a 6 decimales.
 	/// </summary>
-	public readonly record struct StockMinimo
+	public sealed record StockMinimo
 	{
 		public decimal Value { get; }
 
 		public StockMinimo(decimal value)
 		{
-			if (value < 0)
-				throw new BusinessRuleException("Stock mínimo no puede ser negativo.");
-			Value = decimal.Round(value, 6, System.MidpointRounding.AwayFromZero);
+			var rounded = Math.Round(value, 6, MidpointRounding.AwayFromZero);
+			if (rounded < 0m)
+				throw new BusinessRuleException("El stock mínimo no puede ser negativo.");
+			Value = rounded;
 		}
 
-		public static StockMinimo From(decimal value) => new(value);
-		public override string ToString() => Value.ToString("0.######");
+		public override string ToString() => Value.ToString("0.######", CultureInfo.InvariantCulture);
 	}
 }
 

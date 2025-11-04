@@ -1,9 +1,5 @@
 namespace GestionInventarioBC.Domain.ValueObjects
 {
-	/// <summary>
-	/// Motivo del movimiento. Enum genérico; los motivos específicos del negocio
-	/// pueden mapearse a estos valores o extenderse en un catálogo.
-	/// </summary>
 	public enum MotivoMovimiento
 	{
 		Desconocido = 0,

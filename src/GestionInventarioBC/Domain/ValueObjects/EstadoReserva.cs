@@ -1,8 +1,5 @@
 namespace GestionInventarioBC.Domain.ValueObjects
 {
-	/// <summary>
-	/// Estados posibles de una reserva de stock.
-	/// </summary>
 	public enum EstadoReserva
 	{
 		Pendiente = 0,

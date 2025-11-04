@@ -3,7 +3,7 @@ using SharedKernel.Exceptions;
 namespace GestionInventarioBC.Domain.ValueObjects
 {
 	/// <summary>
-	/// Referencia a un documento externo (tipo y número).
+	/// Referencia a un documento externo (tipo y número), ambos obligatorios (trim).
 	/// </summary>
 	public sealed record ReferenciaDocumento
 	{
@@ -12,16 +12,18 @@ namespace GestionInventarioBC.Domain.ValueObjects
 
 		private ReferenciaDocumento(string tipo, string numero)
 		{
+			Tipo = tipo;
+			Numero = numero;
+		}
+
+		public static ReferenciaDocumento Crear(string? tipo, string? numero)
+		{
 			if (string.IsNullOrWhiteSpace(tipo))
 				throw new BusinessRuleException("El tipo de documento es obligatorio.");
 			if (string.IsNullOrWhiteSpace(numero))
 				throw new BusinessRuleException("El número de documento es obligatorio.");
-			Tipo = tipo.Trim();
-			Numero = numero.Trim();
+			return new ReferenciaDocumento(tipo.Trim(), numero.Trim());
 		}
-
-		public static ReferenciaDocumento Crear(string tipo, string numero)
-			=> new(tipo, numero);
 
 		public override string ToString() => $"{Tipo}:{Numero}";
 	}

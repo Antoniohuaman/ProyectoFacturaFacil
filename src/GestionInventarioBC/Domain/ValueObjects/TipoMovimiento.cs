@@ -1,8 +1,5 @@
 namespace GestionInventarioBC.Domain.ValueObjects
 {
-	/// <summary>
-	/// Tipos de movimiento de inventario.
-	/// </summary>
 	public enum TipoMovimiento
 	{
 		Ingreso = 0,

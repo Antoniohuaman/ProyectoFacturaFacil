@@ -1,8 +1,5 @@
 namespace GestionInventarioBC.Domain.ValueObjects
 {
-	/// <summary>
-	/// Estados de una transferencia de inventario.
-	/// </summary>
 	public enum EstadoTransferencia
 	{
 		Creada = 0,
