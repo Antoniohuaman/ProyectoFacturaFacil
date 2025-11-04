@@ -1,4 +1,5 @@
 using CatalogoArticulosBC.Domain.Aggregates;
+using SharedKernel.Specifications;
 
 namespace CatalogoArticulosBC.Domain.Specifications
 {

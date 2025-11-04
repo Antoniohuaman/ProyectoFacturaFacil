@@ -1,11 +1,12 @@
 using ListaPreciosBC.Domain.ValueObjects;
+using SharedKernel.Specifications;
 
 namespace ListaPreciosBC.Domain.Specifications
 {
     /// <summary>
     /// Especificación para determinar si una columna de precio es la columna base.
     /// </summary>
-    public class ColumnaBaseSpecification : ISpecification<ConfiguracionColumnaPrecio>
+    public class ColumnaBaseSpecification : IBooleanSpecification<ConfiguracionColumnaPrecio>
     {
         public bool IsSatisfiedBy(ConfiguracionColumnaPrecio columna)
         {

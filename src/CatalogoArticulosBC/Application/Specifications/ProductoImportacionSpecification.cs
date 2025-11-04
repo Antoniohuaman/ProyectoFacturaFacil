@@ -1,6 +1,6 @@
-
 using CatalogoArticulosBC.Application.DTOs;
 using CatalogoArticulosBC.Domain.Specifications;
+using SharedKernel.Specifications;
 
 namespace CatalogoArticulosBC.Application.Specifications
 {

@@ -1,4 +1,5 @@
 using System;
+using SharedKernel.Specifications;
 
 namespace CatalogoArticulosBC.Domain.Specifications
 {

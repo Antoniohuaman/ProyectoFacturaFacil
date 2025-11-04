@@ -1,7 +1,5 @@
 namespace ListaPreciosBC.Domain.Specifications
 {
-    public interface ISpecification<T>
-    {
-        bool IsSatisfiedBy(T entity);
-    }
+    // Compatibilidad: alias de contrato para el nuevo SharedKernel.Specifications.IBooleanSpecification
+    public interface ISpecification<T> : SharedKernel.Specifications.IBooleanSpecification<T> { }
 }
