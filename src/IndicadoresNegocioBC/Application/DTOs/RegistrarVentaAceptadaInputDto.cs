@@ -63,13 +63,13 @@ namespace IndicadoresNegocioBC.Application.UseCases.IndicadorNegocio
 
         public sealed class ItemInput
         {
-            public string ProductoId { get; }
+            public Guid ProductoId { get; }
             public decimal Cantidad { get; }
             public Dinero Subtotal { get; }
 
-            public ItemInput(string productoId, decimal cantidad, Dinero subtotal)
+            public ItemInput(Guid productoId, decimal cantidad, Dinero subtotal)
             {
-                if (string.IsNullOrWhiteSpace(productoId)) throw new ArgumentException("ProductoId requerido.", nameof(productoId));
+                if (productoId == Guid.Empty) throw new ArgumentException("ProductoId requerido.", nameof(productoId));
                 if (cantidad <= 0m) throw new ArgumentOutOfRangeException(nameof(cantidad), "Cantidad debe ser > 0.");
                 ProductoId = productoId;
                 Cantidad = cantidad;

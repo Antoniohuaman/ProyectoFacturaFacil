@@ -54,7 +54,7 @@ namespace IndicadoresNegocioBC.Tests.Application.UseCases
 
             var items = new[]
             {
-                new RegistrarVentaAceptadaInputDto.ItemInput("PROD-1", 1m, sub)
+                new RegistrarVentaAceptadaInputDto.ItemInput(Guid.Parse("11111111-1111-1111-1111-111111111111"), 1m, sub)
             };
 
             return new RegistrarVentaAceptadaInputDto(
@@ -252,7 +252,7 @@ namespace IndicadoresNegocioBC.Tests.Application.UseCases
                 fecha: new DateOnly(periodo.Inicio.Year, periodo.Inicio.Month, periodo.Inicio.Day),
                 total: new Dinero(118m, usd),   // moneda distinta
                 igv:   new Dinero(18m, usd),
-                items: new[] { new RegistrarVentaAceptadaInputDto.ItemInput("X", 1m, new Dinero(100m, usd)) },
+                items: new[] { new RegistrarVentaAceptadaInputDto.ItemInput(Guid.NewGuid(), 1m, new Dinero(100m, usd)) },
                 establecimientoId: Estab()
             );
 

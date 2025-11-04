@@ -21,7 +21,7 @@ namespace IndicadoresNegocioBC.Application.Contracts.Inbound
 
     /// <summary>Ítem del comprobante (mismos supuestos de moneda que el encabezado).</summary>
     public sealed record ComprobanteEmitidoAceptadoItem(
-        string ProductoId,
+        Guid ProductoId,
         decimal Cantidad,
         decimal Subtotal                                   // en la misma moneda del evento
     );

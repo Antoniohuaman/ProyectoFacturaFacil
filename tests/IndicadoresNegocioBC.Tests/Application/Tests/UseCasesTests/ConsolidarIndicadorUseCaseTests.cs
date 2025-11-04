@@ -33,7 +33,7 @@ namespace IndicadoresNegocioBC.Tests.Application.UseCases
 
         private static void RegistrarVenta(IndicadorNegocio agg, Guid comprobanteId, DateOnly fecha, decimal subtotal)
         {
-            var item = new IndicadorNegocio.ComprobanteVenta.Item("PROD-1", 1m, Money(subtotal));
+            var item = new IndicadorNegocio.ComprobanteVenta.Item(Guid.NewGuid(), 1m, Money(subtotal));
             var venta = new IndicadorNegocio.ComprobanteVenta(
                 comprobanteId: comprobanteId,
                 fecha: fecha,

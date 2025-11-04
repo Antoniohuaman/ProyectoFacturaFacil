@@ -200,6 +200,6 @@ namespace IndicadoresNegocioBC.Domain.Events
         /// <summary>
         /// Datos mínimos de ítem de venta transportados en eventos (para no acoplar a tipos internos del agregado).
         /// </summary>
-        public sealed record VentaItemEventData(string ProductoId, decimal Cantidad, Dinero Subtotal);
+        public sealed record VentaItemEventData(Guid ProductoId, decimal Cantidad, Dinero Subtotal);
     }
 }

@@ -31,9 +31,11 @@ namespace IndicadoresNegocioBC.Tests.Application.UseCases
         private static UsuarioId Vendedor() => UsuarioId.New();
         // ==========================================================================
 
+        private static readonly Guid Prod1 = Guid.Parse("11111111-1111-1111-1111-111111111111");
+
         private static void RegistrarVenta(IndicadorNegocio agg, Guid comprobanteId, DateOnly fecha, decimal subtotal)
         {
-            var item = new IndicadorNegocio.ComprobanteVenta.Item("PROD-1", 1m, Money(subtotal));
+            var item = new IndicadorNegocio.ComprobanteVenta.Item(Prod1, 1m, Money(subtotal));
             var venta = new IndicadorNegocio.ComprobanteVenta(
                 comprobanteId: comprobanteId,
                 fecha: fecha,

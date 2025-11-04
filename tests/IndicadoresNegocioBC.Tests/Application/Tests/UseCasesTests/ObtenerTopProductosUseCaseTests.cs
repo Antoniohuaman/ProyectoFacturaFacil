@@ -32,8 +32,12 @@ namespace IndicadoresNegocioBC.Tests.Application.UseCases
         private static UsuarioId Vendedor() => UsuarioId.From(Guid.NewGuid());
         // ==========================================================================
 
+        private static readonly Guid ProdA = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+        private static readonly Guid ProdB = Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
+        private static readonly Guid ProdC = Guid.Parse("cccccccc-cccc-cccc-cccc-cccccccccccc");
+
         private static void RegistrarVenta(IndicadorNegocio agg, Guid comprobanteId, DateOnly fecha,
-                                           (string prod, decimal cant, decimal subTotal)[] detalles,
+                                           (Guid prod, decimal cant, decimal subTotal)[] detalles,
                                            string tipoComprobante = "Factura")
         {
             var items = detalles.Select(d =>
@@ -74,17 +78,17 @@ namespace IndicadoresNegocioBC.Tests.Application.UseCases
             // Producto A total 300, Producto B total 180, Producto C total 50 (por Subtotal)
             RegistrarVenta(agg, Guid.NewGuid(), new DateOnly(2025, 1, 10), new[]
             {
-                ("A", 1m, 100m),
-                ("B", 2m, 60m)
+                (ProdA, 1m, 100m),
+                (ProdB, 2m, 60m)
             });
             RegistrarVenta(agg, Guid.NewGuid(), new DateOnly(2025, 1, 11), new[]
             {
-                ("A", 2m, 200m),
-                ("C", 1m, 50m)
+                (ProdA, 2m, 200m),
+                (ProdC, 1m, 50m)
             });
             RegistrarVenta(agg, Guid.NewGuid(), new DateOnly(2025, 1, 12), new[]
             {
-                ("B", 2m, 60m)
+                (ProdB, 2m, 60m)
             });
 
             repo.Setup(r => r.GetByClaveAsync(tipo, periodo, segmento, Empresa, It.IsAny<CancellationToken>()))
@@ -106,8 +110,8 @@ namespace IndicadoresNegocioBC.Tests.Application.UseCases
             // Assert
             Assert.That(output, Is.Not.Null);
             Assert.That(output.TopProductos.Count, Is.EqualTo(2));
-            Assert.That(output.TopProductos[0].ProductoId, Is.EqualTo("A")); // 300
-            Assert.That(output.TopProductos[1].ProductoId, Is.EqualTo("B")); // 120
+            Assert.That(output.TopProductos[0].ProductoId, Is.EqualTo(ProdA)); // 300
+            Assert.That(output.TopProductos[1].ProductoId, Is.EqualTo(ProdB)); // 120
             repo.Verify(r => r.GetByClaveAsync(tipo, periodo, segmento, Empresa, It.IsAny<CancellationToken>()), Times.Once);
         }
 
@@ -129,14 +133,14 @@ namespace IndicadoresNegocioBC.Tests.Application.UseCases
             // Cantidades: A=5, B=3, C=2
             RegistrarVenta(agg, Guid.NewGuid(), new DateOnly(2025, 2, 5), new[]
             {
-                ("A", 2m, 100m),
-                ("B", 1m, 50m)
+                (ProdA, 2m, 100m),
+                (ProdB, 1m, 50m)
             });
             RegistrarVenta(agg, Guid.NewGuid(), new DateOnly(2025, 2, 6), new[]
             {
-                ("A", 3m, 150m),
-                ("B", 2m, 100m),
-                ("C", 2m, 60m)
+                (ProdA, 3m, 150m),
+                (ProdB, 2m, 100m),
+                (ProdC, 2m, 60m)
             });
 
             repo.Setup(r => r.GetByClaveAsync(tipo, periodo, segmento, Empresa, It.IsAny<CancellationToken>()))
@@ -155,9 +159,9 @@ namespace IndicadoresNegocioBC.Tests.Application.UseCases
 
             // Assert
             Assert.That(output.TopProductos.Count, Is.GreaterThanOrEqualTo(3)); // default >= 3
-            Assert.That(output.TopProductos[0].ProductoId, Is.EqualTo("A")); // cantidad 5
-            Assert.That(output.TopProductos[1].ProductoId, Is.EqualTo("B")); // cantidad 3
-            Assert.That(output.TopProductos[2].ProductoId, Is.EqualTo("C")); // cantidad 2
+            Assert.That(output.TopProductos[0].ProductoId, Is.EqualTo(ProdA)); // cantidad 5
+            Assert.That(output.TopProductos[1].ProductoId, Is.EqualTo(ProdB)); // cantidad 3
+            Assert.That(output.TopProductos[2].ProductoId, Is.EqualTo(ProdC)); // cantidad 2
         }
 
         [Test]
@@ -210,7 +214,7 @@ namespace IndicadoresNegocioBC.Tests.Application.UseCases
             var agg = IndicadorNegocio.Crear(tipo, periodo, segmento);
             RegistrarVenta(agg, Guid.NewGuid(), new DateOnly(2025, 4, 10), new[]
             {
-                ("X", 1m, 80m)
+                (ProdA, 1m, 80m)
             });
 
             repo.Setup(r => r.GetByClaveAsync(tipo, periodo, segmento, empresa, It.IsAny<CancellationToken>()))

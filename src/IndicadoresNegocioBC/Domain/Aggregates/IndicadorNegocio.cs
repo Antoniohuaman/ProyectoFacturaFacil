@@ -54,8 +54,8 @@ namespace IndicadoresNegocioBC.Domain.Aggregates
             .ToList()
             .AsReadOnly();
 
-        // Ranking productos (por productoId)
-        private readonly Dictionary<string, RankingProductoEntrada> _rankingProductos = new(StringComparer.Ordinal);
+    // Ranking productos (por productoId)
+    private readonly Dictionary<Guid, RankingProductoEntrada> _rankingProductos = new();
         public IReadOnlyCollection<RankingProductoEntrada> RankingProductos => _rankingProductos.Values.ToList().AsReadOnly();
 
         // Ranking clientes (por clienteId)
@@ -521,15 +521,16 @@ namespace IndicadoresNegocioBC.Domain.Aggregates
         /// <summary>Entrada de ranking de productos.</summary>
         public sealed class RankingProductoEntrada
         {
-            public string ProductoId { get; }
+            public Guid ProductoId { get; }
             public decimal Cantidad { get; private set; }
             public Dinero TotalVendido { get; private set; }
 
             public bool EsCero => Cantidad == 0m && TotalVendido.EsCero;
 
-            public RankingProductoEntrada(string productoId, decimal cantidad, Dinero totalVendido)
+            public RankingProductoEntrada(Guid productoId, decimal cantidad, Dinero totalVendido)
             {
-                ProductoId = !string.IsNullOrWhiteSpace(productoId) ? productoId : throw new ArgumentException("ProductoId requerido.", nameof(productoId));
+                if (productoId == Guid.Empty) throw new ArgumentException("ProductoId requerido.", nameof(productoId));
+                ProductoId = productoId;
                 if (cantidad < 0m) throw new ArgumentOutOfRangeException(nameof(cantidad));
                 TotalVendido = totalVendido ?? throw new ArgumentNullException(nameof(totalVendido));
                 Cantidad = cantidad;
@@ -658,7 +659,7 @@ namespace IndicadoresNegocioBC.Domain.Aggregates
             public void MarcarAnulada() => Anulada = true;
         }
 
-        public sealed record ItemRegistrado(string ProductoId, decimal Cantidad, Dinero Subtotal);
+    public sealed record ItemRegistrado(Guid ProductoId, decimal Cantidad, Dinero Subtotal);
 
         // ------------------ DTO de entrada (desde Application) ------------------
 
@@ -713,13 +714,13 @@ namespace IndicadoresNegocioBC.Domain.Aggregates
 
             public sealed class Item
             {
-                public string ProductoId { get; }
+                public Guid ProductoId { get; }
                 public decimal Cantidad { get; }
                 public Dinero Subtotal { get; }
 
-                public Item(string productoId, decimal cantidad, Dinero subtotal)
+                public Item(Guid productoId, decimal cantidad, Dinero subtotal)
                 {
-                    if (string.IsNullOrWhiteSpace(productoId)) throw new ArgumentException("ProductoId requerido.", nameof(productoId));
+                    if (productoId == Guid.Empty) throw new ArgumentException("ProductoId requerido.", nameof(productoId));
                     if (cantidad <= 0m) throw new ArgumentOutOfRangeException(nameof(cantidad), "Cantidad debe ser > 0.");
                     ProductoId = productoId;
                     Cantidad = cantidad;

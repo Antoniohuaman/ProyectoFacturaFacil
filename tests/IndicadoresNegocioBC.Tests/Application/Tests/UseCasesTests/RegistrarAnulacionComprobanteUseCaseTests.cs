@@ -42,7 +42,7 @@ namespace IndicadoresNegocioBC.Tests.Application.UseCases
         {
             var agg = IndicadorNegocio.Crear(tipo, periodo, segmento);
 
-            var item = new IndicadorNegocio.ComprobanteVenta.Item("P001", 1m, Money(100m));
+            var item = new IndicadorNegocio.ComprobanteVenta.Item(Guid.NewGuid(), 1m, Money(100m));
             var venta = new IndicadorNegocio.ComprobanteVenta(
                 comprobanteId: comprobanteId,
                 fecha: fecha,

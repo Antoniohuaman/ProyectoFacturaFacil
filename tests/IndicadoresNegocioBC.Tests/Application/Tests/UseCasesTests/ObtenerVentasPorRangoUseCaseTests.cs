@@ -36,7 +36,7 @@ namespace IndicadoresNegocioBC.Tests.Application.UseCases
             Guid comprobanteId,
             DateOnly fecha,
             Guid? clienteId,
-            (string prod, decimal cant, decimal subTotal)[] detalles,
+            (Guid prod, decimal cant, decimal subTotal)[] detalles,
             string tipoComprobante = "Factura")
         {
             var items = detalles.Select(d =>
@@ -78,9 +78,9 @@ namespace IndicadoresNegocioBC.Tests.Application.UseCases
             var d20 = new DateOnly(2025, 1, 20);
 
             // Dentro del rango [10..20]: dos ventas (10 y 15). Fuera: una (20 si consultamos hasta 18)
-            RegistrarVenta(agg, Guid.NewGuid(), d10, Guid.NewGuid(), new[] { ("A", 1m, 100m) }); // 118 / 18
-            RegistrarVenta(agg, Guid.NewGuid(), d15, Guid.NewGuid(), new[] { ("B", 2m, 150m) }); // 177 / 27
-            RegistrarVenta(agg, Guid.NewGuid(), d20, Guid.NewGuid(), new[] { ("C", 1m, 50m) });   // 59  / 9
+            RegistrarVenta(agg, Guid.NewGuid(), d10, Guid.NewGuid(), new[] { (Guid.NewGuid(), 1m, 100m) }); // 118 / 18
+            RegistrarVenta(agg, Guid.NewGuid(), d15, Guid.NewGuid(), new[] { (Guid.NewGuid(), 2m, 150m) }); // 177 / 27
+            RegistrarVenta(agg, Guid.NewGuid(), d20, Guid.NewGuid(), new[] { (Guid.NewGuid(), 1m, 50m) });   // 59  / 9
 
             tenant.SetupGet(t => t.EmpresaId).Returns(empresa);
             var uc = new ObtenerVentasPorRangoUseCase(repo.Object, tenant.Object);
@@ -130,7 +130,7 @@ namespace IndicadoresNegocioBC.Tests.Application.UseCases
             var agg = IndicadorNegocio.Crear(tipo, periodo, segmento);
 
             // Venta fuera del rango
-            RegistrarVenta(agg, Guid.NewGuid(), new DateOnly(2025, 2, 5), Guid.NewGuid(), new[] { ("X", 1m, 100m) });
+            RegistrarVenta(agg, Guid.NewGuid(), new DateOnly(2025, 2, 5), Guid.NewGuid(), new[] { (Guid.NewGuid(), 1m, 100m) });
 
             tenant.SetupGet(t => t.EmpresaId).Returns(empresa);
             var uc = new ObtenerVentasPorRangoUseCase(repo.Object, tenant.Object);
@@ -201,7 +201,7 @@ namespace IndicadoresNegocioBC.Tests.Application.UseCases
             var uc = new ObtenerVentasPorRangoUseCase(repo.Object, tenant.Object);
 
             var agg = IndicadorNegocio.Crear(tipo, periodo, segmento);
-            RegistrarVenta(agg, Guid.NewGuid(), new DateOnly(2025, 4, 2), Guid.NewGuid(), new[] { ("P", 1m, 50m) });
+            RegistrarVenta(agg, Guid.NewGuid(), new DateOnly(2025, 4, 2), Guid.NewGuid(), new[] { (Guid.NewGuid(), 1m, 50m) });
 
             repo.Setup(r => r.GetByClaveAsync(tipo, periodo, segmento, empresa, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(agg);

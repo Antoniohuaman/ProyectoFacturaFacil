@@ -36,7 +36,7 @@ namespace IndicadoresNegocioBC.Tests.Application.UseCases
             Guid comprobanteId,
             DateOnly fecha,
             Guid? clienteId,
-            (string prod, decimal cant, decimal subTotal)[] detalles,
+            (Guid prod, decimal cant, decimal subTotal)[] detalles,
             string tipoComprobante = "Factura")
         {
             var items = detalles.Select(d =>
@@ -81,16 +81,16 @@ namespace IndicadoresNegocioBC.Tests.Application.UseCases
             var c3 = Guid.NewGuid();
 
             // c1: total 300 (2 compras)
-            RegistrarVenta(agg, Guid.NewGuid(), new DateOnly(2025, 1, 10), c1, new[] { ("A", 1m, 100m) });
-            RegistrarVenta(agg, Guid.NewGuid(), new DateOnly(2025, 1, 12), c1, new[] { ("B", 1m, 200m) });
+            RegistrarVenta(agg, Guid.NewGuid(), new DateOnly(2025, 1, 10), c1, new[] { (Guid.NewGuid(), 1m, 100m) });
+            RegistrarVenta(agg, Guid.NewGuid(), new DateOnly(2025, 1, 12), c1, new[] { (Guid.NewGuid(), 1m, 200m) });
 
             // c2: total 250 (3 compras) -> por monto queda detrás de c1
-            RegistrarVenta(agg, Guid.NewGuid(), new DateOnly(2025, 1, 10), c2, new[] { ("A", 1m, 50m) });
-            RegistrarVenta(agg, Guid.NewGuid(), new DateOnly(2025, 1, 11), c2, new[] { ("B", 1m, 100m) });
-            RegistrarVenta(agg, Guid.NewGuid(), new DateOnly(2025, 1, 13), c2, new[] { ("C", 1m, 100m) });
+            RegistrarVenta(agg, Guid.NewGuid(), new DateOnly(2025, 1, 10), c2, new[] { (Guid.NewGuid(), 1m, 50m) });
+            RegistrarVenta(agg, Guid.NewGuid(), new DateOnly(2025, 1, 11), c2, new[] { (Guid.NewGuid(), 1m, 100m) });
+            RegistrarVenta(agg, Guid.NewGuid(), new DateOnly(2025, 1, 13), c2, new[] { (Guid.NewGuid(), 1m, 100m) });
 
             // c3: total 50 (1 compra)
-            RegistrarVenta(agg, Guid.NewGuid(), new DateOnly(2025, 1, 15), c3, new[] { ("X", 1m, 50m) });
+            RegistrarVenta(agg, Guid.NewGuid(), new DateOnly(2025, 1, 15), c3, new[] { (Guid.NewGuid(), 1m, 50m) });
 
             repo.Setup(r => r.GetByClaveAsync(tipo, periodo, segmento, empresa, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(agg);
@@ -137,14 +137,14 @@ namespace IndicadoresNegocioBC.Tests.Application.UseCases
             var c2 = Guid.NewGuid(); // total 150 (1)
             var c3 = Guid.NewGuid(); // total 120 (3)
 
-            RegistrarVenta(agg, Guid.NewGuid(), new DateOnly(2025, 2, 5), c1, new[] { ("A", 1m, 50m) });
-            RegistrarVenta(agg, Guid.NewGuid(), new DateOnly(2025, 2, 6), c1, new[] { ("B", 1m, 150m) });
+            RegistrarVenta(agg, Guid.NewGuid(), new DateOnly(2025, 2, 5), c1, new[] { (Guid.NewGuid(), 1m, 50m) });
+            RegistrarVenta(agg, Guid.NewGuid(), new DateOnly(2025, 2, 6), c1, new[] { (Guid.NewGuid(), 1m, 150m) });
 
-            RegistrarVenta(agg, Guid.NewGuid(), new DateOnly(2025, 2, 7), c2, new[] { ("X", 1m, 150m) });
+            RegistrarVenta(agg, Guid.NewGuid(), new DateOnly(2025, 2, 7), c2, new[] { (Guid.NewGuid(), 1m, 150m) });
 
-            RegistrarVenta(agg, Guid.NewGuid(), new DateOnly(2025, 2, 10), c3, new[] { ("R", 1m, 40m) });
-            RegistrarVenta(agg, Guid.NewGuid(), new DateOnly(2025, 2, 11), c3, new[] { ("S", 1m, 40m) });
-            RegistrarVenta(agg, Guid.NewGuid(), new DateOnly(2025, 2, 12), c3, new[] { ("T", 1m, 40m) });
+            RegistrarVenta(agg, Guid.NewGuid(), new DateOnly(2025, 2, 10), c3, new[] { (Guid.NewGuid(), 1m, 40m) });
+            RegistrarVenta(agg, Guid.NewGuid(), new DateOnly(2025, 2, 11), c3, new[] { (Guid.NewGuid(), 1m, 40m) });
+            RegistrarVenta(agg, Guid.NewGuid(), new DateOnly(2025, 2, 12), c3, new[] { (Guid.NewGuid(), 1m, 40m) });
 
             repo.Setup(r => r.GetByClaveAsync(tipo, periodo, segmento, empresa, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(agg);
@@ -217,7 +217,7 @@ namespace IndicadoresNegocioBC.Tests.Application.UseCases
             var uc = new ObtenerTopClientesUseCase(repo.Object, tenant.Object);
 
             var agg = IndicadorNegocio.Crear(tipo, periodo, segmento);
-            RegistrarVenta(agg, Guid.NewGuid(), new DateOnly(2025, 4, 5), Guid.NewGuid(), new[] { ("X", 1m, 80m) });
+            RegistrarVenta(agg, Guid.NewGuid(), new DateOnly(2025, 4, 5), Guid.NewGuid(), new[] { (Guid.NewGuid(), 1m, 80m) });
 
             repo.Setup(r => r.GetByClaveAsync(tipo, periodo, segmento, empresa, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(agg);

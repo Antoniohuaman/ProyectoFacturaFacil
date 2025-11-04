@@ -30,6 +30,7 @@ namespace IndicadoresNegocioBC.Tests.Application.UseCases
         private static EstablecimientoId Estab() => EstablecimientoId.From(Guid.NewGuid());
         private static UsuarioId Vendedor() => UsuarioId.From(Guid.NewGuid());
         // ==========================================================================
+    private static readonly Guid Prod1 = Guid.Parse("11111111-1111-1111-1111-111111111111");
 
         private static void RegistrarVenta(
             IndicadorNegocio agg,
@@ -40,7 +41,7 @@ namespace IndicadoresNegocioBC.Tests.Application.UseCases
             EstablecimientoId? establecimientoId = null)
         {
             var est = establecimientoId ?? Estab();
-            var item = new IndicadorNegocio.ComprobanteVenta.Item("PROD-1", 1m, Money(subtotal));
+            var item = new IndicadorNegocio.ComprobanteVenta.Item(Prod1, 1m, Money(subtotal));
             var venta = new IndicadorNegocio.ComprobanteVenta(
                 comprobanteId: comprobanteId,
                 fecha: fecha,

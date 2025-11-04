@@ -54,7 +54,7 @@ namespace IndicadoresNegocioBC.Tests.Domain
 
             var items = new List<IndicadorNegocio.ComprobanteVenta.Item>
             {
-                new IndicadorNegocio.ComprobanteVenta.Item("P001", 1m, sub)
+                new IndicadorNegocio.ComprobanteVenta.Item(Guid.NewGuid(), 1m, sub)
             };
 
             return new IndicadorNegocio.ComprobanteVenta(
@@ -126,7 +126,7 @@ namespace IndicadoresNegocioBC.Tests.Domain
             var items = new List<IndicadorNegocio.ComprobanteVenta.Item>
             {
                 // Subtotal en moneda OK
-                new IndicadorNegocio.ComprobanteVenta.Item("P001", 1m, v.Items[0].Subtotal)
+                new IndicadorNegocio.ComprobanteVenta.Item(Guid.NewGuid(), 1m, v.Items[0].Subtotal)
             };
 
             var ventaMonedaInvalida = new IndicadorNegocio.ComprobanteVenta(

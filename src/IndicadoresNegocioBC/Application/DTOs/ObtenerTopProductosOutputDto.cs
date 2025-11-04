@@ -42,13 +42,13 @@ namespace IndicadoresNegocioBC.Application.UseCases.IndicadorNegocio
 
         public sealed class Item
         {
-            public string ProductoId { get; }
+            public Guid ProductoId { get; }
             public decimal Cantidad { get; }
             public Dinero TotalVendido { get; }
 
-            public Item(string productoId, decimal cantidad, Dinero totalVendido)
+            public Item(Guid productoId, decimal cantidad, Dinero totalVendido)
             {
-                if (string.IsNullOrWhiteSpace(productoId))
+                if (productoId == Guid.Empty)
                     throw new ArgumentException("ProductoId requerido.", nameof(productoId));
 
                 ProductoId = productoId;
