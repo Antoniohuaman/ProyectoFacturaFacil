@@ -1,0 +1,71 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using GestionInventarioBC.Application.Interfaces;
+using GestionInventarioBC.Domain.Aggregates;
+using GestionInventarioBC.Domain.Entities;
+using GestionInventarioBC.Domain.Repositories;
+using GestionInventarioBC.Domain.ValueObjects;
+using SharedKernel.Application.Interfaces;
+using SharedKernel.Exceptions;
+using SharedKernel.ValueObjects;
+
+namespace GestionInventarioBC.Application.UseCases.Movimientos
+{
+	/// <summary>
+	/// Registra una salida de inventario (disminuye stock real) y crea el movimiento.
+	/// </summary>
+	public sealed class RegistrarSalidaUseCase
+	{
+		public readonly record struct Linea(string Sku, decimal Cantidad);
+		public readonly record struct Request(Guid EstablecimientoId, Guid AlmacenId, DateTimeOffset Fecha, string Motivo, IReadOnlyList<Linea> Lineas);
+		public readonly record struct Response(Guid MovimientoId, int LineasAfectadas);
+
+		private readonly IStockPorAlmacenRepository _stockRepo;
+		private readonly IMovimientoInventarioRepository _movRepo;
+		private readonly ITenantContext _tenant;
+		private readonly IUnitOfWork _uow;
+
+		public RegistrarSalidaUseCase(IStockPorAlmacenRepository stockRepo, IMovimientoInventarioRepository movRepo, ITenantContext tenant, IUnitOfWork uow)
+		{
+			_stockRepo = stockRepo ?? throw new ArgumentNullException(nameof(stockRepo));
+			_movRepo = movRepo ?? throw new ArgumentNullException(nameof(movRepo));
+			_tenant = tenant ?? throw new ArgumentNullException(nameof(tenant));
+			_uow = uow ?? throw new ArgumentNullException(nameof(uow));
+		}
+
+		public async Task<Response> Handle(Request req, CancellationToken ct)
+		{
+			var empresaId = _tenant.EmpresaId ?? throw new InvalidOperationException("EmpresaId del contexto es obligatorio.");
+			var estId = EstablecimientoId.From(req.EstablecimientoId);
+			var almId = AlmacenId.From(req.AlmacenId);
+
+			var lineas = new List<LineaMovimiento>(req.Lineas.Count);
+
+			foreach (var l in req.Lineas)
+			{
+				var sku = Sku.Crear(l.Sku);
+				var cant = CantidadStock.From(l.Cantidad);
+				var stock = await _stockRepo.ObtenerAsync(empresaId, estId, almId, sku, ct);
+				if (stock is null)
+					throw new NotFoundException($"No existe stock para el SKU {l.Sku} en el almacén indicado.");
+				stock.Egresar(cant); // valida disponibilidad
+				await _stockRepo.GuardarAsync(stock, ct);
+				lineas.Add(LineaMovimiento.Crear(sku, cant));
+			}
+
+			var movimiento = MovimientoInventario.Registrar(
+				empresaId, estId, almId, req.Fecha,
+				TipoMovimiento.Egreso,
+				Enum.TryParse<MotivoMovimiento>(req.Motivo, true, out var mot) ? mot : MotivoMovimiento.Venta,
+				lineas);
+
+			await _movRepo.GuardarAsync(movimiento, ct);
+			await _uow.CommitAsync(ct);
+			return new Response(movimiento.MovimientoId, lineas.Count);
+		}
+	}
+}
+

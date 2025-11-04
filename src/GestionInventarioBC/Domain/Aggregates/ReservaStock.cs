@@ -67,6 +67,15 @@ namespace GestionInventarioBC.Domain.Aggregates
 				return; // Idempotencia
 			Estado = EstadoReserva.Cancelada;
 		}
+
+		public void ExtenderHasta(DateTimeOffset nuevaFecha)
+		{
+			if (Estado != EstadoReserva.Pendiente)
+				throw new BusinessRuleException("Solo reservas pendientes pueden extenderse.");
+			if (nuevaFecha <= DateTimeOffset.UtcNow)
+				throw new BusinessRuleException("La nueva fecha de vencimiento debe ser futura.");
+			VenceEn = nuevaFecha;
+		}
 	}
 }
 
