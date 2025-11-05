@@ -149,6 +149,33 @@ namespace GestionInventarioBC.Tests.Application.UseCasesTests.Transferencias
 			Assert.That(async () => await sut.Handle(req, ct), Throws.Exception);
 			Assert.That(_uow.CommitCalls, Is.EqualTo(0));
 		}
+
+		[Test]
+		public void Error_SKUDesconocido_LanzaNotFound_SinCommit()
+		{
+			// Arrange
+			var ct = CancellationToken.None;
+			var p1 = ProductoId.New();
+			_catalogo.Seed(_empresa.Value, "SKU-EXISTE", p1, "Prod 1");
+			_stockRepo.Ensure(_empresa, _estA, _almA, p1, real: 5m);
+
+			var sut = CreateSut();
+			var req = new TransferirEntreAlmacenesUseCase.Request(
+				OrigenEstablecimientoId: _estA.Value,
+				OrigenAlmacenId: _almA.Value,
+				DestinoEstablecimientoId: _estB.Value,
+				DestinoAlmacenId: _almB.Value,
+				Fecha: null,
+				Lineas: new List<TransferirEntreAlmacenesUseCase.Linea>
+				{
+					new("SKU-DESCONOCIDO", null, 1m)
+				}
+			);
+
+			// Act + Assert
+			Assert.That(async () => await sut.Handle(req, ct), Throws.Exception);
+			Assert.That(_uow.CommitCalls, Is.EqualTo(0));
+		}
 	}
 }
 
