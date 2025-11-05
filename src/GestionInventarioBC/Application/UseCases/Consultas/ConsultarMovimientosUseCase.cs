@@ -65,16 +65,16 @@ namespace GestionInventarioBC.Application.UseCases.Consultas
 			TipoMovimiento? tipo = null;
 			if (!string.IsNullOrWhiteSpace(req.Tipo) && Enum.TryParse<TipoMovimiento>(req.Tipo, true, out var t)) tipo = t;
 			MotivoMovimiento? motivo = null;
-			if (!string.IsNullOrWhiteSpace(req.Motivo) && Enum.TryParse<MotivoMovimiento>(req.Motivo, true, out var m)) motivo = m;
+			if (!string.IsNullOrWhiteSpace(req.Motivo) && Enum.TryParse<MotivoMovimiento>(req.Motivo, true, out var motivoParsed)) motivo = motivoParsed;
 
 			var lista = await _repo.ListarAsync(empresaId, estId, almId, req.Desde, req.Hasta, productoId, tipo, motivo, ct);
 
 			// Enriquecer líneas con SKU/Nombre
 			var enriched = new List<Item>(lista.Count);
-			foreach (var m in lista)
+			foreach (var mov in lista)
 			{
-				var lineas = new List<Linea>(m.Lineas.Count);
-				foreach (var l in m.Lineas)
+				var lineas = new List<Linea>(mov.Lineas.Count);
+				foreach (var l in mov.Lineas)
 				{
 					var present = await _catalogo.TryGetSkuYNombreAsync(empresaId, l.ProductoId, ct);
 					lineas.Add(new Linea(
@@ -84,10 +84,10 @@ namespace GestionInventarioBC.Application.UseCases.Consultas
 					));
 				}
 				enriched.Add(new Item(
-					MovimientoId: m.MovimientoId,
-					Fecha: m.Fecha,
-					Tipo: m.Tipo.ToString(),
-					Motivo: m.Motivo.ToString(),
+					MovimientoId: mov.MovimientoId,
+					Fecha: mov.Fecha,
+					Tipo: mov.Tipo.ToString(),
+					Motivo: mov.Motivo.ToString(),
 					Lineas: lineas
 				));
 			}

@@ -61,9 +61,10 @@ namespace GestionInventarioBC.Application.UseCases.Transferencias
 			}
 			if (productoId is null)
 				throw new ArgumentException("Debe especificar SKU o ProductoId.");
+			var pid = productoId.Value; // no-nullable guard
 			var cant = CantidadStock.From(req.Cantidad);
 
-			var t = TransferenciaInventario.Crear(empresaId, origenEst, origenAlm, destEst, destAlm, productoId, cant);
+			var t = TransferenciaInventario.Crear(empresaId, origenEst, origenAlm, destEst, destAlm, pid, cant);
 			await _repo.GuardarAsync(t, ct);
 			await _uow.CommitAsync(ct);
 			return new Response(t.TransferenciaId);

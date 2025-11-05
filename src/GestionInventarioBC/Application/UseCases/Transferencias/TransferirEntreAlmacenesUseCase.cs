@@ -87,9 +87,10 @@ namespace GestionInventarioBC.Application.UseCases.Transferencias
 				}
 				if (productoId is null)
 					throw new ArgumentException("Debe especificar SKU o ProductoId en la línea.");
+				var pid = productoId.Value; // no-nullable guard
 				var cant = CantidadStock.From(l.Cantidad);
 
-				var stockOrigen = await _stockRepo.ObtenerAsync(empresaId, oEst, oAlm, productoId, ct);
+				var stockOrigen = await _stockRepo.ObtenerAsync(empresaId, oEst, oAlm, pid, ct);
 				if (stockOrigen is null)
 					throw new NotFoundException($"No se encontró stock en el almacén de origen para el producto indicado.");
 
@@ -98,13 +99,13 @@ namespace GestionInventarioBC.Application.UseCases.Transferencias
 				await _stockRepo.GuardarAsync(stockOrigen, ct);
 
 				// Ingresar en destino (crear si no existe)
-				var stockDestino = await _stockRepo.ObtenerAsync(empresaId, dEst, dAlm, productoId, ct)
-								  ?? StockPorAlmacen.CrearNuevo(empresaId, dEst, dAlm, productoId);
+				var stockDestino = await _stockRepo.ObtenerAsync(empresaId, dEst, dAlm, pid, ct)
+								  ?? StockPorAlmacen.CrearNuevo(empresaId, dEst, dAlm, pid);
 				stockDestino.Ingresar(cant);
 				await _stockRepo.GuardarAsync(stockDestino, ct);
 
-				lineasSalida.Add(LineaMovimiento.Crear(productoId, cant));
-				lineasEntrada.Add(LineaMovimiento.Crear(productoId, cant));
+				lineasSalida.Add(LineaMovimiento.Crear(pid, cant));
+				lineasEntrada.Add(LineaMovimiento.Crear(pid, cant));
 			}
 
 			// Registrar movimientos de salida/entrada

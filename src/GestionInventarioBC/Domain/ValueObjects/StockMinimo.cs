@@ -20,6 +20,14 @@ namespace GestionInventarioBC.Domain.ValueObjects
 		}
 
 		public override string ToString() => Value.ToString("0.######", CultureInfo.InvariantCulture);
+
+		public static StockMinimo From(decimal value)
+		{
+			var rounded = Math.Round(value, 6, MidpointRounding.AwayFromZero);
+			if (rounded < 0m)
+				throw new BusinessRuleException("Stock mínimo no puede ser negativo");
+			return new StockMinimo(rounded);
+		}
 	}
 }
 

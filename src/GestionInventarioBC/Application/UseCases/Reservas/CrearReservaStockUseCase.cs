@@ -56,18 +56,19 @@ namespace GestionInventarioBC.Application.UseCases.Reservas
 			}
 			if (productoId is null)
 				throw new ArgumentException("Debe especificar SKU o ProductoId.");
+			var pid = productoId.Value; // no-null guard
 
-			var stock = await _stockRepo.ObtenerAsync(empresaId, estId, almId, productoId, ct)
-					   ?? StockPorAlmacen.CrearNuevo(empresaId, estId, almId, productoId);
+			var stock = await _stockRepo.ObtenerAsync(empresaId, estId, almId, pid, ct)
+					   ?? StockPorAlmacen.CrearNuevo(empresaId, estId, almId, pid);
 			var disp = DisponibilidadStock.Crear(stock.Real, stock.Reservado);
 			var eval = PoliticaReserva.Evaluar(disp, cant);
 			if (!eval.IsSatisfied)
-				throw new BusinessRuleException(eval.Message);
+				throw new BusinessRuleException(eval.Message ?? "No hay disponibilidad suficiente para reservar.");
 
 			stock.Reservar(cant);
 			await _stockRepo.GuardarAsync(stock, ct);
 
-			var reserva = ReservaStock.Crear(empresaId, estId, almId, productoId, cant, req.VenceEn);
+			var reserva = ReservaStock.Crear(empresaId, estId, almId, pid, cant, req.VenceEn);
 			await _reservaRepo.GuardarAsync(reserva, ct);
 			await _uow.CommitAsync(ct);
 			return new Response(reserva.ReservaId);
