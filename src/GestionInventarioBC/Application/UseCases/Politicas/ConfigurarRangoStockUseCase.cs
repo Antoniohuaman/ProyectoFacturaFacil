@@ -16,8 +16,8 @@ namespace GestionInventarioBC.Application.UseCases.Politicas
 
 		public Task<Response> Handle(Request req, CancellationToken _)
 		{
-			var min = StockMinimo.From(req.Minimo);
-			var max = StockMaximo.From(req.Maximo);
+			var min = new StockMinimo(req.Minimo);
+			var max = new StockMaximo(req.Maximo);
 			var rango = RangoStock.Crear(min, max);
 
 			var spec = new RangoStockValidoSpec();
