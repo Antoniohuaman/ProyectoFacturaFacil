@@ -20,8 +20,8 @@ namespace GestionInventarioBC.Tests.Aggregates
 		{
 			var lineas = new[]
 			{
-				LineaMovimiento.Crear(Sku.Crear("SKU-1"), new CantidadStock(2m)),
-				LineaMovimiento.Crear(Sku.Crear("SKU-2"), new CantidadStock(3.5m), CostoUnitario.DesdeDinero(Dinero.Create(5m, Moneda.PEN())))
+				LineaMovimiento.Crear(ProductoId.New(), new CantidadStock(2m)),
+				LineaMovimiento.Crear(ProductoId.New(), new CantidadStock(3.5m), CostoUnitario.DesdeDinero(Dinero.Create(5m, Moneda.PEN())))
 			};
 
 			var mov = MovimientoInventario.Registrar(E, S, A, DateTimeOffset.UtcNow, TipoMovimiento.Ingreso, MotivoMovimiento.Compra, lineas);

@@ -12,12 +12,12 @@ namespace GestionInventarioBC.Tests.Aggregates
 		private EmpresaId E => EmpresaId.From("20123456789");
 		private EstablecimientoId S => EstablecimientoId.From(System.Guid.NewGuid());
 		private AlmacenId A => AlmacenId.New();
-		private Sku SKU(string v = "SKU-1") => Sku.Crear(v);
+        private ProductoId P() => ProductoId.New();
 
 		[Test]
 		public void CrearNuevo_inicia_en_cero()
 		{
-			var s = StockPorAlmacen.CrearNuevo(E, S, A, SKU());
+			var s = StockPorAlmacen.CrearNuevo(E, S, A, P());
 			Assert.That(s.Real.Value, Is.EqualTo(0m));
 			Assert.That(s.Reservado.Value, Is.EqualTo(0m));
 			Assert.That(s.Disponible.Value, Is.EqualTo(0m));
@@ -26,7 +26,7 @@ namespace GestionInventarioBC.Tests.Aggregates
 		[Test]
 		public void Ingresar_y_Egresar_valida_disponible()
 		{
-			var s = StockPorAlmacen.CrearNuevo(E, S, A, SKU());
+			var s = StockPorAlmacen.CrearNuevo(E, S, A, P());
 			s.Ingresar(new CantidadStock(10m));
 			Assert.That(s.Real.Value, Is.EqualTo(10m));
 
@@ -39,7 +39,7 @@ namespace GestionInventarioBC.Tests.Aggregates
 		[Test]
 		public void Reservar_y_Liberar_controlan_invariantes()
 		{
-			var s = StockPorAlmacen.CrearNuevo(E, S, A, SKU());
+			var s = StockPorAlmacen.CrearNuevo(E, S, A, P());
 			s.Ingresar(new CantidadStock(5m));
 
 			s.Reservar(new CantidadStock(3m));

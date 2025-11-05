@@ -56,7 +56,7 @@ namespace GestionInventarioBC.Tests.Application.UseCasesTests.Almacen
 			var ct = CancellationToken.None;
 			var almId = Guid.NewGuid();
 			// Pre-existente con mismo ID
-			var a = Domain.Aggregates.Almacen.Crear(_empresa, _est, AlmacenId.From(almId), "A1");
+			var a = GestionInventarioBC.Domain.Aggregates.Almacen.Crear(_empresa, _est, AlmacenId.From(almId), "A1");
 			await _repo.GuardarAsync(a, ct);
 
 			var sut = CreateSut();

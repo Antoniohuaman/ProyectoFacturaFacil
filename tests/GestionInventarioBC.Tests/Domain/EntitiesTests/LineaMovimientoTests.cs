@@ -9,11 +9,11 @@ namespace GestionInventarioBC.Tests.Entities
 	public class LineaMovimientoTests
 	{
 		[Test]
-		public void Crear_ok_con_sku_y_cantidad()
+		public void Crear_ok_con_productoId_y_cantidad()
 		{
-			var sku = Sku.Crear("ABC-123");
-			var linea = LineaMovimiento.Crear(sku, new CantidadStock(2.5m));
-			Assert.That(linea.Sku.Valor, Is.EqualTo("ABC-123"));
+			var productoId = ProductoId.New();
+			var linea = LineaMovimiento.Crear(productoId, new CantidadStock(2.5m));
+			Assert.That(linea.ProductoId, Is.EqualTo(productoId));
 			Assert.That(linea.Cantidad.Value, Is.EqualTo(2.5m));
 			Assert.That(linea.CostoUnitario, Is.Null);
 		}
@@ -21,9 +21,9 @@ namespace GestionInventarioBC.Tests.Entities
 		[Test]
 		public void Crear_con_costo_unitario()
 		{
-			var sku = Sku.Crear("PEN-001");
+			var productoId = ProductoId.New();
 			var cu = CostoUnitario.DesdeDinero(Dinero.Create(10m, Moneda.PEN()));
-			var linea = LineaMovimiento.Crear(sku, new CantidadStock(1m), cu);
+			var linea = LineaMovimiento.Crear(productoId, new CantidadStock(1m), cu);
 			Assert.That(linea.CostoUnitario, Is.Not.Null);
 			Assert.That(linea.CostoUnitario!.Valor.Monto, Is.EqualTo(10m));
 		}
