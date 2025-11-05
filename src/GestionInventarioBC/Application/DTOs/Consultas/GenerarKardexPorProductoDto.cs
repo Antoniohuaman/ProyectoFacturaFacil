@@ -10,6 +10,8 @@ namespace GestionInventarioBC.Application.DTOs.Consultas
         public string Sku { get; set; } = string.Empty;
         public DateTimeOffset? Desde { get; set; }
         public DateTimeOffset? Hasta { get; set; }
+        public int? Page { get; set; }
+        public int? PageSize { get; set; }
     }
 
     public class GenerarKardexPorProductoItemDto
@@ -23,6 +25,7 @@ namespace GestionInventarioBC.Application.DTOs.Consultas
 
     public class GenerarKardexPorProductoResultDto
     {
-        public List<GenerarKardexPorProductoItemDto> Movimientos { get; set; } = new();
+        public int Total { get; set; }
+        public List<GenerarKardexPorProductoItemDto> Items { get; set; } = new();
     }
 }

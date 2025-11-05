@@ -16,7 +16,7 @@ namespace GestionInventarioBC.Application.UseCases.Consultas
 	/// </summary>
 	public sealed class GenerarKardexPorProductoUseCase
 	{
-		public readonly record struct Request(Guid EstablecimientoId, Guid AlmacenId, string Sku, DateTimeOffset? Desde, DateTimeOffset? Hasta);
+		public readonly record struct Request(Guid EstablecimientoId, Guid AlmacenId, string Sku, DateTimeOffset? Desde, DateTimeOffset? Hasta, int? Page = null, int? PageSize = null);
 
 		public readonly record struct Item(
 			DateTimeOffset Fecha,
@@ -26,7 +26,7 @@ namespace GestionInventarioBC.Application.UseCases.Consultas
 			decimal SaldoAcumulado
 		);
 
-		public readonly record struct Response(IReadOnlyList<Item> Movimientos);
+		public readonly record struct Response(int Total, IReadOnlyList<Item> Items);
 
 	private readonly IMovimientoInventarioRepository _repo;
 	private readonly ITenantContext _tenant;
@@ -76,7 +76,15 @@ namespace GestionInventarioBC.Application.UseCases.Consultas
 				items.Add(new Item(m.Fecha, m.Tipo.ToString(), entrada, salida, saldo));
 			}
 
-			return new Response(items);
+			// Paginación in-memory (TODO: mover a repo si procede)
+			var total = items.Count;
+			var page = req.Page.GetValueOrDefault(1);
+			var pageSize = req.PageSize.GetValueOrDefault(100);
+			if (page < 1) page = 1;
+			if (pageSize < 1) pageSize = 100;
+			var paged = items.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+
+			return new Response(total, paged);
 		}
 	}
 }

@@ -12,7 +12,8 @@ namespace GestionInventarioBC.Application.DTOs.OperacionesMasivas
 
     public class ImportarStockMasivoLineaDto
     {
-        public string Sku { get; set; } = string.Empty;
+        public string? Sku { get; set; }
+        public Guid? ProductoId { get; set; }
         public decimal Cantidad { get; set; }
     }
 

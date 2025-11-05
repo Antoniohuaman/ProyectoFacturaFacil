@@ -18,7 +18,7 @@ namespace GestionInventarioBC.Application.UseCases.Movimientos
 	/// </summary>
 	public sealed class RegistrarIngresoUseCase
 	{
-		public readonly record struct Linea(string Sku, decimal Cantidad);
+		public readonly record struct Linea(string? Sku, Guid? ProductoId, decimal Cantidad);
 		public readonly record struct Request(Guid EstablecimientoId, Guid AlmacenId, DateTimeOffset Fecha, string Motivo, IReadOnlyList<Linea> Lineas);
 		public readonly record struct Response(Guid MovimientoId, int LineasAfectadas);
 
@@ -47,17 +47,29 @@ namespace GestionInventarioBC.Application.UseCases.Movimientos
 
 			foreach (var l in req.Lineas)
 			{
-				var productoId = await _catalogo.TryGetProductoIdBySkuAsync(empresaId, l.Sku, ct)
-                        ?? throw new SharedKernel.Exceptions.NotFoundException($"No existe producto para SKU {l.Sku}.");
+				// Resolver ProductoId y validar consistencia si llega SKU y ProductoId
+				ProductoId? productoId = null;
+				if (l.ProductoId.HasValue)
+					productoId = ProductoId.From(l.ProductoId.Value);
+				if (!string.IsNullOrWhiteSpace(l.Sku))
+				{
+					var resolved = await _catalogo.TryGetProductoIdBySkuAsync(empresaId, l.Sku!, ct)
+								  ?? throw new SharedKernel.Exceptions.NotFoundException($"No existe producto para SKU {l.Sku}.");
+					if (productoId is not null && !productoId.Value.Equals(resolved))
+						throw new SharedKernel.Exceptions.BusinessRuleException("SKU y ProductoId no corresponden al mismo producto.");
+					productoId ??= resolved;
+				}
+				if (productoId is null)
+					throw new ArgumentException("Debe especificar SKU o ProductoId en la línea.");
 				var cant = CantidadStock.From(l.Cantidad);
 				// Stock
-				var stock = await _stockRepo.ObtenerAsync(empresaId, estId, almId, productoId, ct)
-					   ?? StockPorAlmacen.CrearNuevo(empresaId, estId, almId, productoId);
+				var stock = await _stockRepo.ObtenerAsync(empresaId, estId, almId, productoId.Value, ct)
+				   ?? StockPorAlmacen.CrearNuevo(empresaId, estId, almId, productoId.Value);
 				stock.Ingresar(cant);
 				await _stockRepo.GuardarAsync(stock, ct);
 
 				// Línea de movimiento
-				lineas.Add(LineaMovimiento.Crear(productoId, cant));
+				lineas.Add(LineaMovimiento.Crear(productoId.Value, cant));
 			}
 
 			var movimiento = MovimientoInventario.Registrar(

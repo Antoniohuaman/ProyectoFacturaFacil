@@ -18,7 +18,7 @@ namespace GestionInventarioBC.Application.UseCases.Movimientos
 	/// </summary>
 	public sealed class RegistrarAjusteInventarioUseCase
 	{
-		public readonly record struct Item(string Sku, decimal Delta, string Motivo);
+		public readonly record struct Item(string? Sku, Guid? ProductoId, decimal Delta, string Motivo);
 		public readonly record struct Request(Guid EstablecimientoId, Guid AlmacenId, DateTimeOffset Fecha, IReadOnlyList<Item> Items);
 		public readonly record struct Response(Guid MovimientoId, int LineasAfectadas);
 
@@ -49,12 +49,24 @@ namespace GestionInventarioBC.Application.UseCases.Movimientos
 			foreach (var it in req.Items)
 			{
 				if (it.Delta == 0m) continue;
-				var productoId = await _catalogo.TryGetProductoIdBySkuAsync(empresaId, it.Sku, ct)
-                        ?? throw new NotFoundException($"No existe producto para SKU {it.Sku}.");
+				// Resolver ProductoId y validar consistencia si llega SKU y ProductoId
+				ProductoId? productoId = null;
+				if (it.ProductoId.HasValue)
+					productoId = ProductoId.From(it.ProductoId.Value);
+				if (!string.IsNullOrWhiteSpace(it.Sku))
+				{
+					var resolved = await _catalogo.TryGetProductoIdBySkuAsync(empresaId, it.Sku!, ct)
+								  ?? throw new NotFoundException($"No existe producto para SKU {it.Sku}.");
+					if (productoId is not null && !productoId.Value.Equals(resolved))
+						throw new BusinessRuleException("SKU y ProductoId no corresponden al mismo producto.");
+					productoId ??= resolved;
+				}
+				if (productoId is null)
+					throw new ArgumentException("Debe especificar SKU o ProductoId en el item.");
 				var valorAbs = Math.Abs(it.Delta);
 				var cant = CantidadStock.From(valorAbs);
-				var stock = await _stockRepo.ObtenerAsync(empresaId, estId, almId, productoId, ct)
-					   ?? StockPorAlmacen.CrearNuevo(empresaId, estId, almId, productoId);
+				var stock = await _stockRepo.ObtenerAsync(empresaId, estId, almId, productoId.Value, ct)
+				   ?? StockPorAlmacen.CrearNuevo(empresaId, estId, almId, productoId.Value);
 
 				if (it.Delta > 0m)
 				{
@@ -68,7 +80,7 @@ namespace GestionInventarioBC.Application.UseCases.Movimientos
 					tipoMov ??= TipoMovimiento.AjusteNegativo;
 				}
 				await _stockRepo.GuardarAsync(stock, ct);
-				lineas.Add(LineaMovimiento.Crear(productoId, cant));
+				lineas.Add(LineaMovimiento.Crear(productoId.Value, cant));
 			}
 
 			if (lineas.Count == 0)

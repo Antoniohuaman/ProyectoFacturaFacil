@@ -8,7 +8,8 @@ namespace GestionInventarioBC.Application.DTOs.Transferencias
         public Guid OrigenAlmacenId { get; set; }
         public Guid DestinoEstablecimientoId { get; set; }
         public Guid DestinoAlmacenId { get; set; }
-        public string Sku { get; set; } = string.Empty;
+        public string? Sku { get; set; }
+        public Guid? ProductoId { get; set; }
         public decimal Cantidad { get; set; }
     }
 

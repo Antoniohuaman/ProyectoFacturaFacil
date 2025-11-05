@@ -21,5 +21,14 @@ namespace GestionInventarioBC.Application.Interfaces
             string? sku,
             string? nombre,
             CancellationToken ct = default);
+
+        /// <summary>
+        /// Obtiene datos de presentación (SKU y Nombre) para un producto dado.
+        /// Devuelve null si el producto no existe o no pertenece a la empresa.
+        /// </summary>
+        Task<(string Sku, string Nombre)?> TryGetSkuYNombreAsync(
+            EmpresaId empresaId,
+            ProductoId productoId,
+            CancellationToken ct = default);
     }
 }

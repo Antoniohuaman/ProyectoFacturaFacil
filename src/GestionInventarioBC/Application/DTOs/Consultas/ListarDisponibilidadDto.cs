@@ -9,11 +9,15 @@ namespace GestionInventarioBC.Application.DTOs.Consultas
         public Guid AlmacenId { get; set; }
         public string? FiltroSku { get; set; }
         public bool SoloConDisponible { get; set; }
+        public int? Page { get; set; }
+        public int? PageSize { get; set; }
     }
 
     public class ListarDisponibilidadItemDto
     {
+        public Guid ProductoId { get; set; }
         public string Sku { get; set; } = string.Empty;
+        public string Nombre { get; set; } = string.Empty;
         public decimal Real { get; set; }
         public decimal Reservado { get; set; }
         public decimal Disponible { get; set; }
@@ -21,6 +25,7 @@ namespace GestionInventarioBC.Application.DTOs.Consultas
 
     public class ListarDisponibilidadResultDto
     {
+        public int Total { get; set; }
         public List<ListarDisponibilidadItemDto> Items { get; set; } = new();
     }
 }

@@ -11,7 +11,9 @@ namespace GestionInventarioBC.Application.DTOs.OperacionesMasivas
 
     public class ExportarListadoStockItemDto
     {
+        public Guid ProductoId { get; set; }
         public string Sku { get; set; } = string.Empty;
+        public string Nombre { get; set; } = string.Empty;
         public decimal Real { get; set; }
         public decimal Reservado { get; set; }
         public decimal Disponible { get; set; }

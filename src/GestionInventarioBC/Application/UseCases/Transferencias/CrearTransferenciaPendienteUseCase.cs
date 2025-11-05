@@ -20,7 +20,8 @@ namespace GestionInventarioBC.Application.UseCases.Transferencias
 			Guid OrigenAlmacenId,
 			Guid DestinoEstablecimientoId,
 			Guid DestinoAlmacenId,
-			string Sku,
+			string? Sku,
+			Guid? ProductoId,
 			decimal Cantidad
 		);
 
@@ -46,8 +47,20 @@ namespace GestionInventarioBC.Application.UseCases.Transferencias
 			var origenAlm = AlmacenId.From(req.OrigenAlmacenId);
 			var destEst = EstablecimientoId.From(req.DestinoEstablecimientoId);
 			var destAlm = AlmacenId.From(req.DestinoAlmacenId);
-			var productoId = await _catalogo.TryGetProductoIdBySkuAsync(empresaId, req.Sku, ct)
-							?? throw new SharedKernel.Exceptions.NotFoundException("No existe producto para el SKU indicado.");
+			// Resolver ProductoId y validar consistencia si llega SKU y ProductoId
+			ProductoId? productoId = null;
+			if (req.ProductoId.HasValue)
+				productoId = ProductoId.From(req.ProductoId.Value);
+			if (!string.IsNullOrWhiteSpace(req.Sku))
+			{
+				var resolved = await _catalogo.TryGetProductoIdBySkuAsync(empresaId, req.Sku!, ct)
+							  ?? throw new SharedKernel.Exceptions.NotFoundException("No existe producto para el SKU indicado.");
+				if (productoId is not null && !productoId.Value.Equals(resolved))
+					throw new SharedKernel.Exceptions.BusinessRuleException("SKU y ProductoId no corresponden al mismo producto.");
+				productoId ??= resolved;
+			}
+			if (productoId is null)
+				throw new ArgumentException("Debe especificar SKU o ProductoId.");
 			var cant = CantidadStock.From(req.Cantidad);
 
 			var t = TransferenciaInventario.Crear(empresaId, origenEst, origenAlm, destEst, destAlm, productoId, cant);

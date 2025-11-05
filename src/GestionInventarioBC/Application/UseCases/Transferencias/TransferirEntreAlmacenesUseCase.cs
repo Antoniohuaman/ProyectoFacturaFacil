@@ -19,7 +19,7 @@ namespace GestionInventarioBC.Application.UseCases.Transferencias
 	/// </summary>
 	public sealed class TransferirEntreAlmacenesUseCase
 	{
-		public readonly record struct Linea(string Sku, decimal Cantidad);
+		public readonly record struct Linea(string? Sku, Guid? ProductoId, decimal Cantidad);
 
 		public readonly record struct Request(
 			Guid OrigenEstablecimientoId,
@@ -73,8 +73,20 @@ namespace GestionInventarioBC.Application.UseCases.Transferencias
 
 			foreach (var l in req.Lineas)
 			{
-				var productoId = await _catalogo.TryGetProductoIdBySkuAsync(empresaId, l.Sku, ct)
-								?? throw new NotFoundException($"No existe producto para SKU {l.Sku}.");
+				// Resolver ProductoId y validar consistencia si llega SKU y ProductoId
+				ProductoId? productoId = null;
+				if (l.ProductoId.HasValue)
+					productoId = ProductoId.From(l.ProductoId.Value);
+				if (!string.IsNullOrWhiteSpace(l.Sku))
+				{
+					var resolved = await _catalogo.TryGetProductoIdBySkuAsync(empresaId, l.Sku!, ct)
+								  ?? throw new NotFoundException($"No existe producto para SKU {l.Sku}.");
+					if (productoId is not null && !productoId.Value.Equals(resolved))
+						throw new BusinessRuleException("SKU y ProductoId no corresponden al mismo producto.");
+					productoId ??= resolved;
+				}
+				if (productoId is null)
+					throw new ArgumentException("Debe especificar SKU o ProductoId en la línea.");
 				var cant = CantidadStock.From(l.Cantidad);
 
 				var stockOrigen = await _stockRepo.ObtenerAsync(empresaId, oEst, oAlm, productoId, ct);

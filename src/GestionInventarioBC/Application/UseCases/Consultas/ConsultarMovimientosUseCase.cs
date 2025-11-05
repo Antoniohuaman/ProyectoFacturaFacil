@@ -23,18 +23,22 @@ namespace GestionInventarioBC.Application.UseCases.Consultas
 			DateTimeOffset? Hasta,
 			string? Sku,
 			string? Tipo, // Ingreso/Egreso/AjustePositivo/AjusteNegativo/TransferenciaEntrada/TransferenciaSalida
-			string? Motivo // enum MotivoMovimiento
+			string? Motivo, // enum MotivoMovimiento
+			int? Page = null,
+			int? PageSize = null
 		);
+
+		public readonly record struct Linea(string Sku, string Nombre, decimal Cantidad);
 
 		public readonly record struct Item(
 			Guid MovimientoId,
 			DateTimeOffset Fecha,
 			string Tipo,
 			string Motivo,
-			IReadOnlyList<(string Sku, decimal Cantidad)> Lineas
+			IReadOnlyList<Linea> Lineas
 		);
 
-		public readonly record struct Response(IReadOnlyList<Item> Movimientos);
+		public readonly record struct Response(int Total, IReadOnlyList<Item> Items);
 
 		private readonly IMovimientoInventarioRepository _repo;
 		private readonly ITenantContext _tenant;
@@ -64,15 +68,39 @@ namespace GestionInventarioBC.Application.UseCases.Consultas
 			if (!string.IsNullOrWhiteSpace(req.Motivo) && Enum.TryParse<MotivoMovimiento>(req.Motivo, true, out var m)) motivo = m;
 
 			var lista = await _repo.ListarAsync(empresaId, estId, almId, req.Desde, req.Hasta, productoId, tipo, motivo, ct);
-			var items = lista.Select(m => new Item(
-				MovimientoId: m.MovimientoId,
-				Fecha: m.Fecha,
-				Tipo: m.Tipo.ToString(),
-				Motivo: m.Motivo.ToString(),
-				Lineas: m.Lineas.Select(l => (l.ProductoId.Value.ToString(), l.Cantidad.Value)).ToList()
-			)).ToList();
 
-			return new Response(items);
+			// Enriquecer líneas con SKU/Nombre
+			var enriched = new List<Item>(lista.Count);
+			foreach (var m in lista)
+			{
+				var lineas = new List<Linea>(m.Lineas.Count);
+				foreach (var l in m.Lineas)
+				{
+					var present = await _catalogo.TryGetSkuYNombreAsync(empresaId, l.ProductoId, ct);
+					lineas.Add(new Linea(
+						Sku: present?.Sku ?? string.Empty,
+						Nombre: present?.Nombre ?? string.Empty,
+						Cantidad: l.Cantidad.Value
+					));
+				}
+				enriched.Add(new Item(
+					MovimientoId: m.MovimientoId,
+					Fecha: m.Fecha,
+					Tipo: m.Tipo.ToString(),
+					Motivo: m.Motivo.ToString(),
+					Lineas: lineas
+				));
+			}
+
+			// Paginación in-memory (TODO: mover a repo si procede)
+			var total = enriched.Count;
+			var page = req.Page.GetValueOrDefault(1);
+			var pageSize = req.PageSize.GetValueOrDefault(50);
+			if (page < 1) page = 1;
+			if (pageSize < 1) pageSize = 50;
+			var items = enriched.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+
+			return new Response(total, items);
 		}
 	}
 }

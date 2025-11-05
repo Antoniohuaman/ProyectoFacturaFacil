@@ -14,7 +14,8 @@ namespace GestionInventarioBC.Application.DTOs.Movimientos
 
     public class RegistrarIngresoLineaDto
     {
-        public string Sku { get; set; } = string.Empty;
+        public string? Sku { get; set; }
+        public Guid? ProductoId { get; set; }
         public decimal Cantidad { get; set; }
     }
 

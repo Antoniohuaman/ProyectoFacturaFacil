@@ -17,7 +17,7 @@ namespace GestionInventarioBC.Application.UseCases.Reservas
 	/// </summary>
 	public sealed class CrearReservaStockUseCase
 	{
-		public readonly record struct Request(Guid EstablecimientoId, Guid AlmacenId, string Sku, decimal Cantidad, DateTimeOffset? VenceEn);
+		public readonly record struct Request(Guid EstablecimientoId, Guid AlmacenId, string? Sku, Guid? ProductoId, decimal Cantidad, DateTimeOffset? VenceEn);
 		public readonly record struct Response(Guid ReservaId);
 
 		private readonly IStockPorAlmacenRepository _stockRepo;
@@ -41,8 +41,21 @@ namespace GestionInventarioBC.Application.UseCases.Reservas
 			var estId = EstablecimientoId.From(req.EstablecimientoId);
 			var almId = AlmacenId.From(req.AlmacenId);
 			var cant = CantidadStock.From(req.Cantidad);
-			var productoId = await _catalogo.TryGetProductoIdBySkuAsync(empresaId, req.Sku, ct)
-							?? throw new NotFoundException("No existe producto para el SKU indicado.");
+
+			// Resolver ProductoId y validar consistencia si llega SKU y ProductoId
+			ProductoId? productoId = null;
+			if (req.ProductoId.HasValue)
+				productoId = ProductoId.From(req.ProductoId.Value);
+			if (!string.IsNullOrWhiteSpace(req.Sku))
+			{
+				var resolved = await _catalogo.TryGetProductoIdBySkuAsync(empresaId, req.Sku!, ct)
+							  ?? throw new NotFoundException("No existe producto para el SKU indicado.");
+				if (productoId is not null && !productoId.Value.Equals(resolved))
+					throw new BusinessRuleException("SKU y ProductoId no corresponden al mismo producto.");
+				productoId ??= resolved;
+			}
+			if (productoId is null)
+				throw new ArgumentException("Debe especificar SKU o ProductoId.");
 
 			var stock = await _stockRepo.ObtenerAsync(empresaId, estId, almId, productoId, ct)
 					   ?? StockPorAlmacen.CrearNuevo(empresaId, estId, almId, productoId);

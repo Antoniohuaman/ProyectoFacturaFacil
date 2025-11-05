@@ -15,7 +15,8 @@ namespace GestionInventarioBC.Application.DTOs.Transferencias
 
     public class TransferirEntreAlmacenesLineaDto
     {
-        public string Sku { get; set; } = string.Empty;
+        public string? Sku { get; set; }
+        public Guid? ProductoId { get; set; }
         public decimal Cantidad { get; set; }
     }
 

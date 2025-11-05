@@ -15,16 +15,17 @@ namespace GestionInventarioBC.Application.UseCases.Consultas
 	/// </summary>
 	public sealed class ListarDisponibilidadUseCase
 	{
-		public readonly record struct Request(Guid EstablecimientoId, Guid AlmacenId, string? FiltroSku = null, bool SoloConDisponible = false);
+		public readonly record struct Request(Guid EstablecimientoId, Guid AlmacenId, string? FiltroSku = null, bool SoloConDisponible = false, int? Page = null, int? PageSize = null);
 
 		public readonly record struct Item(
 			string Sku,
+			string Nombre,
 			decimal Real,
 			decimal Reservado,
 			decimal Disponible
 		);
 
-		public readonly record struct Response(IReadOnlyList<Item> Items);
+		public readonly record struct Response(int Total, IReadOnlyList<Item> Items);
 
 	private readonly IStockPorAlmacenRepository _repo;
 	private readonly ITenantContext _tenant;
@@ -58,14 +59,29 @@ namespace GestionInventarioBC.Application.UseCases.Consultas
 				lista = lista.Where(s => s.Disponible.Value > 0m).ToList();
 			}
 
-			var items = lista.Select(s => new Item(
-				Sku: s.ProductoId.Value.ToString(),
-				Real: s.Real.Value,
-				Reservado: s.Reservado.Value,
-				Disponible: s.Disponible.Value
-			)).ToList();
+			// Enriquecer con SKU/Nombre desde catálogo
+			var enriched = new List<Item>(lista.Count);
+			foreach (var s in lista)
+			{
+				var present = await _catalogo.TryGetSkuYNombreAsync(empresaId, s.ProductoId, ct);
+				enriched.Add(new Item(
+					Sku: present?.Sku ?? string.Empty,
+					Nombre: present?.Nombre ?? string.Empty,
+					Real: s.Real.Value,
+					Reservado: s.Reservado.Value,
+					Disponible: s.Disponible.Value
+				));
+			}
 
-			return new Response(items);
+			// Paginación in-memory (TODO: mover a repo si procede)
+			var total = enriched.Count;
+			var page = req.Page.GetValueOrDefault(1);
+			var pageSize = req.PageSize.GetValueOrDefault(50);
+			if (page < 1) page = 1;
+			if (pageSize < 1) pageSize = 50;
+			var items = enriched.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+
+			return new Response(total, items);
 		}
 	}
 }

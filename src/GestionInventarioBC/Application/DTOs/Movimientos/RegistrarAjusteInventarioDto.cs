@@ -13,7 +13,8 @@ namespace GestionInventarioBC.Application.DTOs.Movimientos
 
     public class RegistrarAjusteInventarioItemDto
     {
-        public string Sku { get; set; } = string.Empty;
+        public string? Sku { get; set; }
+        public Guid? ProductoId { get; set; }
         public decimal Delta { get; set; }
         public string Motivo { get; set; } = string.Empty;
     }

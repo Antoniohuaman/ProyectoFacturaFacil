@@ -19,6 +19,7 @@ namespace GestionInventarioBC.Application.UseCases.Consultas
 
 		public readonly record struct Response(
 			string Sku,
+			string Nombre,
 			decimal Real,
 			decimal Reservado,
 			decimal Disponible
@@ -47,10 +48,13 @@ namespace GestionInventarioBC.Application.UseCases.Consultas
 			if (stock is null)
 				throw new NotFoundException("No se encontró stock para el producto en el almacén indicado.");
 
+			var present = await _catalogo.TryGetSkuYNombreAsync(empresaId, productoId, ct);
+
 			// Opcional: usar VO DisponibilidadStock si conviene
 			var disp = DisponibilidadStock.Crear(stock.Real, stock.Reservado);
 			return new Response(
 				Sku: req.Sku,
+				Nombre: present?.Nombre ?? string.Empty,
 				Real: stock.Real.Value,
 				Reservado: stock.Reservado.Value,
 				Disponible: disp.Disponible.Value

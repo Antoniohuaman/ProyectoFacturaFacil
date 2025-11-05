@@ -12,11 +12,14 @@ namespace GestionInventarioBC.Application.DTOs.Consultas
         public string? Sku { get; set; }
         public string? Tipo { get; set; }
         public string? Motivo { get; set; }
+        public int? Page { get; set; }
+        public int? PageSize { get; set; }
     }
 
     public class ConsultarMovimientosLineaDto
     {
         public string Sku { get; set; } = string.Empty;
+        public string Nombre { get; set; } = string.Empty;
         public decimal Cantidad { get; set; }
     }
 
@@ -31,6 +34,7 @@ namespace GestionInventarioBC.Application.DTOs.Consultas
 
     public class ConsultarMovimientosResultDto
     {
-        public List<ConsultarMovimientosItemDto> Movimientos { get; set; } = new();
+        public int Total { get; set; }
+        public List<ConsultarMovimientosItemDto> Items { get; set; } = new();
     }
 }
