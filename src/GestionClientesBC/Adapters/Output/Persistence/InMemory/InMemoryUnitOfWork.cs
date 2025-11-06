@@ -1,4 +1,6 @@
+using System.Threading;
 using System.Threading.Tasks;
+using System.Threading;
 using GestionClientesBC.Application.Interfaces;
 
 namespace GestionClientesBC.Adapters.Output.Persistence.InMemory
@@ -7,7 +9,7 @@ namespace GestionClientesBC.Adapters.Output.Persistence.InMemory
     {
         public bool WasCommitted { get; private set; }
 
-        public Task CommitAsync()
+        public Task CommitAsync(CancellationToken ct = default)
         {
             WasCommitted = true;
             return Task.CompletedTask;
