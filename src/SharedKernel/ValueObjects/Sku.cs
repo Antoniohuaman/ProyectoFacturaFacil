@@ -12,6 +12,7 @@ namespace SharedKernel.ValueObjects
     ///   (Ejemplo en guías: "Cap-258963"). Se normaliza en mayúsculas y sin espacios extremos.
     /// - NO es el "Código de producto SUNAT" (UNSPSC n..8, catálogo 25).
     /// </summary>
+    [Obsolete("SKU no es identidad; usar ProductoId. SKU vive en Catálogo y en Application/ReadModel.")]
     public sealed class Sku : IEquatable<Sku>
     {
         /// <summary>Tamaño máximo normativo para SellersItemIdentification/cbc:ID.</summary>
@@ -90,3 +91,5 @@ namespace SharedKernel.ValueObjects
     public static implicit operator string(Sku sku) => sku.Valor;
     }
 }
+
+// TODO: Eliminar esta clase cuando no existan referencias fuera de CatalogoArticulosBC ni de Application/ReadModel.

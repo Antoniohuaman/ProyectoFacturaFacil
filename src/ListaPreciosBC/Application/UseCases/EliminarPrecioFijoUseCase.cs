@@ -5,7 +5,8 @@ using System.Threading.Tasks;
 using ListaPreciosBC.Application.Interfaces; // IUnitOfWork, ICatalogoReadModel
 using ListaPreciosBC.Domain.Repositories;    // IListaPrecioRepository, IPrecioProductoRepository
 using ListaPreciosBC.Domain.Aggregates;      // PrecioProducto, ListaPrecio
-using ListaPreciosBC.Domain.ValueObjects;    // Sku, IdentificadorColumnaPrecio, ModoValorizacionColumna
+using ListaPreciosBC.Domain.ValueObjects;    // IdentificadorColumnaPrecio, ModoValorizacionColumna
+using System.Text.RegularExpressions;
 using SharedKernel.Exceptions;               // NotFoundException, BusinessRuleException
 using SharedKernel.ValueObjects;
 using SharedKernel.Application.Interfaces;   // ITenantContext
@@ -97,9 +98,9 @@ namespace ListaPreciosBC.Application.UseCases
                 throw new BusinessRuleException($"La columna #{req.ColumnaNumero} no es de modo FIJO; operación no permitida.");
 
             // 3) Resolver ProductoId y recuperar agregado PrecioProducto por ProductoId
-            var sku = Sku.Crear(req.Sku);
-            var productoId = await _catalogo.TryGetProductoIdBySkuAsync(empresaId, sku.Valor, ct)
-                             ?? throw new NotFoundException("Producto", sku.Valor);
+            var skuNorm = NormalizarSku(req.Sku);
+            var productoId = await _catalogo.TryGetProductoIdBySkuAsync(empresaId, skuNorm, ct)
+                             ?? throw new NotFoundException("Producto", skuNorm);
             SharedKernel.ValueObjects.EstablecimientoId? estId = null; // este UC trabaja con lista activa global
             var agregado = await _precioRepo.ObtenerPorProductoIdAsync(empresaId, estId, productoId, ct);
             if (agregado is null)
@@ -123,10 +124,18 @@ namespace ListaPreciosBC.Application.UseCases
 
             // 6) Respuesta
             return new Response(
-                Sku: sku.Valor,
+                Sku: skuNorm,
                 ColumnaNumero: req.ColumnaNumero,
                 Version: agregado.Version
             );
+        }
+
+        private static string NormalizarSku(string sku)
+        {
+            if (string.IsNullOrWhiteSpace(sku))
+                throw new ArgumentException("El SKU no puede estar vacío.", nameof(sku));
+            var t = sku.Trim().ToUpperInvariant();
+            return Regex.Replace(t, @"\s+", " ");
         }
     }
 }
