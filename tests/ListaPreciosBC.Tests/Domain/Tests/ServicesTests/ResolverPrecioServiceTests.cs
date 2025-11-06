@@ -30,7 +30,7 @@ namespace ListaPreciosBC.Tests.UnitTests.Services
         public void Si_NoReciboColumna_UsaBase_P1_y_Resuelve_Fijo()
         {
             var svc = new ResolverPrecioService();
-            var prod = PrecioProducto.CrearNuevo(SKU("CAP-100"));
+            var prod = PrecioProducto.CrearNuevo(EmpresaId.From("EMP-TEST"), ProductoId.New());
             var hoy  = new DateTimeOffset(2025, 1, 10, 10, 0, 0, TimeSpan.Zero);
 
             // Precio fijo en P1 vigente
@@ -71,7 +71,7 @@ namespace ListaPreciosBC.Tests.UnitTests.Services
         public void Si_ColumnaNoTieneValor_Fallback_a_Base()
         {
             var svc = new ResolverPrecioService();
-            var prod = PrecioProducto.CrearNuevo(SKU("CAP-101"));
+            var prod = PrecioProducto.CrearNuevo(EmpresaId.From("EMP-TEST"), ProductoId.New());
             var hoy  = new DateTimeOffset(2025, 1, 11, 9, 0, 0, TimeSpan.Zero);
 
             // Configuro P1 fijo; P2 sin valor
@@ -92,7 +92,7 @@ namespace ListaPreciosBC.Tests.UnitTests.Services
         public void Con_MatrizPorVolumen_Devuelve_Tramo_Aplicado()
         {
             var svc = new ResolverPrecioService();
-            var prod = PrecioProducto.CrearNuevo(SKU("CAP-102"));
+            var prod = PrecioProducto.CrearNuevo(EmpresaId.From("EMP-TEST"), ProductoId.New());
             var hoy  = new DateTimeOffset(2025, 1, 12, 8, 0, 0, TimeSpan.Zero);
 
             // P2 = matriz: [1..10]=30, [11..50]=25, [51..∞]=22

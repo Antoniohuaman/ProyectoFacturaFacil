@@ -4,6 +4,7 @@ using NUnit.Framework;
 using ListaPreciosBC.Domain.Aggregates;
 using ListaPreciosBC.Domain.Events;
 using ListaPreciosBC.Domain.ValueObjects;
+using SharedKernel.ValueObjects;
 
 namespace ListaPreciosBC.Tests.UnitTests.Aggregates
 {
@@ -45,7 +46,7 @@ namespace ListaPreciosBC.Tests.UnitTests.Aggregates
             });
 
         private static ListaPrecio NuevaLista(PlantillaColumnasPrecio? plantilla = null, string usuario = "sys", DateTimeOffset? cuando = null)
-            => ListaPrecio.CrearNueva(Guid.NewGuid(), plantilla ?? PlantillaBasica(), usuario, cuando ?? new DateTimeOffset(2025,1,1,12,0,0,TimeSpan.Zero));
+            => ListaPrecio.CrearNueva(EmpresaId.From("EMP-TEST"), Guid.NewGuid(), plantilla ?? PlantillaBasica(), usuario, cuando ?? new DateTimeOffset(2025,1,1,12,0,0,TimeSpan.Zero));
 
         private static PlantillaDeColumnasActualizada UltimoEvento(ListaPrecio agg)
             => agg.DomainEvents.Last() as PlantillaDeColumnasActualizada
@@ -57,7 +58,7 @@ namespace ListaPreciosBC.Tests.UnitTests.Aggregates
         public void CrearConPlantillaPorDefecto_emite_evento_y_deja_base_correcta()
         {
             var cuando = new DateTimeOffset(2025,1,1,8,0,0, TimeSpan.Zero);
-            var agg = ListaPrecio.CrearConPlantillaPorDefecto(Guid.NewGuid(), "sys", cuando);
+            var agg = ListaPrecio.CrearConPlantillaPorDefecto(EmpresaId.From("EMP-TEST"), Guid.NewGuid(), "sys", cuando);
 
             Assert.That(agg.Version, Is.EqualTo(1)); // creación ya emite un evento
             Assert.That(agg.IdColumnaBase.Numero, Is.EqualTo(1));

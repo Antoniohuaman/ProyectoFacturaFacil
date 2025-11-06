@@ -10,7 +10,7 @@ using ListaPreciosBC.Domain.Aggregates;      // ListaPrecio, PrecioProducto
 using ListaPreciosBC.Domain.ValueObjects;    // IdentificadorColumnaPrecio, NombreColumnaPrecio, ModoValorizacionColumna, PeriodoVigencia, ValorPrecio
 using NUnit.Framework;
 using SharedKernel.Exceptions;
-using SharedKernel.ValueObjects;             // Moneda, Sku
+using SharedKernel.ValueObjects;             // Moneda, Sku, EmpresaId, ProductoId
 using SharedKernel.Application.Interfaces;   // ITenantContext
 using Moq;
 
@@ -38,13 +38,15 @@ namespace ListaPreciosBC.Tests.Application.UseCases
         {
             private readonly Dictionary<string, PrecioProducto> _store = new();
             private readonly Dictionary<string, int> _loadedVersion = new();
+            private string? _lastLookupSku;
             public bool SimularConcurrencia { get; set; }
 
             public Task<PrecioProducto?> ObtenerPorSkuAsync(EmpresaId empresaId, Guid? sucursalId, Sku sku, CancellationToken ct = default)
             {
-                if (_store.TryGetValue(sku.Valor, out var agg))
+                _lastLookupSku = sku.Valor;
+                if (_store.TryGetValue(_lastLookupSku, out var agg))
                 {
-                    _loadedVersion[sku.Valor] = agg.Version;
+                    _loadedVersion[_lastLookupSku] = agg.Version;
                     return Task.FromResult<PrecioProducto?>(agg);
                 }
                 return Task.FromResult<PrecioProducto?>(null);
@@ -56,7 +58,9 @@ namespace ListaPreciosBC.Tests.Application.UseCases
 
             public Task GuardarAsync(PrecioProducto aggregate, EmpresaId empresaId, Guid? sucursalId, int expectedVersion, CancellationToken ct = default)
             {
-                var key = aggregate.Sku.Valor;
+                if (string.IsNullOrEmpty(_lastLookupSku))
+                    throw new InvalidOperationException("Debe consultarse por SKU antes de guardar para conocer la llave de persistencia.");
+                var key = _lastLookupSku;
 
                 if (SimularConcurrencia && _loadedVersion.TryGetValue(key, out var v))
                 {
@@ -66,7 +70,7 @@ namespace ListaPreciosBC.Tests.Application.UseCases
                     if (_loadedVersion.TryGetValue(key, out var loaded) && loaded != expectedVersion)
                         throw new ConcurrencyException(
                             "Versión inesperada del agregado.",
-                            aggregate.Sku.Valor,
+                            key,
                             expectedVersion,
                             aggregate.Version,
                             null,
@@ -108,11 +112,10 @@ namespace ListaPreciosBC.Tests.Application.UseCases
                     return Task.FromResult(result);
                 }
 
-            public void Seed(PrecioProducto agg)
+            public void Seed(string sku, PrecioProducto agg)
             {
-                var key = agg.Sku.Valor;
-                _store[key] = agg;
-                _loadedVersion[key] = agg.Version;
+                _store[sku] = agg;
+                _loadedVersion[sku] = agg.Version;
             }
         }
 
@@ -142,12 +145,12 @@ namespace ListaPreciosBC.Tests.Application.UseCases
                 orden: numeroVolumen
             );
             var plantilla = PlantillaColumnasPrecio.Crear(new[] { baseCfg, volCfg });
-            return ListaPrecio.CrearNueva(Guid.NewGuid(), plantilla);
+            return ListaPrecio.CrearNueva(EmpresaId.From("EMP-01"), Guid.NewGuid(), plantilla);
         }
 
         private static PrecioProducto CrearPrecioProducto(string sku)
         {
-            return PrecioProducto.CrearNuevo(Sku.Crear(sku));
+            return PrecioProducto.CrearNuevo(EmpresaId.From("EMP-01"), ProductoId.New());
         }
 
         private static bool ExistePrecioParaCantidad(PrecioProducto agg, byte columnaNumero, int cantidad)
@@ -171,7 +174,11 @@ namespace ListaPreciosBC.Tests.Application.UseCases
             var uow = new InMemoryUow();
             var tenant = new Mock<ITenantContext>();
             tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
-            var sut = new UpsertMatrizVolumenUseCase(precioRepo, listaRepo, uow, tenant.Object);
+            var catalogo = new Mock<ListaPreciosBC.Application.Interfaces.ICatalogoReadModel>();
+            catalogo
+                .Setup(c => c.TryGetProductoIdBySkuAsync(It.IsAny<EmpresaId>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ProductoId.New());
+            var sut = new UpsertMatrizVolumenUseCase(precioRepo, listaRepo, uow, tenant.Object, catalogo.Object);
 
             var req = new UpsertMatrizVolumenUseCase.Request(
                 Sku: "SKU-001",
@@ -197,6 +204,11 @@ namespace ListaPreciosBC.Tests.Application.UseCases
             Assert.That(post, Is.Not.Null);
             Assert.That(ExistePrecioParaCantidad(post!, 2, cantidad: 1), Is.True);
             Assert.That(ExistePrecioParaCantidad(post!, 2, cantidad: 10), Is.True);
+
+            // Assert de evento con tenant
+            var ev = post!.DomainEvents.OfType<ListaPreciosBC.Domain.Events.MatrizVolumenActualizada>().LastOrDefault();
+            Assert.That(ev, Is.Not.Null);
+            Assert.That(ev!.EmpresaId, Is.EqualTo(EmpresaId.From("EMP-01")));
         }
 
         [Test]
@@ -207,7 +219,11 @@ namespace ListaPreciosBC.Tests.Application.UseCases
             var uow = new InMemoryUow();
             var tenant = new Mock<ITenantContext>();
             tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
-            var sut = new UpsertMatrizVolumenUseCase(precioRepo, listaRepo, uow, tenant.Object);
+            var catalogo = new Mock<ListaPreciosBC.Application.Interfaces.ICatalogoReadModel>();
+            catalogo
+                .Setup(c => c.TryGetProductoIdBySkuAsync(It.IsAny<EmpresaId>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ProductoId.New());
+            var sut = new UpsertMatrizVolumenUseCase(precioRepo, listaRepo, uow, tenant.Object, catalogo.Object);
 
             var req = new UpsertMatrizVolumenUseCase.Request(
                 Sku: "SKU-404",
@@ -234,7 +250,11 @@ namespace ListaPreciosBC.Tests.Application.UseCases
             var uow = new InMemoryUow();
             var tenant = new Mock<ITenantContext>();
             tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
-            var sut = new UpsertMatrizVolumenUseCase(precioRepo, listaRepo, uow, tenant.Object);
+            var catalogo2 = new Mock<ListaPreciosBC.Application.Interfaces.ICatalogoReadModel>();
+            catalogo2
+                .Setup(c => c.TryGetProductoIdBySkuAsync(It.IsAny<EmpresaId>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ProductoId.New());
+            var sut = new UpsertMatrizVolumenUseCase(precioRepo, listaRepo, uow, tenant.Object, catalogo2.Object);
 
             var req = new UpsertMatrizVolumenUseCase.Request(
                 Sku: "SKU-001",
@@ -262,13 +282,17 @@ namespace ListaPreciosBC.Tests.Application.UseCases
                 orden: 1
             );
             var plantilla = PlantillaColumnasPrecio.Crear(new[] { baseCfg });
-            var lista = ListaPrecio.CrearNueva(Guid.NewGuid(), plantilla);
+            var lista = ListaPrecio.CrearNueva(EmpresaId.From("EMP-01"), Guid.NewGuid(), plantilla);
             var listaRepo = new InMemoryListaPrecioRepository { ListaActiva = lista };
             IPrecioProductoRepository precioRepo = new InMemoryPrecioProductoRepository();
             var uow = new InMemoryUow();
             var tenant = new Mock<ITenantContext>();
             tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
-            var sut = new UpsertMatrizVolumenUseCase(precioRepo, listaRepo, uow, tenant.Object);
+            var catalogo3 = new Mock<ListaPreciosBC.Application.Interfaces.ICatalogoReadModel>();
+            catalogo3
+                .Setup(c => c.TryGetProductoIdBySkuAsync(It.IsAny<EmpresaId>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ProductoId.New());
+            var sut = new UpsertMatrizVolumenUseCase(precioRepo, listaRepo, uow, tenant.Object, catalogo3.Object);
 
             var req = new UpsertMatrizVolumenUseCase.Request(
                 Sku: "SKU-001",
@@ -302,12 +326,16 @@ namespace ListaPreciosBC.Tests.Application.UseCases
                 "seed",
                 DateTimeOffset.UtcNow.AddDays(-10)
             );
-            precioRepo.Seed(existente);
+            precioRepo.Seed("SKU-001", existente);
 
             var uow = new InMemoryUow();
             var tenant = new Mock<ITenantContext>();
             tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
-            var sut = new UpsertMatrizVolumenUseCase(precioRepo, listaRepo, uow, tenant.Object);
+            var catalogo4 = new Mock<ListaPreciosBC.Application.Interfaces.ICatalogoReadModel>();
+            catalogo4
+                .Setup(c => c.TryGetProductoIdBySkuAsync(It.IsAny<EmpresaId>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ProductoId.New());
+            var sut = new UpsertMatrizVolumenUseCase(precioRepo, listaRepo, uow, tenant.Object, catalogo4.Object);
 
             var req = new UpsertMatrizVolumenUseCase.Request(
                 Sku: "SKU-001",
@@ -335,7 +363,11 @@ namespace ListaPreciosBC.Tests.Application.UseCases
             var uow = new InMemoryUow();
             var tenant = new Mock<ITenantContext>();
             tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
-            var sut = new UpsertMatrizVolumenUseCase(precioRepo, listaRepo, uow, tenant.Object);
+            var catalogo5 = new Mock<ListaPreciosBC.Application.Interfaces.ICatalogoReadModel>();
+            catalogo5
+                .Setup(c => c.TryGetProductoIdBySkuAsync(It.IsAny<EmpresaId>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ProductoId.New());
+            var sut = new UpsertMatrizVolumenUseCase(precioRepo, listaRepo, uow, tenant.Object, catalogo5.Object);
 
             // Tramos solapados: [1..10] y [8..∞)
             var req = new UpsertMatrizVolumenUseCase.Request(

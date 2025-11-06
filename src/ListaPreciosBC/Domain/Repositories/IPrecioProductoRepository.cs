@@ -12,8 +12,8 @@ namespace ListaPreciosBC.Domain.Repositories
     /// </summary>
     public interface IPrecioProductoRepository
     {
-        /// <summary>Obtiene los precios de un SKU (o null si no existe).</summary>
-        Task<PrecioProducto?> ObtenerPorSkuAsync(EmpresaId empresaId, Guid? sucursalId, Sku sku, CancellationToken ct = default);
+    /// <summary>Obtiene los precios de un SKU (o null si no existe).</summary>
+    Task<PrecioProducto?> ObtenerPorSkuAsync(EmpresaId empresaId, Guid? sucursalId, Sku sku, CancellationToken ct = default);
 
         /// <summary>
         /// Guarda con concurrencia optimista (expectedVersion = 0 para altas).

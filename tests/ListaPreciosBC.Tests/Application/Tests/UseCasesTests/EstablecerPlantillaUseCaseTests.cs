@@ -97,7 +97,7 @@ namespace ListaPreciosBC.Tests.Application.UseCases
                 orden: 2
             );
             var plantilla = PlantillaColumnasPrecio.Crear(new[] { baseCfg, extraCfg });
-            var lista = ListaPrecio.CrearNueva(Guid.NewGuid(), plantilla);
+            var lista = ListaPrecio.CrearNueva(EmpresaId.From("EMP-01"), Guid.NewGuid(), plantilla);
             return lista;
         }
 

@@ -82,7 +82,7 @@ namespace ListaPreciosBC.Domain.Services
             }
 
             return new PrecioCalculadoDto(
-                producto.Sku,
+                producto.ProductoId,
                 objetivo,
                 valor,
                 neto,
@@ -105,7 +105,7 @@ namespace ListaPreciosBC.Domain.Services
 
     /// <summary>DTO de salida del resolvedor de precio.</summary>
     public sealed record PrecioCalculadoDto(
-        Sku Sku,
+        ProductoId ProductoId,
         IdentificadorColumnaPrecio ColumnaAplicada,
         ValorPrecio ValorOriginal,
         Dinero Neto,

@@ -117,10 +117,11 @@ namespace ListaPreciosBC.Tests.Application.UseCases
             var plantilla = PlantillaColumnasPrecio.Crear(new[] { baseCfg, extra2, extra3 });
 
             var lista = ListaPrecio.CrearNueva(
+                EmpresaId.From("EMP-01"),
                 Guid.NewGuid(),
                 plantilla,
                 "tester",
-                DateTime.Now
+                DateTimeOffset.Now
             );
 
             return lista;

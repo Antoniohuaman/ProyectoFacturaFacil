@@ -40,6 +40,7 @@ namespace ListaPreciosBC.Tests.Application.UseCases
         {
             private readonly Dictionary<string, PrecioProducto> _store = new();
             private readonly Dictionary<string, int> _loadedVersion = new();
+            private string? _lastLookupSku;
 
             public bool SimularConcurrencia { get; set; }
 
@@ -52,6 +53,7 @@ namespace ListaPreciosBC.Tests.Application.UseCases
 
             public Task<PrecioProducto?> ObtenerPorSkuAsync(EmpresaId empresaId, Guid? sucursalId, Sku sku, CancellationToken ct = default)
             {
+                _lastLookupSku = sku.Valor;
                 if (_store.TryGetValue(sku.Valor, out var agg))
                 {
                     _loadedVersion[sku.Valor] = agg.Version;
@@ -66,7 +68,7 @@ namespace ListaPreciosBC.Tests.Application.UseCases
 
             public Task GuardarAsync(PrecioProducto aggregate, EmpresaId empresaId, Guid? sucursalId, int expectedVersion, CancellationToken ct = default)
             {
-                var key = aggregate.Sku.Valor;
+                var key = _lastLookupSku ?? throw new InvalidOperationException("Debe haberse consultado por SKU antes de guardar.");
 
                 if (SimularConcurrencia && _loadedVersion.TryGetValue(key, out var v))
                     _loadedVersion[key] = v + 1; // simula cambio concurrente
@@ -88,9 +90,9 @@ namespace ListaPreciosBC.Tests.Application.UseCases
             public Task EliminarAsync(Sku sku, int? expectedVersion = null, CancellationToken ct = default)
                 => EliminarAsync(EmpresaId.From("TEST-EMPRESA"), null, sku, expectedVersion, ct);
 
-            public void Seed(PrecioProducto agg)
+            public void Seed(string sku, PrecioProducto agg)
             {
-                var key = agg.Sku.Valor;
+                var key = sku;
                 _store[key] = agg;
                 _loadedVersion[key] = agg.Version;
             }
@@ -130,12 +132,12 @@ namespace ListaPreciosBC.Tests.Application.UseCases
                 orden: 3
             );
             var plantilla = PlantillaColumnasPrecio.Crear(new[] { baseCfg, mayoristaCfg, minoristaCfg });
-            var lista = ListaPrecio.CrearNueva(Guid.NewGuid(), plantilla);
+            var lista = ListaPrecio.CrearNueva(EmpresaId.From("EMP-01"), Guid.NewGuid(), plantilla);
             return lista;
         }
 
         private static PrecioProducto CrearNuevoAgg(string sku)
-            => PrecioProducto.CrearNuevo(Sku.Crear(sku));
+            => PrecioProducto.CrearNuevo(EmpresaId.From("EMP-01"), ProductoId.New());
 
         private static decimal? PrecioVigente(PrecioProducto agg, byte col, int cantidad)
         {
@@ -153,7 +155,10 @@ namespace ListaPreciosBC.Tests.Application.UseCases
             var uow        = new InMemoryUow();
             var tenant = new Mock<ITenantContext>();
             tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
-            var sut        = new ImportarPreciosPorVolumenUseCase(listaRepo, precioRepo, uow, tenant.Object);
+        var catalogo = new Mock<ICatalogoReadModel>();
+        catalogo.Setup(c => c.TryGetProductoIdBySkuAsync(It.IsAny<EmpresaId>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(ProductoId.New());
+            var sut        = new ImportarPreciosPorVolumenUseCase(listaRepo, precioRepo, uow, tenant.Object, catalogo.Object);
 
             var req = new ImportarPreciosPorVolumenUseCase.Request(
                 Filas: new List<ImportarPreciosPorVolumenUseCase.Fila>
@@ -203,7 +208,10 @@ namespace ListaPreciosBC.Tests.Application.UseCases
             var uow        = new InMemoryUow();
             var tenant = new Mock<ITenantContext>();
             tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
-            var sut        = new ImportarPreciosPorVolumenUseCase(listaRepo, precioRepo, uow, tenant.Object);
+        var catalogo = new Mock<ICatalogoReadModel>();
+        catalogo.Setup(c => c.TryGetProductoIdBySkuAsync(It.IsAny<EmpresaId>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(ProductoId.New());
+            var sut        = new ImportarPreciosPorVolumenUseCase(listaRepo, precioRepo, uow, tenant.Object, catalogo.Object);
 
             var req = new ImportarPreciosPorVolumenUseCase.Request(
                 Filas: new List<ImportarPreciosPorVolumenUseCase.Fila>
@@ -237,7 +245,10 @@ namespace ListaPreciosBC.Tests.Application.UseCases
             var uow        = new InMemoryUow();
             var tenant = new Mock<ITenantContext>();
             tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
-            var sut        = new ImportarPreciosPorVolumenUseCase(listaRepo, precioRepo, uow, tenant.Object);
+            var catalogo2 = new Mock<ICatalogoReadModel>();
+            catalogo2.Setup(c => c.TryGetProductoIdBySkuAsync(It.IsAny<EmpresaId>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ProductoId.New());
+            var sut        = new ImportarPreciosPorVolumenUseCase(listaRepo, precioRepo, uow, tenant.Object, catalogo2.Object);
 
             var req = new ImportarPreciosPorVolumenUseCase.Request(
                 Filas: new List<ImportarPreciosPorVolumenUseCase.Fila>
@@ -265,7 +276,10 @@ namespace ListaPreciosBC.Tests.Application.UseCases
             var uow        = new InMemoryUow();
             var tenant = new Mock<ITenantContext>();
             tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
-            var sut        = new ImportarPreciosPorVolumenUseCase(listaRepo, precioRepo, uow, tenant.Object);
+            var catalogo3 = new Mock<ICatalogoReadModel>();
+            catalogo3.Setup(c => c.TryGetProductoIdBySkuAsync(It.IsAny<EmpresaId>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ProductoId.New());
+            var sut        = new ImportarPreciosPorVolumenUseCase(listaRepo, precioRepo, uow, tenant.Object, catalogo3.Object);
 
             var req = new ImportarPreciosPorVolumenUseCase.Request(
                 Filas: new List<ImportarPreciosPorVolumenUseCase.Fila>
@@ -293,11 +307,14 @@ namespace ListaPreciosBC.Tests.Application.UseCases
             var uow        = new InMemoryUow();
             var tenant = new Mock<ITenantContext>();
             tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
-            var sut        = new ImportarPreciosPorVolumenUseCase(listaRepo, precioRepo, uow, tenant.Object);
+            var catalogoC = new Mock<ICatalogoReadModel>();
+            catalogoC.Setup(c => c.TryGetProductoIdBySkuAsync(It.IsAny<EmpresaId>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ProductoId.New());
+            var sut        = new ImportarPreciosPorVolumenUseCase(listaRepo, precioRepo, uow, tenant.Object, catalogoC.Object);
 
             // Seed con SKU para provocar conflicto de versión
-            var agg = PrecioProducto.CrearNuevo(Sku.Crear("SKU-LOCK"));
-            precioRepo.Seed(agg);
+            var agg = PrecioProducto.CrearNuevo(EmpresaId.From("EMP-01"), ProductoId.New());
+            precioRepo.Seed("SKU-LOCK", agg);
 
             var req = new ImportarPreciosPorVolumenUseCase.Request(
                 Filas: new List<ImportarPreciosPorVolumenUseCase.Fila>
@@ -322,7 +339,10 @@ namespace ListaPreciosBC.Tests.Application.UseCases
             var uow        = new InMemoryUow();
             var tenant = new Mock<ITenantContext>();
             tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
-            var sut        = new ImportarPreciosPorVolumenUseCase(listaRepo, precioRepo, uow, tenant.Object);
+            var catalogo4 = new Mock<ICatalogoReadModel>();
+            catalogo4.Setup(c => c.TryGetProductoIdBySkuAsync(It.IsAny<EmpresaId>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ProductoId.New());
+            var sut        = new ImportarPreciosPorVolumenUseCase(listaRepo, precioRepo, uow, tenant.Object, catalogo4.Object);
 
             var req = new ImportarPreciosPorVolumenUseCase.Request(
                 Filas: new List<ImportarPreciosPorVolumenUseCase.Fila>

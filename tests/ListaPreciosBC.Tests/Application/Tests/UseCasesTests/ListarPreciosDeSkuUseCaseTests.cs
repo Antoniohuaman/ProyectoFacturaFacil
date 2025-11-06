@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using ListaPreciosBC.Application.UseCases;   // ListarPreciosDeSkuUseCase
 using ListaPreciosBC.Domain.Repositories;    // IListaPrecioRepository, IPrecioProductoRepository
 using ListaPreciosBC.Domain.Aggregates;      // ListaPrecio, PrecioProducto
-using ListaPreciosBC.Domain.ValueObjects;    // IdentificadorColumnaPrecio, NombreColumnaPrecio, ModoValorizacionColumna, ValorPrecio, PeriodoVigencia, TramoVolumen, MatrizVolumen, Sku
+using ListaPreciosBC.Domain.ValueObjects;    // IdentificadorColumnaPrecio, NombreColumnaPrecio, ModoValorizacionColumna, ValorPrecio, PeriodoVigencia, TramoVolumen, MatrizVolumen
 using NUnit.Framework;
 using SharedKernel.Exceptions;
 using SharedKernel.ValueObjects;             // Moneda
@@ -37,6 +37,7 @@ namespace ListaPreciosBC.Tests.Application.UseCases
 
         private sealed class InMemoryPrecioProductoRepository : IPrecioProductoRepository
         {
+            // Keyed by SKU to support ObtenerPorSku without relying on aggregate state
             private readonly Dictionary<string, PrecioProducto> _store = new();
 
             public Task<PrecioProducto?> ObtenerPorSkuAsync(EmpresaId empresaId, Guid? sucursalId, Sku sku, CancellationToken ct = default)
@@ -47,17 +48,17 @@ namespace ListaPreciosBC.Tests.Application.UseCases
 
             public Task GuardarAsync(PrecioProducto aggregate, EmpresaId empresaId, Guid? sucursalId, int expectedVersion, CancellationToken ct = default)
             {
-                _store[aggregate.Sku.Valor] = aggregate;
+                // No-op for these read-only tests. If needed, extend to capture by last looked-up SKU.
                 return Task.CompletedTask;
             }
 
-            public void Seed(PrecioProducto agg) => _store[agg.Sku.Valor] = agg;
+            public void Seed(string sku, PrecioProducto agg) => _store[sku] = agg;
 
-                public Task EliminarAsync(EmpresaId empresaId, Guid? sucursalId, Sku sku, int? expectedVersion = null, CancellationToken ct = default)
-                {
-                    _store.Remove(sku.Valor);
-                    return Task.CompletedTask;
-                }
+            public Task EliminarAsync(EmpresaId empresaId, Guid? sucursalId, Sku sku, int? expectedVersion = null, CancellationToken ct = default)
+            {
+                _store.Remove(sku.Valor);
+                return Task.CompletedTask;
+            }
         }
 
         
@@ -91,12 +92,12 @@ namespace ListaPreciosBC.Tests.Application.UseCases
                 orden: 3
             );
             var plantilla = PlantillaColumnasPrecio.Crear(new[] { baseCfg, volCfg, ocultaCfg });
-            var lista = ListaPrecio.CrearNueva(Guid.NewGuid(), plantilla);
+            var lista = ListaPrecio.CrearNueva(EmpresaId.From("EMP-01"), Guid.NewGuid(), plantilla);
             return lista;
         }
 
         private static PrecioProducto CrearPrecioProducto(string sku)
-            => PrecioProducto.CrearNuevo(Sku.Crear(sku));
+            => PrecioProducto.CrearNuevo(EmpresaId.From("EMP-01"), ProductoId.New());
 
         // ---------------------- Tests ----------------------
 
@@ -133,7 +134,7 @@ namespace ListaPreciosBC.Tests.Application.UseCases
             );
 
             // VIP (oculta) — NO definimos precio para probar Monto=null
-            precioRepo.Seed(agg);
+            precioRepo.Seed(sku, agg);
 
             var tenant = new Mock<ITenantContext>();
             tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
@@ -193,7 +194,7 @@ namespace ListaPreciosBC.Tests.Application.UseCases
                 "seed",
                 DateTimeOffset.UtcNow.AddDays(-5)
             );
-            precioRepo.Seed(agg);
+            precioRepo.Seed(sku, agg);
 
             var tenant = new Mock<ITenantContext>();
             tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
@@ -257,7 +258,7 @@ namespace ListaPreciosBC.Tests.Application.UseCases
                 "seed",
                 DateTimeOffset.UtcNow.AddDays(-10)
             );
-            precioRepo.Seed(agg);
+            precioRepo.Seed(sku, agg);
 
             var tenant = new Mock<ITenantContext>();
             tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));

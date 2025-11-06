@@ -39,16 +39,19 @@ namespace ListaPreciosBC.Tests.Application.UseCases
         private sealed class InMemoryPrecioProductoRepository : IPrecioProductoRepository
         {
             private readonly Dictionary<string, PrecioProducto> _store = new();
+            private string? _lastLookupSku;
 
             public Task<PrecioProducto?> ObtenerPorSkuAsync(EmpresaId empresaId, Guid? sucursalId, Sku sku, CancellationToken ct = default)
             {
+                _lastLookupSku = sku.Valor;
                 _store.TryGetValue(sku.Valor, out var agg);
                 return Task.FromResult<PrecioProducto?>(agg);
             }
 
             public Task GuardarAsync(PrecioProducto aggregate, EmpresaId empresaId, Guid? sucursalId, int expectedVersion, CancellationToken ct = default)
             {
-                _store[aggregate.Sku.Valor] = aggregate;
+                var key = _lastLookupSku ?? throw new InvalidOperationException("Debe consultarse por SKU antes de guardar.");
+                _store[key] = aggregate;
                 return Task.CompletedTask;
             }
 
@@ -58,7 +61,7 @@ namespace ListaPreciosBC.Tests.Application.UseCases
                 return Task.CompletedTask;
             }
 
-            public void Seed(PrecioProducto agg) => _store[agg.Sku.Valor] = agg;
+            public void Seed(string sku, PrecioProducto agg) => _store[sku] = agg;
         }
 
         
@@ -92,12 +95,12 @@ namespace ListaPreciosBC.Tests.Application.UseCases
                 orden: 3
             );
             var plantilla = PlantillaColumnasPrecio.Crear(new[] { baseCfg, mayoristaCfg, vipOcultaCfg });
-            return ListaPrecio.CrearNueva(Guid.NewGuid(), plantilla);
+            return ListaPrecio.CrearNueva(EmpresaId.From("EMP-01"), Guid.NewGuid(), plantilla);
         }
 
         private static PrecioProducto CrearAggConPrecios(string sku)
         {
-            var agg = PrecioProducto.CrearNuevo(Sku.Crear(sku));
+            var agg = PrecioProducto.CrearNuevo(EmpresaId.From("EMP-01"), ProductoId.New());
 
             // Base Fija vigente
             agg.UpsertPrecioFijo(
@@ -140,11 +143,14 @@ namespace ListaPreciosBC.Tests.Application.UseCases
 
             const string sku = "SKU-001";
             var agg = CrearAggConPrecios(sku);
-            precioRepo.Seed(agg);
+            precioRepo.Seed(sku, agg);
 
             var tenant = new Mock<ITenantContext>();
             tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
-            var sut = new ExportarPreciosSkuExcelUseCase(listaRepo, precioRepo, tenant.Object);
+            var catalogo = new Moq.Mock<ListaPreciosBC.Application.Interfaces.ICatalogoReadModel>();
+            catalogo.Setup(c => c.TryGetProductoIdBySkuAsync(It.IsAny<EmpresaId>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ProductoId.New());
+            var sut = new ExportarPreciosSkuExcelUseCase(listaRepo, precioRepo, tenant.Object, catalogo.Object);
 
             var res = await sut.Handle(new ExportarPreciosSkuExcelUseCase.Request(
                 Sku: sku,
@@ -181,11 +187,15 @@ namespace ListaPreciosBC.Tests.Application.UseCases
             var precioRepo = new InMemoryPrecioProductoRepository();
 
             const string sku = "SKU-002";
-            precioRepo.Seed(CrearAggConPrecios(sku));
+            var agg2 = CrearAggConPrecios(sku);
+            precioRepo.Seed(sku, agg2);
 
             var tenant = new Mock<ITenantContext>();
             tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
-            var sut = new ExportarPreciosSkuExcelUseCase(listaRepo, precioRepo, tenant.Object);
+            var catalogo2 = new Moq.Mock<ListaPreciosBC.Application.Interfaces.ICatalogoReadModel>();
+            catalogo2.Setup(c => c.TryGetProductoIdBySkuAsync(It.IsAny<EmpresaId>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ProductoId.New());
+            var sut = new ExportarPreciosSkuExcelUseCase(listaRepo, precioRepo, tenant.Object, catalogo2.Object);
 
             var res = await sut.Handle(new ExportarPreciosSkuExcelUseCase.Request(
                 Sku: sku,
@@ -209,7 +219,10 @@ namespace ListaPreciosBC.Tests.Application.UseCases
             var precioRepo = new InMemoryPrecioProductoRepository();
             var tenant = new Mock<ITenantContext>();
             tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
-            var sut        = new ExportarPreciosSkuExcelUseCase(listaRepo, precioRepo, tenant.Object);
+            var catalogo3 = new Moq.Mock<ListaPreciosBC.Application.Interfaces.ICatalogoReadModel>();
+            catalogo3.Setup(c => c.TryGetProductoIdBySkuAsync(It.IsAny<EmpresaId>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ProductoId.New());
+            var sut        = new ExportarPreciosSkuExcelUseCase(listaRepo, precioRepo, tenant.Object, catalogo3.Object);
 
             Assert.That(async () => await sut.Handle(new ExportarPreciosSkuExcelUseCase.Request("SKU-X", 1), CancellationToken.None),
                         Throws.TypeOf<NotFoundException>());
@@ -222,7 +235,10 @@ namespace ListaPreciosBC.Tests.Application.UseCases
             var precioRepo = new InMemoryPrecioProductoRepository();
             var tenant = new Mock<ITenantContext>();
             tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
-            var sut        = new ExportarPreciosSkuExcelUseCase(listaRepo, precioRepo, tenant.Object);
+            var catalogo4 = new Moq.Mock<ListaPreciosBC.Application.Interfaces.ICatalogoReadModel>();
+            catalogo4.Setup(c => c.TryGetProductoIdBySkuAsync(It.IsAny<EmpresaId>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ProductoId.New());
+            var sut        = new ExportarPreciosSkuExcelUseCase(listaRepo, precioRepo, tenant.Object, catalogo4.Object);
 
             Assert.That(async () => await sut.Handle(new ExportarPreciosSkuExcelUseCase.Request("SKU-404", 1), CancellationToken.None),
                         Throws.TypeOf<NotFoundException>());

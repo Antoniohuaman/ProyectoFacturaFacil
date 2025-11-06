@@ -40,11 +40,13 @@ namespace ListaPreciosBC.Tests.Application.UseCases
         {
             private readonly Dictionary<string, PrecioProducto> _store = new();
             private readonly Dictionary<string, int> _loadedVersion = new();
+            private string? _lastLookupSku;
 
             public bool SimularConcurrencia { get; set; }
 
             public Task<PrecioProducto?> ObtenerPorSkuAsync(EmpresaId empresaId, Guid? sucursalId, Sku sku, CancellationToken ct = default)
             {
+                _lastLookupSku = sku.Valor;
                 if (_store.TryGetValue(sku.Valor, out var agg))
                 {
                     _loadedVersion[sku.Valor] = agg.Version;
@@ -59,7 +61,7 @@ namespace ListaPreciosBC.Tests.Application.UseCases
 
             public Task GuardarAsync(PrecioProducto aggregate, EmpresaId empresaId, Guid? sucursalId, int expectedVersion, CancellationToken ct = default)
             {
-                var key = aggregate.Sku.Valor;
+                var key = _lastLookupSku ?? throw new InvalidOperationException("Debe consultarse por SKU antes de guardar.");
 
                 if (SimularConcurrencia && _loadedVersion.TryGetValue(key, out var v))
                     _loadedVersion[key] = v + 1; // simula cambio concurrente
@@ -67,7 +69,7 @@ namespace ListaPreciosBC.Tests.Application.UseCases
                 if (_loadedVersion.TryGetValue(key, out var loaded) && loaded != expectedVersion)
                     throw new ConcurrencyException(
                         "PrecioProducto", // aggregate name
-                        aggregate.Sku.Valor, // aggregateId
+                        key, // aggregateId
                         expectedVersion, // expectedVersion
                         loaded, // currentVersion
                         "Versión inesperada del agregado PrecioProducto.");
@@ -88,9 +90,9 @@ namespace ListaPreciosBC.Tests.Application.UseCases
             public Task EliminarAsync(Sku sku, int? expectedVersion = null, CancellationToken ct = default)
                 => EliminarAsync(EmpresaId.From("TEST-EMPRESA"), null, sku, expectedVersion, ct);
 
-            public void Seed(PrecioProducto agg)
+            public void Seed(string sku, PrecioProducto agg)
             {
-                var key = agg.Sku.Valor;
+                var key = sku;
                 _store[key] = agg;
                 _loadedVersion[key] = agg.Version;
             }
@@ -130,11 +132,11 @@ namespace ListaPreciosBC.Tests.Application.UseCases
                 orden: 3
             );
             var plantilla = PlantillaColumnasPrecio.Crear(new[] { baseCfg, minoristaCfg, mayoristaCfg });
-            return ListaPrecio.CrearNueva(Guid.NewGuid(), plantilla);
+            return ListaPrecio.CrearNueva(EmpresaId.From("EMP-01"), Guid.NewGuid(), plantilla);
         }
 
         private static PrecioProducto CrearPrecioProducto(string sku)
-            => PrecioProducto.CrearNuevo(Sku.Crear(sku));
+            => PrecioProducto.CrearNuevo(EmpresaId.From("EMP-01"), ProductoId.New());
 
         private static bool ExistePrecio(PrecioProducto agg, byte columna, int cantidad)
         {
@@ -155,7 +157,10 @@ namespace ListaPreciosBC.Tests.Application.UseCases
             var uow        = new InMemoryUow();
             var tenant = new Mock<ITenantContext>();
             tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
-            var sut        = new ImportarPreciosFijosUseCase(listaRepo, precioRepo, uow, tenant.Object);
+            var catalogo = new Moq.Mock<ListaPreciosBC.Application.Interfaces.ICatalogoReadModel>();
+            catalogo.Setup(c => c.TryGetProductoIdBySkuAsync(It.IsAny<EmpresaId>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ProductoId.New());
+            var sut        = new ImportarPreciosFijosUseCase(listaRepo, precioRepo, uow, tenant.Object, catalogo.Object);
 
             var req = new ImportarPreciosFijosUseCase.Request(
                 Filas: new List<ImportarPreciosFijosUseCase.Fila>
@@ -202,7 +207,10 @@ namespace ListaPreciosBC.Tests.Application.UseCases
             var uow        = new InMemoryUow();
             var tenant = new Mock<ITenantContext>();
             tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
-            var sut        = new ImportarPreciosFijosUseCase(listaRepo, precioRepo, uow, tenant.Object);
+            var catalogo2 = new Moq.Mock<ListaPreciosBC.Application.Interfaces.ICatalogoReadModel>();
+            catalogo2.Setup(c => c.TryGetProductoIdBySkuAsync(It.IsAny<EmpresaId>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ProductoId.New());
+            var sut        = new ImportarPreciosFijosUseCase(listaRepo, precioRepo, uow, tenant.Object, catalogo2.Object);
 
             var req = new ImportarPreciosFijosUseCase.Request(
                 Filas: new List<ImportarPreciosFijosUseCase.Fila>
@@ -238,7 +246,10 @@ namespace ListaPreciosBC.Tests.Application.UseCases
             var uow        = new InMemoryUow();
             var tenant = new Mock<ITenantContext>();
             tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
-            var sut        = new ImportarPreciosFijosUseCase(listaRepo, precioRepo, uow, tenant.Object);
+            var catalogo3 = new Moq.Mock<ListaPreciosBC.Application.Interfaces.ICatalogoReadModel>();
+            catalogo3.Setup(c => c.TryGetProductoIdBySkuAsync(It.IsAny<EmpresaId>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ProductoId.New());
+            var sut        = new ImportarPreciosFijosUseCase(listaRepo, precioRepo, uow, tenant.Object, catalogo3.Object);
 
             var req = new ImportarPreciosFijosUseCase.Request(
                 Filas: new List<ImportarPreciosFijosUseCase.Fila>
@@ -272,7 +283,10 @@ namespace ListaPreciosBC.Tests.Application.UseCases
             var uow        = new InMemoryUow();
             var tenant = new Mock<ITenantContext>();
             tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
-            var sut        = new ImportarPreciosFijosUseCase(listaRepo, precioRepo, uow, tenant.Object);
+            var catalogoX = new Moq.Mock<ListaPreciosBC.Application.Interfaces.ICatalogoReadModel>();
+            catalogoX.Setup(c => c.TryGetProductoIdBySkuAsync(It.IsAny<EmpresaId>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ProductoId.New());
+            var sut        = new ImportarPreciosFijosUseCase(listaRepo, precioRepo, uow, tenant.Object, catalogoX.Object);
 
             var req = new ImportarPreciosFijosUseCase.Request(
                 Filas: new List<ImportarPreciosFijosUseCase.Fila>
@@ -301,10 +315,13 @@ namespace ListaPreciosBC.Tests.Application.UseCases
             var uow        = new InMemoryUow();
             var tenant = new Mock<ITenantContext>();
             tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
-            var sut        = new ImportarPreciosFijosUseCase(listaRepo, precioRepo, uow, tenant.Object);
+            var catalogoY = new Moq.Mock<ListaPreciosBC.Application.Interfaces.ICatalogoReadModel>();
+            catalogoY.Setup(c => c.TryGetProductoIdBySkuAsync(It.IsAny<EmpresaId>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ProductoId.New());
+            var sut        = new ImportarPreciosFijosUseCase(listaRepo, precioRepo, uow, tenant.Object, catalogoY.Object);
 
             // Seed para forzar conflicto
-            var agg = PrecioProducto.CrearNuevo(Sku.Crear("SKU-LOCK"));
+            var agg = PrecioProducto.CrearNuevo(EmpresaId.From("EMP-01"), ProductoId.New());
             agg.UpsertPrecioFijo(
                 IdentificadorColumnaPrecio.DesdeNumero(1),
                 ValorPrecio.DesdeMonto(9.99m, Moneda.PEN(), true),
@@ -312,7 +329,7 @@ namespace ListaPreciosBC.Tests.Application.UseCases
                 "seed",
                 DateTimeOffset.UtcNow.AddDays(-10)
             );
-            precioRepo.Seed(agg);
+            precioRepo.Seed("SKU-LOCK", agg);
 
             var req = new ImportarPreciosFijosUseCase.Request(
                 Filas: new List<ImportarPreciosFijosUseCase.Fila>
@@ -337,7 +354,10 @@ namespace ListaPreciosBC.Tests.Application.UseCases
             var uow        = new InMemoryUow();
             var tenant = new Mock<ITenantContext>();
             tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
-            var sut        = new ImportarPreciosFijosUseCase(listaRepo, precioRepo, uow, tenant.Object);
+            var catalogo4 = new Moq.Mock<ListaPreciosBC.Application.Interfaces.ICatalogoReadModel>();
+            catalogo4.Setup(c => c.TryGetProductoIdBySkuAsync(It.IsAny<EmpresaId>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ProductoId.New());
+            var sut        = new ImportarPreciosFijosUseCase(listaRepo, precioRepo, uow, tenant.Object, catalogo4.Object);
 
             var req = new ImportarPreciosFijosUseCase.Request(
                 Filas: new List<ImportarPreciosFijosUseCase.Fila>

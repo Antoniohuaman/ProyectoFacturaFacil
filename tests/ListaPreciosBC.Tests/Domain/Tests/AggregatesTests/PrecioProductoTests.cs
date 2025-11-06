@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using NUnit.Framework;
 using ListaPreciosBC.Domain.Aggregates;
 using ListaPreciosBC.Domain.Events;
@@ -12,7 +13,8 @@ namespace ListaPreciosBC.Tests.UnitTests.Aggregates
     {
         // -------------------- Helpers de construcción --------------------
 
-        private static Sku SKU(string s) => Sku.Crear(s);
+    private static EmpresaId EMP(string v = "EMP-TEST") => EmpresaId.From(v);
+    private static ProductoId PID() => ProductoId.New();
 
         private static IdentificadorColumnaPrecio P(byte n) => IdentificadorColumnaPrecio.DesdeNumero(n);
 
@@ -42,8 +44,11 @@ namespace ListaPreciosBC.Tests.UnitTests.Aggregates
         [Test]
         public void CrearNuevo_setea_identidad_y_estado_vacio()
         {
-            var agg = PrecioProducto.CrearNuevo(SKU("CAP-001"));
-            Assert.That(agg.Sku.Valor, Is.EqualTo("CAP-001"));
+            var emp = EMP();
+            var pid = PID();
+            var agg = PrecioProducto.CrearNuevo(emp, pid);
+            Assert.That(agg.EmpresaId, Is.EqualTo(emp));
+            Assert.That(agg.ProductoId, Is.EqualTo(pid));
             Assert.That(agg.Version, Is.EqualTo(0));
             Assert.That(agg.PreciosFijos.Count, Is.EqualTo(0));
             Assert.That(agg.MatricesVolumen.Count, Is.EqualTo(0));
@@ -52,7 +57,7 @@ namespace ListaPreciosBC.Tests.UnitTests.Aggregates
         [Test]
         public void UpsertPrecioFijo_guarda_y_emite_evento_columna_y_base_si_P1_vigente()
         {
-            var agg = PrecioProducto.CrearNuevo(SKU("CAP-002"));
+            var agg = PrecioProducto.CrearNuevo(EMP(), PID());
             var v0 = agg.Version;
 
             var hoy = new DateTimeOffset(2025, 1, 1, 10, 0, 0, TimeSpan.Zero);
@@ -64,12 +69,15 @@ namespace ListaPreciosBC.Tests.UnitTests.Aggregates
             // Eventos: PrecioColumnaActualizada (+ PrecioBaseVigenteEstablecido porque es P1 vigente)
             Assert.That(agg.DomainEvents, Has.Exactly(1).InstanceOf<PrecioColumnaActualizada>());
             Assert.That(agg.DomainEvents, Has.Exactly(1).InstanceOf<PrecioBaseVigenteEstablecido>());
+            // Tenancy en eventos
+            var evCol = (PrecioColumnaActualizada)agg.DomainEvents.First(e => e is PrecioColumnaActualizada);
+            Assert.That(evCol.EmpresaId, Is.EqualTo(agg.EmpresaId));
         }
 
         [Test]
         public void EliminarPrecioFijo_remueve_y_emite_evento()
         {
-            var agg = PrecioProducto.CrearNuevo(SKU("CAP-003"));
+            var agg = PrecioProducto.CrearNuevo(EMP(), PID());
             agg.UpsertPrecioFijo(P(2), Vp(12m), Vigencia(DateTimeOffset.UtcNow.AddDays(-1)));
 
             agg.ClearDomainEvents();
@@ -85,7 +93,7 @@ namespace ListaPreciosBC.Tests.UnitTests.Aggregates
         [Test]
         public void UpsertMatrizVolumen_guarda_y_emite_evento_matriz_y_base_si_P1_tiene_tramo()
         {
-            var agg = PrecioProducto.CrearNuevo(SKU("CAP-004"));
+            var agg = PrecioProducto.CrearNuevo(EMP(), PID());
             var v0 = agg.Version;
 
             var matriz = Mat((1, 10, 9m), (11, 20, 8m), (21, null, 7m));
@@ -103,7 +111,7 @@ namespace ListaPreciosBC.Tests.UnitTests.Aggregates
         [Test]
         public void EliminarMatrizVolumen_remueve_y_emite_evento()
         {
-            var agg = PrecioProducto.CrearNuevo(SKU("CAP-005"));
+            var agg = PrecioProducto.CrearNuevo(EMP(), PID());
             agg.UpsertMatrizVolumen(P(3), Mat((1, 10, 15m)), "u", DateTimeOffset.UtcNow);
 
             agg.ClearDomainEvents();
@@ -119,7 +127,7 @@ namespace ListaPreciosBC.Tests.UnitTests.Aggregates
         [Test]
         public void ObtenerPrecioVigente_prioriza_fijo_si_vigente_sino_busca_en_matriz()
         {
-            var agg = PrecioProducto.CrearNuevo(SKU("CAP-006"));
+            var agg = PrecioProducto.CrearNuevo(EMP(), PID());
 
             // En P4 configuramos fijo vigente
             var hoy = new DateTimeOffset(2025, 1, 5, 10, 0, 0, TimeSpan.Zero);
@@ -146,7 +154,7 @@ namespace ListaPreciosBC.Tests.UnitTests.Aggregates
         [Test]
         public void Upsert_cambia_de_matriz_a_fijo_y_viceversa_en_la_misma_columna()
         {
-            var agg = PrecioProducto.CrearNuevo(SKU("CAP-007"));
+            var agg = PrecioProducto.CrearNuevo(EMP(), PID());
 
             // Primero matriz en P2
             agg.UpsertMatrizVolumen(P(2), Mat((1, 10, 15m)));

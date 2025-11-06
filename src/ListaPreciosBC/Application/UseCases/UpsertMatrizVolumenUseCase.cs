@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using ListaPreciosBC.Application.Interfaces; // IUnitOfWork
+using ListaPreciosBC.Application.Interfaces; // ICatalogoReadModel
 using ListaPreciosBC.Domain.Repositories;    // IListaPrecioRepository, IPrecioProductoRepository
 using ListaPreciosBC.Domain.Aggregates;      // PrecioProducto, ListaPrecio
 using ListaPreciosBC.Domain.ValueObjects;    // Sku, IdentificadorColumnaPrecio, ModoValorizacionColumna, TramoVolumen, MatrizVolumen, ValorPrecio
@@ -52,17 +52,35 @@ namespace ListaPreciosBC.Application.UseCases
     private readonly IListaPrecioRepository _listaRepo;
     private readonly IUnitOfWork _uow;
     private readonly ITenantContext _tenant;
+    private readonly ICatalogoReadModel _catalogo;
 
         public UpsertMatrizVolumenUseCase(
             IPrecioProductoRepository precioRepo,
             IListaPrecioRepository listaRepo,
             IUnitOfWork uow,
-            ITenantContext tenant)
+            ITenantContext tenant,
+            ICatalogoReadModel catalogo)
         {
             _precioRepo = precioRepo ?? throw new ArgumentNullException(nameof(precioRepo));
             _listaRepo  = listaRepo  ?? throw new ArgumentNullException(nameof(listaRepo));
             _uow        = uow        ?? throw new ArgumentNullException(nameof(uow));
             _tenant     = tenant     ?? throw new ArgumentNullException(nameof(tenant));
+            _catalogo   = catalogo   ?? throw new ArgumentNullException(nameof(catalogo));
+        }
+
+        // Backward-compatible overload for tests without catalog
+        public UpsertMatrizVolumenUseCase(
+            IPrecioProductoRepository precioRepo,
+            IListaPrecioRepository listaRepo,
+            IUnitOfWork uow,
+            ITenantContext tenant)
+            : this(precioRepo, listaRepo, uow, tenant, new NullCatalogoReadModel())
+        { }
+
+        private sealed class NullCatalogoReadModel : ICatalogoReadModel
+        {
+            public Task<SharedKernel.ValueObjects.ProductoId?> TryGetProductoIdBySkuAsync(SharedKernel.ValueObjects.EmpresaId empresaId, string sku, CancellationToken ct = default)
+                => Task.FromResult<SharedKernel.ValueObjects.ProductoId?>(null);
         }
 
         public async Task<Response> Handle(Request req, CancellationToken ct)
@@ -92,8 +110,9 @@ namespace ListaPreciosBC.Application.UseCases
             var agregado = await _precioRepo.ObtenerPorSkuAsync(empresaId, null, sku, ct);
             if (agregado is null)
             {
-                // ADAPTA si tu factory difiere (p.ej. Nuevo/Crear)
-                agregado = PrecioProducto.CrearNuevo(sku);
+                var productoId = await _catalogo.TryGetProductoIdBySkuAsync(empresaId, sku.Valor, ct)
+                                 ?? throw new NotFoundException("Producto", sku.Valor);
+                agregado = PrecioProducto.CrearNuevo(empresaId, productoId);
             }
 
             var expectedVersion = agregado.Version; // antes de mutar

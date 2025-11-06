@@ -35,7 +35,7 @@ namespace ListaPreciosBC.Tests.Application.Tests.UseCasesTests
         }
 
         private static ListaPrecio NuevaListaPrecioConP1(Guid id)
-            => ListaPrecio.CrearConPlantillaPorDefecto(id);
+            => ListaPrecio.CrearConPlantillaPorDefecto(EmpresaId.From("EMP-01"), id);
 
         private static AgregarColumnaDto Dto(
             Guid listaPrecioId,

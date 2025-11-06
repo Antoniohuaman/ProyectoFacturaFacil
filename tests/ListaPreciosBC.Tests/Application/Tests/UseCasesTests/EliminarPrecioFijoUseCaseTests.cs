@@ -10,7 +10,7 @@ using ListaPreciosBC.Domain.Aggregates;      // ListaPrecio, PrecioProducto
 using ListaPreciosBC.Domain.ValueObjects;    // Sku, IdentificadorColumnaPrecio, PeriodoVigencia, ValorPrecio, ModoValorizacionColumna
 using NUnit.Framework;
 using SharedKernel.Exceptions;
-using SharedKernel.ValueObjects;             // Moneda (para seed)
+using SharedKernel.ValueObjects;             // Moneda (para seed), ProductoId, EmpresaId
 using SharedKernel.Application.Interfaces;   // ITenantContext
 using Moq;
 
@@ -38,13 +38,15 @@ namespace ListaPreciosBC.Tests.Application.UseCases
         {
             private readonly Dictionary<string, PrecioProducto> _store = new();
             private readonly Dictionary<string, int> _loadedVersion = new();
+            private string? _lastLookupSku;
             public bool SimularConcurrencia { get; set; }
 
             public Task<PrecioProducto?> ObtenerPorSkuAsync(EmpresaId empresaId, Guid? sucursalId, Sku sku, CancellationToken ct = default)
             {
-                if (_store.TryGetValue(sku.Valor, out var agg))
+                _lastLookupSku = sku.Valor;
+                if (_store.TryGetValue(_lastLookupSku, out var agg))
                 {
-                    _loadedVersion[sku.Valor] = agg.Version;
+                    _loadedVersion[_lastLookupSku] = agg.Version;
                     return Task.FromResult<PrecioProducto?>(agg);
                 }
                 return Task.FromResult<PrecioProducto?>(null);
@@ -77,7 +79,9 @@ namespace ListaPreciosBC.Tests.Application.UseCases
 
             public Task GuardarAsync(PrecioProducto aggregate, EmpresaId empresaId, Guid? sucursalId, int expectedVersion, CancellationToken ct = default)
             {
-                var key = aggregate.Sku.Valor;
+                if (string.IsNullOrEmpty(_lastLookupSku))
+                    throw new InvalidOperationException("Debe consultarse por SKU antes de guardar para conocer la llave de persistencia.");
+                var key = _lastLookupSku;
 
                 if (SimularConcurrencia && _loadedVersion.TryGetValue(key, out var v))
                 {
@@ -87,7 +91,7 @@ namespace ListaPreciosBC.Tests.Application.UseCases
                 if (_loadedVersion.TryGetValue(key, out var loaded) && loaded != expectedVersion)
                     throw new ConcurrencyException(
                         "Versión inesperada del agregado.",
-                        aggregate.Sku.Valor, // identificador
+                        key,                // identificador (SKU)
                         expectedVersion,     // expectedVersion
                         aggregate.Version,   // actualVersion
                         null,                // propertyName
@@ -99,11 +103,10 @@ namespace ListaPreciosBC.Tests.Application.UseCases
                 return Task.CompletedTask;
             }
 
-            public void Seed(PrecioProducto agg)
+            public void Seed(string sku, PrecioProducto agg)
             {
-                var key = agg.Sku.Valor;
-                _store[key] = agg;
-                _loadedVersion[key] = agg.Version;
+                _store[sku] = agg;
+                _loadedVersion[sku] = agg.Version;
             }
 
             // Implementación faltante para la interfaz
@@ -132,7 +135,7 @@ namespace ListaPreciosBC.Tests.Application.UseCases
                 numero
             );
             var plantilla = PlantillaColumnasPrecio.Crear(new[] { cfg });
-            return ListaPrecio.CrearNueva(Guid.NewGuid(), plantilla);
+            return ListaPrecio.CrearNueva(EmpresaId.From("EMP-01"), Guid.NewGuid(), plantilla);
         }
 
         private static ListaPrecio CrearListaActivaConColumnaVolumen(byte numero, bool esBase = false, bool visible = true)
@@ -154,12 +157,14 @@ namespace ListaPreciosBC.Tests.Application.UseCases
                 numero
             );
             var plantilla = PlantillaColumnasPrecio.Crear(new[] { baseCfg, volumenCfg });
-            return ListaPrecio.CrearNueva(Guid.NewGuid(), plantilla);
+            return ListaPrecio.CrearNueva(EmpresaId.From("EMP-01"), Guid.NewGuid(), plantilla);
         }
 
         private static PrecioProducto CrearPrecioProducto(string sku)
         {
-            return PrecioProducto.CrearNuevo(Sku.Crear(sku));
+            var empresaId = EmpresaId.From("EMP-01");
+            var productoId = ProductoId.New();
+            return PrecioProducto.CrearNuevo(empresaId, productoId);
         }
 
         private static bool ExistePrecioFijo(PrecioProducto agg, byte columnaNumero)
@@ -191,7 +196,7 @@ namespace ListaPreciosBC.Tests.Application.UseCases
                 "seed",
                 DateTimeOffset.UtcNow.AddDays(-30)
             );
-            precioRepo.Seed(existente);
+            precioRepo.Seed(sku, existente);
 
             var uow = new InMemoryUow();
             var tenant = new Mock<ITenantContext>();
@@ -329,7 +334,7 @@ namespace ListaPreciosBC.Tests.Application.UseCases
                 "seed",
                 DateTimeOffset.UtcNow.AddDays(-10)
             );
-            precioRepo.Seed(existente);
+            precioRepo.Seed(sku, existente);
 
             var uow = new InMemoryUow();
             var tenant = new Mock<ITenantContext>();

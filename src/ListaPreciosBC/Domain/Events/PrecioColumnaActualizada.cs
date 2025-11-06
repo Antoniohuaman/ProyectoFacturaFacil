@@ -7,14 +7,16 @@ namespace ListaPreciosBC.Domain.Events
 {
     public sealed class PrecioColumnaActualizada : DomainEvent
     {
-        public Sku Sku { get; }
+        public EmpresaId EmpresaId { get; }
+        public ProductoId ProductoId { get; }
         public IdentificadorColumnaPrecio Columna { get; }
         public DateTimeOffset OcurrioEn { get; }
 
-        public PrecioColumnaActualizada(Sku sku, IdentificadorColumnaPrecio columna, DateTimeOffset ocurrioEn)
+        public PrecioColumnaActualizada(EmpresaId empresaId, ProductoId productoId, IdentificadorColumnaPrecio columna, DateTimeOffset ocurrioEn)
             : base(occurredOnUtc: ocurrioEn.UtcDateTime)
         {
-            Sku = sku;
+            EmpresaId = empresaId;
+            ProductoId = productoId;
             Columna = columna;
             OcurrioEn = ocurrioEn;
         }

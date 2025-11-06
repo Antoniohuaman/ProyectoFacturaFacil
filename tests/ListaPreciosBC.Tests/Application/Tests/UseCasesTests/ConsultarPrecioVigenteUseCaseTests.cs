@@ -37,9 +37,11 @@ namespace ListaPreciosBC.Tests.Application.UseCases
         private sealed class InMemoryPrecioProductoRepository : IPrecioProductoRepository
         {
             private readonly Dictionary<string, PrecioProducto> _store = new();
+            private string? _lastLookupSku;
 
             public Task<PrecioProducto?> ObtenerPorSkuAsync(EmpresaId empresaId, Guid? sucursalId, Sku sku, CancellationToken ct = default)
             {
+                _lastLookupSku = sku.Valor;
                 _store.TryGetValue(sku.Valor, out var agg);
                 return Task.FromResult<PrecioProducto?>(agg);
             }
@@ -47,11 +49,12 @@ namespace ListaPreciosBC.Tests.Application.UseCases
 
             public Task GuardarAsync(PrecioProducto aggregate, EmpresaId empresaId, Guid? sucursalId, int expectedVersion, CancellationToken ct = default)
             {
-                _store[aggregate.Sku.Valor] = aggregate;
+                var key = _lastLookupSku ?? throw new InvalidOperationException("Debe consultarse por SKU antes de guardar.");
+                _store[key] = aggregate;
                 return Task.CompletedTask;
             }
 
-            public void Seed(PrecioProducto agg) => _store[agg.Sku.Valor] = agg;
+            public void Seed(string sku, PrecioProducto agg) => _store[sku] = agg;
 
                 public Task EliminarAsync(EmpresaId empresaId, Guid? sucursalId, Sku sku, int? expectedVersion = null, CancellationToken ct = default)
                 {
@@ -64,7 +67,7 @@ namespace ListaPreciosBC.Tests.Application.UseCases
 
         // ---------------------- Builders con invariantes ----------------------
 
-        private static ListaPrecio CrearListaBase()
+    private static ListaPrecio CrearListaBase()
         {
             var baseCfg = ConfiguracionColumnaPrecio.Crear(
                 IdentificadorColumnaPrecio.DesdeNumero(1),
@@ -75,7 +78,7 @@ namespace ListaPreciosBC.Tests.Application.UseCases
                 orden: 1
             );
             var plantilla = PlantillaColumnasPrecio.Crear(new[] { baseCfg });
-            var lista = ListaPrecio.CrearNueva(Guid.NewGuid(), plantilla);
+            var lista = ListaPrecio.CrearNueva(EmpresaId.From("EMP-01"), Guid.NewGuid(), plantilla);
             return lista;
         }
 
@@ -97,7 +100,7 @@ namespace ListaPreciosBC.Tests.Application.UseCases
         }
 
         private static PrecioProducto CrearPrecioProducto(string sku)
-            => PrecioProducto.CrearNuevo(Sku.Crear(sku));
+            => PrecioProducto.CrearNuevo(EmpresaId.From("EMP-01"), ProductoId.New());
 
         // ---------------------- Tests ----------------------
 
@@ -116,11 +119,14 @@ namespace ListaPreciosBC.Tests.Application.UseCases
                 "seed",
                 DateTimeOffset.UtcNow.AddDays(-30)
             );
-            precioRepo.Seed(agg);
+            precioRepo.Seed(sku, agg);
 
             var tenant = new Mock<ITenantContext>();
             tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
-            var sut = new ConsultarPrecioVigenteUseCase(listaRepo, precioRepo, tenant.Object);
+            var catalogo = new Moq.Mock<ListaPreciosBC.Application.Interfaces.ICatalogoReadModel>();
+            catalogo.Setup(c => c.TryGetProductoIdBySkuAsync(It.IsAny<EmpresaId>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ProductoId.New());
+            var sut = new ConsultarPrecioVigenteUseCase(listaRepo, precioRepo, tenant.Object, catalogo.Object);
 
             var req = new ConsultarPrecioVigenteUseCase.Request(
                 Sku: sku,
@@ -163,11 +169,14 @@ namespace ListaPreciosBC.Tests.Application.UseCases
                 DateTimeOffset.UtcNow.AddDays(-30),
                 cantidadReferenciaParaEventoBase: 1
             );
-            precioRepo.Seed(agg);
+            precioRepo.Seed(sku, agg);
 
             var tenant = new Mock<ITenantContext>();
             tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
-            var sut = new ConsultarPrecioVigenteUseCase(listaRepo, precioRepo, tenant.Object);
+            var catalogo = new Moq.Mock<ListaPreciosBC.Application.Interfaces.ICatalogoReadModel>();
+            catalogo.Setup(c => c.TryGetProductoIdBySkuAsync(It.IsAny<EmpresaId>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ProductoId.New());
+            var sut = new ConsultarPrecioVigenteUseCase(listaRepo, precioRepo, tenant.Object, catalogo.Object);
 
             // Cantidad 1 → tramo 1..9 → 12
             var res1 = await sut.Handle(new ConsultarPrecioVigenteUseCase.Request(sku, 2, 1, DateTimeOffset.UtcNow), CancellationToken.None);
@@ -187,7 +196,10 @@ namespace ListaPreciosBC.Tests.Application.UseCases
             var precioRepo = new InMemoryPrecioProductoRepository();
             var tenant = new Mock<ITenantContext>();
             tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
-            var sut = new ConsultarPrecioVigenteUseCase(listaRepo, precioRepo, tenant.Object);
+            var catalogo = new Moq.Mock<ListaPreciosBC.Application.Interfaces.ICatalogoReadModel>();
+            catalogo.Setup(c => c.TryGetProductoIdBySkuAsync(It.IsAny<EmpresaId>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ProductoId.New());
+            var sut = new ConsultarPrecioVigenteUseCase(listaRepo, precioRepo, tenant.Object, catalogo.Object);
 
             Assert.That(
                 async () => await sut.Handle(new ConsultarPrecioVigenteUseCase.Request("SKU-X", 1, 1, DateTimeOffset.UtcNow), CancellationToken.None),
@@ -201,7 +213,10 @@ namespace ListaPreciosBC.Tests.Application.UseCases
             var precioRepo = new InMemoryPrecioProductoRepository();
             var tenant = new Mock<ITenantContext>();
             tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
-            var sut = new ConsultarPrecioVigenteUseCase(listaRepo, precioRepo, tenant.Object);
+            var catalogo = new Moq.Mock<ListaPreciosBC.Application.Interfaces.ICatalogoReadModel>();
+            catalogo.Setup(c => c.TryGetProductoIdBySkuAsync(It.IsAny<EmpresaId>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ProductoId.New());
+            var sut = new ConsultarPrecioVigenteUseCase(listaRepo, precioRepo, tenant.Object, catalogo.Object);
 
             Assert.That(
                 async () => await sut.Handle(new ConsultarPrecioVigenteUseCase.Request("SKU-X", 9, 1, DateTimeOffset.UtcNow), CancellationToken.None),
@@ -215,7 +230,10 @@ namespace ListaPreciosBC.Tests.Application.UseCases
             var precioRepo = new InMemoryPrecioProductoRepository();
             var tenant = new Mock<ITenantContext>();
             tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
-            var sut = new ConsultarPrecioVigenteUseCase(listaRepo, precioRepo, tenant.Object);
+            var catalogo = new Moq.Mock<ListaPreciosBC.Application.Interfaces.ICatalogoReadModel>();
+            catalogo.Setup(c => c.TryGetProductoIdBySkuAsync(It.IsAny<EmpresaId>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ProductoId.New());
+            var sut = new ConsultarPrecioVigenteUseCase(listaRepo, precioRepo, tenant.Object, catalogo.Object);
 
             Assert.That(
                 async () => await sut.Handle(new ConsultarPrecioVigenteUseCase.Request("SKU-404", 1, 1, DateTimeOffset.UtcNow), CancellationToken.None),
@@ -238,11 +256,14 @@ namespace ListaPreciosBC.Tests.Application.UseCases
                 "seed",
                 DateTimeOffset.UtcNow.AddDays(-30)
             );
-            precioRepo.Seed(agg);
+            precioRepo.Seed(sku, agg);
 
             var tenant = new Mock<ITenantContext>();
             tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
-            var sut = new ConsultarPrecioVigenteUseCase(listaRepo, precioRepo, tenant.Object);
+            var catalogo = new Moq.Mock<ListaPreciosBC.Application.Interfaces.ICatalogoReadModel>();
+            catalogo.Setup(c => c.TryGetProductoIdBySkuAsync(It.IsAny<EmpresaId>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ProductoId.New());
+            var sut = new ConsultarPrecioVigenteUseCase(listaRepo, precioRepo, tenant.Object, catalogo.Object);
 
             Assert.That(
                 async () => await sut.Handle(new ConsultarPrecioVigenteUseCase.Request(sku, 1, 1, DateTimeOffset.UtcNow), CancellationToken.None),
