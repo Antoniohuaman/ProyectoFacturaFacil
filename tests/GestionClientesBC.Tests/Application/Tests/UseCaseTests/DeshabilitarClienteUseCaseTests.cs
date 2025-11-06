@@ -1,3 +1,4 @@
+using GestionClientesBC.Application.Interfaces; // IUnitOfWork
 using System;
 using System.Linq;
 using System.Threading;
@@ -35,7 +36,7 @@ namespace GestionClientesBC.Tests.Application.Clientes
             tenant = new Mock<ITenantContext>(MockBehavior.Strict);
 
             tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaDemo());
-            uow.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+            uow.Setup(x => x.CommitAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
 
             return new DeshabilitarClienteUseCase(repo.Object, uow.Object, tenant.Object);
         }
@@ -112,7 +113,7 @@ namespace GestionClientesBC.Tests.Application.Clientes
 
             // Persistencia
             repo.Verify(r => r.UpdateAsync(existente), Times.Once);
-            uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+            uow.Verify(u => u.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Test]
@@ -137,7 +138,7 @@ namespace GestionClientesBC.Tests.Application.Clientes
             Assert.That(existente.DomainEvents.Any(e => e is GestionClientesBC.Domain.Events.ClienteDeshabilitado), Is.True);
 
             repo.Verify(r => r.UpdateAsync(existente), Times.Once);
-            uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+            uow.Verify(u => u.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Test]
@@ -215,7 +216,7 @@ namespace GestionClientesBC.Tests.Application.Clientes
             Assert.That(existente.FechaDeshabilitacion!.Value.Kind, Is.EqualTo(DateTimeKind.Utc));
 
             repo.Verify(r => r.UpdateAsync(existente), Times.Once);
-            uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+            uow.Verify(u => u.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Test]

@@ -10,7 +10,8 @@ using ConfiguracionSistemaBC.Application.UseCases;
 
 // Domain
 using ConfiguracionSistemaBC.Domain.Aggregates;          // UsuarioEmpresa, UsuarioEmpresaEstado
-using ConfiguracionSistemaBC.Domain.Repositories;        // IUsuarioEmpresaRepository, IUnitOfWork
+using ConfiguracionSistemaBC.Domain.Repositories;        // IUsuarioEmpresaRepository
+using ConfiguracionSistemaBC.Application.Interfaces;     // IUnitOfWork
 
 // Shared Kernel
 using SharedKernel.Application.Interfaces;               // ITenantContext
@@ -82,7 +83,7 @@ namespace ConfiguracionSistemaBC.Application.Tests.UseCases
                 .Returns(Task.CompletedTask);
 
             _uow
-                .Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()))
+                .Setup(x => x.CommitAsync(It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
             var input = new HabilitarUsuarioEmpresaInputDto
@@ -97,7 +98,7 @@ namespace ConfiguracionSistemaBC.Application.Tests.UseCases
             // Assert
             _usuarioRepo.Verify(r => r.GetAsync(_empresaId, UsuarioId.From(_usuarioGuid), It.IsAny<CancellationToken>()), Times.Once);
             _usuarioRepo.Verify(r => r.UpdateAsync(agg, expectedVersion, It.IsAny<CancellationToken>()), Times.Once);
-            _uow.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+            _uow.Verify(x => x.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
 
             Assert.That(result.UsuarioId, Is.EqualTo(_usuarioGuid));
             Assert.That(result.Estado, Is.EqualTo(UsuarioEmpresaEstado.Habilitado.ToString()));
@@ -122,7 +123,7 @@ namespace ConfiguracionSistemaBC.Application.Tests.UseCases
                 .Returns(Task.CompletedTask);
 
             _uow
-                .Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()))
+                .Setup(x => x.CommitAsync(It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
             var input = new HabilitarUsuarioEmpresaInputDto
@@ -137,7 +138,7 @@ namespace ConfiguracionSistemaBC.Application.Tests.UseCases
             // Assert
             _usuarioRepo.Verify(r => r.GetAsync(_empresaId, UsuarioId.From(_usuarioGuid), It.IsAny<CancellationToken>()), Times.Once);
             _usuarioRepo.Verify(r => r.UpdateAsync(agg, expectedVersion, It.IsAny<CancellationToken>()), Times.Once);
-            _uow.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+            _uow.Verify(x => x.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
 
             Assert.That(agg.Estado, Is.EqualTo(UsuarioEmpresaEstado.Habilitado));
             Assert.That(result.Estado, Is.EqualTo(UsuarioEmpresaEstado.Habilitado.ToString()));
@@ -163,7 +164,7 @@ namespace ConfiguracionSistemaBC.Application.Tests.UseCases
             Assert.That(ex!.Message, Does.Contain("Usuario no encontrado"));
             
             _usuarioRepo.Verify(r => r.UpdateAsync(It.IsAny<UsuarioEmpresa>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
-            _uow.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+            _uow.Verify(x => x.CommitAsync(It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Test]
@@ -190,7 +191,7 @@ namespace ConfiguracionSistemaBC.Application.Tests.UseCases
             var ex = Assert.ThrowsAsync<InvalidOperationException>(() => _sut.HandleAsync(input, CancellationToken.None));
             Assert.That(ex!.Message, Does.Contain("Versión inesperada").Or.Contain("concurrencia"));
 
-            _uow.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+            _uow.Verify(x => x.CommitAsync(It.IsAny<CancellationToken>()), Times.Never);
         }
     }
 }

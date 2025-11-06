@@ -1,3 +1,4 @@
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace ListaPreciosBC.Application.Interfaces
@@ -7,6 +8,6 @@ namespace ListaPreciosBC.Application.Interfaces
     /// </summary>
     public interface IUnitOfWork
     {
-    Task SaveChangesAsync(System.Threading.CancellationToken ct = default);
+        Task CommitAsync(CancellationToken ct = default);
     }
 }

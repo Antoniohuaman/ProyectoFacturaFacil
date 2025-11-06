@@ -5,6 +5,7 @@ using ConfiguracionSistemaBC.Domain.Aggregates;            // SerieComprobante
 using ConfiguracionSistemaBC.Domain.Repositories;          // ISerieComprobanteRepository, IUnitOfWork
 using SharedKernel.Application.Interfaces;                 // ITenantContext
 using SharedKernel.ValueObjects;                           // EmpresaId
+using ConfiguracionSistemaBC.Application.Interfaces;       // IUnitOfWork
 
 namespace ConfiguracionSistemaBC.Application.UseCases
 {
@@ -69,7 +70,7 @@ namespace ConfiguracionSistemaBC.Application.UseCases
             {
                 serie.EstablecerPorDefecto(true);
                 await _repo.UpdateAsync(serie, input.ExpectedVersion, ct);
-                await _uow.SaveChangesAsync(ct);
+                await _uow.CommitAsync(ct);
             }
 
             // 7) Salida

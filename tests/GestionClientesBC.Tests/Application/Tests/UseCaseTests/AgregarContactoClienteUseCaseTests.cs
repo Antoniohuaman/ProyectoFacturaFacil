@@ -1,3 +1,4 @@
+using GestionClientesBC.Application.Interfaces; // IUnitOfWork
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -42,7 +43,7 @@ namespace GestionClientesBC.Tests.Application.Clientes.Contactos
             tenant = new Mock<ITenantContext>(MockBehavior.Strict);
 
             tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaDemo());
-            uow.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+            uow.Setup(x => x.CommitAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
 
             return new AgregarContactoClienteUseCase(repo.Object, uow.Object, tenant.Object);
         }
@@ -116,7 +117,7 @@ namespace GestionClientesBC.Tests.Application.Clientes.Contactos
 
             // Persistencia
             repo.Verify(r => r.UpdateAsync(cliente), Times.Once);
-            uow.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+            uow.Verify(x => x.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Test]
@@ -156,7 +157,7 @@ namespace GestionClientesBC.Tests.Application.Clientes.Contactos
                       .With.Message.Contains("Ya existe un contacto igual"));
 
             repo.Verify(r => r.UpdateAsync(It.IsAny<Cliente>()), Times.Never);
-            uow.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+            uow.Verify(x => x.CommitAsync(It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Test]

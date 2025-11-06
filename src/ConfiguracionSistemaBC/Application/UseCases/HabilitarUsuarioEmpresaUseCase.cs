@@ -4,7 +4,8 @@ using System.Threading.Tasks;
 
 // Domain
 using ConfiguracionSistemaBC.Domain.Aggregates;           // UsuarioEmpresa
-using ConfiguracionSistemaBC.Domain.Repositories;         // IUsuarioEmpresaRepository, IUnitOfWork
+using ConfiguracionSistemaBC.Domain.Repositories;         // IUsuarioEmpresaRepository
+using ConfiguracionSistemaBC.Application.Interfaces;      // IUnitOfWork
 
 // Shared Kernel
 using SharedKernel.Application.Interfaces;                // ITenantContext
@@ -57,7 +58,7 @@ namespace ConfiguracionSistemaBC.Application.UseCases
 
             // Persistir (concurrencia optimista)
             await _usuarioRepo.UpdateAsync(agregado, input.ExpectedVersion, ct);
-            await _uow.SaveChangesAsync(ct);
+            await _uow.CommitAsync(ct);
 
             // Salida
             return new HabilitarUsuarioEmpresaOutputDto

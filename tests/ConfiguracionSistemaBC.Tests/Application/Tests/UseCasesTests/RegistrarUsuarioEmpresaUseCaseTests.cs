@@ -12,6 +12,7 @@ using ConfiguracionSistemaBC.Application.UseCases;
 // Domain
 using ConfiguracionSistemaBC.Domain.Aggregates;          // RolEmpresa
 using ConfiguracionSistemaBC.Domain.Repositories;        // repos interfaces
+using ConfiguracionSistemaBC.Application.Interfaces;     // IUnitOfWork
 
 // Shared Kernel
 using SharedKernel.Application.Interfaces;               // ITenantContext
@@ -99,7 +100,7 @@ namespace ConfiguracionSistemaBC.Application.Tests.UseCases
             // Assert
 
             _usuarioRepo.Verify(r => r.AddAsync(It.IsAny<UsuarioEmpresa>(), It.IsAny<CancellationToken>()), Times.Once);
-            _uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+            _uow.Verify(u => u.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
 
             Assert.That(result, Is.Not.Null);
             Assert.That(result.UsuarioId, Is.Not.EqualTo(Guid.Empty));

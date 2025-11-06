@@ -1,3 +1,4 @@
+using IUnitOfWork = ComprobantesElectronicosBC.Application.Interfaces.IUnitOfWork;
 using System;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -5,6 +6,7 @@ using System.Threading.Tasks;
 using ComprobantesElectronicosBC.Domain.Aggregates;
 using ComprobantesElectronicosBC.Domain.Repositories;
 using SharedKernel.Exceptions;
+using ComprobantesElectronicosBC.Application.Interfaces; // IUnitOfWork
 
 namespace ComprobantesElectronicosBC.Application.UseCases.CorregirComprobante
 {
@@ -80,7 +82,7 @@ namespace ComprobantesElectronicosBC.Application.UseCases.CorregirComprobante
 
             // Persistir
             await _repo.UpdateAsync(actualizado, ct);
-            await _uow.SaveChangesAsync(ct);
+            await _uow.CommitAsync(ct);
 
             return datos;
         }

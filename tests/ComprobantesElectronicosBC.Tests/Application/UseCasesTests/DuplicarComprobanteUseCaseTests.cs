@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using ComprobantesElectronicosBC.Application.UseCases.DuplicarComprobante;
 using ComprobantesElectronicosBC.Domain.Aggregates;
 using ComprobantesElectronicosBC.Domain.Repositories;
+using IUnitOfWork = ComprobantesElectronicosBC.Application.Interfaces.IUnitOfWork;
 using Moq;
 using SharedKernel.Exceptions;
 
@@ -54,8 +55,8 @@ namespace ComprobantesElectronicosBC.Tests.Application
             repo.Setup(r => r.AddAsync(nuevo, It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
-            uow.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()))
-               .ReturnsAsync(1);
+                uow.Setup(x => x.CommitAsync(It.IsAny<CancellationToken>()))
+                    .Returns(Task.CompletedTask);
 
             var sut = new DuplicarComprobanteUseCase(repo.Object, uow.Object, dup.Object);
 
@@ -115,8 +116,8 @@ namespace ComprobantesElectronicosBC.Tests.Application
             repo.Setup(r => r.AddAsync(nuevo, It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
-            uow.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()))
-               .ReturnsAsync(1);
+                uow.Setup(x => x.CommitAsync(It.IsAny<CancellationToken>()))
+                    .Returns(Task.CompletedTask);
 
             var sut = new DuplicarComprobanteUseCase(repo.Object, uow.Object, dup.Object);
 

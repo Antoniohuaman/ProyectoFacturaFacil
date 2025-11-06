@@ -98,7 +98,7 @@ namespace ListaPreciosBC.Application.UseCases
 
             // 5) Persistencia + UoW
             await _listaRepo.GuardarAsync(lista, empresaId, null, expectedVersion, ct);
-            await _uow.SaveChangesAsync(ct);
+            await _uow.CommitAsync(ct);
 
             // 6) Respuesta (usamos el número marcado como base en el request)
             var baseNumero = req.Columnas.Single(x => x.EsBase).Numero;

@@ -1,3 +1,4 @@
+using GestionClientesBC.Application.Interfaces; // IUnitOfWork
 using System;
 using System.Linq;
 using System.Threading;
@@ -33,7 +34,7 @@ namespace GestionClientesBC.Tests.Application.Clientes
             tenant = new Mock<ITenantContext>(MockBehavior.Strict);
 
             tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaDemo());
-            uow.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+            uow.Setup(x => x.CommitAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
 
             return new EliminarClienteUseCase(repo.Object, uow.Object, tenant.Object);
         }
@@ -97,7 +98,7 @@ namespace GestionClientesBC.Tests.Application.Clientes
             Assert.That(existente.DomainEvents.Any(e => e.GetType().Name == "ClienteEliminado"), Is.True);
 
             repo.Verify(r => r.DeleteAsync(EmpresaDemo(), existente.ClienteId), Times.Once);
-            uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+            uow.Verify(u => u.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Test]
@@ -117,7 +118,7 @@ namespace GestionClientesBC.Tests.Application.Clientes
             Assert.That(result.NumeroDocumento, Is.EqualTo("12345678"));
 
             repo.Verify(r => r.DeleteAsync(EmpresaDemo(), existente.ClienteId), Times.Once);
-            uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+            uow.Verify(u => u.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Test]

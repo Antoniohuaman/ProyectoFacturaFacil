@@ -11,7 +11,8 @@ using ConfiguracionSistemaBC.Application.UseCases;
 
 // Domain
 using ConfiguracionSistemaBC.Domain.Aggregates;           // UsuarioEmpresa, RolEmpresa
-using ConfiguracionSistemaBC.Domain.Repositories;         // IUsuarioEmpresaRepository, IRolEmpresaRepository, IConfiguracionEmpresaRepository, IUnitOfWork
+using ConfiguracionSistemaBC.Domain.Repositories;         // IUsuarioEmpresaRepository, IRolEmpresaRepository, IConfiguracionEmpresaRepository
+using ConfiguracionSistemaBC.Application.Interfaces;      // IUnitOfWork
 
 // Shared Kernel
 using SharedKernel.Application.Interfaces;                // ITenantContext
@@ -92,7 +93,7 @@ namespace ConfiguracionSistemaBC.Application.Tests.UseCases
 
             _usuarioRepo.Setup(r => r.UpdateAsync(_agg, 3, It.IsAny<CancellationToken>()))
                         .Returns(Task.CompletedTask);
-            _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            _uow.Setup(u => u.CommitAsync(It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
             var input = new ActualizarPerfilUsuarioEmpresaInputDto
@@ -145,7 +146,7 @@ namespace ConfiguracionSistemaBC.Application.Tests.UseCases
 
             _usuarioRepo.Setup(r => r.UpdateAsync(_agg, 1, It.IsAny<CancellationToken>()))
                         .Returns(Task.CompletedTask);
-            _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            _uow.Setup(u => u.CommitAsync(It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
             var input = new ActualizarPerfilUsuarioEmpresaInputDto

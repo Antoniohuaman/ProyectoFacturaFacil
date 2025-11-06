@@ -88,7 +88,7 @@ namespace ListaPreciosBC.Tests.UnitTests.Application
             Assert.That(ev!.EmpresaId, Is.EqualTo(EmpresaId.From("EMP-01")));
 
             // UoW
-            Assert.That(uow.SaveChangesCount, Is.EqualTo(1));
+            Assert.That(uow.CommitCount, Is.EqualTo(1));
 
             // Concurrencia (expectedVersion registrado en repo)
             Assert.That(precioRepo.LastExpectedVersion, Is.EqualTo(0));
@@ -137,7 +137,7 @@ namespace ListaPreciosBC.Tests.UnitTests.Application
 
             // Assert
             Assert.That(res.Version, Is.EqualTo(versionAntes + 1));
-            Assert.That(uow.SaveChangesCount, Is.EqualTo(1));
+            Assert.That(uow.CommitCount, Is.EqualTo(1));
             Assert.That(precioRepo.LastExpectedVersion, Is.EqualTo(versionAntes));
         }
 
@@ -212,7 +212,7 @@ namespace ListaPreciosBC.Tests.UnitTests.Application
             // Act + Assert
             Assert.That(async () => await uc.ExecuteAsync(req, CancellationToken.None),
                         Throws.TypeOf<ConcurrencyException>());
-            Assert.That(uow.SaveChangesCount, Is.EqualTo(0));
+            Assert.That(uow.CommitCount, Is.EqualTo(0));
         }
 
         // ----------------- dobles InMemory (sólo tests) -----------------
@@ -317,11 +317,10 @@ namespace ListaPreciosBC.Tests.UnitTests.Application
 
         private sealed class UnitOfWorkInMemory : ListaPreciosBC.Application.Interfaces.IUnitOfWork
         {
-            public int SaveChangesCount { get; private set; }
-
-            public Task SaveChangesAsync(CancellationToken ct = default)
+            public int CommitCount { get; private set; }
+            public Task CommitAsync(CancellationToken ct = default)
             {
-                SaveChangesCount++;
+                CommitCount++;
                 return Task.CompletedTask;
             }
         }

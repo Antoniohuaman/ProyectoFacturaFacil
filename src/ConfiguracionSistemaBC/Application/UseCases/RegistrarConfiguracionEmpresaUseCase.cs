@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using ConfiguracionSistemaBC.Domain.Aggregates;
 using ConfiguracionSistemaBC.Domain.Repositories;
+using ConfiguracionSistemaBC.Application.Interfaces;      // IUnitOfWork
 using ConfiguracionSistemaBC.Domain.ValueObjects;   // AmbienteFe, LogoImagen, PieDePagina, Ruc (domain)
 using SharedKernel.Application.Interfaces;          // ITenantContext
 using SharedKernel.ValueObjects;                    // DomicilioFiscal, Email, Moneda, Telefono
@@ -117,7 +118,7 @@ namespace ConfiguracionSistemaBC.Application.UseCases
 
             // Persistencia
             await _repo.AddAsync(empresa, ct);
-            await _uow.SaveChangesAsync(ct);
+            await _uow.CommitAsync(ct);
 
             // Salida
             var principal = empresa.ObtenerEstablecimientoPrincipal();

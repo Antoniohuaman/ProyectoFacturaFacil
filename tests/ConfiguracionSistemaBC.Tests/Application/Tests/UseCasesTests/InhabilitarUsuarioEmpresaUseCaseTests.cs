@@ -9,6 +9,7 @@ using ConfiguracionSistemaBC.Application.UseCases;
 using ConfiguracionSistemaBC.Domain.Aggregates;
 using ConfiguracionSistemaBC.Domain.Repositories;
 using SharedKernel.ValueObjects;
+using ConfiguracionSistemaBC.Application.Interfaces; // IUnitOfWork
 
 namespace ConfiguracionSistemaBC.Tests.Application
 {
@@ -21,7 +22,7 @@ namespace ConfiguracionSistemaBC.Tests.Application
 
         private sealed class FakeUnitOfWork : IUnitOfWork
         {
-            public Task SaveChangesAsync(CancellationToken ct = default) => Task.CompletedTask;
+            public Task CommitAsync(CancellationToken ct = default) => Task.CompletedTask;
         }
 
         private sealed class FakeUsuarioEmpresaRepository : IUsuarioEmpresaRepository

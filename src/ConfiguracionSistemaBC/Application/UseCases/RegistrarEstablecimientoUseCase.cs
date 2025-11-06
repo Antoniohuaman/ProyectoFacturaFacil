@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using ConfiguracionSistemaBC.Domain.Aggregates;
 using ConfiguracionSistemaBC.Domain.Repositories;
+using ConfiguracionSistemaBC.Application.Interfaces;   // IUnitOfWork
 using SharedKernel.Application.Interfaces;          // ITenantContext
 using SharedKernel.ValueObjects;                    // DomicilioFiscal, EmpresaId
 
@@ -79,7 +80,7 @@ namespace ConfiguracionSistemaBC.Application.UseCases
             if (!ok)
                 throw new InvalidOperationException("No se pudo guardar los cambios por conflicto de concurrencia. Intente nuevamente.");
 
-            await _uow.SaveChangesAsync(ct);
+            await _uow.CommitAsync(ct);
 
             // Salida
             var principal = empresa.ObtenerEstablecimientoPrincipal();

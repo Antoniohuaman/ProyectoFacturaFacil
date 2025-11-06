@@ -1,3 +1,4 @@
+using IUnitOfWork = ComprobantesElectronicosBC.Application.Interfaces.IUnitOfWork;
 using System;
 using System.Reflection;
 using System.Threading;
@@ -7,6 +8,7 @@ using ComprobantesElectronicosBC.Domain.Repositories;
 using SharedKernel.Exceptions;
 using SharedKernel.ValueObjects;
 using ComprobantesElectronicosBC.Domain.ValueObjects;
+using ComprobantesElectronicosBC.Application.Interfaces; // IUnitOfWork
 
 namespace ComprobantesElectronicosBC.Application.UseCases.GuardarBorrador
 {
@@ -90,7 +92,7 @@ namespace ComprobantesElectronicosBC.Application.UseCases.GuardarBorrador
                 // Crear nuevo borrador
                 var agregado = await _factory.CrearAsync(input, ct);
                 await _repo.AddAsync(agregado, ct);
-                await _uow.SaveChangesAsync(ct);
+                await _uow.CommitAsync(ct);
 
                 var id = TryGetId(agregado, out var newId) ? newId : Guid.Empty;
                 return new GuardarBorradorOutputDto(
@@ -109,7 +111,7 @@ namespace ComprobantesElectronicosBC.Application.UseCases.GuardarBorrador
 
                 var actualizado = await _factory.AplicarAsync(actual, input, ct);
                 await _repo.UpdateAsync(actualizado, ct);
-                await _uow.SaveChangesAsync(ct);
+                await _uow.CommitAsync(ct);
 
                 var id = TryGetId(actualizado, out var updId) ? updId : input.Id.Value;
                 return new GuardarBorradorOutputDto(

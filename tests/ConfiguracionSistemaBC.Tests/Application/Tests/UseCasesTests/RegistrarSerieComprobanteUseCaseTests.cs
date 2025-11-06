@@ -5,7 +5,8 @@ using NUnit.Framework;
 
 using ConfiguracionSistemaBC.Application.UseCases.Series;   // UseCase + DTOs
 using ConfiguracionSistemaBC.Domain.Aggregates;             // SerieComprobante
-using ConfiguracionSistemaBC.Domain.Repositories;           // ISerieComprobanteRepository, IConfiguracionEmpresaRepository, IUnitOfWork
+using ConfiguracionSistemaBC.Domain.Repositories;           // ISerieComprobanteRepository, IConfiguracionEmpresaRepository
+using ConfiguracionSistemaBC.Application.Interfaces;        // IUnitOfWork
 using ConfiguracionSistemaBC.Domain.ValueObjects;           // TipoComprobanteCodigo, SerieCodigo, TipoOperacion, Correlativo
 using SharedKernel.Application.Interfaces;                   // ITenantContext
 using SharedKernel.ValueObjects;                             // EmpresaId, EstablecimientoId
@@ -25,7 +26,7 @@ namespace ConfiguracionSistemaBC.Tests.Application.Series
         private sealed class FakeUow : IUnitOfWork
         {
             public int SaveCount { get; private set; }
-            public Task SaveChangesAsync(CancellationToken ct = default)
+            public Task CommitAsync(CancellationToken ct = default)
             {
                 SaveCount++;
                 return Task.CompletedTask;

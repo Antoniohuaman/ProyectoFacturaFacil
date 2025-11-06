@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using GestionClientesBC.Domain.Aggregates;
 using GestionClientesBC.Domain.Repositories;
 using GestionClientesBC.Domain.ValueObjects;
+using GestionClientesBC.Application.Interfaces; // IUnitOfWork
 using SharedKernel.Application.Interfaces;
 using SharedKernel.Exceptions;
 using SharedKernel.ValueObjects;
@@ -235,7 +236,7 @@ namespace GestionClientesBC.Application.Clientes.Editar
             {
                 cliente.RegistrarModificacion(cambios);
                 await _repo.UpdateAsync(cliente);
-                await _uow.SaveChangesAsync(ct);
+                await _uow.CommitAsync(ct);
             }
 
             // 10) Salida

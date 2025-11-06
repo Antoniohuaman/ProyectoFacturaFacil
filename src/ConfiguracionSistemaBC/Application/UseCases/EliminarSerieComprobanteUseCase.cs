@@ -5,6 +5,7 @@ using ConfiguracionSistemaBC.Domain.Repositories;        // ISerieComprobanteRep
 using ConfiguracionSistemaBC.Domain.Aggregates;          // SerieComprobante
 using SharedKernel.Application.Interfaces;               // ITenantContext
 using SharedKernel.ValueObjects;                         // EmpresaId
+using ConfiguracionSistemaBC.Application.Interfaces;     // IUnitOfWork
 
 namespace ConfiguracionSistemaBC.Application.UseCases
 {
@@ -56,7 +57,7 @@ namespace ConfiguracionSistemaBC.Application.UseCases
 
             // 4) Eliminar (infra aplica expectedVersion)
             await _seriesRepo.DeleteAsync(serie.Id, input.ExpectedVersion, ct);
-            await _uow.SaveChangesAsync(ct);
+            await _uow.CommitAsync(ct);
 
             // 5) Salida
             return new EliminarSerieComprobanteOutputDto

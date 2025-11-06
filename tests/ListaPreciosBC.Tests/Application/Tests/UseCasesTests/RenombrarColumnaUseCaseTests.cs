@@ -86,7 +86,12 @@ namespace ListaPreciosBC.Tests.Application.UseCases
 
         private sealed class InMemoryUow : IUnitOfWork
         {
-            public Task SaveChangesAsync(CancellationToken ct = default) => Task.CompletedTask;
+            public int CommitCount { get; private set; }
+            public Task CommitAsync(CancellationToken ct = default)
+            {
+                CommitCount++;
+                return Task.CompletedTask;
+            }
         }
 
         // ---------------------- Builder con invariantes (Base + otra columna) ----------------------

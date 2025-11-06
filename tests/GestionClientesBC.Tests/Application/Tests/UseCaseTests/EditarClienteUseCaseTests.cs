@@ -1,3 +1,4 @@
+using GestionClientesBC.Application.Interfaces; // IUnitOfWork
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -34,7 +35,7 @@ namespace GestionClientesBC.Tests.Application.Clientes
             tenant = new Mock<ITenantContext>(MockBehavior.Strict);
 
             tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaDemo());
-            uow.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+            uow.Setup(x => x.CommitAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
 
             return new EditarClienteUseCase(repo.Object, uow.Object, tenant.Object);
         }
@@ -111,7 +112,7 @@ namespace GestionClientesBC.Tests.Application.Clientes
             Assert.That(result.RolCliente, Is.EqualTo("MAY"));
 
             repo.Verify(r => r.UpdateAsync(existente), Times.Once);
-            uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+            uow.Verify(u => u.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Test]

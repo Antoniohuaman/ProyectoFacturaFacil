@@ -104,7 +104,7 @@ namespace ListaPreciosBC.Tests.Application.Tests.UseCasesTests
             Assert.That(recargada!.Plantilla.Existe(P(2)), Is.True);
 
             // UoW SaveChanges fue invocado
-            Assert.That(uow.SaveChangesCount, Is.EqualTo(1));
+            Assert.That(uow.CommitCount, Is.EqualTo(1));
         }
 
         [Test]
@@ -149,7 +149,7 @@ namespace ListaPreciosBC.Tests.Application.Tests.UseCasesTests
             );
 
             // No debió confirmar cambios
-            Assert.That(uow.SaveChangesCount, Is.EqualTo(0));
+            Assert.That(uow.CommitCount, Is.EqualTo(0));
         }
 
         // ---------------------- Dobles InMemory (solo tests) ----------------------
@@ -216,18 +216,10 @@ namespace ListaPreciosBC.Tests.Application.Tests.UseCasesTests
 
         private sealed class UnitOfWorkInMemory : ListaPreciosBC.Application.Interfaces.IUnitOfWork
         {
-            public int SaveChangesCount { get; private set; }
-
-            public Task SaveChangesAsync(CancellationToken ct = default)
+            public int CommitCount { get; private set; }
+            public Task CommitAsync(CancellationToken ct = default)
             {
-                SaveChangesCount++;
-                return Task.CompletedTask;
-            }
-
-            // Implementación requerida por la interfaz: método sin parámetros
-            public Task SaveChangesAsync()
-            {
-                SaveChangesCount++;
+                CommitCount++;
                 return Task.CompletedTask;
             }
         }

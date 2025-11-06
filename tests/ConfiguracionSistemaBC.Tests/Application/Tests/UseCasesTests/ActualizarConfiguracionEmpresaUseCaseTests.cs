@@ -6,6 +6,7 @@ using System.Collections.Generic; // Para KeyNotFoundException
 using ConfiguracionSistemaBC.Application.UseCases;
 using ConfiguracionSistemaBC.Domain.Aggregates;
 using ConfiguracionSistemaBC.Domain.Repositories;
+using ConfiguracionSistemaBC.Application.Interfaces; // IUnitOfWork
 using ConfiguracionSistemaBC.Domain.ValueObjects; // Ruc
 using Moq;
 using NUnit.Framework;
@@ -48,9 +49,9 @@ namespace ConfiguracionSistemaBC.Tests.Application.UseCases
             repo.Setup(r => r.UpdateIfVersionMatchAsync(empresa, versionOriginal, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(true);
 
-            var uow = new Mock<IUnitOfWork>(MockBehavior.Strict);
-            uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
-               .Returns(Task.CompletedTask);
+                var uow = new Mock<IUnitOfWork>(MockBehavior.Strict);
+                uow.Setup(u => u.CommitAsync(It.IsAny<CancellationToken>()))
+                    .Returns(Task.CompletedTask);
 
             var tenant = new Mock<ITenantContext>(MockBehavior.Loose);
             tenant.SetupGet(t => t.EmpresaId).Returns(empresaId);
@@ -101,9 +102,9 @@ namespace ConfiguracionSistemaBC.Tests.Application.UseCases
             repo.Setup(r => r.UpdateIfVersionMatchAsync(empresa, versionOriginal, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(true);
 
-            var uow = new Mock<IUnitOfWork>(MockBehavior.Strict);
-            uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
-               .Returns(Task.CompletedTask);
+                var uow = new Mock<IUnitOfWork>(MockBehavior.Strict);
+                uow.Setup(u => u.CommitAsync(It.IsAny<CancellationToken>()))
+                    .Returns(Task.CompletedTask);
 
             var tenant = new Mock<ITenantContext>(MockBehavior.Loose);
             tenant.SetupGet(t => t.EmpresaId).Returns(empresaId);
@@ -153,9 +154,9 @@ namespace ConfiguracionSistemaBC.Tests.Application.UseCases
             repo.Setup(r => r.UpdateIfVersionMatchAsync(empresa, versionOriginal, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(true);
 
-            var uow = new Mock<IUnitOfWork>(MockBehavior.Strict);
-            uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
-               .Returns(Task.CompletedTask);
+                var uow = new Mock<IUnitOfWork>(MockBehavior.Strict);
+                uow.Setup(u => u.CommitAsync(It.IsAny<CancellationToken>()))
+                    .Returns(Task.CompletedTask);
 
             var tenant = new Mock<ITenantContext>(MockBehavior.Loose);
             tenant.SetupGet(t => t.EmpresaId).Returns(empresaIdReal); // contexto trae otro
@@ -243,9 +244,9 @@ namespace ConfiguracionSistemaBC.Tests.Application.UseCases
             repo.Setup(r => r.UpdateIfVersionMatchAsync(empresa, versionOriginal, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(true);
 
-            var uow = new Mock<IUnitOfWork>(MockBehavior.Strict);
-            uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
-               .Returns(Task.CompletedTask);
+                var uow = new Mock<IUnitOfWork>(MockBehavior.Strict);
+                uow.Setup(u => u.CommitAsync(It.IsAny<CancellationToken>()))
+                    .Returns(Task.CompletedTask);
 
             var tenant = new Mock<ITenantContext>(MockBehavior.Loose);
             tenant.SetupGet(t => t.EmpresaId).Returns(empresaId);

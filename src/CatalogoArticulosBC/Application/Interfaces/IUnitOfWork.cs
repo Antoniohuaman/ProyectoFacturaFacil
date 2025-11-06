@@ -1,10 +1,9 @@
-// IUnitOfWork.cs
+using System.Threading;
 using System.Threading.Tasks;
 namespace CatalogoArticulosBC.Application.Interfaces
 {
     public interface IUnitOfWork
     {
-        Task SaveChangesAsync(CancellationToken ct = default);
-        Task CommitAsync();
+        Task CommitAsync(CancellationToken ct = default);
     }
 }

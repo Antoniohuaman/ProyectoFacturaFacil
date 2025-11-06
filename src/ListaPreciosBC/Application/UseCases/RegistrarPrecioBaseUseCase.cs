@@ -124,7 +124,7 @@ namespace ListaPreciosBC.Application.UseCases
 
             // 6) Guardar + UoW
             await _precioRepo.GuardarAsync(agregado, empresaId, estId, expectedVersion, ct);
-            await _uow.SaveChangesAsync();
+            await _uow.CommitAsync(ct);
 
             return new Response(
                 Sku: sku,

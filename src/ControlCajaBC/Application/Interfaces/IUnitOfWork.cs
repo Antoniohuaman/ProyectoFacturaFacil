@@ -1,3 +1,4 @@
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace ControlCajaBC.Application.Interfaces
@@ -10,6 +11,6 @@ namespace ControlCajaBC.Application.Interfaces
         /// <summary>
         /// Persiste todos los cambios pendientes.
         /// </summary>
-        Task CommitAsync();
+        Task CommitAsync(CancellationToken ct = default);
     }
 }

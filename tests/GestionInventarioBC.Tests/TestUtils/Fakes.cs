@@ -32,7 +32,6 @@ namespace GestionInventarioBC.Tests.TestUtils
             CommitCalls++;
             return Task.CompletedTask;
         }
-        public Task SaveChangesAsync(CancellationToken ct = default) => CommitAsync(ct);
     }
 
     internal sealed class FakeCatalogoReadModel : ICatalogoReadModel

@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using ConfiguracionSistemaBC.Domain.Aggregates;
 using ConfiguracionSistemaBC.Domain.Repositories;
+using ConfiguracionSistemaBC.Application.Interfaces;   // IUnitOfWork
 using SharedKernel.Application.Interfaces;      // ITenantContext
 using SharedKernel.ValueObjects;               // EmpresaId
 using ConfiguracionSistemaBC.Domain.ValueObjects; // FormaDePago
@@ -98,7 +99,7 @@ namespace ConfiguracionSistemaBC.Application.UseCases
             }
 
             await _repo.UpdateAsync(empresa, ct);
-            await _uow.SaveChangesAsync(ct);
+            await _uow.CommitAsync(ct);
 
             var defaultActual = empresa.ObtenerFormaDePagoPorDefecto();
             var total = empresa.ListarFormasDePago().Count;

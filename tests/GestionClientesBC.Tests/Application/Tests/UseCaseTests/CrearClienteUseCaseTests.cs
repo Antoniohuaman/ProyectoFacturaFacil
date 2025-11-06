@@ -1,3 +1,4 @@
+using GestionClientesBC.Application.Interfaces; // IUnitOfWork
 using System;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
@@ -42,8 +43,8 @@ namespace GestionClientesBC.Tests.Application.Clientes
 
             tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaDemo());
 
-            uow.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()))
-               .ReturnsAsync(1);
+            uow.Setup(x => x.CommitAsync(It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
 
             return new CrearClienteUseCase(repo.Object, uow.Object, tenant.Object, nombreFactory.Object);
         }
@@ -79,7 +80,7 @@ namespace GestionClientesBC.Tests.Application.Clientes
             Assert.That(result.Estado, Is.EqualTo(EstadoCliente.Habilitado.Nombre));
 
             repo.Verify(r => r.AddAsync(It.IsAny<Cliente>()), Times.Once);
-            uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+            uow.Verify(u => u.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Test]
@@ -115,7 +116,7 @@ namespace GestionClientesBC.Tests.Application.Clientes
             Assert.That(result.Nombres, Is.Not.Null);
 
             repo.Verify(r => r.AddAsync(It.IsAny<Cliente>()), Times.Once);
-            uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+            uow.Verify(u => u.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Test]
@@ -215,7 +216,7 @@ namespace GestionClientesBC.Tests.Application.Clientes
             Assert.That(result.Estado, Is.EqualTo(EstadoCliente.Habilitado.Nombre));
 
             repo.Verify(r => r.AddAsync(It.IsAny<Cliente>()), Times.Once);
-            uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+            uow.Verify(u => u.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
         }
     }
 }

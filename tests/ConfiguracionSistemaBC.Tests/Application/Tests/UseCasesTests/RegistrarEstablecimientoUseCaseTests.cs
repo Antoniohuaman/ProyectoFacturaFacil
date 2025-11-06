@@ -8,6 +8,7 @@ using Moq;
 using NUnit.Framework;
 using SharedKernel.Application.Interfaces;           // ITenantContext
 using SharedKernel.ValueObjects;                     // EmpresaId, DomicilioFiscal, Moneda
+using ConfiguracionSistemaBC.Application.Interfaces; // IUnitOfWork
 
 namespace ConfiguracionSistemaBC.Tests.Application.UseCases
 {
@@ -64,8 +65,8 @@ namespace ConfiguracionSistemaBC.Tests.Application.UseCases
                 .ReturnsAsync(true);
 
             var uow = new Mock<IUnitOfWork>(MockBehavior.Strict);
-            uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
-               .Returns(Task.CompletedTask);
+                uow.Setup(u => u.CommitAsync(It.IsAny<CancellationToken>()))
+                    .Returns(Task.CompletedTask);
 
             var tenant = new Mock<ITenantContext>(MockBehavior.Strict);
             tenant.SetupGet(t => t.EmpresaId).Returns(empresaId);
@@ -122,7 +123,7 @@ namespace ConfiguracionSistemaBC.Tests.Application.UseCases
             // Assert
             Assert.That(ex!.Message, Does.Contain("Ya existe un establecimiento"));
             repo.Verify(r => r.UpdateIfVersionMatchAsync(It.IsAny<ConfiguracionEmpresa>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
-            uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+            uow.Verify(u => u.CommitAsync(It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Test]

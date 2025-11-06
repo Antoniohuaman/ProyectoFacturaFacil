@@ -80,8 +80,8 @@ namespace ListaPreciosBC.Tests.Application.UseCases
 
         private sealed class UnitOfWorkInMemory : ListaPreciosBC.Application.Interfaces.IUnitOfWork
         {
-            public int SaveChangesCount { get; private set; }
-            public Task SaveChangesAsync(CancellationToken ct = default) { SaveChangesCount++; return Task.CompletedTask; }
+            public int CommitCount { get; private set; }
+            public Task CommitAsync(CancellationToken ct = default) { CommitCount++; return Task.CompletedTask; }
         }
 
         private static ListaPrecio CrearListaActivaConColumnaFija(byte numero = 1)
@@ -145,7 +145,7 @@ namespace ListaPreciosBC.Tests.Application.UseCases
             ), CancellationToken.None);
 
             // Assert: UoW commit once
-            Assert.That(uow.SaveChangesCount, Is.EqualTo(1));
+            Assert.That(uow.CommitCount, Is.EqualTo(1));
             Assert.That(res.Sku, Is.EqualTo("SKU-DEL"));
             Assert.That(res.ColumnaNumero, Is.EqualTo(1));
 

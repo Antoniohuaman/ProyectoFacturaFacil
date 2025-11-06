@@ -7,6 +7,7 @@ using GestionClientesBC.Domain.Repositories;
 using GestionClientesBC.Domain.Events;
 using SharedKernel.Application.Interfaces;
 using SharedKernel.Exceptions;
+using GestionClientesBC.Application.Interfaces; // IUnitOfWork
 
 namespace GestionClientesBC.Application.Clientes.Habilitar
 {
@@ -56,7 +57,7 @@ namespace GestionClientesBC.Application.Clientes.Habilitar
 
             // 4) Persistir
             await _repo.UpdateAsync(cliente);
-            await _uow.SaveChangesAsync(ct);
+            await _uow.CommitAsync(ct);
 
             // 5) Obtener fecha del evento si existe
             var evento = cliente.DomainEvents.OfType<ClienteHabilitado>().LastOrDefault();

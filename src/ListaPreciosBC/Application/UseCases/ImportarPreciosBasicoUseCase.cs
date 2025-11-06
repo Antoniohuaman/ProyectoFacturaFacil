@@ -199,7 +199,7 @@ namespace ListaPreciosBC.Application.UseCases
             }
 
             // Commit general
-            await _uow.SaveChangesAsync(ct);
+            await _uow.CommitAsync(ct);
 
             return new Response(
                 Procesadas: req.Filas.Count,

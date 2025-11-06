@@ -1,6 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
-namespace GestionClientesBC.Application.Interfaces
+
+namespace IndicadoresNegocioBC.Application.Interfaces
 {
     public interface IUnitOfWork
     {

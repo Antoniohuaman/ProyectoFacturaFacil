@@ -81,8 +81,8 @@ namespace ListaPreciosBC.Tests.Application.UseCases
 
         private sealed class UnitOfWorkInMemory : ListaPreciosBC.Application.Interfaces.IUnitOfWork
         {
-            public int SaveChangesCount { get; private set; }
-            public Task SaveChangesAsync(CancellationToken ct = default) { SaveChangesCount++; return Task.CompletedTask; }
+            public int CommitCount { get; private set; }
+            public Task CommitAsync(CancellationToken ct = default) { CommitCount++; return Task.CompletedTask; }
         }
 
         private static ListaPrecio CrearListaActivaConColumnaFija(byte numero = 1)
@@ -150,7 +150,7 @@ namespace ListaPreciosBC.Tests.Application.UseCases
             ), CancellationToken.None);
 
             // Assert: single commit
-            Assert.That(uow.SaveChangesCount, Is.EqualTo(1));
+            Assert.That(uow.CommitCount, Is.EqualTo(1));
             Assert.That(resp.AgregadosAfectados, Is.EqualTo(2));
 
             var post1 = await precioRepo.ObtenerPorProductoIdAsync(prod1);

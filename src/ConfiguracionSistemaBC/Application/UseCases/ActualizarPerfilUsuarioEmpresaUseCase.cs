@@ -6,7 +6,8 @@ using System.Threading.Tasks;
 
 // Domain
 using ConfiguracionSistemaBC.Domain.Aggregates;           // UsuarioEmpresa
-using ConfiguracionSistemaBC.Domain.Repositories;         // IUsuarioEmpresaRepository, IRolEmpresaRepository, IConfiguracionEmpresaRepository, IUnitOfWork
+using ConfiguracionSistemaBC.Domain.Repositories;         // IUsuarioEmpresaRepository, IRolEmpresaRepository, IConfiguracionEmpresaRepository
+using ConfiguracionSistemaBC.Application.Interfaces;      // IUnitOfWork
 
 // Shared Kernel (VOs / Contexto)
 using SharedKernel.Application.Interfaces;                // ITenantContext
@@ -136,7 +137,7 @@ namespace ConfiguracionSistemaBC.Application.UseCases
 
             // 5) Persistencia con concurrencia optimista
             await _usuarioRepo.UpdateAsync(agg, input.ExpectedVersion, ct);
-            await _uow.SaveChangesAsync(ct);
+            await _uow.CommitAsync(ct);
 
             // 6) Salida
             return new ActualizarPerfilUsuarioEmpresaOutputDto

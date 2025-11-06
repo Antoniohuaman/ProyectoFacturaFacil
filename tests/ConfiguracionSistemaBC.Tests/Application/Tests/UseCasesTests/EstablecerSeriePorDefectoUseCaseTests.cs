@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using ConfiguracionSistemaBC.Application.UseCases;
 using ConfiguracionSistemaBC.Domain.Aggregates;
 using ConfiguracionSistemaBC.Domain.Repositories;
+using ConfiguracionSistemaBC.Application.Interfaces; // IUnitOfWork
 using ConfiguracionSistemaBC.Domain.ValueObjects;
 using Moq;
 using NUnit.Framework;
@@ -74,7 +75,7 @@ namespace ConfiguracionSistemaBC.Tests.UseCases
 
             _repo.Verify(r => r.UnsetDefaultForTipoAsync(_empresa, candidata.Tipo, It.IsAny<CancellationToken>()), Times.Once);
             _repo.Verify(r => r.UpdateAsync(candidata, input.ExpectedVersion, It.IsAny<CancellationToken>()), Times.Once);
-            _uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+            _uow.Verify(u => u.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Test]
@@ -101,7 +102,7 @@ namespace ConfiguracionSistemaBC.Tests.UseCases
             Assert.That(dto.YaEraPorDefecto, Is.True);
             _repo.Verify(r => r.UnsetDefaultForTipoAsync(It.IsAny<EmpresaId>(), It.IsAny<TipoComprobanteCodigo>(), It.IsAny<CancellationToken>()), Times.Never);
             _repo.Verify(r => r.UpdateAsync(It.IsAny<SerieComprobante>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
-            _uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+            _uow.Verify(u => u.CommitAsync(It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Test]

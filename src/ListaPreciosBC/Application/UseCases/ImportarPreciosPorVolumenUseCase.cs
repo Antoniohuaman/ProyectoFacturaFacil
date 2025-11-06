@@ -224,7 +224,7 @@ namespace ListaPreciosBC.Application.UseCases
                 }
             }
 
-            await _uow.SaveChangesAsync(ct);
+            await _uow.CommitAsync(ct);
 
             return new Response(
                 FilasProcesadas: req.Filas.Count,

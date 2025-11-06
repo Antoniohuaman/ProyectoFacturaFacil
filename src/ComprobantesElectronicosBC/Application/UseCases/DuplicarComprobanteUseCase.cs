@@ -1,3 +1,4 @@
+using IUnitOfWork = ComprobantesElectronicosBC.Application.Interfaces.IUnitOfWork;
 using System;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -5,6 +6,7 @@ using System.Threading.Tasks;
 using ComprobantesElectronicosBC.Domain.Aggregates;
 using ComprobantesElectronicosBC.Domain.Repositories;
 using SharedKernel.Exceptions;
+using ComprobantesElectronicosBC.Application.Interfaces; // IUnitOfWork
 
 namespace ComprobantesElectronicosBC.Application.UseCases.DuplicarComprobante
 {
@@ -79,7 +81,7 @@ namespace ComprobantesElectronicosBC.Application.UseCases.DuplicarComprobante
 
             // Persistir
             await _repo.AddAsync(nuevo, ct);
-            await _uow.SaveChangesAsync(ct);
+            await _uow.CommitAsync(ct);
 
             // Devuelve los datos que el duplicador garantizó (incluye Id/Serie/Número/Tipo/Estado)
             return datos;

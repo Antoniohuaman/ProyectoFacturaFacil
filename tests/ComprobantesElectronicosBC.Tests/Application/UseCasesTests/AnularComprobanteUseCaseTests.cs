@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using ComprobantesElectronicosBC.Application.UseCases.AnularComprobante;
 using ComprobantesElectronicosBC.Domain.Aggregates;
 using ComprobantesElectronicosBC.Domain.Repositories;
+using IUnitOfWork = ComprobantesElectronicosBC.Application.Interfaces.IUnitOfWork;
 using Moq;
 using SharedKernel.Exceptions;
 
@@ -53,8 +54,8 @@ namespace ComprobantesElectronicosBC.Tests.Application
             repo.Setup(r => r.UpdateAsync(anulado, It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
-            uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
-               .ReturnsAsync(1);
+                uow.Setup(u => u.CommitAsync(It.IsAny<CancellationToken>()))
+                    .Returns(Task.CompletedTask);
 
             var sut = new AnularComprobanteUseCase(repo.Object, uow.Object, an.Object);
 

@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using ConfiguracionSistemaBC.Application.UseCases;
 using ConfiguracionSistemaBC.Domain.Aggregates;
 using ConfiguracionSistemaBC.Domain.Repositories;
+using ConfiguracionSistemaBC.Application.Interfaces; // IUnitOfWork
 using ConfiguracionSistemaBC.Domain.ValueObjects;
 using NUnit.Framework;
 using Moq;
@@ -61,7 +62,7 @@ namespace ConfiguracionSistemaBC.Tests.UseCases
             _seriesRepo.Setup(r => r.ExistsByTipoSerieAsync(_empresaId, TipoComprobanteCodigo.Factura, SerieCodigo.From("FE01"), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(false);
             _seriesRepo.Setup(r => r.AddAsync(It.IsAny<SerieComprobante>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
-            _uow.Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+            _uow.Setup(r => r.CommitAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
 
             var sut = CreateSut();
 
@@ -85,7 +86,7 @@ namespace ConfiguracionSistemaBC.Tests.UseCases
                 s.Siguiente == Correlativo.From(1)
             ), It.IsAny<CancellationToken>()), Times.Once);
 
-            _uow.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+            _uow.Verify(r => r.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Test]
@@ -191,7 +192,7 @@ namespace ConfiguracionSistemaBC.Tests.UseCases
                 .ReturnsAsync(false);
             _seriesRepo.Setup(r => r.UnsetDefaultForTipoAsync(It.IsAny<EmpresaId>(), It.IsAny<TipoComprobanteCodigo>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
             _seriesRepo.Setup(r => r.AddAsync(It.IsAny<SerieComprobante>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
-            _uow.Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+            _uow.Setup(r => r.CommitAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
 
             var sut = CreateSut();
             await sut.HandleAsync(input);

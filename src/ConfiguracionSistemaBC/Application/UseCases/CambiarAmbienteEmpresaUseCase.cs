@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using ConfiguracionSistemaBC.Domain.Aggregates;
 using ConfiguracionSistemaBC.Domain.Repositories;
+using ConfiguracionSistemaBC.Application.Interfaces;   // IUnitOfWork
 using ConfiguracionSistemaBC.Domain.ValueObjects;    // AmbienteFe
 using SharedKernel.Application.Interfaces;           // ITenantContext
 using SharedKernel.ValueObjects;                     // EmpresaId
@@ -86,7 +87,7 @@ namespace ConfiguracionSistemaBC.Application.UseCases
             if (!ok)
                 throw new InvalidOperationException("Conflicto de concurrencia al guardar el cambio de ambiente.");
 
-            await _uow.SaveChangesAsync(ct);
+            await _uow.CommitAsync(ct);
 
             var purga = false;
             if (destino == AmbienteFe.PRODUCCION && input.BorrarDocumentosEmitidosEnPrueba)

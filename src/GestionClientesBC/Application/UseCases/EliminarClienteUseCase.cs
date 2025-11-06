@@ -7,6 +7,7 @@ using GestionClientesBC.Domain.Repositories;
 using GestionClientesBC.Domain.Events;
 using SharedKernel.Application.Interfaces;
 using SharedKernel.Exceptions;
+using GestionClientesBC.Application.Interfaces; // IUnitOfWork
 
 namespace GestionClientesBC.Application.Clientes.Eliminar
 {
@@ -58,7 +59,7 @@ namespace GestionClientesBC.Application.Clientes.Eliminar
             await _repo.DeleteAsync(empresaId, cliente.ClienteId);
 
             // 5) Persistencia
-            await _uow.SaveChangesAsync(ct);
+            await _uow.CommitAsync(ct);
 
             // 6) Obtener la fecha del evento (si la infra captura los DomainEvents)
             var fechaEliminacionUtc = cliente.DomainEvents

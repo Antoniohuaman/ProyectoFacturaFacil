@@ -2,7 +2,8 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using ConfiguracionSistemaBC.Domain.Aggregates;                 // SerieComprobante
-using ConfiguracionSistemaBC.Domain.Repositories;               // ISerieComprobanteRepository, IConfiguracionEmpresaRepository, IUnitOfWork
+using ConfiguracionSistemaBC.Domain.Repositories;               // ISerieComprobanteRepository, IConfiguracionEmpresaRepository
+using ConfiguracionSistemaBC.Application.Interfaces;            // IUnitOfWork
 using ConfiguracionSistemaBC.Domain.ValueObjects;               // TipoComprobanteCodigo, SerieCodigo, TipoOperacion, Correlativo
 using SharedKernel.Application.Interfaces;                       // ITenantContext
 using SharedKernel.ValueObjects;                                 // EmpresaId, EstablecimientoId
@@ -93,7 +94,7 @@ namespace ConfiguracionSistemaBC.Application.UseCases.Series
 
             // Persistir
             await _series.AddAsync(agregado, ct);
-            await _uow.SaveChangesAsync(ct);
+            await _uow.CommitAsync(ct);
 
             // Salida
             return new RegistrarSerieComprobanteOutputDto

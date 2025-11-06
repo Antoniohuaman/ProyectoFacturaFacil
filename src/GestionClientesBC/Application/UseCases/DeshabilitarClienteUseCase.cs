@@ -7,6 +7,7 @@ using GestionClientesBC.Domain.Repositories;
 using GestionClientesBC.Domain.Events;
 using SharedKernel.Application.Interfaces;
 using SharedKernel.Exceptions;
+using GestionClientesBC.Application.Interfaces; // IUnitOfWork
 
 namespace GestionClientesBC.Application.Clientes.Deshabilitar
 {
@@ -59,7 +60,7 @@ namespace GestionClientesBC.Application.Clientes.Deshabilitar
 
             // 5) Persistir
             await _repo.UpdateAsync(cliente);
-            await _uow.SaveChangesAsync(ct);
+            await _uow.CommitAsync(ct);
 
             // 6) Tomar OccurredOn del evento si está disponible
             var evento = cliente.DomainEvents.OfType<ClienteDeshabilitado>().LastOrDefault();

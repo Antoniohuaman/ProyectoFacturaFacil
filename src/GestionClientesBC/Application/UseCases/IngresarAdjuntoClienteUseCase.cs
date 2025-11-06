@@ -8,6 +8,7 @@ using GestionClientesBC.Domain.Events;
 using GestionClientesBC.Domain.Repositories;
 using SharedKernel.Application.Interfaces;
 using SharedKernel.Exceptions;
+using GestionClientesBC.Application.Interfaces; // IUnitOfWork
 
 namespace GestionClientesBC.Application.Clientes.Adjuntos.Ingresar
 {
@@ -72,7 +73,7 @@ namespace GestionClientesBC.Application.Clientes.Adjuntos.Ingresar
 
             // 5) Persistir
             await _repo.UpdateAsync(cliente);
-            await _uow.SaveChangesAsync(ct);
+            await _uow.CommitAsync(ct);
 
             // 6) Obtener evento para trazabilidad
             var ev = cliente.DomainEvents.OfType<AdjuntoAgregado>().LastOrDefault();

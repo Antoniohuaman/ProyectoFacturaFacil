@@ -206,7 +206,7 @@ namespace ListaPreciosBC.Application.UseCases
                 }
             }
 
-            await _uow.SaveChangesAsync(ct);
+            await _uow.CommitAsync(ct);
 
             var fallidos = errores.Count;
             return new Response(

@@ -74,7 +74,7 @@ namespace ListaPreciosBC.Application.UseCases
 
             // 4) Persistencia + UoW
             await _listaRepo.GuardarAsync(lista, empresaId, null, expectedVersion, ct);
-            await _uow.SaveChangesAsync(ct);
+            await _uow.CommitAsync(ct);
 
             // 5) Respuesta
             return new Response(

@@ -1,3 +1,4 @@
+using IUnitOfWork = ComprobantesElectronicosBC.Application.Interfaces.IUnitOfWork;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -5,6 +6,7 @@ using System.Text.RegularExpressions;
 using ComprobantesElectronicosBC.Domain.Aggregates;
 using ComprobantesElectronicosBC.Domain.Repositories;
 using SharedKernel.Exceptions;
+using ComprobantesElectronicosBC.Application.Interfaces; // IUnitOfWork
 
 namespace ComprobantesElectronicosBC.Application.UseCases.AnularComprobante
 {
@@ -75,7 +77,7 @@ namespace ComprobantesElectronicosBC.Application.UseCases.AnularComprobante
 
             // Persistencia (anulación lógica: UpdateAsync; no usamos RemoveAsync)
             await _repo.UpdateAsync(anulado, ct);
-            await _uow.SaveChangesAsync(ct);
+            await _uow.CommitAsync(ct);
 
             return output;
         }

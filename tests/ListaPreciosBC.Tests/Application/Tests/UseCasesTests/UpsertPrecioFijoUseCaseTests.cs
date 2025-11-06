@@ -102,7 +102,12 @@ namespace ListaPreciosBC.Tests.Application.UseCases
 
         private sealed class InMemoryUow : IUnitOfWork
         {
-            public Task SaveChangesAsync(CancellationToken ct = default) => Task.CompletedTask;
+            public int CommitCount { get; private set; }
+            public Task CommitAsync(CancellationToken ct = default)
+            {
+                CommitCount++;
+                return Task.CompletedTask;
+            }
         }
 
         
@@ -352,7 +357,7 @@ namespace ListaPreciosBC.Tests.Application.UseCases
 
             var precioRepo = new InMemoryPrecioProductoRepository();
             var uowMock = new Moq.Mock<IUnitOfWork>();
-            uowMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+            uowMock.Setup(u => u.CommitAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
             var tenant = new Moq.Mock<ITenantContext>();
             var empresaTenant = EmpresaId.From("EMP-TNT");
             tenant.SetupGet(t => t.EmpresaId).Returns(empresaTenant);
@@ -381,7 +386,7 @@ namespace ListaPreciosBC.Tests.Application.UseCases
             var res = await sut.Handle(req, CancellationToken.None);
 
             // Assert: commit 1 vez
-            uowMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+            uowMock.Verify(u => u.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
 
             // Assert eventos con tenant y establecimiento
             var agg = await precioRepo.ObtenerPorProductoIdAsync(productoIdEst);

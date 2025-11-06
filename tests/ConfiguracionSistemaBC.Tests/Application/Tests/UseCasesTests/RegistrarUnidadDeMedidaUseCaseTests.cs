@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using ConfiguracionSistemaBC.Application.UseCases;
 using ConfiguracionSistemaBC.Domain.Aggregates;
 using ConfiguracionSistemaBC.Domain.Repositories;
+using ConfiguracionSistemaBC.Application.Interfaces; // IUnitOfWork
 using ConfiguracionSistemaBC.Domain.ValueObjects; // Ruc
 using Moq;
 using NUnit.Framework;
@@ -48,9 +49,9 @@ namespace ConfiguracionSistemaBC.Tests.Application.UseCases
             repo.Setup(r => r.UpdateAsync(empresa, It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
-            var uow = new Mock<IUnitOfWork>(MockBehavior.Strict);
-            uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
-               .Returns(Task.CompletedTask);
+                var uow = new Mock<IUnitOfWork>(MockBehavior.Strict);
+                uow.Setup(u => u.CommitAsync(It.IsAny<CancellationToken>()))
+                    .Returns(Task.CompletedTask);
 
             var tenant = new Mock<ITenantContext>(MockBehavior.Strict);
             tenant.SetupGet(t => t.EmpresaId).Returns(empresaId);

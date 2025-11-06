@@ -9,6 +9,7 @@ using Moq;
 using NUnit.Framework;
 using SharedKernel.Application.Interfaces;                 // ITenantContext
 using SharedKernel.ValueObjects;                           // DomicilioFiscal, Moneda, Telefono, Email
+using ConfiguracionSistemaBC.Application.Interfaces;       // IUnitOfWork
 
 // Si conviven Ruc en Domain y en SharedKernel, puedes descomentar el alias que corresponda:
 // using RucDomain = ConfiguracionSistemaBC.Domain.ValueObjects.Ruc;
@@ -62,8 +63,8 @@ namespace ConfiguracionSistemaBC.Tests.Application.UseCases
                 .Callback<ConfiguracionEmpresa, CancellationToken>((a, _) => agregadoCapturado = a)
                 .Returns(Task.CompletedTask);
 
-            uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
-               .Returns(Task.CompletedTask);
+                uow.Setup(u => u.CommitAsync(It.IsAny<CancellationToken>()))
+                    .Returns(Task.CompletedTask);
 
             var useCase = new RegistrarConfiguracionEmpresaUseCase(repo.Object, uow.Object, tenant.Object);
             var input = BuildInput();
@@ -97,7 +98,7 @@ namespace ConfiguracionSistemaBC.Tests.Application.UseCases
             // Verificaciones de llamadas
             repo.Verify(r => r.FindByRucAsync(It.IsAny<Ruc>(), It.IsAny<CancellationToken>()), Times.Once);
             repo.Verify(r => r.AddAsync(It.IsAny<ConfiguracionEmpresa>(), It.IsAny<CancellationToken>()), Times.Once);
-            uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+            uow.Verify(u => u.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Test]
@@ -134,7 +135,7 @@ namespace ConfiguracionSistemaBC.Tests.Application.UseCases
             Assert.That(ex!.Message, Does.Contain("Ya existe una configuración registrada"));
             repo.Verify(r => r.FindByRucAsync(It.IsAny<Ruc>(), It.IsAny<CancellationToken>()), Times.Once);
             repo.Verify(r => r.AddAsync(It.IsAny<ConfiguracionEmpresa>(), It.IsAny<CancellationToken>()), Times.Never);
-            uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+            uow.Verify(u => u.CommitAsync(It.IsAny<CancellationToken>()), Times.Never);
         }
 
     // El ambiente inicial siempre debe ser PRUEBA. No se permite crear directamente en PRODUCCION.

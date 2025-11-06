@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using GestionClientesBC.Domain.Aggregates;
 using GestionClientesBC.Domain.Repositories;
 using GestionClientesBC.Domain.ValueObjects;
+using GestionClientesBC.Application.Interfaces; // IUnitOfWork
 using SharedKernel.Application.Interfaces;
 using SharedKernel.Exceptions;
 using SharedKernel.ValueObjects;
@@ -148,7 +149,7 @@ namespace GestionClientesBC.Application.Clientes.Crear
             );
 
             await _repo.AddAsync(cliente);
-            await _uow.SaveChangesAsync(ct);
+            await _uow.CommitAsync(ct);
 
             // 8) Salida
             return new CrearClienteOutputDto

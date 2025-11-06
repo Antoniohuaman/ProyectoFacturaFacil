@@ -75,7 +75,7 @@ namespace ListaPreciosBC.Application.UseCases
 
             // 4) Persistencia + UoW
             await _listaRepo.GuardarAsync(lista, empresaId, null, expectedVersion, ct);
-            await _uow.SaveChangesAsync(ct);
+            await _uow.CommitAsync(ct);
 
             // 5) Respuesta (consultamos el estado actual de la columna)
             var columna = lista.Plantilla.Columnas.Single(c => c.Id.Equals(colId));

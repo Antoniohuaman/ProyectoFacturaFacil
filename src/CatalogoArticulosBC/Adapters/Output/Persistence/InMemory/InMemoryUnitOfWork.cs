@@ -10,10 +10,11 @@ namespace CatalogoArticulosBC.Adapters.Output.Persistence.InMemory
 
         public Task SaveChangesAsync(CancellationToken cancellationToken = default)
         {
-            return Task.CompletedTask;
+            // Mantener compatibilidad; delega a CommitAsync.
+            return CommitAsync(cancellationToken);
         }
 
-        public Task CommitAsync()
+        public Task CommitAsync(CancellationToken ct = default)
         {
             WasCommitted = true;
             return Task.CompletedTask;

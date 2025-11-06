@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using ConfiguracionSistemaBC.Application.UseCases;
 using ConfiguracionSistemaBC.Domain.Aggregates;
 using ConfiguracionSistemaBC.Domain.Repositories;
+using ConfiguracionSistemaBC.Application.Interfaces; // IUnitOfWork
 using ConfiguracionSistemaBC.Domain.ValueObjects;
 using Moq;
 using NUnit.Framework;
@@ -72,7 +73,7 @@ namespace ConfiguracionSistemaBC.Tests.UseCases
             Assert.That(outDto.Serie, Is.EqualTo("FE01"));
 
             _seriesRepo.Verify(r => r.DeleteAsync(s.Id, s.Version, It.IsAny<CancellationToken>()), Times.Once);
-            _uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+            _uow.Verify(u => u.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Test]

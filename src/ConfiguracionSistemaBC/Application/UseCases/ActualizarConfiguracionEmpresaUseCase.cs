@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using ConfiguracionSistemaBC.Domain.Aggregates;
 using ConfiguracionSistemaBC.Domain.Repositories;
+using ConfiguracionSistemaBC.Application.Interfaces;   // IUnitOfWork
 using SharedKernel.Application.Interfaces;              // ITenantContext
 using SharedKernel.ValueObjects;                        // EmpresaId, DomicilioFiscal, Moneda, Telefono, Email
 using ConfiguracionSistemaBC.Domain.ValueObjects;       // AmbienteFe (no se usa aquí), LogoImagen, PieDePagina
@@ -109,7 +110,7 @@ namespace ConfiguracionSistemaBC.Application.UseCases
 
             // Persistencia (concurrencia optimista)
             await _repo.UpdateIfVersionMatchAsync(empresa, versionOriginal, ct);
-            await _uow.SaveChangesAsync(ct);
+            await _uow.CommitAsync(ct);
 
             // Salida
             var principal = empresa.ObtenerEstablecimientoPrincipal(); // snapshot útil para UI

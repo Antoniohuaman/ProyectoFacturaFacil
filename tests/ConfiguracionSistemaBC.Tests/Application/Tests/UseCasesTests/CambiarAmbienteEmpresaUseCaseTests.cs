@@ -6,6 +6,7 @@ using ConfiguracionSistemaBC.Application.Ports;
 using ConfiguracionSistemaBC.Application.UseCases;
 using ConfiguracionSistemaBC.Domain.Aggregates;
 using ConfiguracionSistemaBC.Domain.Repositories;
+using ConfiguracionSistemaBC.Application.Interfaces; // IUnitOfWork
 using ConfiguracionSistemaBC.Domain.ValueObjects;    // AmbienteFe
 using Moq;
 using NUnit.Framework;
@@ -48,9 +49,9 @@ namespace ConfiguracionSistemaBC.Tests.Application.UseCases
             repo.Setup(r => r.UpdateIfVersionMatchAsync(empresa, It.IsAny<int>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(true);
 
-            var uow = new Mock<IUnitOfWork>(MockBehavior.Strict);
-            uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
-               .Returns(Task.CompletedTask);
+                var uow = new Mock<IUnitOfWork>(MockBehavior.Strict);
+                uow.Setup(u => u.CommitAsync(It.IsAny<CancellationToken>()))
+                    .Returns(Task.CompletedTask);
 
             var purge = new Mock<IDocumentosElectronicosPurgeService>(MockBehavior.Strict);
             purge.Setup(p => p.PurgeTestDocumentsAsync(empresaId, It.IsAny<CancellationToken>()))
@@ -120,7 +121,7 @@ namespace ConfiguracionSistemaBC.Tests.Application.UseCases
 
             // No debería intentar update ni save ni purga
             repo.Verify(r => r.UpdateIfVersionMatchAsync(It.IsAny<ConfiguracionEmpresa>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
-            uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+            uow.Verify(u => u.CommitAsync(It.IsAny<CancellationToken>()), Times.Never);
             purge.Verify(p => p.PurgeTestDocumentsAsync(It.IsAny<EmpresaId>(), It.IsAny<CancellationToken>()), Times.Never);
             repo.VerifyAll();
             // No se verifica tenant porque Moq.Strict espera acceso a todos los setups, pero TenantId puede no ser accedido
@@ -226,9 +227,9 @@ namespace ConfiguracionSistemaBC.Tests.Application.UseCases
             repo.Setup(r => r.UpdateIfVersionMatchAsync(empresa, It.IsAny<int>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(true);
 
-            var uow = new Mock<IUnitOfWork>(MockBehavior.Strict);
-            uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
-               .Returns(Task.CompletedTask);
+                var uow = new Mock<IUnitOfWork>(MockBehavior.Strict);
+                uow.Setup(u => u.CommitAsync(It.IsAny<CancellationToken>()))
+                    .Returns(Task.CompletedTask);
 
             var tenant = new Mock<ITenantContext>(MockBehavior.Strict);
             tenant.SetupGet(t => t.EmpresaId).Returns(empresaId);

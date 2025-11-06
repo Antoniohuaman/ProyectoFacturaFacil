@@ -10,6 +10,7 @@ using GestionClientesBC.Domain.Events;
 using SharedKernel.Application.Interfaces;
 using SharedKernel.Exceptions;
 using SharedKernel.ValueObjects;
+using GestionClientesBC.Application.Interfaces; // IUnitOfWork
 
 namespace GestionClientesBC.Application.Clientes.Contactos.Agregar
 {
@@ -102,7 +103,7 @@ namespace GestionClientesBC.Application.Clientes.Contactos.Agregar
 
             // 6) Persistir
             await _repo.UpdateAsync(cliente);
-            await _uow.SaveChangesAsync(ct);
+            await _uow.CommitAsync(ct);
 
             // 7) Obtener el evento para timestamp
             var evt = cliente.DomainEvents.OfType<ContactoAgregado>().LastOrDefault();

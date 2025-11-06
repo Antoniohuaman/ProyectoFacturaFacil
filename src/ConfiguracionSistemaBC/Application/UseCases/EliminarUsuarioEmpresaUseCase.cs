@@ -3,7 +3,8 @@ using System.Threading;
 using System.Threading.Tasks;
 
 // Domain
-using ConfiguracionSistemaBC.Domain.Repositories; // IUsuarioEmpresaRepository, IUnitOfWork
+using ConfiguracionSistemaBC.Domain.Repositories; // IUsuarioEmpresaRepository
+using ConfiguracionSistemaBC.Application.Interfaces; // IUnitOfWork
 using ConfiguracionSistemaBC.Domain.Aggregates;   // UsuarioEmpresa
 
 // Shared Kernel
@@ -63,7 +64,7 @@ namespace ConfiguracionSistemaBC.Application.UseCases
             await _usuarioRepo.DeleteAsync(empresaId, usuarioId, input.ExpectedVersion, ct);
 
             // 4) Persistir
-            await _uow.SaveChangesAsync(ct);
+            await _uow.CommitAsync(ct);
 
             // 5) Salida
             return new EliminarUsuarioEmpresaOutputDto

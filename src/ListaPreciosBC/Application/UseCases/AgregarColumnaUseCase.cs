@@ -60,7 +60,7 @@ namespace ListaPreciosBC.Application.UseCases
             var empresaId = _tenant.EmpresaId;
             if (empresaId is null) throw new InvalidOperationException("EmpresaId del contexto es obligatorio.");
             await _repository.GuardarAsync(listaPrecio, empresaId, null, expectedVersion, ct);
-            await _unitOfWork.SaveChangesAsync();
+            await _unitOfWork.CommitAsync(ct);
 
             // 6) Mapear respuesta (recomendado: primitivos, no VOs)
             return new AgregarColumnaResultDto

@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using ConfiguracionSistemaBC.Domain.Aggregates;
 using ConfiguracionSistemaBC.Domain.Repositories;
+using ConfiguracionSistemaBC.Application.Interfaces;   // IUnitOfWork
 using ConfiguracionSistemaBC.Domain.ValueObjects; // UnidadDeMedida
 using SharedKernel.Application.Interfaces;         // ITenantContext
 using SharedKernel.ValueObjects;                   // EmpresaId
@@ -100,7 +101,7 @@ namespace ConfiguracionSistemaBC.Application.UseCases
 
             // Persistencia (concurrencia optimista)
             await _repo.UpdateAsync(empresa, ct);
-            await _uow.SaveChangesAsync(ct);
+            await _uow.CommitAsync(ct);
 
             var defaultActual = empresa.ObtenerUnidadDeMedidaPorDefecto();
             var total = empresa.ListarUnidadesDeMedida().Count;
