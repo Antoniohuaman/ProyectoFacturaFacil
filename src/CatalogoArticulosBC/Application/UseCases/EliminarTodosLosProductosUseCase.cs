@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using CatalogoArticulosBC.Domain.Repositories;
+using CatalogoArticulosBC.Application.Interfaces; // IUnitOfWork from Application layer
 using SharedKernel.Application.Interfaces;
 using SharedKernel.Exceptions;
 using SharedKernel.ValueObjects;
@@ -20,13 +21,13 @@ namespace CatalogoArticulosBC.Application.UseCases.EliminarTodosLosProductos
     /// </summary>
     public sealed class EliminarTodosLosProductosUseCase : IEliminarTodosLosProductosUseCase
     {
-        private readonly IProductoRepository _repo;
-        private readonly IUnitOfWork _uow;
+    private readonly IProductoRepository _repo;
+    private readonly CatalogoArticulosBC.Application.Interfaces.IUnitOfWork _uow;
         private readonly ITenantContext _tenant;
 
         public EliminarTodosLosProductosUseCase(
             IProductoRepository repo,
-            IUnitOfWork uow,
+            CatalogoArticulosBC.Application.Interfaces.IUnitOfWork uow,
             ITenantContext tenant)
         {
             _repo   = repo   ?? throw new ArgumentNullException(nameof(repo));

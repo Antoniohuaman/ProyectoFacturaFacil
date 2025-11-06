@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using CatalogoArticulosBC.Domain.Aggregates;
 using CatalogoArticulosBC.Domain.Entities;
 using CatalogoArticulosBC.Domain.Repositories;
+using CatalogoArticulosBC.Application.Interfaces; // IUnitOfWork (moved out of Domain per DDD guideline)
 using CatalogoArticulosBC.Domain.Services;
 using CatalogoArticulosBC.Domain.ValueObjects;
 using SharedKernel.Application.Interfaces;
@@ -25,15 +26,15 @@ namespace CatalogoArticulosBC.Application.UseCases.CrearProductoSimple
     /// </summary>
     public sealed class CrearProductoSimpleUseCase
     {
-        private readonly IProductoRepository _productos;
-        private readonly IUnitOfWork _uow;
+    private readonly IProductoRepository _productos;
+    private readonly CatalogoArticulosBC.Application.Interfaces.IUnitOfWork _uow;
         private readonly ITenantContext _tenant;
         private readonly ISkuGenerator? _skuGenerator;   // opcional si permites autogenerar
         private readonly IEventBus? _eventBus;           // opcional si publicas aquí en vez de Outbox
 
         public CrearProductoSimpleUseCase(
             IProductoRepository productos,
-            IUnitOfWork uow,
+            CatalogoArticulosBC.Application.Interfaces.IUnitOfWork uow,
             ITenantContext tenant,
             ISkuGenerator? skuGenerator = null,
             IEventBus? eventBus = null)

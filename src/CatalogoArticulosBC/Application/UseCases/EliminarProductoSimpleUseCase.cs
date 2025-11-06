@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using CatalogoArticulosBC.Domain.Aggregates;
 using CatalogoArticulosBC.Domain.Repositories;
+using CatalogoArticulosBC.Application.Interfaces; // IUnitOfWork moved to Application
 using SharedKernel.Application.Interfaces;
 using SharedKernel.Exceptions;
 
@@ -18,11 +19,11 @@ namespace CatalogoArticulosBC.Application.UseCases.EliminarProductoSimple
     /// </summary>
     public sealed class EliminarProductoSimpleUseCase : IEliminarProductoSimpleUseCase
     {
-        private readonly IProductoRepository _repo;
-        private readonly IUnitOfWork _uow;
+    private readonly IProductoRepository _repo;
+    private readonly CatalogoArticulosBC.Application.Interfaces.IUnitOfWork _uow;
         private readonly ITenantContext _tenant;
 
-        public EliminarProductoSimpleUseCase(IProductoRepository repo, IUnitOfWork uow, ITenantContext tenant)
+    public EliminarProductoSimpleUseCase(IProductoRepository repo, CatalogoArticulosBC.Application.Interfaces.IUnitOfWork uow, ITenantContext tenant)
         {
             _repo = repo ?? throw new ArgumentNullException(nameof(repo));
             _uow = uow ?? throw new ArgumentNullException(nameof(uow));

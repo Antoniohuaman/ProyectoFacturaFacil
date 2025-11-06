@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using CatalogoArticulosBC.Domain.Filters;
 using CatalogoArticulosBC.Domain.Repositories;
+using CatalogoArticulosBC.Application.Interfaces; // IUnitOfWork from Application layer
 using CatalogoArticulosBC.Domain.ValueObjects;
 using SharedKernel.ValueObjects;
 using SharedKernel.Application.Interfaces;
@@ -25,13 +26,13 @@ namespace CatalogoArticulosBC.Application.UseCases.EliminarProductosPorCriterio
     /// </summary>
     public sealed class EliminarProductosPorCriterioUseCase : IEliminarProductosPorCriterioUseCase
     {
-        private readonly IProductoRepository _repo;
-        private readonly IUnitOfWork _uow;
+    private readonly IProductoRepository _repo;
+    private readonly CatalogoArticulosBC.Application.Interfaces.IUnitOfWork _uow;
         private readonly ITenantContext _tenant;
 
         public EliminarProductosPorCriterioUseCase(
             IProductoRepository repo,
-            IUnitOfWork uow,
+            CatalogoArticulosBC.Application.Interfaces.IUnitOfWork uow,
             ITenantContext tenant)
         {
             _repo = repo ?? throw new ArgumentNullException(nameof(repo));

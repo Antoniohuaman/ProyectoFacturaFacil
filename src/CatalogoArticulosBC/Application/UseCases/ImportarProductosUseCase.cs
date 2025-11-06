@@ -9,6 +9,7 @@ using CatalogoArticulosBC.Application.Interfaces;
 using CatalogoArticulosBC.Application.Specifications;
 using CatalogoArticulosBC.Domain.Aggregates;
 using CatalogoArticulosBC.Domain.Repositories;
+// removed duplicate using of Application.Interfaces
 using CatalogoArticulosBC.Domain.ValueObjects;
 using SharedKernel.Application.Interfaces;
 using SharedKernel.Exceptions;
@@ -47,7 +48,7 @@ namespace CatalogoArticulosBC.Application.UseCases
         private readonly IImportExportService _parser;
         private readonly IImportSchemaProvider _schemaProvider;
         private readonly IProductoRepository _productos;
-    private readonly CatalogoArticulosBC.Application.Interfaces.IUnitOfWork _uow;
+        private readonly CatalogoArticulosBC.Application.Interfaces.IUnitOfWork _uow;
         private readonly ITenantContext _tenant;
         private readonly ConfiguracionSistemaBC.Domain.Repositories.IConfiguracionEmpresaRepository _configRepo;
 

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using CatalogoArticulosBC.Domain.Repositories;
+using CatalogoArticulosBC.Application.Interfaces; // IUnitOfWork from Application
 using CatalogoArticulosBC.Domain.ValueObjects;
 using SharedKernel.Application.Interfaces;
 using SharedKernel.Exceptions;
@@ -24,13 +25,13 @@ namespace CatalogoArticulosBC.Application.UseCases.EliminarProductosSeleccionado
     /// </summary>
     public sealed class EliminarProductosSeleccionadosUseCase : IEliminarProductosSeleccionadosUseCase
     {
-        private readonly IProductoRepository _repo;
-        private readonly IUnitOfWork _uow;
+    private readonly IProductoRepository _repo;
+    private readonly CatalogoArticulosBC.Application.Interfaces.IUnitOfWork _uow;
         private readonly ITenantContext _tenant;
 
         public EliminarProductosSeleccionadosUseCase(
             IProductoRepository repo,
-            IUnitOfWork uow,
+            CatalogoArticulosBC.Application.Interfaces.IUnitOfWork uow,
             ITenantContext tenant)
         {
             _repo   = repo   ?? throw new ArgumentNullException(nameof(repo));
