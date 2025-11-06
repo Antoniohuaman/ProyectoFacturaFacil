@@ -23,7 +23,7 @@ namespace SharedKernel.Tests.UnitTests
         }
 
         [Test]
-        public void DomainAssemblies_ShouldNotReference_SkuVO_WithAllowlist()
+    public void DomainAssemblies_ShouldNotReference_SkuVO()
         {
             var root = FindSolutionRoot();
             var domainDlls = Directory.GetFiles(Path.Combine(root, "src"), "*.Domain.dll", SearchOption.AllDirectories)
@@ -34,15 +34,6 @@ namespace SharedKernel.Tests.UnitTests
             Assert.That(domainDlls.Length, Is.EqualTo(1), $"Se esperó 1 ensamblado ListaPreciosBC.Domain, encontrados: {domainDlls.Length}:\n{string.Join("\n", domainDlls)}");
 
             var violations = new List<string>();
-
-            // Allowlist: transitoria, hasta remover SKU del dominio de ListaPreciosBC.
-            // Permitimos sólo la interfaz IPrecioProductoRepository de ListaPreciosBC.Domain y sus métodos ObtenerPorSkuAsync/EliminarAsync
-            var allowType = "ListaPreciosBC.Domain.Repositories.IPrecioProductoRepository";
-            var allowMembers = new HashSet<string>(StringComparer.Ordinal)
-            {
-                "ObtenerPorSkuAsync",
-                "EliminarAsync"
-            };
 
             foreach (var dll in domainDlls)
             {
@@ -78,12 +69,6 @@ namespace SharedKernel.Tests.UnitTests
                     {
                         bool match = TypeOrGenericContainsSku(m.ReturnType) || m.GetParameters().Any(pa => TypeOrGenericContainsSku(pa.ParameterType));
                         if (!match) continue;
-
-                        // Allowlist filter
-                        if (t.FullName == allowType && allowMembers.Contains(m.Name))
-                            continue;
-
-                        // If it's other type in same namespace (Repositories), but not the allowed type, still count as violation
                         violations.Add($"{t.FullName}::{m.Name} (method)");
                     }
                 }

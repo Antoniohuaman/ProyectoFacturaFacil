@@ -39,29 +39,32 @@ namespace ListaPreciosBC.Tests.Application.UseCases
         private sealed class InMemoryPrecioProductoRepository : IPrecioProductoRepository
         {
             private readonly Dictionary<string, PrecioProducto> _store = new();
-            private string? _lastLookupSku;
+            private string? _lastLookupProductoKey;
 
-          public Task<PrecioProducto?> ObtenerPorSkuAsync(EmpresaId empresaId, Guid? sucursalId, Sku sku, CancellationToken ct = default)
+            private static string Key(ProductoId productoId) => productoId.Value.ToString();
+
+            public Task<PrecioProducto?> ObtenerPorProductoIdAsync(EmpresaId empresaId, EstablecimientoId? establecimientoId, ProductoId productoId, CancellationToken ct = default)
             {
-              _lastLookupSku = sku.Valor;
-              _store.TryGetValue(sku.Valor, out var agg);
+                var key = Key(productoId);
+                _store.TryGetValue(key, out var agg);
+                _lastLookupProductoKey = key;
                 return Task.FromResult<PrecioProducto?>(agg);
             }
 
-            public Task GuardarAsync(PrecioProducto aggregate, EmpresaId empresaId, Guid? sucursalId, int expectedVersion, CancellationToken ct = default)
+            public Task GuardarAsync(PrecioProducto aggregate, EmpresaId empresaId, EstablecimientoId? establecimientoId, int expectedVersion, CancellationToken ct = default)
             {
-                var key = _lastLookupSku ?? throw new InvalidOperationException("Debe consultarse por SKU antes de guardar.");
+                var key = _lastLookupProductoKey ?? Key(aggregate.ProductoId);
                 _store[key] = aggregate;
                 return Task.CompletedTask;
             }
 
-            public Task EliminarAsync(EmpresaId empresaId, Guid? sucursalId, Sku sku, int? expectedVersion = null, CancellationToken ct = default)
+            public Task EliminarAsync(EmpresaId empresaId, EstablecimientoId? establecimientoId, ProductoId productoId, int? expectedVersion = null, CancellationToken ct = default)
             {
-                _store.Remove(sku.Valor);
+                _store.Remove(Key(productoId));
                 return Task.CompletedTask;
             }
 
-            public void Seed(string sku, PrecioProducto agg) => _store[sku] = agg;
+            public void Seed(PrecioProducto agg) => _store[Key(agg.ProductoId)] = agg;
         }
 
         
@@ -143,13 +146,13 @@ namespace ListaPreciosBC.Tests.Application.UseCases
 
             const string sku = "SKU-001";
             var agg = CrearAggConPrecios(sku);
-            precioRepo.Seed(sku, agg);
+            precioRepo.Seed(agg);
 
             var tenant = new Mock<ITenantContext>();
             tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
             var catalogo = new Moq.Mock<ListaPreciosBC.Application.Interfaces.ICatalogoReadModel>();
             catalogo.Setup(c => c.TryGetProductoIdBySkuAsync(It.IsAny<EmpresaId>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(ProductoId.New());
+                .ReturnsAsync(agg.ProductoId);
             var sut = new ExportarPreciosSkuExcelUseCase(listaRepo, precioRepo, tenant.Object, catalogo.Object);
 
             var res = await sut.Handle(new ExportarPreciosSkuExcelUseCase.Request(
@@ -188,13 +191,13 @@ namespace ListaPreciosBC.Tests.Application.UseCases
 
             const string sku = "SKU-002";
             var agg2 = CrearAggConPrecios(sku);
-            precioRepo.Seed(sku, agg2);
+            precioRepo.Seed(agg2);
 
             var tenant = new Mock<ITenantContext>();
             tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
             var catalogo2 = new Moq.Mock<ListaPreciosBC.Application.Interfaces.ICatalogoReadModel>();
             catalogo2.Setup(c => c.TryGetProductoIdBySkuAsync(It.IsAny<EmpresaId>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(ProductoId.New());
+                .ReturnsAsync(agg2.ProductoId);
             var sut = new ExportarPreciosSkuExcelUseCase(listaRepo, precioRepo, tenant.Object, catalogo2.Object);
 
             var res = await sut.Handle(new ExportarPreciosSkuExcelUseCase.Request(

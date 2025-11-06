@@ -89,9 +89,11 @@ namespace ListaPreciosBC.Application.UseCases
             if (columnaCfg is null)
                 throw new NotFoundException($"La columna #{req.ColumnaNumero} no existe en la plantilla activa.");
 
-            // 3) Obtener agregado de precio por SKU
+            // 3) Resolver ProductoId y obtener agregado por ProductoId
             var sku = Sku.Crear(req.Sku);
-            var agregado = await _precioRepo.ObtenerPorSkuAsync(empresaId, null, sku, ct);
+            var productoId = await _catalogo.TryGetProductoIdBySkuAsync(empresaId, sku.Valor, ct)
+                             ?? throw new NotFoundException("Producto", sku.Valor);
+            var agregado = await _precioRepo.ObtenerPorProductoIdAsync(empresaId, null, productoId, ct);
             if (agregado is null)
                 throw new NotFoundException($"No existe PrecioProducto para el SKU {req.Sku}.");
 

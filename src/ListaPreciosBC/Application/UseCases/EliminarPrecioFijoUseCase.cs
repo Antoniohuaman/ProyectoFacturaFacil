@@ -96,9 +96,12 @@ namespace ListaPreciosBC.Application.UseCases
             if (!columnaCfg.Modo.Equals(ModoValorizacionColumna.Fijo))
                 throw new BusinessRuleException($"La columna #{req.ColumnaNumero} no es de modo FIJO; operación no permitida.");
 
-            // 3) Recuperar agregado PrecioProducto por SKU (mantener compatibilidad con repos in-memory de pruebas)
+            // 3) Resolver ProductoId y recuperar agregado PrecioProducto por ProductoId
             var sku = Sku.Crear(req.Sku);
-            var agregado = await _precioRepo.ObtenerPorSkuAsync(empresaId, null, sku, ct);
+            var productoId = await _catalogo.TryGetProductoIdBySkuAsync(empresaId, sku.Valor, ct)
+                             ?? throw new NotFoundException("Producto", sku.Valor);
+            SharedKernel.ValueObjects.EstablecimientoId? estId = null; // este UC trabaja con lista activa global
+            var agregado = await _precioRepo.ObtenerPorProductoIdAsync(empresaId, estId, productoId, ct);
             if (agregado is null)
             {
                 if (req.LanzarSiNoExiste)
@@ -115,7 +118,7 @@ namespace ListaPreciosBC.Application.UseCases
                 agregado.EliminarPrecioFijo(colId, req.Usuario, cuando);
 
             // 5) Persistencia + UoW
-            await _precioRepo.GuardarAsync(agregado, empresaId, null, expectedVersion, ct);
+            await _precioRepo.GuardarAsync(agregado, empresaId, estId, expectedVersion, ct);
             await _uow.SaveChangesAsync(ct);
 
             // 6) Respuesta

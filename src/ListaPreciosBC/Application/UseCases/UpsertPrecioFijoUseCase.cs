@@ -102,13 +102,14 @@ namespace ListaPreciosBC.Application.UseCases
             if (!columnaCfg.Modo.Equals(ModoValorizacionColumna.Fijo))
                 throw new BusinessRuleException($"La columna #{req.ColumnaNumero} no es de modo FIJO; operación no permitida.");
 
-            // 3) Traer o crear agregado PrecioProducto
+            // 3) Resolver ProductoId a partir de SKU y traer o crear agregado PrecioProducto
             var sku = Sku.Crear(req.Sku);
-            var agregado = await _precioRepo.ObtenerPorSkuAsync(empresaId, req.SucursalId, sku, ct);
+            var productoId = await _catalogo.TryGetProductoIdBySkuAsync(empresaId, sku.Valor, ct)
+                             ?? throw new NotFoundException("Producto", sku.Valor);
+            EstablecimientoId? estId = req.SucursalId.HasValue ? SharedKernel.ValueObjects.EstablecimientoId.From(req.SucursalId.Value) : null;
+            var agregado = await _precioRepo.ObtenerPorProductoIdAsync(empresaId, estId, productoId, ct);
             if (agregado is null)
             {
-                var productoId = await _catalogo.TryGetProductoIdBySkuAsync(empresaId, sku.Valor, ct)
-                                 ?? throw new NotFoundException("Producto", sku.Valor);
                 agregado = PrecioProducto.CrearNuevo(empresaId, productoId, req.SucursalId);
             }
 
@@ -125,7 +126,7 @@ namespace ListaPreciosBC.Application.UseCases
             agregado.UpsertPrecioFijo(colId, valor, vig, req.Usuario, cuando);
 
             // 6) Persistencia + UoW
-            await _precioRepo.GuardarAsync(agregado, empresaId, req.SucursalId, expectedVersion, ct);
+            await _precioRepo.GuardarAsync(agregado, empresaId, estId, expectedVersion, ct);
             await _uow.SaveChangesAsync();
 
             // 7) Respuesta

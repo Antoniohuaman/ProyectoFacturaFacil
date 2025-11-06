@@ -38,50 +38,47 @@ namespace ListaPreciosBC.Tests.Application.UseCases
         {
             private readonly Dictionary<string, PrecioProducto> _store = new();
             private readonly Dictionary<string, int> _loadedVersion = new();
-            private string? _lastLookupSku;
+            private string? _lastLookupProductoKey;
             public bool SimularConcurrencia { get; set; }
 
-            public Task<PrecioProducto?> ObtenerPorSkuAsync(EmpresaId empresaId, Guid? sucursalId, Sku sku, CancellationToken ct = default)
+            private static string Key(ProductoId productoId) => productoId.Value.ToString();
+
+            public Task<PrecioProducto?> ObtenerPorProductoIdAsync(EmpresaId empresaId, EstablecimientoId? establecimientoId, ProductoId productoId, CancellationToken ct = default)
             {
-                _lastLookupSku = sku.Valor;
-                if (_store.TryGetValue(_lastLookupSku, out var agg))
+                var key = Key(productoId);
+                if (_store.TryGetValue(key, out var agg))
                 {
-                    _loadedVersion[_lastLookupSku] = agg.Version;
+                    _loadedVersion[key] = agg.Version;
+                    _lastLookupProductoKey = key;
                     return Task.FromResult<PrecioProducto?>(agg);
                 }
+                _lastLookupProductoKey = key;
                 return Task.FromResult<PrecioProducto?>(null);
             }
-            // Helper para asserts en tests
-            public Task<PrecioProducto?> ObtenerPorSkuAsync(Sku sku, CancellationToken ct = default)
-            {
-                _store.TryGetValue(sku.Valor, out var agg);
-                return Task.FromResult<PrecioProducto?>(agg);
-            }
-                public Task EliminarAsync(EmpresaId empresaId, Guid? sucursalId, Sku sku, int? expectedVersion = null, CancellationToken ct = default)
-                {
-                    var key = sku.Valor;
-                    if (_store.TryGetValue(key, out var agg))
-                    {
-                        if (expectedVersion.HasValue && agg.Version != expectedVersion.Value)
-                            throw new ConcurrencyException(
-                                "Versión inesperada del agregado al eliminar.",
-                                sku.Valor,
-                                expectedVersion.Value,
-                                agg.Version,
-                                null,
-                                null
-                            );
-                        _store.Remove(key);
-                        _loadedVersion.Remove(key);
-                    }
-                    return Task.CompletedTask;
-                }
 
-            public Task GuardarAsync(PrecioProducto aggregate, EmpresaId empresaId, Guid? sucursalId, int expectedVersion, CancellationToken ct = default)
+            public Task EliminarAsync(EmpresaId empresaId, EstablecimientoId? establecimientoId, ProductoId productoId, int? expectedVersion = null, CancellationToken ct = default)
             {
-                if (string.IsNullOrEmpty(_lastLookupSku))
-                    throw new InvalidOperationException("Debe consultarse por SKU antes de guardar para conocer la llave de persistencia.");
-                var key = _lastLookupSku;
+                var key = Key(productoId);
+                if (_store.TryGetValue(key, out var agg))
+                {
+                    if (expectedVersion.HasValue && agg.Version != expectedVersion.Value)
+                        throw new ConcurrencyException(
+                            "Versión inesperada del agregado al eliminar.",
+                            key,
+                            expectedVersion.Value,
+                            agg.Version,
+                            null,
+                            null
+                        );
+                    _store.Remove(key);
+                    _loadedVersion.Remove(key);
+                }
+                return Task.CompletedTask;
+            }
+
+            public Task GuardarAsync(PrecioProducto aggregate, EmpresaId empresaId, EstablecimientoId? establecimientoId, int expectedVersion, CancellationToken ct = default)
+            {
+                var key = _lastLookupProductoKey ?? Key(aggregate.ProductoId);
 
                 if (SimularConcurrencia && _loadedVersion.TryGetValue(key, out var v))
                 {
@@ -91,11 +88,11 @@ namespace ListaPreciosBC.Tests.Application.UseCases
                 if (_loadedVersion.TryGetValue(key, out var loaded) && loaded != expectedVersion)
                     throw new ConcurrencyException(
                         "Versión inesperada del agregado.",
-                        key,                // identificador (SKU)
-                        expectedVersion,     // expectedVersion
-                        aggregate.Version,   // actualVersion
-                        null,                // propertyName
-                        null                 // additionalData
+                        key,
+                        expectedVersion,
+                        aggregate.Version,
+                        null,
+                        null
                     );
 
                 _store[key] = aggregate;
@@ -103,17 +100,18 @@ namespace ListaPreciosBC.Tests.Application.UseCases
                 return Task.CompletedTask;
             }
 
-            public void Seed(string sku, PrecioProducto agg)
+            public void Seed(PrecioProducto agg)
             {
-                _store[sku] = agg;
-                _loadedVersion[sku] = agg.Version;
+                var key = Key(agg.ProductoId);
+                _store[key] = agg;
+                _loadedVersion[key] = agg.Version;
             }
 
-            // Implementación faltante para la interfaz
-            public Task<IEnumerable<PrecioProducto>> ObtenerPorSkusAsync(IEnumerable<Sku> skus, CancellationToken ct = default)
+            // Helper para asserts en tests
+            public Task<PrecioProducto?> ObtenerPorProductoIdAsync(ProductoId productoId, CancellationToken ct = default)
             {
-                var result = skus.Select(s => _store.TryGetValue(s.Valor, out var agg) ? agg : null).Where(x => x != null).Cast<PrecioProducto>();
-                return Task.FromResult(result);
+                _store.TryGetValue(Key(productoId), out var agg);
+                return Task.FromResult(agg);
             }
         }
 
@@ -196,12 +194,15 @@ namespace ListaPreciosBC.Tests.Application.UseCases
                 "seed",
                 DateTimeOffset.UtcNow.AddDays(-30)
             );
-            precioRepo.Seed(sku, existente);
+            precioRepo.Seed(existente);
 
             var uow = new InMemoryUow();
             var tenant = new Mock<ITenantContext>();
             tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
-            var sut = new EliminarPrecioFijoUseCase(precioRepo, listaRepo, uow, tenant.Object);
+            var catalogo = new Moq.Mock<ListaPreciosBC.Application.Interfaces.ICatalogoReadModel>();
+            catalogo.Setup(c => c.TryGetProductoIdBySkuAsync(It.IsAny<EmpresaId>(), It.Is<string>(s => s == sku), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(existente.ProductoId);
+            var sut = new EliminarPrecioFijoUseCase(precioRepo, listaRepo, uow, tenant.Object, catalogo.Object);
 
             var req = new EliminarPrecioFijoUseCase.Request(
                 Sku: sku,
@@ -217,7 +218,7 @@ namespace ListaPreciosBC.Tests.Application.UseCases
             Assert.That(res.Version, Is.GreaterThanOrEqualTo(0));
 
             // Verificación de efecto: el precio vigente ya no debe existir
-            var post = await precioRepo.ObtenerPorSkuAsync(Sku.Crear(sku));
+            var post = await precioRepo.ObtenerPorProductoIdAsync(existente.ProductoId);
             Assert.That(post, Is.Not.Null);
             Assert.That(ExistePrecioFijo(post!, 1), Is.False);
         }
@@ -230,7 +231,10 @@ namespace ListaPreciosBC.Tests.Application.UseCases
             var uow = new InMemoryUow();
             var tenant = new Mock<ITenantContext>();
             tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
-            var sut = new EliminarPrecioFijoUseCase(precioRepo, listaRepo, uow, tenant.Object);
+            var catalogo = new Moq.Mock<ListaPreciosBC.Application.Interfaces.ICatalogoReadModel>();
+            catalogo.Setup(c => c.TryGetProductoIdBySkuAsync(It.IsAny<EmpresaId>(), It.Is<string>(s => s == "SKU-NEW"), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ProductoId.New());
+            var sut = new EliminarPrecioFijoUseCase(precioRepo, listaRepo, uow, tenant.Object, catalogo.Object);
 
             var req = new EliminarPrecioFijoUseCase.Request(
                 Sku: "SKU-404",
@@ -253,7 +257,15 @@ namespace ListaPreciosBC.Tests.Application.UseCases
             var uow = new InMemoryUow();
             var tenant = new Mock<ITenantContext>();
             tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
-            var sut = new EliminarPrecioFijoUseCase(precioRepo, listaRepo, uow, tenant.Object);
+            // Seed un agregado para que el fallo se deba a columna inexistente y no a producto inexistente
+            var sku = "SKU-001";
+            var existente = CrearPrecioProducto(sku);
+            precioRepo.Seed(existente);
+
+            var catalogo = new Moq.Mock<ListaPreciosBC.Application.Interfaces.ICatalogoReadModel>();
+            catalogo.Setup(c => c.TryGetProductoIdBySkuAsync(It.IsAny<EmpresaId>(), It.Is<string>(s => s == sku), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(existente.ProductoId);
+            var sut = new EliminarPrecioFijoUseCase(precioRepo, listaRepo, uow, tenant.Object, catalogo.Object);
 
             var req = new EliminarPrecioFijoUseCase.Request(
                 Sku: "SKU-001",
@@ -276,7 +288,10 @@ namespace ListaPreciosBC.Tests.Application.UseCases
             var uow = new InMemoryUow();
             var tenant = new Mock<ITenantContext>();
             tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
-            var sut = new EliminarPrecioFijoUseCase(precioRepo, listaRepo, uow, tenant.Object);
+            var catalogoIdemp = new Moq.Mock<ListaPreciosBC.Application.Interfaces.ICatalogoReadModel>();
+            catalogoIdemp.Setup(c => c.TryGetProductoIdBySkuAsync(It.IsAny<EmpresaId>(), It.Is<string>(s => s == "SKU-001"), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ProductoId.New());
+            var sut = new EliminarPrecioFijoUseCase(precioRepo, listaRepo, uow, tenant.Object, catalogoIdemp.Object);
 
             var req = new EliminarPrecioFijoUseCase.Request(
                 Sku: "SKU-001",
@@ -300,7 +315,10 @@ namespace ListaPreciosBC.Tests.Application.UseCases
             var uow = new InMemoryUow();
             var tenant = new Mock<ITenantContext>();
             tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
-            var sut = new EliminarPrecioFijoUseCase(precioRepo, listaRepo, uow, tenant.Object);
+            var catalogoIdemp = new Moq.Mock<ListaPreciosBC.Application.Interfaces.ICatalogoReadModel>();
+            catalogoIdemp.Setup(c => c.TryGetProductoIdBySkuAsync(It.IsAny<EmpresaId>(), It.Is<string>(s => s == "SKU-NEW"), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ProductoId.New());
+            var sut = new EliminarPrecioFijoUseCase(precioRepo, listaRepo, uow, tenant.Object, catalogoIdemp.Object);
 
             var req = new EliminarPrecioFijoUseCase.Request(
                 Sku: "SKU-NEW",
@@ -334,12 +352,15 @@ namespace ListaPreciosBC.Tests.Application.UseCases
                 "seed",
                 DateTimeOffset.UtcNow.AddDays(-10)
             );
-            precioRepo.Seed(sku, existente);
+            precioRepo.Seed(existente);
 
             var uow = new InMemoryUow();
             var tenant = new Mock<ITenantContext>();
             tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
-            var sut = new EliminarPrecioFijoUseCase(precioRepo, listaRepo, uow, tenant.Object);
+            var catalogo4 = new Moq.Mock<ListaPreciosBC.Application.Interfaces.ICatalogoReadModel>();
+            catalogo4.Setup(c => c.TryGetProductoIdBySkuAsync(It.IsAny<EmpresaId>(), It.Is<string>(s => s == sku), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(existente.ProductoId);
+            var sut = new EliminarPrecioFijoUseCase(precioRepo, listaRepo, uow, tenant.Object, catalogo4.Object);
 
             var req = new EliminarPrecioFijoUseCase.Request(
                 Sku: sku,

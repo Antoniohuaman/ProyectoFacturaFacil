@@ -77,9 +77,11 @@ namespace ListaPreciosBC.Application.UseCases
             if (lista is null)
                 throw new NotFoundException("No existe lista de precios activa.");
 
-            // 2) Agregado del SKU
+            // 2) Resolver ProductoId y obtener agregado
             var sku = Sku.Crear(req.Sku);
-            var agregado = await _precioRepo.ObtenerPorSkuAsync(empresaId, null, sku, ct);
+            var productoId = await _catalogo.TryGetProductoIdBySkuAsync(empresaId, sku.Valor, ct)
+                             ?? throw new NotFoundException("Producto", sku.Valor);
+            var agregado = await _precioRepo.ObtenerPorProductoIdAsync(empresaId, null, productoId, ct);
             if (agregado is null)
                 throw new NotFoundException($"No existe PrecioProducto para el SKU {req.Sku}.");
 

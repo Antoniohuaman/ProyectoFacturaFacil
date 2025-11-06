@@ -39,41 +39,25 @@ namespace ListaPreciosBC.Tests.Application.UseCases
         {
             private readonly Dictionary<string, PrecioProducto> _store = new();
             private readonly Dictionary<string, int> _loadedVersion = new();
-            private readonly Dictionary<ProductoId, string> _skuByProducto = new();
-            private string? _lastLookupSku;
+            private string? _lastLookupProductoKey;
 
             public bool SimularConcurrencia { get; set; } = false;
 
-            public Task<PrecioProducto?> ObtenerPorSkuAsync(EmpresaId empresaId, Guid? sucursalId, Sku sku, CancellationToken ct = default)
+            private static string Key(ProductoId productoId) => productoId.Value.ToString();
+
+            public Task<PrecioProducto?> ObtenerPorProductoIdAsync(EmpresaId empresaId, EstablecimientoId? establecimientoId, ProductoId productoId, CancellationToken ct = default)
             {
-                var key = sku.Valor;
-                if (_store.TryGetValue(key, out var agg))
-                {
-                    _loadedVersion[key] = agg.Version; // para expectedVersion
-                    _skuByProducto[agg.ProductoId] = key;
-                    _lastLookupSku = key;
-                    return Task.FromResult<PrecioProducto?>(agg);
-                }
-                _lastLookupSku = key;
-                return Task.FromResult<PrecioProducto?>(null);
+                var key = Key(productoId);
+                _store.TryGetValue(key, out var agg);
+                if (agg is not null) _loadedVersion[key] = agg.Version;
+                _lastLookupProductoKey = key;
+                return Task.FromResult<PrecioProducto?>(agg);
             }
 
-            public Task<PrecioProducto?> ObtenerPorSkuAsync(Sku sku, CancellationToken ct = default)
+            public Task GuardarAsync(PrecioProducto aggregate, EmpresaId empresaId, EstablecimientoId? establecimientoId, int expectedVersion, CancellationToken ct = default)
             {
-                var key = sku.Valor;
-                if (_store.TryGetValue(key, out var agg))
-                {
-                    _loadedVersion[key] = agg.Version;
-                    return Task.FromResult<PrecioProducto?>(agg);
-                }
-                return Task.FromResult<PrecioProducto?>(null);
-            }
+                var key = _lastLookupProductoKey ?? Key(aggregate.ProductoId);
 
-            public Task GuardarAsync(PrecioProducto aggregate, EmpresaId empresaId, Guid? sucursalId, int expectedVersion, CancellationToken ct = default)
-            {
-                var key = (_skuByProducto.TryGetValue(aggregate.ProductoId, out var s) ? s : _lastLookupSku) ?? "UNKNOWN";
-
-                // Simula update concurrente: alguien incrementó la versión “entre” load y save
                 if (SimularConcurrencia && _loadedVersion.TryGetValue(key, out var v))
                 {
                     _loadedVersion[key] = v + 1;
@@ -91,23 +75,29 @@ namespace ListaPreciosBC.Tests.Application.UseCases
 
                 _store[key] = aggregate;
                 _loadedVersion[key] = aggregate.Version;
-                _skuByProducto[aggregate.ProductoId] = key;
                 return Task.CompletedTask;
             }
 
-            public Task EliminarAsync(EmpresaId empresaId, Guid? sucursalId, Sku sku, int? expectedVersion = null, CancellationToken ct = default)
+            public Task EliminarAsync(EmpresaId empresaId, EstablecimientoId? establecimientoId, ProductoId productoId, int? expectedVersion = null, CancellationToken ct = default)
             {
-                // Dummy para cumplir interfaz
+                var key = Key(productoId);
+                if (_store.TryGetValue(key, out var agg) && expectedVersion.HasValue && agg.Version != expectedVersion.Value)
+                    throw new ConcurrencyException("Versión inesperada del agregado al eliminar.", key, expectedVersion.Value, agg.Version, null, null);
+                _store.Remove(key);
+                _loadedVersion.Remove(key);
                 return Task.CompletedTask;
             }
 
             // Helpers de prueba
-            public void Seed(PrecioProducto agg, string sku)
+            public void Seed(PrecioProducto agg)
             {
-                _store[sku] = agg;
-                _loadedVersion[sku] = agg.Version;
-                _skuByProducto[agg.ProductoId] = sku;
+                var key = Key(agg.ProductoId);
+                _store[key] = agg;
+                _loadedVersion[key] = agg.Version;
             }
+
+            public Task<PrecioProducto?> ObtenerPorProductoIdAsync(ProductoId productoId, CancellationToken ct = default)
+                => Task.FromResult(_store.TryGetValue(Key(productoId), out var agg) ? agg : null);
         }
 
         private sealed class InMemoryUow : IUnitOfWork
@@ -180,8 +170,9 @@ namespace ListaPreciosBC.Tests.Application.UseCases
             var tenant = new Mock<ITenantContext>();
             tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
         var catalogo = new Moq.Mock<ICatalogoReadModel>();
+        var productoId = ProductoId.New();
         catalogo.Setup(c => c.TryGetProductoIdBySkuAsync(It.IsAny<EmpresaId>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(ProductoId.New());
+            .ReturnsAsync(productoId);
         var sut = new UpsertPrecioFijoUseCase(precioRepo, listaRepo, uow, tenant.Object, catalogo.Object);
 
             var req = new UpsertPrecioFijoUseCase.Request(
@@ -205,7 +196,7 @@ namespace ListaPreciosBC.Tests.Application.UseCases
             Assert.That(res.Version, Is.GreaterThanOrEqualTo(0));
 
             // Assert de evento de dominio
-            var agg = await precioRepo.ObtenerPorSkuAsync(Sku.Crear("SKU-001"));
+            var agg = await precioRepo.ObtenerPorProductoIdAsync(productoId);
             Assert.That(agg, Is.Not.Null);
             Assert.That(agg!.DomainEvents.OfType<PrecioFijoActualizado>().Any(), Is.True);
 
@@ -324,14 +315,15 @@ namespace ListaPreciosBC.Tests.Application.UseCases
                 PeriodoVigencia.Crear(DateTimeOffset.UtcNow.AddDays(-10), null),
                 "seed", DateTimeOffset.UtcNow.AddDays(-10)
             );
-            precioRepo.Seed(existente, "SKU-001");
+            precioRepo.Seed(existente);
 
             var uow = new InMemoryUow();
             var tenant = new Mock<ITenantContext>();
             tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
         var catalogo = new Moq.Mock<ICatalogoReadModel>();
+        // Usamos el mismo ProductoId del agregado existente para simular concurrencia
         catalogo.Setup(c => c.TryGetProductoIdBySkuAsync(It.IsAny<EmpresaId>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(ProductoId.New());
+            .ReturnsAsync(existente.ProductoId);
         var sut = new UpsertPrecioFijoUseCase(precioRepo, listaRepo, uow, tenant.Object, catalogo.Object);
 
             var req = new UpsertPrecioFijoUseCase.Request(
@@ -366,9 +358,10 @@ namespace ListaPreciosBC.Tests.Application.UseCases
             tenant.SetupGet(t => t.EmpresaId).Returns(empresaTenant);
 
             var catalogo = new Moq.Mock<ICatalogoReadModel>();
+            var productoIdEst = ProductoId.New();
             catalogo
                 .Setup(c => c.TryGetProductoIdBySkuAsync(It.IsAny<EmpresaId>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(ProductoId.New());
+                .ReturnsAsync(productoIdEst);
 
             var sut = new UpsertPrecioFijoUseCase(precioRepo, listaRepo, uowMock.Object, tenant.Object, catalogo.Object);
 
@@ -391,7 +384,7 @@ namespace ListaPreciosBC.Tests.Application.UseCases
             uowMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
 
             // Assert eventos con tenant y establecimiento
-            var agg = await precioRepo.ObtenerPorSkuAsync(Sku.Crear("SKU-EST-001"));
+            var agg = await precioRepo.ObtenerPorProductoIdAsync(productoIdEst);
             Assert.That(agg, Is.Not.Null);
             var evtFijo = agg!.DomainEvents.OfType<PrecioFijoActualizado>().LastOrDefault();
             Assert.That(evtFijo, Is.Not.Null);

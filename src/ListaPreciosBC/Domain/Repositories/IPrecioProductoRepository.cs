@@ -1,7 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using ListaPreciosBC.Domain.Aggregates;
-using SharedKernel.ValueObjects; // Sku
+using SharedKernel.ValueObjects; // EmpresaId, ProductoId, EstablecimientoId
 using System;
 
 namespace ListaPreciosBC.Domain.Repositories
@@ -12,16 +12,16 @@ namespace ListaPreciosBC.Domain.Repositories
     /// </summary>
     public interface IPrecioProductoRepository
     {
-    /// <summary>Obtiene los precios de un SKU (o null si no existe).</summary>
-    Task<PrecioProducto?> ObtenerPorSkuAsync(EmpresaId empresaId, Guid? sucursalId, Sku sku, CancellationToken ct = default);
+    /// <summary>Obtiene los precios por ProductoId (o null si no existe).</summary>
+    Task<PrecioProducto?> ObtenerPorProductoIdAsync(EmpresaId empresaId, EstablecimientoId? establecimientoId, ProductoId productoId, CancellationToken ct = default);
 
         /// <summary>
         /// Guarda con concurrencia optimista (expectedVersion = 0 para altas).
         /// Debe lanzar si la versión actual difiere de la esperada.
         /// </summary>
-    Task GuardarAsync(PrecioProducto agregado, EmpresaId empresaId, Guid? sucursalId, int expectedVersion, CancellationToken ct = default);
+    Task GuardarAsync(PrecioProducto agregado, EmpresaId empresaId, EstablecimientoId? establecimientoId, int expectedVersion, CancellationToken ct = default);
 
-        /// <summary>Elimina los precios de un SKU (idempotente).</summary>
-        Task EliminarAsync(EmpresaId empresaId, Guid? sucursalId, Sku sku, int? expectedVersion = null, CancellationToken ct = default);
+        /// <summary>Elimina los precios por ProductoId (idempotente).</summary>
+        Task EliminarAsync(EmpresaId empresaId, EstablecimientoId? establecimientoId, ProductoId productoId, int? expectedVersion = null, CancellationToken ct = default);
     }
 }

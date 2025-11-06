@@ -47,9 +47,10 @@ namespace ListaPreciosBC.Tests.UnitTests.Application
             var tenant = new Mock<ITenantContext>();
             tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
             var catalogo = new Moq.Mock<ListaPreciosBC.Application.Interfaces.ICatalogoReadModel>();
+            var productoId = ProductoId.New();
             catalogo
                 .Setup(c => c.TryGetProductoIdBySkuAsync(It.IsAny<EmpresaId>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(ProductoId.New());
+                .ReturnsAsync(productoId);
             var uc          = new RegistrarPrecioBaseUseCase(listaRepo, precioRepo, uow, tenant.Object, catalogo.Object);
 
             var req = new RegistrarPrecioBaseUseCase.Request(
@@ -79,7 +80,7 @@ namespace ListaPreciosBC.Tests.UnitTests.Application
             Assert.That(res.Version, Is.EqualTo(1)); // nuevo agregado: primera mutación
 
             // Persistencia y evento con tenant
-            var stored = await precioRepo.ObtenerPorSkuAsync(Sku.Crear("CAP-001"), CancellationToken.None);
+            var stored = await precioRepo.ObtenerPorProductoIdAsync(productoId, CancellationToken.None);
             Assert.That(stored, Is.Not.Null);
             Assert.That(stored!.Version, Is.EqualTo(res.Version));
             var ev = stored!.DomainEvents.OfType<ListaPreciosBC.Domain.Events.PrecioFijoActualizado>().LastOrDefault();
@@ -104,7 +105,7 @@ namespace ListaPreciosBC.Tests.UnitTests.Application
             var sku = Sku.Crear("MOCH-123");
             var agregado = PrecioProducto.CrearNuevo(EmpresaId.From("EMP-01"), ProductoId.New()); // Version = 0
             var precioRepo = new PrecioProductoRepoInMemory();
-            precioRepo.Semilla(sku.Valor, agregado);
+            precioRepo.Semilla(agregado);
 
             var uow = new UnitOfWorkInMemory();
             var tenant = new Mock<ITenantContext>();
@@ -112,7 +113,7 @@ namespace ListaPreciosBC.Tests.UnitTests.Application
             var catalogo2 = new Moq.Mock<ListaPreciosBC.Application.Interfaces.ICatalogoReadModel>();
             catalogo2
                 .Setup(c => c.TryGetProductoIdBySkuAsync(It.IsAny<EmpresaId>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(ProductoId.New());
+                .ReturnsAsync(agregado.ProductoId);
             var uc  = new RegistrarPrecioBaseUseCase(listaRepo, precioRepo, uow, tenant.Object, catalogo2.Object);
 
             var req = new RegistrarPrecioBaseUseCase.Request(
@@ -184,7 +185,7 @@ namespace ListaPreciosBC.Tests.UnitTests.Application
             var sku = Sku.Crear("R-77");
             var agregado = PrecioProducto.CrearNuevo(EmpresaId.From("EMP-01"), ProductoId.New());
             var precioRepo = new PrecioProductoRepoInMemory { ForceConcurrencyConflictNextSave = true };
-            precioRepo.Semilla(sku.Valor, agregado);
+            precioRepo.Semilla(agregado);
 
             var uow = new UnitOfWorkInMemory();
             var tenant = new Mock<ITenantContext>();
@@ -192,7 +193,7 @@ namespace ListaPreciosBC.Tests.UnitTests.Application
             var catalogo4 = new Moq.Mock<ListaPreciosBC.Application.Interfaces.ICatalogoReadModel>();
             catalogo4
                 .Setup(c => c.TryGetProductoIdBySkuAsync(It.IsAny<EmpresaId>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(ProductoId.New());
+                .ReturnsAsync(agregado.ProductoId);
             var uc  = new RegistrarPrecioBaseUseCase(listaRepo, precioRepo, uow, tenant.Object, catalogo4.Object);
 
             var req = new RegistrarPrecioBaseUseCase.Request(
@@ -236,37 +237,32 @@ namespace ListaPreciosBC.Tests.UnitTests.Application
         {
             private readonly System.Collections.Generic.Dictionary<string, PrecioProducto> _store = new();
             private readonly System.Collections.Generic.Dictionary<string, int> _versions = new();
-            private readonly System.Collections.Generic.Dictionary<ProductoId, string> _skuByProducto = new();
-            private string? _lastLookupSku;
+            private string? _lastLookupProductoKey;
 
             public bool ForceConcurrencyConflictNextSave { get; set; }
             public int? LastExpectedVersion { get; private set; }
 
-            public void Semilla(string sku, PrecioProducto agregado)
+            public void Semilla(PrecioProducto agregado)
             {
-                _store[sku]    = agregado;
-                _versions[sku] = agregado.Version;
-                _skuByProducto[agregado.ProductoId] = sku;
+                var key = agregado.ProductoId.Value.ToString();
+                _store[key]    = agregado;
+                _versions[key] = agregado.Version;
             }
 
-            public Task<PrecioProducto?> ObtenerPorSkuAsync(EmpresaId empresaId, Guid? sucursalId, Sku sku, CancellationToken ct = default)
+            private static string Key(ProductoId productoId) => productoId.Value.ToString();
+
+            public Task<PrecioProducto?> ObtenerPorProductoIdAsync(EmpresaId empresaId, EstablecimientoId? establecimientoId, ProductoId productoId, CancellationToken ct = default)
             {
-                _lastLookupSku = sku.Valor;
-                _store.TryGetValue(_lastLookupSku, out var agg);
+                var key = Key(productoId);
+                _store.TryGetValue(key, out var agg);
+                _lastLookupProductoKey = key;
                 return Task.FromResult(agg);
             }
 
-            // Helper overload para asserts en tests
-            public Task<PrecioProducto?> ObtenerPorSkuAsync(Sku sku, CancellationToken ct = default)
-            {
-                _store.TryGetValue(sku.Valor, out var agg);
-                return Task.FromResult(agg);
-            }
-
-            public Task GuardarAsync(PrecioProducto aggregate, EmpresaId empresaId, Guid? sucursalId, int expectedVersion, CancellationToken ct = default)
+            public Task GuardarAsync(PrecioProducto aggregate, EmpresaId empresaId, EstablecimientoId? establecimientoId, int expectedVersion, CancellationToken ct = default)
             {
                 LastExpectedVersion = expectedVersion;
-                var key = (_skuByProducto.TryGetValue(aggregate.ProductoId, out var mapped) ? mapped : _lastLookupSku) ?? "UNKNOWN";
+                var key = _lastLookupProductoKey ?? Key(aggregate.ProductoId);
 
                 var exists = _store.ContainsKey(key);
 
@@ -284,7 +280,6 @@ namespace ListaPreciosBC.Tests.UnitTests.Application
 
                     _store[key]    = aggregate;
                     _versions[key] = aggregate.Version;
-                    _skuByProducto[aggregate.ProductoId] = key;
                     return Task.CompletedTask;
                 }
 
@@ -294,13 +289,12 @@ namespace ListaPreciosBC.Tests.UnitTests.Application
 
                 _store[key]    = aggregate;
                 _versions[key] = aggregate.Version;
-                _skuByProducto[aggregate.ProductoId] = key;
                 return Task.CompletedTask;
             }
 
-            public Task EliminarAsync(EmpresaId empresaId, Guid? sucursalId, Sku sku, int? expectedVersion = null, CancellationToken ct = default)
+            public Task EliminarAsync(EmpresaId empresaId, EstablecimientoId? establecimientoId, ProductoId productoId, int? expectedVersion = null, CancellationToken ct = default)
             {
-                var key = sku.Valor;
+                var key = Key(productoId);
                 if (_store.ContainsKey(key))
                 {
                     if (expectedVersion.HasValue && _versions[key] != expectedVersion.Value)
@@ -308,8 +302,14 @@ namespace ListaPreciosBC.Tests.UnitTests.Application
                     _store.Remove(key);
                     _versions.Remove(key);
                 }
-                // idempotente: si no existe, no hace nada
                 return Task.CompletedTask;
+            }
+
+            // Helper para asserts
+            public Task<PrecioProducto?> ObtenerPorProductoIdAsync(ProductoId productoId, CancellationToken ct = default)
+            {
+                _store.TryGetValue(Key(productoId), out var agg);
+                return Task.FromResult(agg);
             }
         }
 

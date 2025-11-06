@@ -135,13 +135,13 @@ namespace ListaPreciosBC.Application.UseCases
                 if (fila.Columnas is null || fila.Columnas.Count == 0)
                     continue;
 
-                    var skuVo = Sku.Crear(fila.Sku);
-                    var agregado = await _precioRepo.ObtenerPorSkuAsync(empresaId, null, skuVo, ct);
+                var skuVo = Sku.Crear(fila.Sku);
+                var productoId = await _catalogo.TryGetProductoIdBySkuAsync(empresaId, skuVo.Valor, ct)
+                                 ?? throw new NotFoundException("Producto", skuVo.Valor);
+                var agregado = await _precioRepo.ObtenerPorProductoIdAsync(empresaId, null, productoId, ct);
                 var esNuevo = agregado is null;
                 if (esNuevo)
                 {
-                    var productoId = await _catalogo.TryGetProductoIdBySkuAsync(empresaId, skuVo.Valor, ct)
-                                     ?? throw new NotFoundException("Producto", skuVo.Valor);
                     agregado = PrecioProducto.CrearNuevo(empresaId, productoId);
                 }
 

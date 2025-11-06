@@ -106,13 +106,14 @@ namespace ListaPreciosBC.Application.UseCases
             if (!columnaCfg.Modo.Equals(ModoValorizacionColumna.PorVolumen))
                 throw new BusinessRuleException($"La columna #{req.ColumnaNumero} no es de modo POR VOLUMEN; operación no permitida.");
 
-            // 3) Recuperar/crear agregado PrecioProducto
+            // 3) Resolver ProductoId y recuperar/crear agregado PrecioProducto
             var sku = Sku.Crear(req.Sku);
-            var agregado = await _precioRepo.ObtenerPorSkuAsync(empresaId, req.SucursalId, sku, ct);
+            var productoId = await _catalogo.TryGetProductoIdBySkuAsync(empresaId, sku.Valor, ct)
+                             ?? throw new NotFoundException("Producto", sku.Valor);
+            SharedKernel.ValueObjects.EstablecimientoId? estId = req.SucursalId.HasValue ? SharedKernel.ValueObjects.EstablecimientoId.From(req.SucursalId.Value) : null;
+            var agregado = await _precioRepo.ObtenerPorProductoIdAsync(empresaId, estId, productoId, ct);
             if (agregado is null)
             {
-                var productoId = await _catalogo.TryGetProductoIdBySkuAsync(empresaId, sku.Valor, ct)
-                                 ?? throw new NotFoundException("Producto", sku.Valor);
                 agregado = PrecioProducto.CrearNuevo(empresaId, productoId, req.SucursalId);
             }
 
@@ -133,7 +134,7 @@ namespace ListaPreciosBC.Application.UseCases
             agregado.UpsertMatrizVolumen(colId, matriz, req.Usuario, cuando, req.CantidadReferenciaParaEventoBase);
 
             // 6) Persistencia + UoW
-            await _precioRepo.GuardarAsync(agregado, empresaId, req.SucursalId, expectedVersion, ct);
+            await _precioRepo.GuardarAsync(agregado, empresaId, estId, expectedVersion, ct);
             await _uow.SaveChangesAsync(ct);
 
             // 7) Respuesta

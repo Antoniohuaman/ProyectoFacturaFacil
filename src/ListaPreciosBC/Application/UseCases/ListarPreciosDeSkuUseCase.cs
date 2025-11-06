@@ -8,6 +8,7 @@ using ListaPreciosBC.Domain.ValueObjects;    // IdentificadorColumnaPrecio
 using SharedKernel.ValueObjects;             // Sku
 using SharedKernel.Exceptions;               // NotFoundException
 using SharedKernel.Application.Interfaces;   // ITenantContext
+using ListaPreciosBC.Application.Interfaces; // ICatalogoReadModel
 
 namespace ListaPreciosBC.Application.UseCases
 {
@@ -46,15 +47,32 @@ namespace ListaPreciosBC.Application.UseCases
     private readonly IListaPrecioRepository _listaRepo;
     private readonly IPrecioProductoRepository _precioRepo;
     private readonly ITenantContext _tenant;
+    private readonly ICatalogoReadModel _catalogo;
 
         public ListarPreciosDeSkuUseCase(
             IListaPrecioRepository listaRepo,
             IPrecioProductoRepository precioRepo,
-            ITenantContext tenant)
+            ITenantContext tenant,
+            ICatalogoReadModel catalogo)
         {
             _listaRepo = listaRepo ?? throw new ArgumentNullException(nameof(listaRepo));
             _precioRepo = precioRepo ?? throw new ArgumentNullException(nameof(precioRepo));
             _tenant = tenant ?? throw new ArgumentNullException(nameof(tenant));
+            _catalogo = catalogo ?? throw new ArgumentNullException(nameof(catalogo));
+        }
+
+        // Backward-compatible overload for tests without catalog
+        public ListarPreciosDeSkuUseCase(
+            IListaPrecioRepository listaRepo,
+            IPrecioProductoRepository precioRepo,
+            ITenantContext tenant)
+            : this(listaRepo, precioRepo, tenant, new NullCatalogoReadModel())
+        { }
+
+        private sealed class NullCatalogoReadModel : ICatalogoReadModel
+        {
+            public Task<SharedKernel.ValueObjects.ProductoId?> TryGetProductoIdBySkuAsync(SharedKernel.ValueObjects.EmpresaId empresaId, string sku, CancellationToken ct = default)
+                => Task.FromResult<SharedKernel.ValueObjects.ProductoId?>(null);
         }
 
         public async Task<Response> Handle(Request req, CancellationToken ct)
@@ -68,9 +86,11 @@ namespace ListaPreciosBC.Application.UseCases
             if (lista is null)
                 throw new NotFoundException("No existe lista de precios activa.");
 
-            // 2) SKU -> agregado PrecioProducto
+            // 2) Resolver ProductoId y obtener agregado
             var sku = Sku.Crear(req.Sku);
-            var agregado = await _precioRepo.ObtenerPorSkuAsync(empresaId, null, sku, ct);
+            var productoId = await _catalogo.TryGetProductoIdBySkuAsync(empresaId, sku.Valor, ct)
+                             ?? throw new NotFoundException("Producto", sku.Valor);
+            var agregado = await _precioRepo.ObtenerPorProductoIdAsync(empresaId, null, productoId, ct);
             if (agregado is null)
                 throw new NotFoundException($"No existe PrecioProducto para el SKU {req.Sku}.");
 
