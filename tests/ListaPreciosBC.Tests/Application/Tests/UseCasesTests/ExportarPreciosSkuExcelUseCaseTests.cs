@@ -41,10 +41,10 @@ namespace ListaPreciosBC.Tests.Application.UseCases
             private readonly Dictionary<string, PrecioProducto> _store = new();
             private string? _lastLookupSku;
 
-            public Task<PrecioProducto?> ObtenerPorSkuAsync(EmpresaId empresaId, Guid? sucursalId, Sku sku, CancellationToken ct = default)
+          public Task<PrecioProducto?> ObtenerPorSkuAsync(EmpresaId empresaId, Guid? sucursalId, Sku sku, CancellationToken ct = default)
             {
-                _lastLookupSku = sku.Valor;
-                _store.TryGetValue(sku.Valor, out var agg);
+              _lastLookupSku = sku.Valor;
+              _store.TryGetValue(sku.Valor, out var agg);
                 return Task.FromResult<PrecioProducto?>(agg);
             }
 

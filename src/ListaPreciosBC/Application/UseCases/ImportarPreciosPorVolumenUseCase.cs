@@ -135,8 +135,8 @@ namespace ListaPreciosBC.Application.UseCases
                 if (fila.Columnas is null || fila.Columnas.Count == 0)
                     continue;
 
-                var skuVo = Sku.Crear(fila.Sku);
-                var agregado = await _precioRepo.ObtenerPorSkuAsync(empresaId, null, skuVo, ct);
+                    var skuVo = Sku.Crear(fila.Sku);
+                    var agregado = await _precioRepo.ObtenerPorSkuAsync(empresaId, null, skuVo, ct);
                 var esNuevo = agregado is null;
                 if (esNuevo)
                 {

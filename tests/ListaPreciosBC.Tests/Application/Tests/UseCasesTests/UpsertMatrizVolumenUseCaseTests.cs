@@ -384,6 +384,57 @@ namespace ListaPreciosBC.Tests.Application.UseCases
                         Throws.TypeOf<BusinessRuleException>());
         }
 
-        
+        [Test]
+        public async Task UpsertMatrizVolumen_EmiteEventosConTenantYEstablecimiento_CuandoSeIndicaSucursal()
+        {
+            // Arrange
+            var sucursalId = Guid.NewGuid();
+            var listaRepo = new InMemoryListaPrecioRepository
+            {
+                ListaActiva = CrearListaActivaConBaseYColumnaVolumen(numeroVolumen: 2)
+            };
+
+            var precioRepo = new InMemoryPrecioProductoRepository();
+            var uowMock = new Moq.Mock<IUnitOfWork>();
+            uowMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+
+            var tenant = new Moq.Mock<ITenantContext>();
+            var empresaTenant = EmpresaId.From("EMP-TNT");
+            tenant.SetupGet(t => t.EmpresaId).Returns(empresaTenant);
+
+            var catalogo = new Moq.Mock<ListaPreciosBC.Application.Interfaces.ICatalogoReadModel>();
+            catalogo
+                .Setup(c => c.TryGetProductoIdBySkuAsync(It.IsAny<EmpresaId>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ProductoId.New());
+
+            var sut = new UpsertMatrizVolumenUseCase(precioRepo, listaRepo, uowMock.Object, tenant.Object, catalogo.Object);
+
+            var req = new UpsertMatrizVolumenUseCase.Request(
+                Sku: "SKU-EST-002",
+                ColumnaNumero: 2,
+                Tramos: new List<UpsertMatrizVolumenUseCase.Tramo>
+                {
+                    new(1, 10, 10m, true)
+                },
+                CantidadReferenciaParaEventoBase: 1,
+                Usuario: "tester",
+                Cuando: DateTimeOffset.UtcNow,
+                SucursalId: sucursalId
+            );
+
+            // Act
+            var res = await sut.Handle(req, CancellationToken.None);
+
+            // Assert commit 1 vez
+            uowMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+
+            // Assert eventos con tenant y establecimiento
+            var post = await precioRepo.ObtenerPorSkuAsync(Sku.Crear("SKU-EST-002"));
+            Assert.That(post, Is.Not.Null);
+            var ev = post!.DomainEvents.OfType<ListaPreciosBC.Domain.Events.MatrizVolumenActualizada>().LastOrDefault();
+            Assert.That(ev, Is.Not.Null);
+            Assert.That(ev!.EmpresaId, Is.EqualTo(empresaTenant));
+            Assert.That(ev!.EstablecimientoId, Is.EqualTo(sucursalId));
+        }
     }
 }

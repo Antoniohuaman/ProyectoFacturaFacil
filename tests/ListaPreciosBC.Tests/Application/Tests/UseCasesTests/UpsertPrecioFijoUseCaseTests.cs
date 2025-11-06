@@ -347,5 +347,56 @@ namespace ListaPreciosBC.Tests.Application.UseCases
             // Act + Assert
             Assert.ThrowsAsync<ConcurrencyException>(() => sut.Handle(req, CancellationToken.None));
         }
+
+        [Test]
+        public async Task UpsertPrecioFijo_EmiteEventosConTenantYEstablecimiento_CuandoSeIndicaSucursal()
+        {
+            // Arrange
+            var sucursalId = Guid.NewGuid();
+            var listaRepo = new InMemoryListaPrecioRepository
+            {
+                ListaActiva = CrearListaActivaConColumnaFija(numero: 1, esBase: true)
+            };
+
+            var precioRepo = new InMemoryPrecioProductoRepository();
+            var uowMock = new Moq.Mock<IUnitOfWork>();
+            uowMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+            var tenant = new Moq.Mock<ITenantContext>();
+            var empresaTenant = EmpresaId.From("EMP-TNT");
+            tenant.SetupGet(t => t.EmpresaId).Returns(empresaTenant);
+
+            var catalogo = new Moq.Mock<ICatalogoReadModel>();
+            catalogo
+                .Setup(c => c.TryGetProductoIdBySkuAsync(It.IsAny<EmpresaId>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ProductoId.New());
+
+            var sut = new UpsertPrecioFijoUseCase(precioRepo, listaRepo, uowMock.Object, tenant.Object, catalogo.Object);
+
+            var req = new UpsertPrecioFijoUseCase.Request(
+                Sku: "SKU-EST-001",
+                ColumnaNumero: 1,
+                Monto: 25.00m,
+                IncluyeImpuesto: true,
+                VigenciaDesde: DateTimeOffset.UtcNow.Date,
+                VigenciaHasta: null,
+                Usuario: "tester",
+                Cuando: DateTimeOffset.UtcNow,
+                SucursalId: sucursalId
+            );
+
+            // Act
+            var res = await sut.Handle(req, CancellationToken.None);
+
+            // Assert: commit 1 vez
+            uowMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+
+            // Assert eventos con tenant y establecimiento
+            var agg = await precioRepo.ObtenerPorSkuAsync(Sku.Crear("SKU-EST-001"));
+            Assert.That(agg, Is.Not.Null);
+            var evtFijo = agg!.DomainEvents.OfType<PrecioFijoActualizado>().LastOrDefault();
+            Assert.That(evtFijo, Is.Not.Null);
+            Assert.That(evtFijo!.EmpresaId, Is.EqualTo(empresaTenant));
+            Assert.That(evtFijo!.EstablecimientoId, Is.EqualTo(sucursalId));
+        }
     }
 }

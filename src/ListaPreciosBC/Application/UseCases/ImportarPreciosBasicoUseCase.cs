@@ -123,8 +123,8 @@ namespace ListaPreciosBC.Application.UseCases
             {
                 ct.ThrowIfCancellationRequested();
 
-                var skuVo = Sku.Crear(grupo.Key);
-                var agregado = await _precioRepo.ObtenerPorSkuAsync(empresaId, null, skuVo, ct);
+                    var skuVo = Sku.Crear(grupo.Key);
+                    var agregado = await _precioRepo.ObtenerPorSkuAsync(empresaId, null, skuVo, ct);
                 var nuevo = agregado is null;
 
                 if (nuevo)

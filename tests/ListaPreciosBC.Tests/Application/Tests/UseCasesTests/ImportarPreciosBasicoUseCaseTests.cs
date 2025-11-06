@@ -46,7 +46,7 @@ namespace ListaPreciosBC.Tests.Application.UseCases
 
             public Task<PrecioProducto?> ObtenerPorSkuAsync(EmpresaId empresaId, Guid? sucursalId, Sku sku, CancellationToken ct = default)
             {
-                _lastLookupSku = sku.Valor;
+                _lastLookupSku = sku;
                 if (_store.TryGetValue(sku.Valor, out var agg))
                 {
                     _loadedVersion[sku.Valor] = agg.Version;
