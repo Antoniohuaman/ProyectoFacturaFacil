@@ -533,7 +533,7 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
             UltimoCdrDescripcion = null;
 
             // Emit domain event (enviado)
-            _domainEvents.Add(new ComprobanteEnviadoDomainEvent(ComprobanteId, EnviadoEnUtc.Value.UtcDateTime));
+            _domainEvents.Add(new ComprobanteEnviadoDomainEvent(EmpresaId, EstablecimientoId, ComprobanteId, EnviadoEnUtc.Value.UtcDateTime));
         }
 
         /// <summary>Pasa de Enviado → Corregir (error recuperable).</summary>
@@ -546,7 +546,7 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
             Estado = EstadoComprobante.Corregir;
 
             // Evento: Observado (corrección requerida)
-            _domainEvents.Add(new ComprobanteObservadoDomainEvent(ComprobanteId, UltimoErrorTecnico, DateTimeOffset.UtcNow.UtcDateTime));
+            _domainEvents.Add(new ComprobanteObservadoDomainEvent(EmpresaId, EstablecimientoId, ComprobanteId, UltimoErrorTecnico, DateTimeOffset.UtcNow.UtcDateTime));
         }
 
         /// <summary>Pasa de Enviado → Aceptado.</summary>
@@ -558,6 +558,8 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
 
             // Evento: Aceptado (se respeta namespace/nombre que ya usas)
             _domainEvents.Add(new ComprobanteAceptadoDomainEvent(
+                EmpresaId,
+                EstablecimientoId,
                 ComprobanteId,
                 AceptadoEnUtc.Value.UtcDateTime,
                 UltimoCdrDescripcion));
@@ -571,6 +573,8 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
             AceptadoEnUtc = aceptadoEnUtc;
 
             _domainEvents.Add(new ComprobanteAceptadoDomainEvent(
+                EmpresaId,
+                EstablecimientoId,
                 ComprobanteId,
                 AceptadoEnUtc.Value.UtcDateTime,
                 UltimoCdrDescripcion));
@@ -587,6 +591,8 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
             Estado = EstadoComprobante.Rechazado;
 
             _domainEvents.Add(new ComprobanteRechazadoDomainEvent(
+                EmpresaId,
+                EstablecimientoId,
                 ComprobanteId,
                 UltimoCdrCodigo ?? string.Empty,
                 UltimoCdrDescripcion ?? string.Empty,
@@ -603,6 +609,8 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
             AnuladoEnUtc = cdrBajaEnUtc;
 
             _domainEvents.Add(new ComprobanteAnuladoDomainEvent(
+                EmpresaId,
+                EstablecimientoId,
                 ComprobanteId,
                 AnuladoEnUtc.Value.UtcDateTime));
         }

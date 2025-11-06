@@ -1,5 +1,6 @@
 using System;
 using SharedKernel.Events;
+using SharedKernel.ValueObjects;
 
 namespace ComprobantesElectronicosBC.Domain.Events
 {
@@ -7,6 +8,8 @@ namespace ComprobantesElectronicosBC.Domain.Events
 	/// Evento: El comprobante fue rechazado por SUNAT.
 	/// </summary>
 	public sealed record ComprobanteRechazadoDomainEvent(
+		EmpresaId EmpresaId,
+		EstablecimientoId EstablecimientoId,
 		Guid ComprobanteId,
 		string CodigoCdr,
 		string Descripcion,

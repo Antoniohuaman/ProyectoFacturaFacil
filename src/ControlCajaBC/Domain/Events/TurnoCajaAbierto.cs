@@ -2,6 +2,7 @@ using System;
 using ControlCajaBC.Domain.ValueObjects;
 using ControlCajaBC.Domain.Entities;
 using SharedKernel.ValueObjects;
+using SharedKernel.Events;
 
 
 namespace ControlCajaBC.Domain.Events

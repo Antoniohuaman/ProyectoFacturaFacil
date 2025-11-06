@@ -4,6 +4,7 @@ using System;
 using ControlCajaBC.Domain.Entities;
 using ControlCajaBC.Domain.ValueObjects;
 using SharedKernel.ValueObjects;
+using SharedKernel.Events;
 namespace ControlCajaBC.Domain.Events
 {
     /// <summary>
