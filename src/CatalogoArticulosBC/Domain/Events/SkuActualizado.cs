@@ -1,5 +1,6 @@
 using SharedKernel.Events;
 using SharedKernel.ValueObjects;
+using CatalogoArticulosBC.Domain.ValueObjects;
 using System;
 
 namespace CatalogoArticulosBC.Domain.Events

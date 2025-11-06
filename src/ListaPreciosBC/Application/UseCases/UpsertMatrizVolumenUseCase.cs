@@ -106,10 +106,11 @@ namespace ListaPreciosBC.Application.UseCases
             if (!columnaCfg.Modo.Equals(ModoValorizacionColumna.PorVolumen))
                 throw new BusinessRuleException($"La columna #{req.ColumnaNumero} no es de modo POR VOLUMEN; operación no permitida.");
 
-            // 3) Resolver ProductoId y recuperar/crear agregado PrecioProducto
-            var sku = Sku.Crear(req.Sku);
-            var productoId = await _catalogo.TryGetProductoIdBySkuAsync(empresaId, sku.Valor, ct)
-                             ?? throw new NotFoundException("Producto", sku.Valor);
+            // 3) Resolver ProductoId y recuperar/crear agregado PrecioProducto (SKU como string)
+            var sku = (req.Sku ?? string.Empty).Trim();
+            if (string.IsNullOrWhiteSpace(sku)) throw new ArgumentException("El SKU no puede estar vacío.", nameof(req.Sku));
+            var productoId = await _catalogo.TryGetProductoIdBySkuAsync(empresaId, sku, ct)
+                             ?? throw new NotFoundException("Producto", sku);
             SharedKernel.ValueObjects.EstablecimientoId? estId = req.SucursalId.HasValue ? SharedKernel.ValueObjects.EstablecimientoId.From(req.SucursalId.Value) : null;
             var agregado = await _precioRepo.ObtenerPorProductoIdAsync(empresaId, estId, productoId, ct);
             if (agregado is null)
@@ -139,7 +140,7 @@ namespace ListaPreciosBC.Application.UseCases
 
             // 7) Respuesta
             return new Response(
-                Sku: sku.Valor,
+                Sku: sku,
                 ColumnaNumero: req.ColumnaNumero,
                 TramosActualizados: req.Tramos.Count,
                 Version: agregado.Version

@@ -1,4 +1,4 @@
-using SharedKernel.ValueObjects;
+using CatalogoArticulosBC.Domain.ValueObjects;
 
 namespace CatalogoArticulosBC.Domain.Services
 {

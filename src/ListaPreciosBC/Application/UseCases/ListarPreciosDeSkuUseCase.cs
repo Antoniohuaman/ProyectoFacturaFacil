@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using ListaPreciosBC.Domain.Repositories;    // IListaPrecioRepository, IPrecioProductoRepository
 using ListaPreciosBC.Domain.Aggregates;      // ListaPrecio, PrecioProducto
 using ListaPreciosBC.Domain.ValueObjects;    // IdentificadorColumnaPrecio
-using SharedKernel.ValueObjects;             // Sku
 using SharedKernel.Exceptions;               // NotFoundException
 using SharedKernel.Application.Interfaces;   // ITenantContext
 using ListaPreciosBC.Application.Interfaces; // ICatalogoReadModel
@@ -86,10 +85,11 @@ namespace ListaPreciosBC.Application.UseCases
             if (lista is null)
                 throw new NotFoundException("No existe lista de precios activa.");
 
-            // 2) Resolver ProductoId y obtener agregado
-            var sku = Sku.Crear(req.Sku);
-            var productoId = await _catalogo.TryGetProductoIdBySkuAsync(empresaId, sku.Valor, ct)
-                             ?? throw new NotFoundException("Producto", sku.Valor);
+            // 2) Resolver ProductoId y obtener agregado (SKU como string normalizado)
+            var sku = (req.Sku ?? string.Empty).Trim();
+            if (string.IsNullOrWhiteSpace(sku)) throw new ArgumentException("El SKU no puede estar vacío.", nameof(req.Sku));
+            var productoId = await _catalogo.TryGetProductoIdBySkuAsync(empresaId, sku, ct)
+                             ?? throw new NotFoundException("Producto", sku);
             var agregado = await _precioRepo.ObtenerPorProductoIdAsync(empresaId, null, productoId, ct);
             if (agregado is null)
                 throw new NotFoundException($"No existe PrecioProducto para el SKU {req.Sku}.");
@@ -135,7 +135,7 @@ namespace ListaPreciosBC.Application.UseCases
 
             // 5) Respuesta
             return new Response(
-                Sku: sku.Valor,
+                Sku: sku,
                 FechaConsulta: fecha,
                 Cantidad: req.Cantidad,
                 PreciosPorColumna: items,

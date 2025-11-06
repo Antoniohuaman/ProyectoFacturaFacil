@@ -2,7 +2,7 @@
 using System;
 using System.Text.RegularExpressions;
 
-namespace Dominio.CatalogoArticulosBC.ValueObjects
+namespace CatalogoArticulosBC.Domain.ValueObjects
 {
     /// <summary>
     /// SKU (Stock Keeping Unit) según la práctica de SUNAT en UBL 2.1:
@@ -12,8 +12,7 @@ namespace Dominio.CatalogoArticulosBC.ValueObjects
     ///   (Ejemplo en guías: "Cap-258963"). Se normaliza en mayúsculas y sin espacios extremos.
     /// - NO es el "Código de producto SUNAT" (UNSPSC n..8, catálogo 25).
     /// </summary>
-    [Obsolete("SKU no es identidad; usar ProductoId. SKU vive en Catálogo y en Application/ReadModel.")]
-    public sealed class Sku : IEquatable<Sku>
+    public sealed record Sku : IEquatable<Sku>
     {
         /// <summary>Tamaño máximo normativo para SellersItemIdentification/cbc:ID.</summary>
         public const int MaxLength = 30;
@@ -24,9 +23,9 @@ namespace Dominio.CatalogoArticulosBC.ValueObjects
             new(@"^[A-Z0-9][A-Z0-9 \-\/\.]{0,29}$", RegexOptions.Compiled);
 
         /// <summary>Valor normalizado (Trim → UpperInvariant → compactar espacios).</summary>
-    public string Valor { get; }
+        public string Valor { get; }
 
-    private Sku(string valor) => Valor = valor;
+        private Sku(string valor) => Valor = valor;
 
         /// <summary>Crea un SKU validando la norma SUNAT (lanza excepción si es inválido).</summary>
         public static Sku Crear(string? valor)
@@ -75,21 +74,8 @@ namespace Dominio.CatalogoArticulosBC.ValueObjects
             return t;
         }
 
-        // ------------------- Igualdad / utilidades -------------------
-
-        public override bool Equals(object? obj) => obj is Sku other && Equals(other);
-
-        public bool Equals(Sku? other) =>
-            other is not null &&
-            string.Equals(Valor, other.Valor, StringComparison.Ordinal);
-
-        public override int GetHashCode() =>
-            StringComparer.Ordinal.GetHashCode(Valor);
-
         public override string ToString() => Valor;
 
-    public static implicit operator string(Sku sku) => sku.Valor;
+        public static implicit operator string(Sku sku) => sku.Valor;
     }
 }
-
-// TODO: Eliminar esta clase cuando no existan referencias fuera de CatalogoArticulosBC ni de Application/ReadModel.

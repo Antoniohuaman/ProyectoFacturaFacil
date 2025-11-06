@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using CatalogoArticulosBC.Domain.Repositories;
+using CatalogoArticulosBC.Domain.ValueObjects;
 using SharedKernel.Application.Interfaces;
 using SharedKernel.Exceptions;
 using SharedKernel.ValueObjects;

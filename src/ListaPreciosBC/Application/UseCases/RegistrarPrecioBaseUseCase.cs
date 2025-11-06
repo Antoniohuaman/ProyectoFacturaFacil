@@ -6,7 +6,7 @@ using ListaPreciosBC.Domain.Aggregates;
 using ListaPreciosBC.Domain.Repositories;
 using ListaPreciosBC.Domain.ValueObjects;
 using SharedKernel.Exceptions;
-using SharedKernel.ValueObjects; // Sku, Moneda
+using SharedKernel.ValueObjects; // Moneda
 using SharedKernel.Application.Interfaces;   // ITenantContext
 using ListaPreciosBC.Application.Interfaces; // ICatalogoReadModel
 
@@ -71,7 +71,7 @@ namespace ListaPreciosBC.Application.UseCases
         );
 
         public sealed record Response(
-            SharedKernel.ValueObjects.Sku Sku,
+            string Sku,
             byte ColumnaBaseNumero,
             ValorPrecio Valor,
             PeriodoVigencia Vigencia,
@@ -94,9 +94,10 @@ namespace ListaPreciosBC.Application.UseCases
             var idBase = listaActiva.Plantilla.IdColumnaBase; // evita fallback P1 hardcodeado
 
             // 2) Cargar o crear el agregado PrecioProducto por ProductoId
-            var sku = SharedKernel.ValueObjects.Sku.Crear(req.Sku);
-            var productoId = await _catalogo.TryGetProductoIdBySkuAsync(empresaId, sku.Valor, ct)
-                             ?? throw new NotFoundException("Producto", sku.Valor);
+            var sku = (req.Sku ?? string.Empty).Trim();
+            if (string.IsNullOrWhiteSpace(sku)) throw new ArgumentException("El SKU no puede estar vacío.", nameof(req.Sku));
+            var productoId = await _catalogo.TryGetProductoIdBySkuAsync(empresaId, sku, ct)
+                             ?? throw new NotFoundException("Producto", sku);
             SharedKernel.ValueObjects.EstablecimientoId? estId = req.SucursalId.HasValue ? SharedKernel.ValueObjects.EstablecimientoId.From(req.SucursalId.Value) : null;
             var agregado = await _precioRepo.ObtenerPorProductoIdAsync(empresaId, estId, productoId, ct);
             if (agregado is null)

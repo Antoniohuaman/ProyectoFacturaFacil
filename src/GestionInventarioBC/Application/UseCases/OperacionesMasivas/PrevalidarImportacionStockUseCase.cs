@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using SharedKernel.ValueObjects;
+ 
 
 namespace GestionInventarioBC.Application.UseCases.OperacionesMasivas
 {
@@ -24,17 +24,18 @@ namespace GestionInventarioBC.Application.UseCases.OperacionesMasivas
 			for (var i = 0; i < req.Lineas.Count; i++)
 			{
 				var l = req.Lineas[i];
-				// Validar SKU
-				if (!Sku.TryCrear(l.Sku, out var sku, out var errorSku))
+				// Validar SKU con reglas básicas (alineado a UBL an..30, inicia alfanumérico; permite A-Z 0-9 espacio - /. .)
+				var sku = l.Sku?.Trim() ?? string.Empty;
+				if (!EsSkuValido(sku))
 				{
-					errores.Add(new Error(i, l.Sku ?? string.Empty, errorSku ?? "SKU inválido"));
+					errores.Add(new Error(i, l.Sku ?? string.Empty, "SKU inválido"));
 					continue;
 				}
 
 				// Validar cantidad
 				if (l.Cantidad < 0m)
 				{
-					errores.Add(new Error(i, sku!.Valor, "La cantidad no puede ser negativa."));
+					errores.Add(new Error(i, sku, "La cantidad no puede ser negativa."));
 					continue;
 				}
 			}
@@ -44,6 +45,22 @@ namespace GestionInventarioBC.Application.UseCases.OperacionesMasivas
 				ConErrores: errores.Count,
 				Errores: errores
 			));
+		}
+
+		private static bool EsSkuValido(string sku)
+		{
+			if (string.IsNullOrWhiteSpace(sku)) return false;
+			var n = sku.Trim().ToUpperInvariant();
+			if (n.Length < 1 || n.Length > 30) return false;
+			if (!char.IsLetterOrDigit(n[0])) return false;
+			for (int i = 0; i < n.Length; i++)
+			{
+				char c = n[i];
+				if (char.IsLetterOrDigit(c)) continue;
+				if (c == ' ' || c == '-' || c == '/' || c == '.') continue;
+				return false;
+			}
+			return true;
 		}
 	}
 }

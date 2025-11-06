@@ -71,7 +71,7 @@ namespace ListaPreciosBC.Tests.UnitTests.Application
             var res = await uc.ExecuteAsync(req, CancellationToken.None);
 
             // Assert respuesta
-            Assert.That(res.Sku.Valor, Is.EqualTo("CAP-001"));
+            Assert.That(res.Sku, Is.EqualTo("CAP-001"));
             Assert.That(res.ColumnaBaseNumero, Is.EqualTo((byte)1)); // P1 por plantilla por defecto
             Assert.That(res.Valor.Importe.Monto, Is.EqualTo(10.50m));
             Assert.That(res.Valor.Importe.Moneda, Is.EqualTo(Moneda.PEN()));
@@ -102,7 +102,7 @@ namespace ListaPreciosBC.Tests.UnitTests.Application
             var listaRepo   = new ListaPrecioRepoInMemory();
             listaRepo.SemillaActiva(listaActiva);
 
-            var sku = Sku.Crear("MOCH-123");
+            var sku = "MOCH-123";
             var agregado = PrecioProducto.CrearNuevo(EmpresaId.From("EMP-01"), ProductoId.New()); // Version = 0
             var precioRepo = new PrecioProductoRepoInMemory();
             precioRepo.Semilla(agregado);
@@ -119,7 +119,7 @@ namespace ListaPreciosBC.Tests.UnitTests.Application
             var req = new RegistrarPrecioBaseUseCase.Request(
                 EmpresaId: Guid.NewGuid(),
                 SucursalId: Guid.NewGuid(),
-                Sku: sku.Valor,
+                Sku: sku,
                 Monto: 99.99m,
                 Moneda: Moneda.PEN(),
                 IncluyeImpuesto: false,
@@ -182,7 +182,7 @@ namespace ListaPreciosBC.Tests.UnitTests.Application
             var listaRepo   = new ListaPrecioRepoInMemory();
             listaRepo.SemillaActiva(listaActiva);
 
-            var sku = Sku.Crear("R-77");
+            var sku = "R-77";
             var agregado = PrecioProducto.CrearNuevo(EmpresaId.From("EMP-01"), ProductoId.New());
             var precioRepo = new PrecioProductoRepoInMemory { ForceConcurrencyConflictNextSave = true };
             precioRepo.Semilla(agregado);
@@ -199,7 +199,7 @@ namespace ListaPreciosBC.Tests.UnitTests.Application
             var req = new RegistrarPrecioBaseUseCase.Request(
                 EmpresaId: Guid.NewGuid(),
                 SucursalId: Guid.NewGuid(),
-                Sku: sku.Valor,
+                Sku: sku,
                 Monto: 15m,
                 Moneda: Moneda.PEN(),
                 IncluyeImpuesto: true,

@@ -221,7 +221,7 @@ namespace ComprobantesElectronicosBC.Application.UseCases
                 if (i.Cantidad <= 0m) throw new BusinessRuleException($"Cantidad inválida para SKU '{i.Sku}'.");
                 if (i.PrecioUnitario < 0m) throw new BusinessRuleException($"Precio unitario inválido para SKU '{i.Sku}'.");
 
-                var sku = Sku.Crear(i.Sku);
+                var sku = (i.Sku ?? string.Empty).Trim();
                 var uom = UnidadDeMedida.From(i.UnidadMedidaCodigo);
                 var afect = AfectacionImpuesto.From(i.AfectacionCodigo);
 
@@ -233,7 +233,7 @@ namespace ComprobantesElectronicosBC.Application.UseCases
 
                 list.Add(new LineaCalculada(
                     sku: sku,
-                    descripcion: i.Descripcion?.Trim() ?? sku.Valor,
+                    descripcion: i.Descripcion?.Trim() ?? sku,
                     unidadMedida: uom,
                     cantidad: i.Cantidad,
                     precioUnitario: pu,
@@ -282,7 +282,7 @@ namespace ComprobantesElectronicosBC.Application.UseCases
 
         /// <summary>Representa una línea lista para el cálculo/persistencia.</summary>
         public sealed record LineaCalculada(
-            Sku sku,
+            string sku,
             string descripcion,
             UnidadDeMedida unidadMedida,
             decimal cantidad,
@@ -290,7 +290,7 @@ namespace ComprobantesElectronicosBC.Application.UseCases
             Dinero BaseLinea,
             AfectacionImpuesto Afectacion)
         {
-            public Sku Sku => sku;
+            public string Sku => sku;
             public string Descripcion => descripcion;
             public UnidadDeMedida UnidadDeMedida => unidadMedida;
             public decimal Cantidad => cantidad;

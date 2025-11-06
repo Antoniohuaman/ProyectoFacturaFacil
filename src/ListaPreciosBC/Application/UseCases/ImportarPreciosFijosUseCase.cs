@@ -8,7 +8,7 @@ using ListaPreciosBC.Domain.Repositories;    // IListaPrecioRepository, IPrecioP
 using ListaPreciosBC.Domain.Aggregates;      // ListaPrecio, PrecioProducto
 using ListaPreciosBC.Domain.ValueObjects;    // IdentificadorColumnaPrecio, ModoValorizacionColumna, ValorPrecio, PeriodoVigencia
 using SharedKernel.Exceptions;               // NotFoundException, BusinessRuleException, ConcurrencyException
-using SharedKernel.ValueObjects;             // Moneda, Sku
+using SharedKernel.ValueObjects;             // Moneda
 using SharedKernel.Application.Interfaces;   // ITenantContext
 
 namespace ListaPreciosBC.Application.UseCases
@@ -131,9 +131,10 @@ namespace ListaPreciosBC.Application.UseCases
                 if (fila.Items is null || fila.Items.Count == 0)
                     continue;
 
-                var skuVo = Sku.Crear(fila.Sku);
-                var productoId = await _catalogo.TryGetProductoIdBySkuAsync(empresaId, skuVo.Valor, ct)
-                                 ?? throw new NotFoundException("Producto", skuVo.Valor);
+                var sku = (fila.Sku ?? string.Empty).Trim();
+                if (string.IsNullOrWhiteSpace(sku)) throw new ArgumentException("El SKU no puede estar vacío.");
+                var productoId = await _catalogo.TryGetProductoIdBySkuAsync(empresaId, sku, ct)
+                                 ?? throw new NotFoundException("Producto", sku);
                 var agregado = await _precioRepo.ObtenerPorProductoIdAsync(empresaId, null, productoId, ct);
                 var nuevo = agregado is null;
                 if (nuevo)
@@ -179,19 +180,19 @@ namespace ListaPreciosBC.Application.UseCases
                     }
                     catch (ConcurrencyException) when (!req.DetenerAntePrimerError)
                     {
-                        errores.Add(new ErrorItem(fIdx, iIdx, fila.Sku, item.ColumnaNumero, "Conflicto de concurrencia."));
+                        errores.Add(new ErrorItem(fIdx, iIdx, sku, item.ColumnaNumero, "Conflicto de concurrencia."));
                     }
                     catch (BusinessRuleException bre) when (!req.DetenerAntePrimerError)
                     {
-                        errores.Add(new ErrorItem(fIdx, iIdx, fila.Sku, item.ColumnaNumero, bre.Message));
+                        errores.Add(new ErrorItem(fIdx, iIdx, sku, item.ColumnaNumero, bre.Message));
                     }
                     catch (NotFoundException nfe) when (!req.DetenerAntePrimerError)
                     {
-                        errores.Add(new ErrorItem(fIdx, iIdx, fila.Sku, item.ColumnaNumero, nfe.Message));
+                        errores.Add(new ErrorItem(fIdx, iIdx, sku, item.ColumnaNumero, nfe.Message));
                     }
                     catch (Exception ex) when (!req.DetenerAntePrimerError)
                     {
-                        errores.Add(new ErrorItem(fIdx, iIdx, fila.Sku, item.ColumnaNumero, $"Error inesperado: {ex.Message}"));
+                        errores.Add(new ErrorItem(fIdx, iIdx, sku, item.ColumnaNumero, $"Error inesperado: {ex.Message}"));
                     }
 
                     if (req.DetenerAntePrimerError && errores.Count > 0)

@@ -11,7 +11,6 @@ namespace ListaPreciosBC.Tests.UnitTests.Services
     [TestFixture]
     public class ResolverPrecioServiceTests
     {
-        private static Sku SKU(string v) => Sku.Crear(v);
         private static IdentificadorColumnaPrecio P(byte n) => IdentificadorColumnaPrecio.DesdeNumero(n);
         private static PeriodoVigencia Vig(DateTimeOffset desde, DateTimeOffset? hasta = null) => PeriodoVigencia.Crear(desde, hasta);
         private static ValorPrecio VP(decimal monto) => ValorPrecio.DesdeMonto(monto); // usa Moneda.PEN por default (adaptador que agregaste)
