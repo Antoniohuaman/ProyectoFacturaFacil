@@ -30,6 +30,7 @@ namespace ListaPreciosBC.Domain.Aggregates
         // -------- Identidad / Concurrencia / Auditoría --------
     public EmpresaId EmpresaId { get; }
     public Guid Id { get; }
+        public Guid? EstablecimientoId { get; }
         public int Version { get; private set; }
         public DateTimeOffset? UltimaActualizacion { get; private set; }
         public string? UltimoUsuario { get; private set; }
@@ -48,12 +49,13 @@ namespace ListaPreciosBC.Domain.Aggregates
         public IReadOnlyCollection<IDomainEvent> DomainEvents => _domainEvents.AsReadOnly();
         public void ClearDomainEvents() => _domainEvents.Clear();
 
-        private ListaPrecio(EmpresaId empresaId, Guid id, PlantillaColumnasPrecio plantilla, int version = 0)
+        private ListaPrecio(EmpresaId empresaId, Guid id, PlantillaColumnasPrecio plantilla, int version = 0, Guid? establecimientoId = null)
         {
             EmpresaId = empresaId ?? throw new ArgumentNullException(nameof(empresaId));
             Id = id == Guid.Empty ? Guid.NewGuid() : id;
             Plantilla = plantilla ?? throw new ArgumentNullException(nameof(plantilla));
             Version = version;
+            EstablecimientoId = establecimientoId;
         }
 
         // =========================
@@ -62,9 +64,9 @@ namespace ListaPreciosBC.Domain.Aggregates
 
         /// <summary>Crea una instancia con una plantilla ya validada.</summary>
         public static ListaPrecio CrearNueva(EmpresaId empresaId, Guid id, PlantillaColumnasPrecio plantilla,
-            string? usuario = null, DateTimeOffset? cuando = null)
+            string? usuario = null, DateTimeOffset? cuando = null, Guid? establecimientoId = null)
         {
-            var agg = new ListaPrecio(empresaId, id, plantilla, 0);
+            var agg = new ListaPrecio(empresaId, id, plantilla, 0, establecimientoId);
             // opcional: emitir evento inicial como "actualizada" para sincronizar proyecciones
             agg.EmitirEventoActualizacion(usuario, cuando ?? DateTimeOffset.UtcNow);
             return agg;
@@ -75,7 +77,7 @@ namespace ListaPreciosBC.Domain.Aggregates
         /// - P1: Base, visible, orden 1, modo Fijo, nombre "Precio de venta al público".
         /// </summary>
         public static ListaPrecio CrearConPlantillaPorDefecto(EmpresaId empresaId, Guid id,
-            string? usuario = null, DateTimeOffset? cuando = null)
+            string? usuario = null, DateTimeOffset? cuando = null, Guid? establecimientoId = null)
         {
             var baseCfg = ConfiguracionColumnaPrecio.Crear(
                 id: IdentificadorColumnaPrecio.DesdeNumero(1),
@@ -86,7 +88,7 @@ namespace ListaPreciosBC.Domain.Aggregates
                 orden: 1);
 
             var plantilla = PlantillaColumnasPrecio.Crear(new[] { baseCfg });
-            return CrearNueva(empresaId, id, plantilla, usuario, cuando);
+            return CrearNueva(empresaId, id, plantilla, usuario, cuando, establecimientoId);
         }
 
         // =========================
@@ -186,6 +188,7 @@ namespace ListaPreciosBC.Domain.Aggregates
 
             _domainEvents.Add(new PlantillaDeColumnasActualizada(
                 EmpresaId: EmpresaId,
+                EstablecimientoId: EstablecimientoId,
                 ListaPrecioId: Id,
                 NuevaPlantilla: Plantilla,
                 Version: Version,

@@ -32,7 +32,8 @@ namespace ListaPreciosBC.Application.UseCases
             DateTimeOffset VigenciaDesde,
             DateTimeOffset? VigenciaHasta,
             string? Usuario = null,
-            DateTimeOffset? Cuando = null
+            DateTimeOffset? Cuando = null,
+            Guid? SucursalId = null
         );
 
         public readonly record struct Response(
@@ -88,7 +89,7 @@ namespace ListaPreciosBC.Application.UseCases
             if (empresaId is null) throw new InvalidOperationException("EmpresaId del contexto es obligatorio.");
 
             // 1) Traer lista activa
-            var lista = await _listaRepo.ObtenerActivaAsync(empresaId, null, ct);
+            var lista = await _listaRepo.ObtenerActivaAsync(empresaId, req.SucursalId, ct);
             if (lista is null)
                 throw new NotFoundException("No existe lista de precios activa.");
 
@@ -103,12 +104,12 @@ namespace ListaPreciosBC.Application.UseCases
 
             // 3) Traer o crear agregado PrecioProducto
             var sku = Sku.Crear(req.Sku);
-            var agregado = await _precioRepo.ObtenerPorSkuAsync(empresaId, null, sku, ct);
+            var agregado = await _precioRepo.ObtenerPorSkuAsync(empresaId, req.SucursalId, sku, ct);
             if (agregado is null)
             {
                 var productoId = await _catalogo.TryGetProductoIdBySkuAsync(empresaId, sku.Valor, ct)
                                  ?? throw new NotFoundException("Producto", sku.Valor);
-                agregado = PrecioProducto.CrearNuevo(empresaId, productoId);
+                agregado = PrecioProducto.CrearNuevo(empresaId, productoId, req.SucursalId);
             }
 
             // Mantener expectedVersion ANTES de mutar
@@ -124,7 +125,7 @@ namespace ListaPreciosBC.Application.UseCases
             agregado.UpsertPrecioFijo(colId, valor, vig, req.Usuario, cuando);
 
             // 6) Persistencia + UoW
-            await _precioRepo.GuardarAsync(agregado, empresaId, null, expectedVersion, ct);
+            await _precioRepo.GuardarAsync(agregado, empresaId, req.SucursalId, expectedVersion, ct);
             await _uow.SaveChangesAsync();
 
             // 7) Respuesta

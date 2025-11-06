@@ -100,7 +100,7 @@ namespace ListaPreciosBC.Application.UseCases
             {
                 var productoId = await _catalogo.TryGetProductoIdBySkuAsync(empresaId, sku.Valor, ct)
                                  ?? throw new NotFoundException("Producto", sku.Valor);
-                agregado = PrecioProducto.CrearNuevo(empresaId, productoId);
+                agregado = PrecioProducto.CrearNuevo(empresaId, productoId, req.SucursalId);
             }
 
             // 3) expectedVersion antes de mutar (concurrencia optimista)

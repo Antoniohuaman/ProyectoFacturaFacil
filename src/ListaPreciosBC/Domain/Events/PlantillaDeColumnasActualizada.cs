@@ -8,6 +8,7 @@ namespace ListaPreciosBC.Domain.Events
     public sealed class PlantillaDeColumnasActualizada : DomainEvent
     {
         public EmpresaId EmpresaId { get; }
+        public Guid? EstablecimientoId { get; }
         public Guid ListaPrecioId { get; }
         public PlantillaColumnasPrecio NuevaPlantilla { get; }
         public int Version { get; }
@@ -16,6 +17,7 @@ namespace ListaPreciosBC.Domain.Events
 
         public PlantillaDeColumnasActualizada(
             EmpresaId EmpresaId,
+            Guid? EstablecimientoId,
             Guid ListaPrecioId,
             PlantillaColumnasPrecio NuevaPlantilla,
             int Version,
@@ -24,6 +26,7 @@ namespace ListaPreciosBC.Domain.Events
             : base(occurredOnUtc: OcurrioEn.UtcDateTime)
         {
             this.EmpresaId      = EmpresaId;
+            this.EstablecimientoId = EstablecimientoId;
             this.ListaPrecioId   = ListaPrecioId;
             this.NuevaPlantilla  = NuevaPlantilla;
             this.Version         = Version;
