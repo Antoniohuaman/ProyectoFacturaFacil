@@ -85,6 +85,8 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
 
         // --------------------- Identidad y estado ----------------
         public Guid ComprobanteId { get; }
+        /// <summary>Versión para control de concurrencia optimista.</summary>
+        public int Version { get; internal set; }
         public EstadoComprobante Estado { get; private set; } = EstadoComprobante.Borrador;
         public string EstadoCodigo => Estado.Codigo();
 
@@ -184,9 +186,10 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
 
             // Regla mínima: en CONTADO, Vencimiento == Emision
             if (FormaDePago.EsContado && !Vencimiento.EsMismoDiaQue(Emision.Fecha))
-                throw new InvalidOperationException("En CONTADO el vencimiento debe ser el mismo día de la emisión.");
+                throw new ComprobantesElectronicosBC.Domain.Exceptions.EstadoInvalidoException("En CONTADO el vencimiento debe ser el mismo día de la emisión.");
 
             CreadoEnUtc = creadoUtc;
+            Version = 0;
         }
 
         /// <summary>Crea un comprobante en BORRADOR (sin envío).</summary>
@@ -238,7 +241,7 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
             EnsureEditable();
             if (nuevo is null) throw new ArgumentNullException(nameof(nuevo));
             if (FormaDePago.EsContado && !nuevo.EsMismoDiaQue(Emision.Fecha))
-                throw new InvalidOperationException("En CONTADO el vencimiento debe ser igual a la emisión.");
+                throw new ComprobantesElectronicosBC.Domain.Exceptions.EstadoInvalidoException("En CONTADO el vencimiento debe ser igual a la emisión.");
             Vencimiento = nuevo;
         }
 
@@ -274,7 +277,7 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
             if (correos is { Count: > 0 })
             {
                 if (correos.Count > 5)
-                    throw new InvalidOperationException("Máximo 5 correos de envío.");
+                    throw new ComprobantesElectronicosBC.Domain.Exceptions.ReglaDeNegocioException("Máximo 5 correos de envío.");
                 _correosEnvio.AddRange(correos);
             }
         }
@@ -321,7 +324,7 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
                 {
                     // Validar consistencia
                     if (!ln.PrecioUnitario.Moneda.Equals(Moneda))
-                        throw new InvalidOperationException("La moneda de una línea no coincide con la del comprobante antes de convertir.");
+                        throw new ComprobantesElectronicosBC.Domain.Exceptions.ReglaDeNegocioException("La moneda de una línea no coincide con la del comprobante antes de convertir.");
 
                     var actual = ln.PrecioUnitario.Monto;
                     var convertido = factorEsDeMonedaActualAHaciaNueva ? actual * factorConversion : actual / factorConversion;
@@ -333,7 +336,7 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
             {
                 // Si no conviertes, asegúrate de que las líneas ya vengan en la nueva moneda
                 if (_lineas.Any(l => !l.PrecioUnitario.Moneda.Equals(nueva)))
-                    throw new InvalidOperationException("Las líneas deben tener la misma moneda que el comprobante.");
+                    throw new ComprobantesElectronicosBC.Domain.Exceptions.ReglaDeNegocioException("Las líneas deben tener la misma moneda que el comprobante.");
             }
 
             Moneda = nueva;
@@ -359,7 +362,7 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
             if (afectacion is null) throw new ArgumentNullException(nameof(afectacion));
             if (tasa is null) throw new ArgumentNullException(nameof(tasa));
             if (!precioUnitario.Moneda.Equals(Moneda))
-                throw new InvalidOperationException($"La moneda de la línea ({precioUnitario.Moneda.Codigo}) debe coincidir con la del documento ({Moneda.Codigo}).");
+                throw new ComprobantesElectronicosBC.Domain.Exceptions.ReglaDeNegocioException($"La moneda de la línea ({precioUnitario.Moneda.Codigo}) debe coincidir con la del documento ({Moneda.Codigo}).");
 
             var numeroLinea = _lineas.Count + 1;
             var linea = ComprobanteLinea.Create(
@@ -397,7 +400,7 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
                      ?? throw new ArgumentException("No existe la línea indicada.", nameof(numeroLinea));
 
             if (precioUnitario is not null && !precioUnitario.Moneda.Equals(Moneda))
-                throw new InvalidOperationException($"La moneda de la línea ({precioUnitario.Moneda.Codigo}) debe coincidir con la del documento ({Moneda.Codigo}).");
+                throw new ComprobantesElectronicosBC.Domain.Exceptions.ReglaDeNegocioException($"La moneda de la línea ({precioUnitario.Moneda.Codigo}) debe coincidir con la del documento ({Moneda.Codigo}).");
 
             if (descripcion is not null) ln.CambiarDescripcion(descripcion);
             if (unidad is not null) ln.CambiarUnidad(unidad);
@@ -456,54 +459,11 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
 
         private void RecalcularTotales()
         {
-            if (_lineas.Count == 0)
-            {
-                SubtotalBase = 0m;
-                DescuentoGlobalMonto = 0m;
-                IgvTotal = 0m;
-                Total = 0m;
-                return;
-            }
-
-            // 1) Bases separadas (después del descuento de línea)
-            var baseTotal = _lineas.Sum(l => l.BaseImponible.Monto);
-
-            // 2) Descuento global sobre la BASE
-            SubtotalBase = Round2(baseTotal);
-            DescuentoGlobalMonto = Round2(DescuentoGlobal.CalcularMontoDescuento(SubtotalBase));
-            var baseNeta = Round2(SubtotalBase - DescuentoGlobalMonto);
-
-            // 3) IGV total
-            decimal igvTotal = 0m;
-            if (DescuentoGlobal.EsNinguno)
-            {
-                igvTotal = _lineas.Sum(l => l.Igv.Monto);
-            }
-            else
-            {
-                // Prorrateo del descuento global a cada línea para recalcular IGV correctamente
-                for (int i = 0; i < _lineas.Count; i++)
-                {
-                    var linea = _lineas[i];
-                    decimal share = DescuentoGlobal.Modo switch
-                    {
-                        DescuentoGlobalModo.Porcentaje => Round6(linea.BaseImponible.Monto * DescuentoGlobal.Valor),
-                        DescuentoGlobalModo.Monto      => SubtotalBase == 0m ? 0m : Round6(DescuentoGlobalMonto * (linea.BaseImponible.Monto / SubtotalBase)),
-                        _                              => 0m
-                    };
-                    var baseLineaTrasGlobal = Round2(linea.BaseImponible.Monto - share);
-                    var igvLinea = linea.AfectacionImpuesto.GravaImpuesto
-                        ? Round2(baseLineaTrasGlobal * linea.TasaImpuesto.Fraccion)
-                        : 0m;
-                    igvTotal += igvLinea;
-                }
-            }
-
-            IgvTotal = Round2(igvTotal);
-            Total = Round2(baseNeta + IgvTotal);
-
-            // Nota: El check de "totales inconsistentes" era inalcanzable porque Total se calcula del mismo modo.
-            // Si deseas una validación dura, compárala contra una recomposición independiente o fuentes externas.
+            var t = Services.ComprobanteTotalesService.Calcular(_lineas, DescuentoGlobal);
+            SubtotalBase = t.SubtotalBase;
+            DescuentoGlobalMonto = t.DescuentoGlobalMonto;
+            IgvTotal = t.IgvTotal;
+            Total = t.Total;
         }
 
         // --------------------- Transiciones de estado ----------

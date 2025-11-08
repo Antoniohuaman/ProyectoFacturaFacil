@@ -193,7 +193,7 @@ namespace ComprobantesElectronicosBC.Domain.Tests
             Assert.That(c.CorreosEnvio.Count, Is.EqualTo(5));
 
             var seis = cinco.Concat(new[] { Email.Create("f@x.com") }).ToArray();
-            Assert.That(() => c.ReemplazarCorreosEnvio(seis), Throws.InvalidOperationException);
+            Assert.That(() => c.ReemplazarCorreosEnvio(seis), Throws.TypeOf<ComprobantesElectronicosBC.Domain.Exceptions.ReglaDeNegocioException>());
         }
 
         [Test]
