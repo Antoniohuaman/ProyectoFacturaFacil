@@ -86,7 +86,7 @@ namespace ComprobantesElectronicosBC.Tests.UnitTests.ValueObjects
         public void CalcularMontoSobreBase_MontoMayorQueBase_Lanza()
         {
             var d = DescuentoLinea.FromMonto(250m);
-            Assert.Throws<InvalidOperationException>(() => d.CalcularMontoSobreBase(200m));
+            Assert.Throws<ComprobantesElectronicosBC.Domain.Exceptions.ReglaDeNegocioException>(() => d.CalcularMontoSobreBase(200m));
         }
 
         // -----------------------------------------

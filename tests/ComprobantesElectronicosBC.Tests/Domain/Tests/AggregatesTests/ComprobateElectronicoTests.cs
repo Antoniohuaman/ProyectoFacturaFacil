@@ -202,7 +202,7 @@ namespace ComprobantesElectronicosBC.Domain.Tests
             var c = NuevoBorradorFacturaPEN_Contado_ClienteRuc();
 
             c.AsignarSerieYNumero("F001", 1);
-            Assert.That(() => c.Emitir(), Throws.InvalidOperationException); // sin líneas
+            Assert.That(() => c.Emitir(), Throws.TypeOf<ComprobantesElectronicosBC.Domain.Exceptions.ReglaDeNegocioException>()); // sin líneas
 
             AgregarLineaSimple(c, 100m);
             c.Emitir();
@@ -226,7 +226,7 @@ namespace ComprobantesElectronicosBC.Domain.Tests
             c.AsignarSerieYNumero("F001", 1);
 
             // Sin TC → error
-            Assert.That(() => c.Emitir(), Throws.InvalidOperationException);
+            Assert.That(() => c.Emitir(), Throws.TypeOf<ComprobantesElectronicosBC.Domain.Exceptions.ReglaDeNegocioException>());
 
             // Con TC → OK
             c.EstablecerTipoCambio(TipoCambio.Create(PEN(), USD(), 3.70m, DateOnly.FromDateTime(DateTime.Now)));
@@ -294,9 +294,9 @@ namespace ComprobantesElectronicosBC.Domain.Tests
             c.Emitir();
 
             // En ENVIADO no se edita (EnsureEditable)
-            Assert.That(() => c.CambiarCliente(ClienteDni()), Throws.InvalidOperationException);
+            Assert.That(() => c.CambiarCliente(ClienteDni()), Throws.TypeOf<ComprobantesElectronicosBC.Domain.Exceptions.EstadoInvalidoException>());
             Assert.That(() => c.AgregarLinea(Prod(), UM_NIU(), Cant(1m), Importe(1m, c.Moneda), Gravado_IGV(), IGV18(), false),
-                Throws.InvalidOperationException);
+                Throws.TypeOf<ComprobantesElectronicosBC.Domain.Exceptions.EstadoInvalidoException>());
 
             // Pasamos a corregir
             c.MarcarCorregir("ajuste");

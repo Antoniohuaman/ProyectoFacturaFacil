@@ -193,7 +193,7 @@ namespace ComprobantesElectronicosBC.Tests.Application
             var sut = new GuardarBorradorUseCase(repo.Object, uow.Object, fac.Object);
 
             // Act + Assert
-            Assert.ThrowsAsync<InvalidOperationException>(() => sut.ExecuteAsync(input));
+            Assert.ThrowsAsync<ComprobantesElectronicosBC.Domain.Exceptions.ReglaDeNegocioException>(() => sut.ExecuteAsync(input));
         }
     }
 }

@@ -96,7 +96,7 @@ namespace ComprobantesElectronicosBC.Tests.UnitTests.ValueObjects
             });
 
             var max = SerieYNumero.Create("F001", 99_999_999);
-            Assert.That(() => max.Next(), Throws.TypeOf<InvalidOperationException>());
+            Assert.That(() => max.Next(), Throws.TypeOf<ComprobantesElectronicosBC.Domain.Exceptions.ReglaDeNegocioException>());
         }
 
         [Test]

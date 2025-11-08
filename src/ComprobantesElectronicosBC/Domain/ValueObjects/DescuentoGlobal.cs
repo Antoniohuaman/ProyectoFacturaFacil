@@ -92,7 +92,7 @@ namespace ComprobantesElectronicosBC.Domain.ValueObjects
 
             // Evitar sobre-descontar por redondeos
             if (monto > subtotalBaseImponible + 0.0000001m)
-                throw new InvalidOperationException("El descuento global no puede exceder el subtotal.");
+                throw new ComprobantesElectronicosBC.Domain.Exceptions.ReglaDeNegocioException("El descuento global no puede exceder el subtotal.");
 
             return Math.Round(monto, 2);
         }

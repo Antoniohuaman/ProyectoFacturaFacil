@@ -474,17 +474,17 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
         public void Emitir()
         {
             if (!Estado.PuedeEmitir())
-                throw new InvalidOperationException("Solo BORRADOR o CORREGIR pueden emitirse.");
+                throw new ComprobantesElectronicosBC.Domain.Exceptions.EstadoInvalidoException("Solo BORRADOR o CORREGIR pueden emitirse.");
             if (SerieNumero is null)
-                throw new InvalidOperationException("Asigne Serie y Número antes de emitir.");
+                throw new ComprobantesElectronicosBC.Domain.Exceptions.ReglaDeNegocioException("Asigne Serie y Número antes de emitir.");
             if (_lineas.Count == 0)
-                throw new InvalidOperationException("Debe existir al menos una línea antes de emitir.");
+                throw new ComprobantesElectronicosBC.Domain.Exceptions.ReglaDeNegocioException("Debe existir al menos una línea antes de emitir.");
 
             // Guards normativos
             if (Tipo.RequiereRucCliente && !Cliente.EsRuc)
-                throw new InvalidOperationException("Para Factura (01) el cliente debe tener RUC.");
+                throw new ComprobantesElectronicosBC.Domain.Exceptions.ReglaDeNegocioException("Para Factura (01) el cliente debe tener RUC.");
             if (Moneda.Codigo != "PEN" && TipoCambio is null)
-                throw new InvalidOperationException("Tipo de cambio obligatorio para moneda extranjera.");
+                throw new ComprobantesElectronicosBC.Domain.Exceptions.ReglaDeNegocioException("Tipo de cambio obligatorio para moneda extranjera.");
 
             Estado = EstadoComprobante.Enviado;
             EnviadoEnUtc = DateTimeOffset.UtcNow;
@@ -500,7 +500,7 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
         public void MarcarCorregir(string detalleError)
         {
             if (Estado != EstadoComprobante.Enviado)
-                throw new InvalidOperationException("Solo un comprobante ENVIADO puede pasar a CORREGIR.");
+                throw new ComprobantesElectronicosBC.Domain.Exceptions.EstadoInvalidoException("Solo un comprobante ENVIADO puede pasar a CORREGIR.");
 
             UltimoErrorTecnico = string.IsNullOrWhiteSpace(detalleError) ? "Error no especificado" : detalleError.Trim();
             Estado = EstadoComprobante.Corregir;
@@ -544,7 +544,7 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
         public void MarcarRechazado(string codigoCdr, string descripcion)
         {
             if (Estado != EstadoComprobante.Enviado)
-                throw new InvalidOperationException("Solo un comprobante ENVIADO puede marcarse RECHAZADO.");
+                throw new ComprobantesElectronicosBC.Domain.Exceptions.EstadoInvalidoException("Solo un comprobante ENVIADO puede marcarse RECHAZADO.");
 
             UltimoCdrCodigo = string.IsNullOrWhiteSpace(codigoCdr) ? null : codigoCdr.Trim();
             UltimoCdrDescripcion = string.IsNullOrWhiteSpace(descripcion) ? null : descripcion.Trim();
@@ -563,7 +563,7 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
         public void MarcarAnulado(DateTimeOffset cdrBajaEnUtc)
         {
             if (Estado != EstadoComprobante.Aceptado)
-                throw new InvalidOperationException("Solo un comprobante ACEPTADO puede anularse por baja.");
+                throw new ComprobantesElectronicosBC.Domain.Exceptions.EstadoInvalidoException("Solo un comprobante ACEPTADO puede anularse por baja.");
 
             Estado = EstadoComprobante.Anulado;
             AnuladoEnUtc = cdrBajaEnUtc;
@@ -578,17 +578,17 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
         private void EnsurePuedeAceptar()
         {
             if (Estado != EstadoComprobante.Enviado)
-                throw new InvalidOperationException("Solo un comprobante ENVIADO puede marcarse como Aceptado.");
+                throw new ComprobantesElectronicosBC.Domain.Exceptions.EstadoInvalidoException("Solo un comprobante ENVIADO puede marcarse como Aceptado.");
             if (SerieNumero is null)
-                throw new InvalidOperationException("Debe existir Serie y Número antes de la aceptación.");
+                throw new ComprobantesElectronicosBC.Domain.Exceptions.ReglaDeNegocioException("Debe existir Serie y Número antes de la aceptación.");
             if (_lineas.Count == 0)
-                throw new InvalidOperationException("Debe existir al menos una línea antes de la aceptación.");
+                throw new ComprobantesElectronicosBC.Domain.Exceptions.ReglaDeNegocioException("Debe existir al menos una línea antes de la aceptación.");
         }
 
         private void EnsureEditable()
         {
             if (!Estado.PuedeEditar())
-                throw new InvalidOperationException("Solo en BORRADOR o CORREGIR puede editarse el comprobante.");
+                throw new ComprobantesElectronicosBC.Domain.Exceptions.EstadoInvalidoException("Solo en BORRADOR o CORREGIR puede editarse el comprobante.");
         }
 
         // --------------------- Helpers -------------------------

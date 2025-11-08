@@ -147,10 +147,10 @@ namespace ComprobantesElectronicosBC.Domain.ValueObjects
             }
 
             if (s.StartsWith('F') && !EsFactura)
-                throw new InvalidOperationException("Serie con prefijo 'F' corresponde a Factura (01).");
+                throw new ComprobantesElectronicosBC.Domain.Exceptions.ReglaDeNegocioException("Serie con prefijo 'F' corresponde a Factura (01).");
 
             if (s.StartsWith('B') && !EsBoleta)
-                throw new InvalidOperationException("Serie con prefijo 'B' corresponde a Boleta (03).");
+                throw new ComprobantesElectronicosBC.Domain.Exceptions.ReglaDeNegocioException("Serie con prefijo 'B' corresponde a Boleta (03).");
         }
 
         /// <summary>

@@ -78,7 +78,7 @@ namespace ComprobantesElectronicosBC.Tests.ValueObjects
         {
             var a = ImporteMonetario.Create(10m, PEN);
             var b = ImporteMonetario.Create( 1m, USD);
-            Assert.That(() => a.Sumar(b), Throws.InvalidOperationException);
+            Assert.That(() => a.Sumar(b), Throws.TypeOf<ComprobantesElectronicosBC.Domain.Exceptions.ReglaDeNegocioException>());
         }
 
         [Test]

@@ -61,7 +61,7 @@ public readonly record struct Cantidad
         if (scale < 0) throw new ArgumentOutOfRangeException(nameof(scale));
         var rounded = decimal.Round(Value, scale, mode);
         if (rounded <= 0m)
-            throw new InvalidOperationException("La cantidad resultante debe ser > 0.");
+            throw new ComprobantesElectronicosBC.Domain.Exceptions.ReglaDeNegocioException("La cantidad resultante debe ser > 0.");
         return new Cantidad(rounded);
     }
 

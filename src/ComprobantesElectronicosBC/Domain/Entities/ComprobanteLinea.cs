@@ -171,7 +171,7 @@ namespace ComprobantesElectronicosBC.Domain.Entities
         {
             if (nuevo is null) throw new ArgumentNullException(nameof(nuevo));
             if (!Equals(nuevo.Moneda, Moneda) && !permitirCambioDeMoneda)
-                throw new InvalidOperationException("No se puede cambiar la moneda dentro de la misma línea.");
+                throw new ComprobantesElectronicosBC.Domain.Exceptions.ReglaDeNegocioException("No se puede cambiar la moneda dentro de la misma línea.");
 
             PrecioUnitario = nuevo;
             if (incluyeIgv.HasValue) PrecioIncluyeIgv = incluyeIgv.Value;

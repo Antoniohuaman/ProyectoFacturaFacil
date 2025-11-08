@@ -91,8 +91,8 @@ namespace ComprobantesElectronicosBC.Tests.UnitTests.ValueObjects
             var factura = TipoDeComprobante.Create("01");
             var boleta  = TipoDeComprobante.Create("03");
 
-            Assert.Throws<InvalidOperationException>(() => boleta.ValidarCompatibilidadConSerie("F123"));
-            Assert.Throws<InvalidOperationException>(() => factura.ValidarCompatibilidadConSerie("B001"));
+            Assert.Throws<ComprobantesElectronicosBC.Domain.Exceptions.ReglaDeNegocioException>(() => boleta.ValidarCompatibilidadConSerie("F123"));
+            Assert.Throws<ComprobantesElectronicosBC.Domain.Exceptions.ReglaDeNegocioException>(() => factura.ValidarCompatibilidadConSerie("B001"));
         }
 
         [Test]

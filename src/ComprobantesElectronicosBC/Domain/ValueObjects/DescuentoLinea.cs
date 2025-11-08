@@ -75,7 +75,7 @@ namespace ComprobantesElectronicosBC.Domain.ValueObjects
 
             // Monto
             if (Valor > baseAntes)
-                throw new InvalidOperationException("El descuento por monto no puede exceder la base.");
+                throw new ComprobantesElectronicosBC.Domain.Exceptions.ReglaDeNegocioException("El descuento por monto no puede exceder la base.");
             return Round2(Valor);
         }
 

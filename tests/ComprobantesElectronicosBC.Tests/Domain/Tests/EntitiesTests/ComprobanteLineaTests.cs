@@ -325,7 +325,7 @@ namespace ComprobantesElectronicosBC.Domain.Entities.Tests
             );
 
             Assert.That(() => linea.CambiarPrecio(M(10m, USD())),
-                Throws.TypeOf<InvalidOperationException>()
+                Throws.TypeOf<ComprobantesElectronicosBC.Domain.Exceptions.ReglaDeNegocioException>()
                       .With.Message.Contains("moneda"));
         }
 

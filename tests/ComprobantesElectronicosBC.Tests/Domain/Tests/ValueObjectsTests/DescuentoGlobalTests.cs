@@ -119,7 +119,7 @@ namespace ComprobantesElectronicosBC.Tests.UnitTests.ValueObjects
         public void CalcularMontoDescuento_LanzaSiExcedeSubtotal()
         {
             var d = DescuentoGlobal.FromMonto(60m);
-            Assert.Throws<InvalidOperationException>(() => d.CalcularMontoDescuento(50m));
+            Assert.Throws<ComprobantesElectronicosBC.Domain.Exceptions.ReglaDeNegocioException>(() => d.CalcularMontoDescuento(50m));
         }
 
         [Test]

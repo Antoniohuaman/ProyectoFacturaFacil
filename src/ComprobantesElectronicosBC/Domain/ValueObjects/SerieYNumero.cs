@@ -110,7 +110,7 @@ namespace ComprobantesElectronicosBC.Domain.ValueObjects
         public SerieYNumero Next()
         {
             if (Numero >= 99_999_999)
-                throw new InvalidOperationException("Se alcanzó el máximo correlativo permitido para la serie.");
+                throw new ComprobantesElectronicosBC.Domain.Exceptions.ReglaDeNegocioException("Se alcanzó el máximo correlativo permitido para la serie.");
             return new SerieYNumero(Serie, Numero + 1);
         }
 

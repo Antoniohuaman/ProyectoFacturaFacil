@@ -151,7 +151,7 @@ namespace ComprobantesElectronicosBC.Domain.ValueObjects
         private void EnsureMismaMoneda(ImporteMonetario otro)
         {
             if (!MismaMoneda(otro))
-                throw new InvalidOperationException($"No se puede operar entre distintas monedas: {Moneda.Codigo} vs {otro.Moneda.Codigo}.");
+                throw new ComprobantesElectronicosBC.Domain.Exceptions.ReglaDeNegocioException($"No se puede operar entre distintas monedas: {Moneda.Codigo} vs {otro.Moneda.Codigo}.");
         }
     }
 }
