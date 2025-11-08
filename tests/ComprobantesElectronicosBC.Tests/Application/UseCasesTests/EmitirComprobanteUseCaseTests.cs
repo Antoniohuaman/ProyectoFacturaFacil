@@ -181,12 +181,13 @@ namespace ComprobantesElectronicosBC.Application.Tests.UseCases
 
                 // Evento publicado
                 Assert.That(publicado, Is.Not.Null);
-                Assert.That(publicado, Is.TypeOf<EmitirComprobanteUseCase.ComprobanteEmitidoDomainEvent>());
-                var ev = (EmitirComprobanteUseCase.ComprobanteEmitidoDomainEvent)publicado!;
+                Assert.That(publicado, Is.TypeOf<ComprobantesElectronicosBC.Domain.Events.ComprobanteEmitidoDomainEvent>());
+                var ev = (ComprobantesElectronicosBC.Domain.Events.ComprobanteEmitidoDomainEvent)publicado!;
                 Assert.That(ev.ComprobanteId, Is.EqualTo(nuevoId));
                 Assert.That(ev.TipoComprobante, Is.EqualTo("FACTURA"));
                 Assert.That(ev.Serie, Is.EqualTo("F001"));
                 Assert.That(ev.Numero, Is.EqualTo(123));
+                Assert.That(ev.MonedaCodigo, Is.EqualTo("PEN"));
                 Assert.That(ev.ImporteTotal, Is.EqualTo(286m));
             });
 

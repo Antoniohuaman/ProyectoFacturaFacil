@@ -11,6 +11,11 @@ namespace ComprobantesElectronicosBC.Domain.Events
 		EmpresaId EmpresaId,
 		EstablecimientoId EstablecimientoId,
 		Guid ComprobanteId,
+		string TipoComprobante,
+		string Serie,
+		int Numero,
+		string MonedaCodigo,
+		decimal ImporteTotal,
 		DateTime EmitidoEnUtc
 	) : IDomainEvent;
 }

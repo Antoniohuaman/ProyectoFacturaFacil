@@ -125,18 +125,18 @@ namespace ComprobantesElectronicosBC.Application.UseCases
             }
 
             // -------- Evento de dominio
-            var evt = new ComprobanteEmitidoDomainEvent(
-                empresaId.Value,
-                establecimientoId.Value,
+            // Evento se migrará a dominio; aquí solo se publica el drenado del agregado (pendiente de refactor completo).
+            // Por ahora reutilizamos el record de dominio para mantener compatibilidad de pruebas.
+            var evt = new ComprobantesElectronicosBC.Domain.Events.ComprobanteEmitidoDomainEvent(
+                empresaId,
+                establecimientoId,
                 persisted.Id,
                 tipoComprobante,
                 sn.Serie,
                 sn.Numero,
                 moneda.Codigo,
                 total.Monto,
-                nowUtc
-            );
-
+                nowUtc.UtcDateTime);
             await _eventBus.PublishAsync(evt, ct);
 
             // -------- Salida
@@ -324,41 +324,7 @@ namespace ComprobantesElectronicosBC.Application.UseCases
 
     // Eliminado: public sealed record ComprobantePersistido(Guid Id, int Version);
 
-        /// <summary>Evento de dominio emitido al crear el comprobante.</summary>
-        public sealed class ComprobanteEmitidoDomainEvent : DomainEvent
-        {
-            public string EmpresaId { get; }
-            public Guid EstablecimientoId { get; }
-            public Guid ComprobanteId { get; }
-            public string TipoComprobante { get; }
-            public string Serie { get; }
-            public int Numero { get; }
-            public string Moneda { get; }
-            public decimal ImporteTotal { get; }
-            public DateTimeOffset EmitidoEnUtc { get; }
-
-            public ComprobanteEmitidoDomainEvent(
-                string empresaId,
-                Guid establecimientoId,
-                Guid comprobanteId,
-                string tipoComprobante,
-                string serie,
-                int numero,
-                string moneda,
-                decimal importeTotal,
-                DateTimeOffset emitidoEnUtc)
-            {
-                EmpresaId = empresaId;
-                EstablecimientoId = establecimientoId;
-                ComprobanteId = comprobanteId;
-                TipoComprobante = tipoComprobante;
-                Serie = serie;
-                Numero = numero;
-                Moneda = moneda;
-                ImporteTotal = importeTotal;
-                EmitidoEnUtc = emitidoEnUtc;
-            }
-        }
+        // Eliminado: nested ComprobanteEmitidoDomainEvent (migrado a Domain/Events como record inmutable).
     }
 
     /// <summary>Contrato del caso de uso para DI/tests.</summary>
