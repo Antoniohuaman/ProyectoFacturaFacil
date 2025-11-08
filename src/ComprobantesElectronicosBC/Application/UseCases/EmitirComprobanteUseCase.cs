@@ -5,7 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using ComprobantesElectronicosBC.Application.DTOs;
-using ComprobantesElectronicosBC.Application.Interfaces; // Ajusta si tus puertos tienen otro nombre/ubicación
+using ComprobantesElectronicosBC.Application.Interfaces;
 using SharedKernel.Events;
 using SharedKernel.Exceptions;
 using SharedKernel.ValueObjects;
@@ -20,7 +20,7 @@ namespace ComprobantesElectronicosBC.Application.UseCases
     public sealed class EmitirComprobanteUseCase : IEmitirComprobanteUseCase
     {
         private readonly INumeracionService _numeracion;
-    private readonly IComprobanteEmitidoPersister _repo;
+        private readonly IComprobanteEmitidoPersister _repo;
         private readonly IEventBus _eventBus;
 
         public EmitirComprobanteUseCase(
@@ -57,7 +57,7 @@ namespace ComprobantesElectronicosBC.Application.UseCases
             var emails = Email.ParseListOrEmpty(input.Cliente.Emails, Email.MaxDestinatarios);
             var telefonos = Telefono.FromTexto(input.Cliente.Telefonos);
 
-            // -------- Ítems y cálculos
+            // Mantener lógica previa (aún no migrada totalmente) para no romper dependencia de DTOs.
             var lineas = ProyectarLineas(input.Items, moneda);
             if (lineas.Count == 0)
                 throw new BusinessRuleException("No hay líneas válidas para emitir.");
@@ -73,12 +73,10 @@ namespace ComprobantesElectronicosBC.Application.UseCases
             // -------- Numeración
             var sn = await _numeracion.ReservarSiguienteAsync(
                 empresaId, establecimientoId, tipoComprobante, input.SeriePreferida, ct);
-
             if (sn is null)
                 throw new NotFoundException("Numeracion", $"{empresaId.Value}/{establecimientoId.Value}/{tipoComprobante}",
                     "No se pudo obtener numeración.");
 
-            // -------- Persistencia
             var nowUtc = DateTimeOffset.UtcNow;
 
             var data = new ComprobanteParaEmitir(
@@ -105,7 +103,7 @@ namespace ComprobantesElectronicosBC.Application.UseCases
                 nowUtc
             );
 
-            ComprobantesElectronicosBC.Application.Interfaces.ComprobantePersistido persisted;
+            ComprobantePersistido persisted;
             try
             {
                 persisted = await _repo.GuardarEmitidoAsync(data, ct);
@@ -124,18 +122,11 @@ namespace ComprobantesElectronicosBC.Application.UseCases
                 }) { Source = ex.Source };
             }
 
-            // -------- Evento de dominio
-            // Evento se migrará a dominio; aquí solo se publica el drenado del agregado (pendiente de refactor completo).
-            // Por ahora reutilizamos el record de dominio para mantener compatibilidad de pruebas.
-            var evt = new ComprobantesElectronicosBC.Domain.Events.ComprobanteEmitidoDomainEvent(
+            // Evento de transición unificado (Enviado)
+            var evt = new ComprobantesElectronicosBC.Domain.Events.ComprobanteEnviadoDomainEvent(
                 empresaId,
                 establecimientoId,
                 persisted.Id,
-                tipoComprobante,
-                sn.Serie,
-                sn.Numero,
-                moneda.Codigo,
-                total.Monto,
                 nowUtc.UtcDateTime);
             await _eventBus.PublishAsync(evt, ct);
 
@@ -278,8 +269,6 @@ namespace ComprobantesElectronicosBC.Application.UseCases
             total = totalValorVenta + impuesto;
         }
 
-        // ============================ Contratos internos/records ============================
-
         /// <summary>Representa una línea lista para el cálculo/persistencia.</summary>
         public sealed record LineaCalculada(
             string sku,
@@ -292,7 +281,7 @@ namespace ComprobantesElectronicosBC.Application.UseCases
         {
             public string Sku => sku;
             public string Descripcion => descripcion;
-            public UnidadDeMedida UnidadDeMedida => unidadMedida;
+            public UnidadDeMedida UnidadMedida => unidadMedida;
             public decimal Cantidad => cantidad;
             public Dinero PrecioUnitario => precioUnitario;
         }
@@ -321,8 +310,6 @@ namespace ComprobantesElectronicosBC.Application.UseCases
             string? observaciones,
             DateTimeOffset emitidoEnUtc
         );
-
-    // Eliminado: public sealed record ComprobantePersistido(Guid Id, int Version);
 
         // Eliminado: nested ComprobanteEmitidoDomainEvent (migrado a Domain/Events como record inmutable).
     }

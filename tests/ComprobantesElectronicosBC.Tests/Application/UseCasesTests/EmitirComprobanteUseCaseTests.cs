@@ -179,16 +179,11 @@ namespace ComprobantesElectronicosBC.Application.Tests.UseCases
                 Assert.That(capturado.total.Monto, Is.EqualTo(286m));
                 Assert.That(capturado.receptorEtiqueta, Does.Contain("ACME S.A.C."));
 
-                // Evento publicado
+                // Evento publicado (unificado: Enviado)
                 Assert.That(publicado, Is.Not.Null);
-                Assert.That(publicado, Is.TypeOf<ComprobantesElectronicosBC.Domain.Events.ComprobanteEmitidoDomainEvent>());
-                var ev = (ComprobantesElectronicosBC.Domain.Events.ComprobanteEmitidoDomainEvent)publicado!;
+                Assert.That(publicado, Is.TypeOf<ComprobantesElectronicosBC.Domain.Events.ComprobanteEnviadoDomainEvent>());
+                var ev = (ComprobantesElectronicosBC.Domain.Events.ComprobanteEnviadoDomainEvent)publicado!;
                 Assert.That(ev.ComprobanteId, Is.EqualTo(nuevoId));
-                Assert.That(ev.TipoComprobante, Is.EqualTo("FACTURA"));
-                Assert.That(ev.Serie, Is.EqualTo("F001"));
-                Assert.That(ev.Numero, Is.EqualTo(123));
-                Assert.That(ev.MonedaCodigo, Is.EqualTo("PEN"));
-                Assert.That(ev.ImporteTotal, Is.EqualTo(286m));
             });
 
             _numeracion.VerifyAll();

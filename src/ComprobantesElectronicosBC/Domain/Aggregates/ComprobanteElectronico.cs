@@ -228,6 +228,8 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
             Cliente = nuevo ?? throw new ArgumentNullException(nameof(nuevo));
         }
 
+        
+
     public void CambiarFormaDePago(FormaDePago forma, int? diasCredito = null)
         {
             EnsureEditable();
@@ -310,31 +312,50 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
             bool factorEsDeMonedaActualAHaciaNueva,
             bool convertirPreciosDeLineas = true)
         {
+            // Compatibilidad hacia atrás: construimos un TipoCambio a partir del factor y bandera, y delegamos.
+            if (nueva is null) throw new ArgumentNullException(nameof(nueva));
+            if (factorConversion <= 0m)
+                throw new ArgumentOutOfRangeException(nameof(factorConversion), "El factor de conversión debe ser positivo.");
+
+            var hoy = DateOnly.FromDateTime(DateTime.Now);
+            var tc = factorEsDeMonedaActualAHaciaNueva
+                ? SharedKernel.ValueObjects.TipoCambio.Create(Moneda, nueva, factorConversion, hoy)
+                : SharedKernel.ValueObjects.TipoCambio.Create(nueva, Moneda, factorConversion, hoy);
+
+            CambiarMoneda(nueva, tc, convertirPreciosDeLineas);
+        }
+
+        /// <summary>
+        /// Cambia la moneda del comprobante utilizando un TipoCambio del SharedKernel.
+        /// Cuando convertirPreciosDeLineas es true, transforma cada precio con MonedaConversionService.Convertir.
+        /// </summary>
+        public void CambiarMoneda(
+            Moneda nueva,
+            SharedKernel.ValueObjects.TipoCambio tipoCambio,
+            bool convertirPreciosDeLineas = true)
+        {
             EnsureEditable();
             if (nueva is null) throw new ArgumentNullException(nameof(nueva));
             if (nueva.Codigo == Moneda.Codigo) return;
 
-            // Si se requiere conversión de precios de líneas, aplicarla
+            // Si se requiere conversión de precios de líneas, aplicarla usando el servicio de conversión
             if (convertirPreciosDeLineas)
             {
-                if (factorConversion <= 0m)
-                    throw new ArgumentOutOfRangeException(nameof(factorConversion), "El factor de conversión debe ser positivo.");
+                if (tipoCambio is null)
+                    throw new ComprobantesElectronicosBC.Domain.Exceptions.ReglaDeNegocioException("Se requiere Tipo de Cambio para convertir precios entre monedas diferentes.");
 
                 foreach (var ln in _lineas)
                 {
-                    // Validar consistencia
                     if (!ln.PrecioUnitario.Moneda.Equals(Moneda))
                         throw new ComprobantesElectronicosBC.Domain.Exceptions.ReglaDeNegocioException("La moneda de una línea no coincide con la del comprobante antes de convertir.");
 
-                    var actual = ln.PrecioUnitario.Monto;
-                    var convertido = factorEsDeMonedaActualAHaciaNueva ? actual * factorConversion : actual / factorConversion;
-                    var nuevoPrecio = ImporteMonetario.Create(Round2(convertido), nueva);
-                    ln.CambiarPrecio(nuevoPrecio, ln.PrecioIncluyeIgv, permitirCambioDeMoneda: true); // permite cambio de moneda
+                    var convertido = Services.MonedaConversionService.Convertir(ln.PrecioUnitario.Monto, Moneda, nueva, tipoCambio);
+                    var nuevoPrecio = ImporteMonetario.Create(convertido, nueva);
+                    ln.CambiarPrecio(nuevoPrecio, ln.PrecioIncluyeIgv, permitirCambioDeMoneda: true);
                 }
             }
             else
             {
-                // Si no conviertes, asegúrate de que las líneas ya vengan en la nueva moneda
                 if (_lineas.Any(l => !l.PrecioUnitario.Moneda.Equals(nueva)))
                     throw new ComprobantesElectronicosBC.Domain.Exceptions.ReglaDeNegocioException("Las líneas deben tener la misma moneda que el comprobante.");
             }
@@ -486,14 +507,20 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
             if (Moneda.Codigo != "PEN" && TipoCambio is null)
                 throw new ComprobantesElectronicosBC.Domain.Exceptions.ReglaDeNegocioException("Tipo de cambio obligatorio para moneda extranjera.");
 
+            // Totales actualizados antes del cambio de estado
+            RecalcularTotales();
+
             Estado = EstadoComprobante.Enviado;
             EnviadoEnUtc = DateTimeOffset.UtcNow;
             UltimoErrorTecnico = null;
             UltimoCdrCodigo = null;
             UltimoCdrDescripcion = null;
 
-            // Emit domain event (enviado)
-            _domainEvents.Add(new ComprobanteEnviadoDomainEvent(EmpresaId, EstablecimientoId, ComprobanteId, EnviadoEnUtc.Value.UtcDateTime));
+            _domainEvents.Add(new ComprobanteEnviadoDomainEvent(
+                EmpresaId,
+                EstablecimientoId,
+                ComprobanteId,
+                EnviadoEnUtc.Value.UtcDateTime));
         }
 
         /// <summary>Pasa de Enviado → Corregir (error recuperable).</summary>
