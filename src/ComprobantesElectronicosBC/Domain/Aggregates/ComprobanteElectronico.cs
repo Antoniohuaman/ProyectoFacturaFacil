@@ -536,9 +536,13 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
                 throw new ComprobantesElectronicosBC.Domain.Exceptions.ReglaDeNegocioException("El monto total no puede ser negativo.");
             if (t.Total > MONTO_MAXIMO_GLOBAL)
                 throw new ComprobantesElectronicosBC.Domain.Exceptions.ReglaDeNegocioException($"El monto total excede el máximo permitido ({MONTO_MAXIMO_GLOBAL}).");
-            // Regla SUNAT: Boleta no puede exceder 700 soles (aplica en moneda local)
+            // Regla operativa: para Boleta en moneda local (PEN), si el total excede 700 soles
+            // se exige que el cliente sea DNI. Si no tiene DNI se considera inválido.
             if (Tipo.EsBoleta && Moneda.Codigo == "PEN" && t.Total > 700m)
-                throw new ComprobantesElectronicosBC.Domain.Exceptions.ReglaDeNegocioException("El monto total de una Boleta no puede exceder 700 soles.");
+            {
+                if (Cliente is null || Cliente.Documento is null || !Cliente.Documento.EsDni)
+                    throw new ComprobantesElectronicosBC.Domain.Exceptions.ReglaDeNegocioException("Boleta en PEN con monto mayor a 700 soles requiere DNI del cliente.");
+            }
 
             SubtotalBase = t.SubtotalBase;
             DescuentoGlobalMonto = t.DescuentoGlobalMonto;

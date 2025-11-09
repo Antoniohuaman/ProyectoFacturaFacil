@@ -181,7 +181,12 @@ namespace ComprobantesElectronicosBC.Domain.Tests
         [Test]
         public void Boleta_Total_NoPuedeExceder_700_Soles()
         {
-            var c = NuevoBorradorBoletaPEN_Contado_ClienteDni();
+            // Si la boleta tiene cliente SIN DNI (p. ej. RUC u otro), y total > 700 PEN, debe fallar
+            var c = ComprobanteElectronico.CrearBorrador(
+                tipo: Boleta(), emisor: Emisor(), cliente: ClienteRuc(),
+                moneda: PEN(), emision: Hoy(), formaDePago: Contado(),
+                vencimiento: VenceHoy(), usuarioEmisor: Usuario()
+            );
 
             // Base 600, IGV 108, total 708 → debe fallar al recalcular totales
             Assert.That(() => AgregarLineaSimple(c, 600m, incluyeIgv: false, cant: 1m),
