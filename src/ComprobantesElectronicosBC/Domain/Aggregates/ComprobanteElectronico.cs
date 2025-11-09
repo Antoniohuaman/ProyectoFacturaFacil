@@ -403,6 +403,34 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
             return numeroLinea;
         }
 
+        /// <summary>
+        /// Nuevo comando orientado a orquestación pura desde Application: agrega una línea ya construida
+        /// (factory ComprobanteLinea.Create) y recalcula totales. Mantiene compatibilidad con método anterior.
+        /// </summary>
+        public int AgregarLinea(ComprobantesElectronicosBC.Domain.Entities.ComprobanteLinea linea)
+        {
+            EnsureEditable();
+            if (linea is null) throw new ArgumentNullException(nameof(linea));
+            if (!linea.Moneda.Equals(Moneda))
+                throw new ComprobantesElectronicosBC.Domain.Exceptions.ReglaDeNegocioException($"La moneda de la línea ({linea.Moneda.Codigo}) debe coincidir con la del documento ({Moneda.Codigo}).");
+            var nuevoNumero = _lineas.Count + 1;
+            // Reasignamos número para mantener secuencia 1..N con coherencia
+            var ajustada = ComprobantesElectronicosBC.Domain.Entities.ComprobanteLinea.Create(
+                nuevoNumero,
+                linea.Descripcion,
+                linea.UM,
+                linea.Cantidad,
+                linea.PrecioUnitario,
+                linea.PrecioIncluyeIgv,
+                linea.AfectacionImpuesto,
+                linea.TasaImpuesto,
+                linea.Descuento,
+                linea.CentroDeCosto);
+            _lineas.Add(ajustada);
+            RecalcularTotales();
+            return nuevoNumero;
+        }
+
         public void EditarLinea(
             int numeroLinea,
             DescripcionProducto? descripcion = null,
@@ -435,6 +463,26 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
 
             if (descuento is not null) ln.CambiarDescuento(descuento);
             if (centroDeCosto is not null) ln.CambiarCentroDeCosto(centroDeCosto);
+
+            RecalcularTotales();
+        }
+
+        /// <summary>
+        /// Nuevo comando para actualización con VO fuertes (id de línea + withers):
+        /// facilita orquestación limpia desde Application.
+        /// </summary>
+        public void ActualizarLinea(int numeroLinea, Action<ComprobantesElectronicosBC.Domain.Entities.ComprobanteLinea> apply)
+        {
+            EnsureEditable();
+            if (apply is null) throw new ArgumentNullException(nameof(apply));
+
+            var ln = _lineas.FirstOrDefault(l => l.NumeroLinea == numeroLinea)
+                     ?? throw new ArgumentException("No existe la línea indicada.", nameof(numeroLinea));
+
+            apply(ln);
+            // Validación de moneda consistente
+            if (!ln.Moneda.Equals(Moneda))
+                throw new ComprobantesElectronicosBC.Domain.Exceptions.ReglaDeNegocioException($"La moneda de la línea ({ln.Moneda.Codigo}) debe coincidir con la del documento ({Moneda.Codigo}).");
 
             RecalcularTotales();
         }
@@ -478,7 +526,7 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
             RecalcularTotales();
         }
 
-        private void RecalcularTotales()
+        public void RecalcularTotales()
         {
             var t = Services.ComprobanteTotalesService.Calcular(_lineas, DescuentoGlobal);
             SubtotalBase = t.SubtotalBase;
