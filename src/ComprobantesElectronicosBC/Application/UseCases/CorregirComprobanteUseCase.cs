@@ -39,6 +39,7 @@ namespace ComprobantesElectronicosBC.Application.UseCases.CorregirComprobante
         private readonly IComprobanteRepository _repo;
         private readonly IUnitOfWork _uow;
         private readonly IComprobanteCorrector _corrector;
+        private readonly SharedKernel.Events.IEventBus? _eventBus;
 
         public CorregirComprobanteUseCase(
             IComprobanteRepository repo,
@@ -48,6 +49,17 @@ namespace ComprobantesElectronicosBC.Application.UseCases.CorregirComprobante
             _repo = repo ?? throw new ArgumentNullException(nameof(repo));
             _uow = uow ?? throw new ArgumentNullException(nameof(uow));
             _corrector = corrector ?? throw new ArgumentNullException(nameof(corrector));
+        }
+
+        /// <summary>Constructor extendido para publicar eventos drenados del agregado corregido.</summary>
+        public CorregirComprobanteUseCase(
+            IComprobanteRepository repo,
+            IUnitOfWork uow,
+            IComprobanteCorrector corrector,
+            SharedKernel.Events.IEventBus eventBus)
+            : this(repo, uow, corrector)
+        {
+            _eventBus = eventBus ?? throw new ArgumentNullException(nameof(eventBus));
         }
 
         public async Task<CorregirComprobanteOutputDto> ExecuteAsync(
@@ -83,6 +95,14 @@ namespace ComprobantesElectronicosBC.Application.UseCases.CorregirComprobante
             // Persistir
             await _repo.UpdateAsync(actualizado, ct);
             await _uow.CommitAsync(ct);
+
+            // Publicar eventos drenados si se dispone de bus
+            if (_eventBus is not null)
+            {
+                var drained = actualizado.DrainDomainEvents();
+                if (drained.Count > 0)
+                    await _eventBus.PublishAsync(drained, ct);
+            }
 
             return datos;
         }

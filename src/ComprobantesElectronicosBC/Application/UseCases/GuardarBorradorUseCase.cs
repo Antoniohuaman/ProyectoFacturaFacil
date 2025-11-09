@@ -39,6 +39,7 @@ namespace ComprobantesElectronicosBC.Application.UseCases.GuardarBorrador
         private readonly IComprobanteRepository _repo;
         private readonly IUnitOfWork _uow;
         private readonly IComprobanteDraftFactory _factory;
+        private readonly SharedKernel.Events.IEventBus? _eventBus;
 
         public GuardarBorradorUseCase(
             IComprobanteRepository repo,
@@ -48,6 +49,17 @@ namespace ComprobantesElectronicosBC.Application.UseCases.GuardarBorrador
             _repo    = repo  ?? throw new ArgumentNullException(nameof(repo));
             _uow     = uow   ?? throw new ArgumentNullException(nameof(uow));
             _factory = factory ?? throw new ArgumentNullException(nameof(factory));
+        }
+
+        /// <summary>Constructor extendido para publicar eventos drenados del borrador creado/actualizado.</summary>
+        public GuardarBorradorUseCase(
+            IComprobanteRepository repo,
+            IUnitOfWork uow,
+            IComprobanteDraftFactory factory,
+            SharedKernel.Events.IEventBus eventBus)
+            : this(repo, uow, factory)
+        {
+            _eventBus = eventBus ?? throw new ArgumentNullException(nameof(eventBus));
         }
 
         public async Task<GuardarBorradorOutputDto> ExecuteAsync(
@@ -94,6 +106,13 @@ namespace ComprobantesElectronicosBC.Application.UseCases.GuardarBorrador
                 await _repo.AddAsync(agregado, ct);
                 await _uow.CommitAsync(ct);
 
+                if (_eventBus is not null)
+                {
+                    var drained = agregado.DrainDomainEvents();
+                    if (drained.Count > 0)
+                        await _eventBus.PublishAsync(drained, ct);
+                }
+
                 var id = TryGetId(agregado, out var newId) ? newId : Guid.Empty;
                 return new GuardarBorradorOutputDto(
                     id == Guid.Empty ? Guid.NewGuid() : id, // fallback defensivo
@@ -112,6 +131,13 @@ namespace ComprobantesElectronicosBC.Application.UseCases.GuardarBorrador
                 var actualizado = await _factory.AplicarAsync(actual, input, ct);
                 await _repo.UpdateAsync(actualizado, ct);
                 await _uow.CommitAsync(ct);
+
+                if (_eventBus is not null)
+                {
+                    var drained = actualizado.DrainDomainEvents();
+                    if (drained.Count > 0)
+                        await _eventBus.PublishAsync(drained, ct);
+                }
 
                 var id = TryGetId(actualizado, out var updId) ? updId : input.Id.Value;
                 return new GuardarBorradorOutputDto(

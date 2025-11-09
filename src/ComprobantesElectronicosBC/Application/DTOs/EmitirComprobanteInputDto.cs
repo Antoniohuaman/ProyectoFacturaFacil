@@ -12,6 +12,8 @@ namespace ComprobantesElectronicosBC.Application.DTOs
     {
         public required string EmpresaId { get; init; }
         public required string EstablecimientoId { get; init; }
+        /// <summary>Tenant real del usuario/empresa. Opcional para compatibilidad; si falta, se derivará del Emisor configurado.</summary>
+        public string? TenantId { get; init; }
 
         /// <summary>Valores esperados: "FACTURA" o "BOLETA" (amplía según tus tipos).</summary>
         public required string TipoComprobante { get; init; }

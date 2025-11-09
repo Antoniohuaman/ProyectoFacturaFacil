@@ -37,6 +37,7 @@ namespace ComprobantesElectronicosBC.Application.UseCases.AnularComprobante
         private readonly IComprobanteRepository _repo;
         private readonly IUnitOfWork _uow;
         private readonly IComprobanteAnulador _anulador;
+        private readonly SharedKernel.Events.IEventBus? _eventBus; // inyección opcional para no romper firmas existentes
 
         // Para validación simple del motivo (no permitir solo espacios/control).
         private static readonly Regex OnlySpaces = new(@"^\s*$", RegexOptions.Compiled);
@@ -52,6 +53,17 @@ namespace ComprobantesElectronicosBC.Application.UseCases.AnularComprobante
             _repo = repo ?? throw new ArgumentNullException(nameof(repo));
             _uow = uow ?? throw new ArgumentNullException(nameof(uow));
             _anulador = anulador ?? throw new ArgumentNullException(nameof(anulador));
+        }
+
+        /// <summary>Nuevo constructor que permite publicar eventos drenados del agregado tras la persistencia.</summary>
+        public AnularComprobanteUseCase(
+            IComprobanteRepository repo,
+            IUnitOfWork uow,
+            IComprobanteAnulador anulador,
+            SharedKernel.Events.IEventBus eventBus)
+            : this(repo, uow, anulador)
+        {
+            _eventBus = eventBus ?? throw new ArgumentNullException(nameof(eventBus));
         }
 
         public async Task<AnularComprobanteOutputDto> ExecuteAsync(
@@ -78,6 +90,14 @@ namespace ComprobantesElectronicosBC.Application.UseCases.AnularComprobante
             // Persistencia (anulación lógica: UpdateAsync; no usamos RemoveAsync)
             await _repo.UpdateAsync(anulado, ct);
             await _uow.CommitAsync(ct);
+
+            // Publicación de eventos de dominio drenados (mínimo acoplamiento; sólo si se inyectó EventBus)
+            if (_eventBus is not null)
+            {
+                var drained = anulado.DrainDomainEvents();
+                if (drained.Count > 0)
+                    await _eventBus.PublishAsync(drained, ct);
+            }
 
             return output;
         }

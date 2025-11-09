@@ -567,6 +567,7 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
             _domainEvents.Add(new ComprobanteEnviadoDomainEvent(
                 EmpresaId,
                 EstablecimientoId,
+                TenantId,
                 ComprobanteId,
                 EnviadoEnUtc.Value.UtcDateTime));
         }
@@ -581,7 +582,7 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
             Estado = EstadoComprobante.Corregir;
 
             // Evento: Observado (corrección requerida)
-            _domainEvents.Add(new ComprobanteObservadoDomainEvent(EmpresaId, EstablecimientoId, ComprobanteId, UltimoErrorTecnico, DateTimeOffset.UtcNow.UtcDateTime));
+            _domainEvents.Add(new ComprobanteObservadoDomainEvent(EmpresaId, EstablecimientoId, TenantId, ComprobanteId, UltimoErrorTecnico, DateTimeOffset.UtcNow.UtcDateTime));
         }
 
         /// <summary>Pasa de Enviado → Aceptado.</summary>
@@ -595,6 +596,7 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
             _domainEvents.Add(new ComprobanteAceptadoDomainEvent(
                 EmpresaId,
                 EstablecimientoId,
+                TenantId,
                 ComprobanteId,
                 AceptadoEnUtc.Value.UtcDateTime,
                 UltimoCdrDescripcion));
@@ -610,6 +612,7 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
             _domainEvents.Add(new ComprobanteAceptadoDomainEvent(
                 EmpresaId,
                 EstablecimientoId,
+                TenantId,
                 ComprobanteId,
                 AceptadoEnUtc.Value.UtcDateTime,
                 UltimoCdrDescripcion));
@@ -628,6 +631,7 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
             _domainEvents.Add(new ComprobanteRechazadoDomainEvent(
                 EmpresaId,
                 EstablecimientoId,
+                TenantId,
                 ComprobanteId,
                 UltimoCdrCodigo ?? string.Empty,
                 UltimoCdrDescripcion ?? string.Empty,
@@ -646,6 +650,7 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
             _domainEvents.Add(new ComprobanteAnuladoDomainEvent(
                 EmpresaId,
                 EstablecimientoId,
+                TenantId,
                 ComprobanteId,
                 AnuladoEnUtc.Value.UtcDateTime));
         }

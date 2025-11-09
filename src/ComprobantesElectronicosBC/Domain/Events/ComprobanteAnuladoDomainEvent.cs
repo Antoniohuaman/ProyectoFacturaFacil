@@ -10,6 +10,7 @@ namespace ComprobantesElectronicosBC.Domain.Events
 	public sealed record ComprobanteAnuladoDomainEvent(
 		EmpresaId EmpresaId,
 		EstablecimientoId EstablecimientoId,
+		TenantId TenantId,
 		Guid ComprobanteId,
 		DateTime AnuladoEnUtc
 	) : IDomainEvent;

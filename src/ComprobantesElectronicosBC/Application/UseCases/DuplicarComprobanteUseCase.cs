@@ -38,6 +38,7 @@ namespace ComprobantesElectronicosBC.Application.UseCases.DuplicarComprobante
         private readonly IComprobanteRepository _repo;
         private readonly IUnitOfWork _uow;
         private readonly IComprobanteDuplicator _duplicator;
+        private readonly SharedKernel.Events.IEventBus? _eventBus;
 
         public DuplicarComprobanteUseCase(
             IComprobanteRepository repo,
@@ -47,6 +48,17 @@ namespace ComprobantesElectronicosBC.Application.UseCases.DuplicarComprobante
             _repo = repo ?? throw new ArgumentNullException(nameof(repo));
             _uow = uow ?? throw new ArgumentNullException(nameof(uow));
             _duplicator = duplicator ?? throw new ArgumentNullException(nameof(duplicator));
+        }
+
+        /// <summary>Constructor extendido para publicar eventos drenados del agregado duplicado.</summary>
+        public DuplicarComprobanteUseCase(
+            IComprobanteRepository repo,
+            IUnitOfWork uow,
+            IComprobanteDuplicator duplicator,
+            SharedKernel.Events.IEventBus eventBus)
+            : this(repo, uow, duplicator)
+        {
+            _eventBus = eventBus ?? throw new ArgumentNullException(nameof(eventBus));
         }
 
         public async Task<DuplicarComprobanteOutputDto> ExecuteAsync(
@@ -82,6 +94,14 @@ namespace ComprobantesElectronicosBC.Application.UseCases.DuplicarComprobante
             // Persistir
             await _repo.AddAsync(nuevo, ct);
             await _uow.CommitAsync(ct);
+
+            // Publicación de eventos drenados si corresponde
+            if (_eventBus is not null)
+            {
+                var drained = nuevo.DrainDomainEvents();
+                if (drained.Count > 0)
+                    await _eventBus.PublishAsync(drained, ct);
+            }
 
             // Devuelve los datos que el duplicador garantizó (incluye Id/Serie/Número/Tipo/Estado)
             return datos;

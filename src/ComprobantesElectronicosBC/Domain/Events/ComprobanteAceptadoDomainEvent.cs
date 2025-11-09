@@ -8,6 +8,7 @@ namespace ComprobantesElectronicosBC.Domain.Events
 	public sealed record ComprobanteAceptadoDomainEvent(
 		EmpresaId EmpresaId,
 		EstablecimientoId EstablecimientoId,
+		TenantId TenantId,
 		Guid ComprobanteId,
 		DateTime FechaAceptacion,
 		string? Observaciones = null
