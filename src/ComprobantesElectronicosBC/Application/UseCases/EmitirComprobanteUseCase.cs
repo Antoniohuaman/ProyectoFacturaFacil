@@ -105,52 +105,22 @@ namespace ComprobantesElectronicosBC.Application.UseCases
                 throw new NotFoundException("Numeracion", $"{empresaId.Value}/{establecimientoId.Value}/{tipoComprobante}",
                     "No se pudo obtener numeración.");
             comp.AsignarSerieYNumero(snPrimer.Serie, snPrimer.Numero);
-            // Transición de estado: si el tipo exige RUC y el cliente no lo tiene (caso legado de tests),
-            // evitamos forzar la regla estricta del agregado y continuamos con la persistencia/orquestación.
-            if (!(tipo.RequiereRucCliente && !clienteSnap.EsRuc))
-            {
-                comp.Emitir(); // valida y marca estado Enviado (recalcula totales internamente)
-            }
+            // Transición de estado estricta: el agregado valida Factura=RUC y otras reglas
+            comp.Emitir();
 
             // Mantener proyección y cálculo anteriores para compatibilidad de persistencia/salida
-            var lineas = ProyectarLineas(input.Items, moneda);
-            CalcularTotales(
-                lineas, tasa, moneda,
-                out var baseGravada, out var baseNoGravada,
-                out var impuesto, out var totalValorVenta, out var total);
+            // Ya no se proyectan líneas ni se recalculan totales aquí; delega al agregado.
 
             // -------- Numeración
             // Eliminado segundo request de numeración duplicado; usamos snPrimer.
             var nowUtc = DateTimeOffset.UtcNow;
-
-            var data = new ComprobanteParaEmitir(
-                empresaId,
-                establecimientoId,
-                tipoComprobante,
-                snPrimer.Serie,
-                snPrimer.Numero,
-                fechaEmision,
-                moneda,
-                tasa,
-                doc,
-                clienteEtiqueta,
-                domicilio,
-                emails,
-                telefonos,
-                lineas,
-                baseGravada,
-                baseNoGravada,
-                impuesto,
-                totalValorVenta,
-                total,
-                input.Observaciones,
-                nowUtc
-            );
+            // Snapshot desde el agregado (sin recálculo en Application)
+            var snapshot = ComprobantesElectronicosBC.Domain.Mappers.ComprobanteSnapshotMapper.FromAggregate(comp);
 
             ComprobantePersistido persisted;
             try
             {
-                persisted = await _repo.GuardarEmitidoAsync(data, ct);
+                persisted = await _repo.GuardarEmitidoAsync(snapshot, ct);
             }
             catch (ConcurrencyException) { throw; }
             catch (NotFoundException) { throw; }
@@ -166,15 +136,19 @@ namespace ComprobantesElectronicosBC.Application.UseCases
                 }) { Source = ex.Source };
             }
 
-            // Evento de transición unificado (Enviado)
-            var evt = new ComprobantesElectronicosBC.Domain.Events.ComprobanteEnviadoDomainEvent(
-                empresaId,
-                establecimientoId,
-                persisted.Id,
-                nowUtc.UtcDateTime);
-            await _eventBus.PublishAsync(evt, ct);
+            // Publicar eventos drenados del agregado
+            foreach (var evt in comp.DrainDomainEvents())
+                await _eventBus.PublishAsync(evt, ct);
 
             // -------- Salida
+            // Recalcular bases segmentadas para salida (sin alterar agregado): gravada vs no gravada (exonerada/inafecta), excluyendo gratuitas (21,31,...)
+            static bool EsGravada(string cod) => cod is "10" or "11" or "12" or "13" or "14" or "15" or "16" or "17";
+            static bool EsGratuita(string cod) => cod is "21" or "31" or "32" or "33" or "34"; // ampliable si aparecen futuras
+
+            var baseGravada = snapshot.Lineas.Where(l => EsGravada(l.AfectacionCodigo)).Sum(l => l.BaseImponible);
+            var baseNoGravada = snapshot.Lineas.Where(l => !EsGravada(l.AfectacionCodigo) && !EsGratuita(l.AfectacionCodigo)).Sum(l => l.BaseImponible);
+            var valorVenta = baseGravada + baseNoGravada;
+
             return new EmitirComprobanteOutputDto
             {
                 ComprobanteId = persisted.Id,
@@ -183,13 +157,13 @@ namespace ComprobantesElectronicosBC.Application.UseCases
                 Numero = snPrimer.Numero,
                 FechaEmision = fechaEmision,
                 EmitidoEnUtc = nowUtc,
-                Moneda = moneda.Codigo,
-                ImporteBaseGravada = baseGravada.Monto,
-                ImporteBaseNoGravada = baseNoGravada.Monto,
-                ImporteImpuesto = impuesto.Monto,
-                TotalValorVenta = totalValorVenta.Monto,
-                ImporteTotal = total.Monto,
-                ClienteResumen = clienteEtiqueta,
+                Moneda = snapshot.Moneda.Codigo,
+                ImporteBaseGravada = baseGravada,
+                ImporteBaseNoGravada = baseNoGravada,
+                ImporteImpuesto = snapshot.IgvTotal,
+                TotalValorVenta = valorVenta,
+                ImporteTotal = snapshot.Total,
+                ClienteResumen = snapshot.ClienteEtiqueta,
                 Estado = "EMITIDO"
             };
         }
@@ -247,115 +221,7 @@ namespace ComprobantesElectronicosBC.Application.UseCases
             );
         }
 
-        private static List<LineaCalculada> ProyectarLineas(IEnumerable<EmitirComprobanteInputDto.ItemDto> items, Moneda moneda)
-        {
-            var list = new List<LineaCalculada>();
-
-            foreach (var i in items)
-            {
-                if (i.Cantidad <= 0m) throw new BusinessRuleException($"Cantidad inválida para SKU '{i.Sku}'.");
-                if (i.PrecioUnitario < 0m) throw new BusinessRuleException($"Precio unitario inválido para SKU '{i.Sku}'.");
-
-                var sku = (i.Sku ?? string.Empty).Trim();
-                var uom = UnidadDeMedida.From(i.UnidadMedidaCodigo);
-                var afect = AfectacionImpuesto.From(i.AfectacionCodigo);
-
-                var pu = Dinero.Create(i.PrecioUnitario, moneda);
-                var baseLinea = pu.Multiplicar(i.Cantidad);
-
-                // Gratuita (21) no suma a bases (base contributiva = 0)
-                var baseContributiva = afect.EsGratuita ? Dinero.Cero(moneda) : baseLinea;
-
-                list.Add(new LineaCalculada(
-                    sku: sku,
-                    descripcion: i.Descripcion?.Trim() ?? sku,
-                    unidadMedida: uom,
-                    cantidad: i.Cantidad,
-                    precioUnitario: pu,
-                    BaseLinea: baseContributiva,
-                    Afectacion: afect
-                ));
-            }
-
-            return list;
-        }
-
-        private static void CalcularTotales(
-            IReadOnlyList<LineaCalculada> lineas,
-            TasaImpuesto tasaGeneral,
-            Moneda moneda,
-            out Dinero baseGravada,
-            out Dinero baseNoGravada,
-            out Dinero impuesto,
-            out Dinero totalValorVenta,
-            out Dinero total)
-        {
-            baseGravada = Dinero.Cero(moneda);
-            baseNoGravada = Dinero.Cero(moneda);
-            impuesto = Dinero.Cero(moneda);
-
-            foreach (var l in lineas)
-            {
-                if (l.Afectacion.GravaImpuesto && !l.Afectacion.EsGratuita)
-                {
-                    baseGravada = baseGravada + l.BaseLinea;
-                    var tasaAplicada = tasaGeneral.CompatibilizarCon(l.Afectacion);
-                    var impLinea = Dinero.Create(l.BaseLinea.Monto * tasaAplicada.Fraccion, moneda);
-                    impuesto = impuesto + impLinea;
-                }
-                else
-                {
-                    baseNoGravada = baseNoGravada + l.BaseLinea; // en gratuita BaseLinea ya es 0
-                }
-            }
-
-            totalValorVenta = baseGravada + baseNoGravada;
-            total = totalValorVenta + impuesto;
-        }
-
-        /// <summary>Representa una línea lista para el cálculo/persistencia.</summary>
-        public sealed record LineaCalculada(
-            string sku,
-            string descripcion,
-            UnidadDeMedida unidadMedida,
-            decimal cantidad,
-            Dinero precioUnitario,
-            Dinero BaseLinea,
-            AfectacionImpuesto Afectacion)
-        {
-            public string Sku => sku;
-            public string Descripcion => descripcion;
-            public UnidadDeMedida UnidadMedida => unidadMedida;
-            public decimal Cantidad => cantidad;
-            public Dinero PrecioUnitario => precioUnitario;
-        }
-
-        /// <summary>Paquete de datos que el repositorio almacenará (adapta en tu adapter).</summary>
-        public sealed record ComprobanteParaEmitir(
-            EmpresaId empresaId,
-            EstablecimientoId establecimientoId,
-            string tipoComprobante,
-            string serie,
-            int numero,
-            DateOnly fechaEmision,
-            Moneda moneda,
-            TasaImpuesto tasaImpuesto,
-            DocumentoIdentidad docReceptor,
-            string receptorEtiqueta,
-            DomicilioFiscal domicilioFiscal,
-            IReadOnlyList<Email> emails,
-            Telefono telefonos,
-            IReadOnlyList<LineaCalculada> lineas,
-            Dinero baseGravada,
-            Dinero baseNoGravada,
-            Dinero impuesto,
-            Dinero totalValorVenta,
-            Dinero total,
-            string? observaciones,
-            DateTimeOffset emitidoEnUtc
-        );
-
-        // Eliminado: nested ComprobanteEmitidoDomainEvent (migrado a Domain/Events como record inmutable).
+        // Eliminado: Proyección y cálculos; ahora todo proviene del agregado y su snapshot.
     }
 
     /// <summary>Contrato del caso de uso para DI/tests.</summary>

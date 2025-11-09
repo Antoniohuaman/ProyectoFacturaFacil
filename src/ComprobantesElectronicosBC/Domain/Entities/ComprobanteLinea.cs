@@ -214,6 +214,18 @@ namespace ComprobantesElectronicosBC.Domain.Entities
             Igv                = new ImporteMonetario(moneda, r.Igv);
             ImporteTotal       = new ImporteMonetario(moneda, r.Total);
 
+            // Líneas gratuitas (afectación 21,31,32,33,34) no deben impactar bases ni totales del comprobante.
+            // Mantienen UnitPrice para referencia pero montos de resumen = 0.
+            var cod = AfectacionImpuesto.Codigo;
+            if (cod is "21" or "31" or "32" or "33" or "34")
+            {
+                BaseAntesDescuento = ImporteMonetario.Zero(moneda);
+                DescuentoMonto     = ImporteMonetario.Zero(moneda);
+                BaseImponible      = ImporteMonetario.Zero(moneda);
+                Igv                = ImporteMonetario.Zero(moneda);
+                ImporteTotal       = ImporteMonetario.Zero(moneda);
+            }
+
             // 2) UnitPriceSinIgv / UnitPriceConIgv coherentes con afectación y tasa
             decimal unitSin, unitCon;
             if (PrecioIncluyeIgv)

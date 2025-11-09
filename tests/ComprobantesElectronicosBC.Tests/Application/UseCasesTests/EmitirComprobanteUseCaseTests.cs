@@ -22,7 +22,7 @@ namespace ComprobantesElectronicosBC.Application.Tests.UseCases
     public class EmitirComprobanteUseCaseTests
     {
         private Mock<INumeracionService> _numeracion = null!;
-        private Mock<IComprobanteEmitidoPersister> _persister = null!;
+    private Mock<IComprobanteEmitidoPersister> _persister = null!;
         private Mock<IEventBus> _eventBus = null!;
     private Guid _establecimientoGuid;
     private string _empresaId = string.Empty;
@@ -133,15 +133,14 @@ namespace ComprobantesElectronicosBC.Application.Tests.UseCases
                     It.IsAny<CancellationToken>()))
                 .ReturnsAsync(sn);
 
-            var nuevoId = Guid.NewGuid();
-            EmitirComprobanteUseCase.ComprobanteParaEmitir? capturado = null;
+            ComprobantesElectronicosBC.Domain.Mappers.ComprobanteEmitidoSnapshot? capturado = null;
 
             _persister
                 .Setup(r => r.GuardarEmitidoAsync(
-                    It.IsAny<EmitirComprobanteUseCase.ComprobanteParaEmitir>(),
+                    It.IsAny<ComprobantesElectronicosBC.Domain.Mappers.ComprobanteEmitidoSnapshot>(),
                     It.IsAny<CancellationToken>()))
-                .Callback<EmitirComprobanteUseCase.ComprobanteParaEmitir, CancellationToken>((d, _) => capturado = d)
-                .ReturnsAsync(new ComprobantePersistido(nuevoId, 1));
+                .Callback<ComprobantesElectronicosBC.Domain.Mappers.ComprobanteEmitidoSnapshot, CancellationToken>((d, _) => capturado = d)
+                .ReturnsAsync(() => new ComprobantePersistido(capturado!.ComprobanteId, 1));
 
             IDomainEvent? publicado = null;
             _eventBus
@@ -168,26 +167,29 @@ namespace ComprobantesElectronicosBC.Application.Tests.UseCases
                 // Numeración y persistencia
                 Assert.That(dto.Serie, Is.EqualTo("F001"));
                 Assert.That(dto.Numero, Is.EqualTo(123));
-                Assert.That(dto.ComprobanteId, Is.EqualTo(nuevoId));
+                Assert.That(dto.ComprobanteId, Is.EqualTo(capturado!.ComprobanteId));
 
                 // Se persistió con coherencia
                 Assert.That(capturado, Is.Not.Null);
-                Assert.That(capturado!.moneda.Codigo, Is.EqualTo("PEN"));
-                Assert.That(capturado.baseGravada.Monto, Is.EqualTo(200m));
-                Assert.That(capturado.baseNoGravada.Monto, Is.EqualTo(50m));
-                Assert.That(capturado.impuesto.Monto, Is.EqualTo(36m));
-                Assert.That(capturado.total.Monto, Is.EqualTo(286m));
-                Assert.That(capturado.receptorEtiqueta, Does.Contain("ACME S.A.C."));
+                Assert.That(capturado!.Moneda.Codigo, Is.EqualTo("PEN"));
+                // SubtotalBase ahora incluye bases gravadas + no gravadas (sin gratuitas)
+                Assert.That(capturado.SubtotalBase, Is.EqualTo(250m));
+                // Base no gravada: suma de líneas con afectación distinta a las gravadas
+                var baseNoGravada = capturado.Lineas.Where(l => !(l.AfectacionCodigo == "10" || l.AfectacionCodigo == "11" || l.AfectacionCodigo == "12" || l.AfectacionCodigo == "13" || l.AfectacionCodigo == "14" || l.AfectacionCodigo == "15" || l.AfectacionCodigo == "16" || l.AfectacionCodigo == "17")).Sum(l => l.BaseImponible);
+                Assert.That(baseNoGravada, Is.EqualTo(50m));
+                Assert.That(capturado.IgvTotal, Is.EqualTo(36m));
+                Assert.That(capturado.Total, Is.EqualTo(286m));
+                Assert.That(capturado.ClienteEtiqueta, Does.Contain("ACME S.A.C."));
 
                 // Evento publicado (unificado: Enviado)
                 Assert.That(publicado, Is.Not.Null);
                 Assert.That(publicado, Is.TypeOf<ComprobantesElectronicosBC.Domain.Events.ComprobanteEnviadoDomainEvent>());
                 var ev = (ComprobantesElectronicosBC.Domain.Events.ComprobanteEnviadoDomainEvent)publicado!;
-                Assert.That(ev.ComprobanteId, Is.EqualTo(nuevoId));
+                Assert.That(ev.ComprobanteId, Is.EqualTo(dto.ComprobanteId));
             });
 
             _numeracion.VerifyAll();
-            _persister.Verify(r => r.GuardarEmitidoAsync(It.IsAny<EmitirComprobanteUseCase.ComprobanteParaEmitir>(), It.IsAny<CancellationToken>()), Times.Once);
+            _persister.Verify(r => r.GuardarEmitidoAsync(It.IsAny<ComprobantesElectronicosBC.Domain.Mappers.ComprobanteEmitidoSnapshot>(), It.IsAny<CancellationToken>()), Times.Once);
             _eventBus.Verify(b => b.PublishAsync(It.IsAny<IDomainEvent>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
@@ -204,9 +206,9 @@ namespace ComprobantesElectronicosBC.Application.Tests.UseCases
                     It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new SerieNumeroDto { Serie = "F001", Numero = 1 });
 
-            _persister.Setup(r => r.GuardarEmitidoAsync(
-                    It.IsAny<EmitirComprobanteUseCase.ComprobanteParaEmitir>(),
-                    It.IsAny<CancellationToken>()))
+        _persister.Setup(r => r.GuardarEmitidoAsync(
+            It.IsAny<ComprobantesElectronicosBC.Domain.Mappers.ComprobanteEmitidoSnapshot>(),
+            It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new ComprobantePersistido(Guid.NewGuid(), 1));
 
             _eventBus.Setup(b => b.PublishAsync(It.IsAny<IDomainEvent>(), It.IsAny<CancellationToken>()))
@@ -269,9 +271,9 @@ namespace ComprobantesElectronicosBC.Application.Tests.UseCases
                     It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new SerieNumeroDto { Serie = "F001", Numero = 7 });
 
-            _persister.Setup(r => r.GuardarEmitidoAsync(
-                    It.IsAny<EmitirComprobanteUseCase.ComprobanteParaEmitir>(),
-                    It.IsAny<CancellationToken>()))
+        _persister.Setup(r => r.GuardarEmitidoAsync(
+            It.IsAny<ComprobantesElectronicosBC.Domain.Mappers.ComprobanteEmitidoSnapshot>(),
+            It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new ConcurrencyException("Comprobante", "id", 1, 2));
 
             var sut = CreateSut(_numeracion, _persister, _eventBus);
@@ -310,8 +312,9 @@ namespace ComprobantesElectronicosBC.Application.Tests.UseCases
             var input = new EmitirComprobanteInputDto {
                 EmpresaId = baseInput.EmpresaId,
                 EstablecimientoId = baseInput.EstablecimientoId,
-                TipoComprobante = baseInput.TipoComprobante,
-                SeriePreferida = baseInput.SeriePreferida,
+                // Regla estricta: DNI -> BOLETA
+                TipoComprobante = "BOLETA",
+                SeriePreferida = "B001",
                 FechaEmision = baseInput.FechaEmision,
                 MonedaCodigo = baseInput.MonedaCodigo,
                 TasaImpuestoPorcentaje = baseInput.TasaImpuestoPorcentaje,
@@ -337,14 +340,14 @@ namespace ComprobantesElectronicosBC.Application.Tests.UseCases
             _numeracion.Setup(s => s.ReservarSiguienteAsync(
                     It.IsAny<EmpresaId>(),
                     It.IsAny<EstablecimientoId>(),
-                    It.IsAny<string>(),
-                    It.IsAny<string?>(),
+                    "BOLETA",
+                    "B001",
                     It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new SerieNumeroDto { Serie = "F001", Numero = 10 });
+                .ReturnsAsync(new SerieNumeroDto { Serie = "B001", Numero = 10 });
 
-            _persister.Setup(r => r.GuardarEmitidoAsync(
-                    It.IsAny<EmitirComprobanteUseCase.ComprobanteParaEmitir>(),
-                    It.IsAny<CancellationToken>()))
+        _persister.Setup(r => r.GuardarEmitidoAsync(
+            It.IsAny<ComprobantesElectronicosBC.Domain.Mappers.ComprobanteEmitidoSnapshot>(),
+            It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new ComprobantePersistido(Guid.NewGuid(), 1));
 
             _eventBus.Setup(b => b.PublishAsync(It.IsAny<IDomainEvent>(), It.IsAny<CancellationToken>()))
