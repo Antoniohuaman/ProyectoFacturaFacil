@@ -4,8 +4,9 @@ using ComprobantesElectronicosBC.Domain.ValueObjects;
 namespace ComprobantesElectronicosBC.Domain.Policies
 {
 	/// <summary>
-	/// Política para el control normativo de los montos globales en comprobantes electrónicos.
+	/// [OBSOLETO] Integrado en ComprobanteElectronico.RecalcularTotales.
 	/// </summary>
+	[Obsolete("Integrado en Aggregate.RecalcularTotales (montos negativos, tope global y boleta<=700 PEN).")]
 	public class PolicyControlDeMontosGlobales
 	{
 		/// <summary>
@@ -13,7 +14,7 @@ namespace ComprobantesElectronicosBC.Domain.Policies
 		/// </summary>
 		/// <param name="comprobante">Comprobante electrónico a validar.</param>
 		/// <returns>Resultado con éxito y motivo.</returns>
-		public ResultadoControlMontosGlobales ValidarMontoGlobal(object comprobante)
+	public ResultadoControlMontosGlobales ValidarMontoGlobal(object comprobante)
 		{
 			if (comprobante == null)
 				return ResultadoControlMontosGlobales.Fallo("El comprobante es nulo.");

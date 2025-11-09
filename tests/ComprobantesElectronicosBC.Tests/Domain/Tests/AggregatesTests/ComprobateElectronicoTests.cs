@@ -179,6 +179,26 @@ namespace ComprobantesElectronicosBC.Domain.Tests
         }
 
         [Test]
+        public void Boleta_Total_NoPuedeExceder_700_Soles()
+        {
+            var c = NuevoBorradorBoletaPEN_Contado_ClienteDni();
+
+            // Base 600, IGV 108, total 708 → debe fallar al recalcular totales
+            Assert.That(() => AgregarLineaSimple(c, 600m, incluyeIgv: false, cant: 1m),
+                Throws.TypeOf<ComprobantesElectronicosBC.Domain.Exceptions.ReglaDeNegocioException>());
+        }
+
+        [Test]
+        public void Monto_Total_NoPuedeExceder_Maximo_Global()
+        {
+            var c = NuevoBorradorFacturaPEN_Contado_ClienteRuc();
+
+            // Busca exceder 1'000,000 con IGV incluido
+            Assert.That(() => AgregarLineaSimple(c, 900000m, incluyeIgv: false, cant: 1m),
+                Throws.TypeOf<ComprobantesElectronicosBC.Domain.Exceptions.ReglaDeNegocioException>());
+        }
+
+        [Test]
         public void CorreosEnvio_MaximoCinco()
         {
             var c = NuevoBorradorBoletaPEN_Contado_ClienteDni();

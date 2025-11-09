@@ -529,6 +529,17 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
         public void RecalcularTotales()
         {
             var t = Services.ComprobanteTotalesService.Calcular(_lineas, DescuentoGlobal);
+
+            // Validaciones normativas de montos globales (integración de PolicyControlDeMontosGlobales)
+            const decimal MONTO_MAXIMO_GLOBAL = 1_000_000m;
+            if (t.Total < 0m)
+                throw new ComprobantesElectronicosBC.Domain.Exceptions.ReglaDeNegocioException("El monto total no puede ser negativo.");
+            if (t.Total > MONTO_MAXIMO_GLOBAL)
+                throw new ComprobantesElectronicosBC.Domain.Exceptions.ReglaDeNegocioException($"El monto total excede el máximo permitido ({MONTO_MAXIMO_GLOBAL}).");
+            // Regla SUNAT: Boleta no puede exceder 700 soles (aplica en moneda local)
+            if (Tipo.EsBoleta && Moneda.Codigo == "PEN" && t.Total > 700m)
+                throw new ComprobantesElectronicosBC.Domain.Exceptions.ReglaDeNegocioException("El monto total de una Boleta no puede exceder 700 soles.");
+
             SubtotalBase = t.SubtotalBase;
             DescuentoGlobalMonto = t.DescuentoGlobalMonto;
             IgvTotal = t.IgvTotal;
