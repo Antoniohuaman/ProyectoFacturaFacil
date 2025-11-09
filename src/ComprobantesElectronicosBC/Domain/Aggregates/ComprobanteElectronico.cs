@@ -563,6 +563,7 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
             UltimoErrorTecnico = null;
             UltimoCdrCodigo = null;
             UltimoCdrDescripcion = null;
+            Version++;
 
             _domainEvents.Add(new ComprobanteEnviadoDomainEvent(
                 EmpresaId,
@@ -580,6 +581,7 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
 
             UltimoErrorTecnico = string.IsNullOrWhiteSpace(detalleError) ? "Error no especificado" : detalleError.Trim();
             Estado = EstadoComprobante.Corregir;
+            Version++;
 
             // Evento: Observado (corrección requerida)
             _domainEvents.Add(new ComprobanteObservadoDomainEvent(EmpresaId, EstablecimientoId, TenantId, ComprobanteId, UltimoErrorTecnico, DateTimeOffset.UtcNow.UtcDateTime));
@@ -591,6 +593,7 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
             EnsurePuedeAceptar();
             Estado = EstadoComprobante.Aceptado;
             AceptadoEnUtc = DateTimeOffset.UtcNow;
+            Version++;
 
             // Evento: Aceptado (se respeta namespace/nombre que ya usas)
             _domainEvents.Add(new ComprobanteAceptadoDomainEvent(
@@ -608,6 +611,7 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
             EnsurePuedeAceptar();
             Estado = EstadoComprobante.Aceptado;
             AceptadoEnUtc = aceptadoEnUtc;
+            Version++;
 
             _domainEvents.Add(new ComprobanteAceptadoDomainEvent(
                 EmpresaId,
@@ -627,6 +631,7 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
             UltimoCdrCodigo = string.IsNullOrWhiteSpace(codigoCdr) ? null : codigoCdr.Trim();
             UltimoCdrDescripcion = string.IsNullOrWhiteSpace(descripcion) ? null : descripcion.Trim();
             Estado = EstadoComprobante.Rechazado;
+            Version++;
 
             _domainEvents.Add(new ComprobanteRechazadoDomainEvent(
                 EmpresaId,
@@ -646,6 +651,7 @@ namespace ComprobantesElectronicosBC.Domain.Aggregates
 
             Estado = EstadoComprobante.Anulado;
             AnuladoEnUtc = cdrBajaEnUtc;
+            Version++;
 
             _domainEvents.Add(new ComprobanteAnuladoDomainEvent(
                 EmpresaId,

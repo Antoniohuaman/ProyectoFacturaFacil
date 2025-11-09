@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using ComprobantesElectronicosBC.Domain.Aggregates;
 using ComprobantesElectronicosBC.Domain.Repositories;
+using SharedKernel.Exceptions;
 
 namespace ComprobantesElectronicosBC.Adapters.Output.Persistence.InMemory
 {
@@ -47,8 +48,35 @@ namespace ComprobantesElectronicosBC.Adapters.Output.Persistence.InMemory
             return Task.CompletedTask;
         }
 
+        [Obsolete("Usar overload con expectedVersion para control de concurrencia.")]
         public Task UpdateAsync(ComprobanteElectronico aggregate, CancellationToken ct = default)
         {
+            // Delegación mínima: si la versión es > 0 (transición del agregado), asumimos expectedVersion = Version - 1.
+            // En borradores (Version == 0) no se aplica control de concurrencia.
+            var expected = aggregate.Version > 0 ? aggregate.Version - 1 : 0;
+            return UpdateAsync(aggregate, expected, ct);
+        }
+
+        public Task UpdateAsync(ComprobanteElectronico aggregate, int expectedVersion, CancellationToken ct = default)
+        {
+            if (!_byId.TryGetValue(aggregate.ComprobanteId, out var current))
+            {
+                // Si no existe, tratamos como add.
+                _byId[aggregate.ComprobanteId] = aggregate;
+                IndexSerieNumeroIfPresent(aggregate);
+                return Task.CompletedTask;
+            }
+
+            // Control de concurrencia optimista: la versión almacenada debe coincidir con expectedVersion
+            if (current.Version != expectedVersion)
+            {
+                throw new ConcurrencyException(
+                    aggregate: nameof(ComprobanteElectronico),
+                    aggregateId: aggregate.ComprobanteId.ToString(),
+                    expectedVersion: expectedVersion,
+                    currentVersion: current.Version);
+            }
+
             _byId[aggregate.ComprobanteId] = aggregate;
             IndexSerieNumeroIfPresent(aggregate);
             return Task.CompletedTask;

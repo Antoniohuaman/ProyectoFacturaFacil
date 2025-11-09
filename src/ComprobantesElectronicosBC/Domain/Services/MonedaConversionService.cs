@@ -32,7 +32,7 @@ namespace ComprobantesElectronicosBC.Domain.Services
                 return Math.Round(conv, destino.Decimales, MidpointRounding.AwayFromZero);
             }
 
-            throw new InvalidOperationException($"El tipo de cambio {tc} no cubre el par {origen.Codigo}/{destino.Codigo}.");
+            throw new ComprobantesElectronicosBC.Domain.Exceptions.ReglaDeNegocioException($"Tipo de cambio no cubre par {origen.Codigo}/{destino.Codigo}.");
         }
     }
 }

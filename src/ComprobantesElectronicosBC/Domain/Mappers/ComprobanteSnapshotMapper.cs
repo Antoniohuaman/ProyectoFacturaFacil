@@ -56,9 +56,9 @@ namespace ComprobantesElectronicosBC.Domain.Mappers
         {
             if (cpe is null) throw new ArgumentNullException(nameof(cpe));
             if (cpe.SerieNumero is null)
-                throw new InvalidOperationException("El comprobante aún no tiene Serie/Numero asignado.");
+                throw new ComprobantesElectronicosBC.Domain.Exceptions.EstadoInvalidoException("Serie/Número requerido para snapshot emitido.");
             if (cpe.Estado != EstadoComprobante.Enviado && cpe.Estado != EstadoComprobante.Corregir && cpe.Estado != EstadoComprobante.Aceptado && cpe.Estado != EstadoComprobante.Rechazado)
-                throw new InvalidOperationException("Se esperaba un comprobante al menos emitido.");
+                throw new ComprobantesElectronicosBC.Domain.Exceptions.EstadoInvalidoException("Estado debe ser ENVIADO/CORREGIR/ACEPTADO/RECHAZADO para snapshot.");
 
             var lineas = cpe.Lineas.Select(l => new ComprobanteEmitidoSnapshot.LineaSnapshot(
                 Numero: l.NumeroLinea,

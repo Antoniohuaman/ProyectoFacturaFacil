@@ -26,8 +26,14 @@ namespace ComprobantesElectronicosBC.Domain.Repositories
         /// <summary>Agrega un nuevo agregado al almacenamiento.</summary>
         Task AddAsync(ComprobanteElectronico aggregate, CancellationToken ct = default);
 
-        /// <summary>Marca el agregado como modificado (si usas EF Core, el tracking suele bastar).</summary>
-        Task UpdateAsync(ComprobanteElectronico aggregate, CancellationToken ct = default);
+    /// <summary>Marca el agregado como modificado (si usas EF Core, el tracking suele bastar).</summary>
+    [System.Obsolete("Usar overload con expectedVersion para control de concurrencia.")]
+    Task UpdateAsync(ComprobanteElectronico aggregate, CancellationToken ct = default);
+
+    /// <summary>
+    /// Actualiza aplicando control de concurrencia optimista: valida que la versión almacenada coincida con <paramref name="expectedVersion"/>.
+    /// </summary>
+    Task UpdateAsync(ComprobanteElectronico aggregate, int expectedVersion, CancellationToken ct = default);
 
         /// <summary>Elimina por Id (opcional si en tu dominio prefieres “anulación lógica”).</summary>
         Task RemoveAsync(Guid id, CancellationToken ct = default);
