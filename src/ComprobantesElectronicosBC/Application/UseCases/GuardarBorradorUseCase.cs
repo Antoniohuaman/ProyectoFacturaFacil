@@ -128,8 +128,9 @@ namespace ComprobantesElectronicosBC.Application.UseCases.GuardarBorrador
                 if (actual is null)
                     throw NotFoundException.For<ComprobanteElectronico>(input.Id);
 
+                var expectedVersion = actual.Version; // captura para control de concurrencia
                 var actualizado = await _factory.AplicarAsync(actual, input, ct);
-                await _repo.UpdateAsync(actualizado, ct);
+                await _repo.UpdateAsync(actualizado, expectedVersion, ct);
                 await _uow.CommitAsync(ct);
 
                 if (_eventBus is not null)

@@ -85,10 +85,11 @@ namespace ComprobantesElectronicosBC.Application.UseCases.AnularComprobante
                 throw NotFoundException.For<ComprobanteElectronico>(input.ComprobanteId);
 
             // Delegar la anulación al adaptador (aplica reglas del agregado y mapea VOs)
+            var expectedVersion = original.Version; // captura para control de concurrencia
             var (anulado, output) = await _anulador.AnularAsync(original, input, ct);
 
-            // Persistencia (anulación lógica: UpdateAsync; no usamos RemoveAsync)
-            await _repo.UpdateAsync(anulado, ct);
+            // Persistencia (anulación lógica: UpdateAsync con expectedVersion; no usamos RemoveAsync)
+            await _repo.UpdateAsync(anulado, expectedVersion, ct);
             await _uow.CommitAsync(ct);
 
             // Publicación de eventos de dominio drenados (mínimo acoplamiento; sólo si se inyectó EventBus)

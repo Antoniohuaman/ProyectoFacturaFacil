@@ -122,7 +122,7 @@ namespace ComprobantesElectronicosBC.Tests.Application
             fac.Setup(f => f.AplicarAsync(existente, input, It.IsAny<CancellationToken>()))
                .ReturnsAsync(actualizado);
 
-            repo.Setup(r => r.UpdateAsync(actualizado, It.IsAny<CancellationToken>()))
+            repo.Setup(r => r.UpdateAsync(actualizado, existente.Version, It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
                 uow.Setup(x => x.CommitAsync(It.IsAny<CancellationToken>()))

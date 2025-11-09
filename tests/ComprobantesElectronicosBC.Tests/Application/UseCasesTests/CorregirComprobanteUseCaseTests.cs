@@ -50,7 +50,7 @@ namespace ComprobantesElectronicosBC.Tests.Application
             corr.Setup(c => c.CorregirAsync(original, input, It.IsAny<CancellationToken>()))
                 .ReturnsAsync((actualizado, output));
 
-            repo.Setup(r => r.UpdateAsync(actualizado, It.IsAny<CancellationToken>()))
+            repo.Setup(r => r.UpdateAsync(actualizado, original.Version, It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
                 uow.Setup(u => u.CommitAsync(It.IsAny<CancellationToken>()))
@@ -108,7 +108,7 @@ namespace ComprobantesElectronicosBC.Tests.Application
             corr.Setup(c => c.CorregirAsync(original, input, It.IsAny<CancellationToken>()))
                 .ReturnsAsync((actualizado, output));
 
-            repo.Setup(r => r.UpdateAsync(actualizado, It.IsAny<CancellationToken>()))
+            repo.Setup(r => r.UpdateAsync(actualizado, original.Version, It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
                 uow.Setup(u => u.CommitAsync(It.IsAny<CancellationToken>()))

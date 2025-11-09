@@ -51,7 +51,7 @@ namespace ComprobantesElectronicosBC.Tests.Application
             an.Setup(a => a.AnularAsync(original, input, It.IsAny<CancellationToken>()))
               .ReturnsAsync((anulado, output));
 
-            repo.Setup(r => r.UpdateAsync(anulado, It.IsAny<CancellationToken>()))
+            repo.Setup(r => r.UpdateAsync(anulado, original.Version, It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
                 uow.Setup(u => u.CommitAsync(It.IsAny<CancellationToken>()))

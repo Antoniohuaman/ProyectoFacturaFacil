@@ -90,10 +90,11 @@ namespace ComprobantesElectronicosBC.Application.UseCases.CorregirComprobante
                 throw NotFoundException.For<ComprobanteElectronico>(input.ComprobanteId);
 
             // Delegar al corrector (infraestructura adapta DTO → VOs y aplica reglas del agregado)
+            var expectedVersion = original.Version; // captura versión antes de mutar
             var (actualizado, datos) = await _corrector.CorregirAsync(original, input, ct);
 
-            // Persistir
-            await _repo.UpdateAsync(actualizado, ct);
+            // Persistir con control de concurrencia
+            await _repo.UpdateAsync(actualizado, expectedVersion, ct);
             await _uow.CommitAsync(ct);
 
             // Publicar eventos drenados si se dispone de bus

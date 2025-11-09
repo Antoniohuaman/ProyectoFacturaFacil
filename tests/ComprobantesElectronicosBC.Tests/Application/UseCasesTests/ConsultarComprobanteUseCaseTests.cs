@@ -35,7 +35,7 @@ namespace ComprobantesElectronicosBC.Tests.Application.UseCases
                 TipoComprobante = "01",
                 Serie = "F001",
                 Numero = 123,
-                Estado = "Emitido",
+                Estado = "Enviado", // Unificado (antes 'Emitido')
                 FechaEmision = new DateOnly(2025, 1, 2),
                 Total = 150.25m,
                 Moneda = "PEN",
@@ -169,7 +169,7 @@ public void Consulta_sin_criterios_lanza_ArgumentException()
                 TipoComprobante = "01",
                 Serie = "F001",
                 Numero = 1,
-                Estado = "Emitido",
+                Estado = "Enviado", // Unificado (antes 'Emitido')
                 FechaEmision = new DateOnly(2025, 1, 1),
                 Total = 1,
                 Moneda = "PEN",

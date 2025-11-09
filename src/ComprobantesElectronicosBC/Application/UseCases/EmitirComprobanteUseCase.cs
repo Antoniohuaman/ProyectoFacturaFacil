@@ -167,7 +167,8 @@ namespace ComprobantesElectronicosBC.Application.UseCases
                 TotalValorVenta = valorVenta,
                 ImporteTotal = snapshot.Total,
                 ClienteResumen = snapshot.ClienteEtiqueta,
-                Estado = "EMITIDO"
+                // Unificación de naming: estado visible 'ENVIADO' (antes 'EMITIDO').
+                Estado = "ENVIADO"
             };
         }
 
