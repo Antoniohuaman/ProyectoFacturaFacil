@@ -58,8 +58,11 @@ namespace ComprobantesElectronicosBC.Application.UseCases
             var telefonos = Telefono.FromTexto(input.Cliente.Telefonos);
 
             // Orquestación: construir aggregate BORRADOR y usar comandos de dominio.
-            // Reutilizamos empresaId / establecimientoId ya creados arriba. TenantId se asume igual a EmpresaId (heurística temporal).
-            var tenantId = SharedKernel.ValueObjects.TenantId.New(); // No hay Tenant explícito en input; generamos uno efímero para snapshot (no usado por tests)
+            // Multitenant: usar TenantId real si viene en input; si no, fallback temporal a uno nuevo.
+            // TODO: Retirar fallback cuando la UI provea siempre TenantId.
+            var tenantId = SharedKernel.ValueObjects.TenantId.TryParse(input.TenantId, out var parsedTenant)
+                ? parsedTenant
+                : SharedKernel.ValueObjects.TenantId.New();
             // El EmisorSnapshot requiere RUC. Si el documento del cliente NO es RUC usamos un placeholder de empresa (input.EmpresaId) asumiendo que empresaId.Value es el RUC.
             var rucEmisor = doc.EsRuc ? doc.Numero : empresaId.Value; // Asunción: empresaId.Value mantiene RUC válido.
             var emisor = ComprobantesElectronicosBC.Domain.ValueObjects.EmisorSnapshot.Create(

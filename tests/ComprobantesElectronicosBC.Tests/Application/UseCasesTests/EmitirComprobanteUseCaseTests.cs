@@ -84,6 +84,7 @@ namespace ComprobantesElectronicosBC.Application.Tests.UseCases
             {
                 EmpresaId = _empresaId,
                 EstablecimientoId = _establecimientoGuid.ToString(),
+                TenantId = Guid.Parse("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee").ToString(),
                 TipoComprobante = "FACTURA",
                 SeriePreferida = "F001",
                 FechaEmision = new DateOnly(2025, 1, 15),
@@ -186,6 +187,8 @@ namespace ComprobantesElectronicosBC.Application.Tests.UseCases
                 Assert.That(publicado, Is.TypeOf<ComprobantesElectronicosBC.Domain.Events.ComprobanteEnviadoDomainEvent>());
                 var ev = (ComprobantesElectronicosBC.Domain.Events.ComprobanteEnviadoDomainEvent)publicado!;
                 Assert.That(ev.ComprobanteId, Is.EqualTo(dto.ComprobanteId));
+                Assert.That(ev.TenantId.ToString(), Is.EqualTo(input.TenantId));
+                Assert.That(capturado!.TenantId.ToString(), Is.EqualTo(input.TenantId));
             });
 
             _numeracion.VerifyAll();
@@ -312,6 +315,7 @@ namespace ComprobantesElectronicosBC.Application.Tests.UseCases
             var input = new EmitirComprobanteInputDto {
                 EmpresaId = baseInput.EmpresaId,
                 EstablecimientoId = baseInput.EstablecimientoId,
+                TenantId = baseInput.TenantId,
                 // Regla estricta: DNI -> BOLETA
                 TipoComprobante = "BOLETA",
                 SeriePreferida = "B001",
