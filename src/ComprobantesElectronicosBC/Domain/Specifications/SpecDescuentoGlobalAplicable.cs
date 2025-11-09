@@ -30,9 +30,9 @@ namespace ComprobantesElectronicosBC.Domain.Specifications
 			if (montoDescuento > subtotalBaseImponible)
 				return ValidationResult.Failure("El monto del descuento global no puede exceder el subtotal base imponible.");
 
-			// Reglas adicionales: porcentaje máximo permitido (ejemplo: 50%)
-			if (descuento.Modo == DescuentoGlobalModo.Porcentaje && descuento.Valor > 50m)
-				return ValidationResult.Failure("El porcentaje de descuento global no puede exceder el 50%.");
+			// Regla adicional: el porcentaje debe ser menor que el límite definido (100% no se considera descuento)
+			if (descuento.Modo == DescuentoGlobalModo.Porcentaje && descuento.Valor >= DiscountLimits.MaxPercentAllowedExclusive)
+				return ValidationResult.Failure($"El porcentaje de descuento global debe ser menor que {DiscountLimits.MaxPercentAllowedExclusive}%.");
 
 			return ValidationResult.Success();
 		}

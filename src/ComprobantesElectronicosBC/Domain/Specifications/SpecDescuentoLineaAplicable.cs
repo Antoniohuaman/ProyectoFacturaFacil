@@ -30,9 +30,9 @@ namespace ComprobantesElectronicosBC.Domain.Specifications
 			if (montoDescuento > baseAntes)
 				return ValidationResult.Failure("El monto del descuento de línea no puede exceder la base antes del descuento.");
 
-			// Reglas adicionales: porcentaje máximo permitido (ejemplo: 50%)
-			if (descuento.EsPorcentaje && descuento.Valor > 50m)
-				return ValidationResult.Failure("El porcentaje de descuento de línea no puede exceder el 50%.");
+			// Regla adicional: el porcentaje debe ser menor que el límite definido (100% no se considera descuento)
+			if (descuento.EsPorcentaje && descuento.Valor >= DiscountLimits.MaxPercentAllowedExclusive)
+				return ValidationResult.Failure($"El porcentaje de descuento de línea debe ser menor que {DiscountLimits.MaxPercentAllowedExclusive}%.");
 
 			return ValidationResult.Success();
 		}
