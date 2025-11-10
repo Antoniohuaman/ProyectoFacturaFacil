@@ -46,8 +46,8 @@ namespace ConfiguracionSistemaBC.Tests.Application.UseCases
             var repo = new Mock<IConfiguracionEmpresaRepository>(MockBehavior.Strict);
             repo.Setup(r => r.GetByEmpresaIdAsync(empresaId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(empresa);
-            repo.Setup(r => r.UpdateAsync(empresa, It.IsAny<CancellationToken>()))
-                .Returns(Task.CompletedTask);
+            repo.Setup(r => r.UpdateIfVersionMatchAsync(empresa, It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(true);
 
                 var uow = new Mock<IUnitOfWork>(MockBehavior.Strict);
                 uow.Setup(u => u.CommitAsync(It.IsAny<CancellationToken>()))
@@ -96,7 +96,7 @@ namespace ConfiguracionSistemaBC.Tests.Application.UseCases
             Assert.That(cmt!.Nombre, Is.EqualTo("CENTÍMETRO"));
             Assert.That(cmt.EsSistema, Is.False);
 
-            repo.Verify(r => r.UpdateAsync(empresa, It.IsAny<CancellationToken>()), Times.Once);
+            repo.Verify(r => r.UpdateIfVersionMatchAsync(empresa, It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Once);
             repo.VerifyAll();
             uow.VerifyAll();
             tenant.VerifyAll();

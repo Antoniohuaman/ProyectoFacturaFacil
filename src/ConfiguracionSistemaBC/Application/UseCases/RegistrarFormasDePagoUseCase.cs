@@ -98,7 +98,10 @@ namespace ConfiguracionSistemaBC.Application.UseCases
                 });
             }
 
-            await _repo.UpdateAsync(empresa, ct);
+            // Persistencia con concurrencia optimista
+            var ok = await _repo.UpdateIfVersionMatchAsync(empresa, versionOriginal, ct);
+            if (!ok)
+                throw new InvalidOperationException("Conflicto de concurrencia al registrar formas de pago.");
             await _uow.CommitAsync(ct);
 
             var defaultActual = empresa.ObtenerFormaDePagoPorDefecto();

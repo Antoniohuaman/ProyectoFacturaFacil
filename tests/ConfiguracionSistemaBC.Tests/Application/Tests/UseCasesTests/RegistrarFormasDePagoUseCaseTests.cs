@@ -48,8 +48,8 @@ namespace ConfiguracionSistemaBC.Tests.Application.UseCases
             var repo = new Mock<IConfiguracionEmpresaRepository>(MockBehavior.Strict);
             repo.Setup(r => r.GetByEmpresaIdAsync(empresaId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(empresa);
-            repo.Setup(r => r.UpdateAsync(empresa, It.IsAny<CancellationToken>()))
-                .Returns(Task.CompletedTask);
+            repo.Setup(r => r.UpdateIfVersionMatchAsync(empresa, It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(true);
 
                 var uow = new Mock<IUnitOfWork>(MockBehavior.Strict);
                 uow.Setup(u => u.CommitAsync(It.IsAny<CancellationToken>()))
