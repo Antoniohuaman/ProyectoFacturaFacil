@@ -7,14 +7,33 @@ namespace ConfiguracionSistemaBC.Domain.Events
 {
     /// <summary>
     /// Evento de dominio que representa la creación de un UsuarioEmpresa.
-    /// Ahora se asocia a uno o varios establecimientos, no sucursales.
     /// </summary>
-    public sealed record UsuarioEmpresaCreado(
-        UsuarioId UsuarioId,
-        EmpresaId EmpresaId,
-        IReadOnlyCollection<EstablecimientoId> Establecimientos,
-        Email Email,
-        NombrePersona Nombre,
-        RolEmpresa? Rol // Ahora es opcional
-    ) : IDomainEvent;
+    public sealed class UsuarioEmpresaCreado : DomainEvent
+    {
+        public UsuarioId UsuarioId { get; }
+        public EmpresaId EmpresaId { get; }
+        public IReadOnlyCollection<EstablecimientoId> Establecimientos { get; }
+        public Email Email { get; }
+        public NombrePersona Nombre { get; }
+        public RolEmpresa? Rol { get; }
+
+        public UsuarioEmpresaCreado(
+            UsuarioId usuarioId,
+            EmpresaId empresaId,
+            IReadOnlyCollection<EstablecimientoId> establecimientos,
+            Email email,
+            NombrePersona nombre,
+            RolEmpresa? rol,
+            DateTime? occurredOnUtc = null,
+            Guid? eventId = null)
+            : base(eventId, occurredOnUtc)
+        {
+            UsuarioId = usuarioId;
+            EmpresaId = empresaId;
+            Establecimientos = establecimientos;
+            Email = email;
+            Nombre = nombre;
+            Rol = rol;
+        }
+    }
 }

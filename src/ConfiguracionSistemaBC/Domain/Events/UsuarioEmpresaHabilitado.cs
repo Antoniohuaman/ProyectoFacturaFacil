@@ -1,11 +1,24 @@
 using System;
-using ConfiguracionSistemaBC.Domain.ValueObjects;
 using SharedKernel.Events;
 using SharedKernel.ValueObjects;
+using ConfiguracionSistemaBC.Domain.ValueObjects;
+
 namespace ConfiguracionSistemaBC.Domain.Events
 {
-    public sealed record UsuarioEmpresaHabilitado(
-        EmpresaId EmpresaId,
-        IReadOnlyCollection<EstablecimientoId> Establecimientos
-    ) : IDomainEvent;
+    public sealed class UsuarioEmpresaHabilitado : DomainEvent
+    {
+        public EmpresaId EmpresaId { get; }
+        public IReadOnlyCollection<EstablecimientoId> Establecimientos { get; }
+
+        public UsuarioEmpresaHabilitado(
+            EmpresaId empresaId,
+            IReadOnlyCollection<EstablecimientoId> establecimientos,
+            DateTime? occurredOnUtc = null,
+            Guid? eventId = null)
+            : base(eventId, occurredOnUtc)
+        {
+            EmpresaId = empresaId;
+            Establecimientos = establecimientos;
+        }
+    }
 }

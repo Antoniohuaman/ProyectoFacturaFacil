@@ -210,6 +210,9 @@ namespace ConfiguracionSistemaBC.Tests.Application.Series
             Assert.That(
                 async () => await useCase.HandleAsync(input, CancellationToken.None),
                 Throws.InvalidOperationException.With.Message.Contains("Ya existe una serie"));
+            // Asegura que no hubo efectos colaterales
+            Assert.That(seriesRepo.AddCount, Is.EqualTo(0));
+            Assert.That(uow.SaveCount, Is.EqualTo(0));
         }
 
         [Test]
@@ -259,6 +262,26 @@ namespace ConfiguracionSistemaBC.Tests.Application.Series
             Assert.That(seriesRepo.UnsetDefaultCalled, Is.False);
             Assert.That(seriesRepo.AddCount, Is.EqualTo(1));
             Assert.That(uow.SaveCount, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void Rechaza_creacion_de_serie_duplicada_por_empresa_tipo_serie_establecimiento()
+        {
+            var seriesRepo = new FakeSerieComprobanteRepository { ExistsByTipoSerieFlag = true }; // Simula duplicado
+            var empresaRepo = new FakeConfiguracionEmpresaRepository { EstablecimientoExisteFlag = true };
+            var uow = new FakeUow();
+            var useCase = BuildUseCase(seriesRepo, empresaRepo, uow);
+
+            var input = MakeInput(tipo: "01", serie: "FE01", porDefecto: true, habilitada: true);
+
+            Assert.That(
+                async () => await useCase.HandleAsync(input, CancellationToken.None),
+                Throws.InvalidOperationException.With.Message.Contains("Ya existe una serie"));
+
+            // Verifica que no se añadió ni se hizo commit
+            Assert.That(seriesRepo.AddCount, Is.EqualTo(0), "No debe agregar la serie cuando existe duplicado.");
+            Assert.That(uow.SaveCount, Is.EqualTo(0), "No debe commitear la transacción cuando existe duplicado.");
+            Assert.That(seriesRepo.UnsetDefaultCalled, Is.False, "No debe intentar desmarcar default en caso de duplicado.");
         }
     }
 }
