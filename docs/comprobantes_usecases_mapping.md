@@ -1,77 +1,68 @@
-# Casos de uso vs métodos del Aggregate — ComprobantesElectronicosBC
+## Casos de uso vs métodos del Aggregate — ComprobantesElectronicosBC
 
-Este documento mapea los casos de uso de `src/ComprobantesElectronicosBC/Application/UseCases` a los métodos y responsabilidades del aggregate `ComprobanteElectronico` y sus entidades.
+Este documento mapea los casos de uso de `src/ComprobantesElectronicosBC/Application/UseCases` a los métodos y responsabilidades del aggregate `ComprobanteElectronico` y sus entidades internas (p. ej. `ComprobanteLinea`). Está basado en el código real leído en `src/ComprobantesElectronicosBC`.
 
-## Resumen rápido
-- Aggregate principal: `ComprobanteElectronico` (cambia estado, gestiona líneas y totales y publica eventos).  
-- Entidad interna: `ComprobanteLinea` (gestiona cálculos por línea).  
-- Use Cases: orquestadores de aplicación que crean/actualizan el aggregate y llaman repositorios/adapters.
-
----
-
-## Mapeo detallado (UseCase → Aggregate / Repos / Servicios)
-
-1) EmitirComprobanteUseCase (Application/UseCases/EmitirComprobanteUseCase.cs)
-   - Acciones principales en UC:
-     - Construir EmisorSnapshot y ClienteSnapshot.
-     - Crear agregado en BORRADOR (ComprobanteElectronico.CrearBorrador).
-     - Agregar líneas: llama internamente a ComprobanteElectronico.AgregarLinea(...) por cada ítem.
-     - Reservar numeración: usa `INumeracionService.ReservarSiguienteAsync` (infraestructura).
-     - Asignar serie/número: ComprobanteElectronico.AsignarSerieYNumero(...).
-     - Emitir: ComprobanteElectronico.Emitir() (valida reglas, recalcula totales y agrega ComprobanteEnviadoDomainEvent).
-     - Persistir: `IComprobanteEmitidoPersister.GuardarEmitidoAsync(snapshot)` (adapter especializado).
-     - Publicar eventos: drena events con DrainDomainEvents() y publica via `IEventBus`.
-   - Servicios externos usados: INumeracionService, IComprobanteEmitidoPersister, IEventBus.
-
-2) GuardarBorradorUseCase (Application/UseCases/GuardarBorradorUseCase.cs)
-   - Acciones principales en UC:
-     - Valida formato serie/tipo (TipoDeComprobante + SerieYNumero).
-     - Usa `IComprobanteDraftFactory` (puerta de fábrica) para crear o aplicar cambios sobre el agregado en estado BORRADOR.
-     - Repositorio: AddAsync / UpdateAsync en `IComprobanteRepository`.
-     - Unit of Work: `IUnitOfWork.CommitAsync()`.
-     - Publicación opcional de eventos drenados (IEventBus).
-   - Métodos del agregado invocados por la factoría: AgregarLinea(), EditarLinea(), EliminarLinea(), AsignarSerieYNumero(), CambiarCliente(), CambiarObservaciones(), CambiarFormaDePago(), etc.
-
-3) CorregirComprobanteUseCase (Application/UseCases/CorregirComprobanteUseCase.cs)
-   - Acciones principales:
-     - Carga agregado por Id (IComprobanteRepository.GetByIdAsync).
-     - Validación Serie/Número si vienen fijados (pre-check duplicidad).
-     - Delegación a `IComprobanteCorrector.CorregirAsync` que aplica cambios al agregado (usa métodos del aggregate para cambiar campos permitidos).
-     - Persistencia (UpdateAsync + Commit) y publicación de events.
-   - Métodos del agregado típicamente usados: CambiarCliente(), AsignarSerieYNumero(), CambiarVencimiento(), CambiarObservaciones(), RecalcularTotales(), MarcarCorregir() si se requiere.
-
-4) AnularComprobanteUseCase (Application/UseCases/AnularComprobanteUseCase.cs)
-   - Acciones principales:
-     - Carga agregado.
-     - Delegación a `IComprobanteAnulador.AnularAsync` que invoca ComprobanteElectronico.MarcarAnulado(cdrBajaEnUtc) o métodos equivalentes y añade notas internas.
-     - Persistencia y publicación de events (ComprobanteAnuladoDomainEvent).
-
-5) DuplicarComprobanteUseCase (Application/UseCases/DuplicarComprobanteUseCase.cs)
-   - Acciones principales:
-     - Carga el comprobante origen.
-     - Delegación a `IComprobanteDuplicator.DuplicarAsync` que construye un nuevo ComprobanteElectronico (nuevo borrador) copiando líneas, VOs y aplicando overrides.
-     - Persistencia (AddAsync) y publicación de events si procede.
-   - Métodos del agregado que el duplicador suele usar: ComprobanteElectronico.CrearBorrador (factory), AgregarLinea(...), AsignarSerieYNumero(...) (si se fija serie), CambiarCliente(...).
-
-6) ConsultarComprobanteUseCase / ListarComprobantesUseCase
-   - Son casos de consulta (read-only). Normalmente usan `IComprobanteQueryRepository` para devolver read-models (`ComprobanteResumenDto`, `ComprobanteDetalleDto`). No invocan métodos mutantes del agregado.
+### Resumen rápido
+- Aggregate principal: `ComprobanteElectronico` — maneja ciclo de vida (Borrador → Emitido/Enviado → Aceptado/Anulado/Observado) y cálculos de totales.
+- Entidad interna: `ComprobanteLinea` — cálculos unitarios, descuentos y redondeos según UM.
+- Puertos/Adapters usados por los UseCases: `INumeracionService`, `IComprobanteEmitidoPersister`, `IComprobanteRepository`, `IComprobanteQueryRepository`, `IUnitOfWork`, `IEventBus`.
 
 ---
 
-## Recomendaciones para documentación y pruebas
-- Completar diagramas por agregado (ej.: separar `ComprobanteLinea` en su propio mmd con atributos y reglas de cálculo).  
-- Generar diagramas de secuencia para los casos: Emitir (incluye INumeracionService, IComprobanteEmitidoPersister, EventBus) y Corregir/Anular (incluye validaciones y adaptadores).  
-- Añadir test de integración del UseCase `EmitirComprobanteUseCase` que compruebe: creación de borrador, agregado de líneas, asignación de serie, Emitir() y publicación de `ComprobanteEnviadoDomainEvent`.
+### Mapeo detallado (UseCase → Aggregate / Repos / Servicios)
+
+1) EmitirComprobanteUseCase (`Application/UseCases/EmitirComprobanteUseCase.cs`)
+   - Flujo resumido:
+     1. Normaliza inputs (tipo, moneda, tasa, fecha).
+     2. Construye `EmisorSnapshot` y `ClienteSnapshot`.
+     3. Crea agregado en BORRADOR con `ComprobanteElectronico.CrearBorrador(...)`.
+     4. Por cada ítem del request invoca `ComprobanteElectronico.AgregarLinea(...)` (factores: Descripcion, UM, Cantidad, Precio, Afectacion, Tasa).
+     5. Reserva numeración vía `INumeracionService.ReservarSiguienteAsync(...)`.
+     6. Llama `ComprobanteElectronico.AsignarSerieYNumero(...)` y `ComprobanteElectronico.Emitir()`.
+     7. Persiste resultado emitido con `IComprobanteEmitidoPersister.GuardarEmitidoAsync(snapshot)`.
+     8. Drena events del agregado (`DrainDomainEvents()`) y publica por `IEventBus`.
+
+   - Puertos/servicios implicados: `INumeracionService`, `IComprobanteEmitidoPersister`, `IEventBus`.
+
+2) GuardarBorradorUseCase (`Application/UseCases/GuardarBorradorUseCase.cs`)
+   - Flujo resumido:
+     1. Valida tipo/serie y duplicidad si viene número.
+     2. Usa `IComprobanteDraftFactory` para crear o aplicar cambios sobre `ComprobanteElectronico` (factory aplica llamadas al agregado: AgregarLinea, CambiarCliente, AsignarSerieYNumero, etc.).
+     3. Persiste con `IComprobanteRepository.AddAsync` o `UpdateAsync` y confirma con `IUnitOfWork.CommitAsync`.
+     4. Opcional: publica eventos drenados a `IEventBus`.
+
+   - Métodos de agregado que la factoría invoca: `AgregarLinea(...)`, `CambiarCliente(...)`, `AsignarSerieYNumero(...)`, `CambiarFormaDePago(...)`, `CambiarVencimiento(...)`, `RecalcularTotales()`.
+
+3) CorregirComprobanteUseCase
+   - Flujo resumido:
+     1. Carga agregado (`IComprobanteRepository.GetByIdAsync`).
+     2. Valida y prepara cambios (serie/número, campos permitidos).
+     3. Delegación a `IComprobanteCorrector` / factoria que aplica mutaciones sobre el agregado.
+     4. Persiste (`UpdateAsync(expectedVersion)`) y confirma (`IUnitOfWork.CommitAsync`).
+     5. Publica events si existen (`IEventBus`).
+
+4) AnularComprobanteUseCase
+   - Carga el agregado, delega a `IComprobanteAnulador` que invoca `ComprobanteElectronico.MarcarAnulado(...)` y persiste el cambio; publica `ComprobanteAnuladoDomainEvent`.
+
+5) DuplicarComprobanteUseCase
+   - Carga comprobante origen y crea un nuevo borrador copiando líneas/VOs (`ComprobanteElectronico.CrearBorrador` + `AgregarLinea(...)`), persiste y devuelve el nuevo Id.
+
+6) Consultar / Listar
+   - `ConsultarComprobanteUseCase` / `ListarComprobantesUseCase` usan `IComprobanteQueryRepository` (read models: `ComprobanteResumenDto`, `ComprobanteDetalleDto`) — operaciones read-only que no modifican el agregado.
 
 ---
 
-Archivos creados recientemente:
-- `docs/comprobantes_domain_classes.mmd` (diagrama Mermaid del dominio).  
-- `docs/comprobantes_usecases_mapping.md` (este documento).
+### Puntos prácticos (basados en el código)
+- Validaciones en Aggregate: `EnsureEditable()` limita mutaciones a estados Borrador/Corregir.
+- Recalculo de montos y reglas fiscales está implementado en `ComprobanteLinea.Recalcular()` y `ComprobanteElectronico.RecalcularTotales()`.
+- La numeración es reservada por el UseCase antes de llamar `Emitir()` — la persistencia del emitido usa un persister especializado (`IComprobanteEmitidoPersister`) que suele encapsular operaciones transversales (persistir snapshot, asociados UBL, CDR metadata).
+- Publicación de eventos: UseCases drenan eventos del agregado y los publican por `IEventBus`.
 
-Si quieres, puedo:
-- Renderizar `comprobantes_domain_classes.mmd` a PNG/SVG y añadirlo en `docs/`.
-- Generar diagramas de secuencia (Mermaid) para `EmitirComprobante` y `CorregirComprobante`.
-- Extraer interfaces/VOs faltantes y añadirlos al diagrama (por ejemplo `AfectacionImpuesto`, `TasaImpuesto`, `CentroDeCosto`).
+---
 
-Dime qué prefieres y lo continúo.
+### Recomendaciones y siguientes pasos
+- Renderizar `docs/comprobantes_domain_classes.mmd` a PNG/SVG para presentaciones.
+- Generar diagramas de secuencia para `EmitirComprobante` y `CorregirComprobante` (incluye `INumeracionService`, `IComprobanteEmitidoPersister`, `IEventBus`).
+- Añadir tests de integración del UseCase `EmitirComprobanteUseCase` que simulen numeración y persister.
+
+Si quieres que automatice alguno de esos pasos (render, secuencias, extracción DTOs), dime cuál y lo hago.
