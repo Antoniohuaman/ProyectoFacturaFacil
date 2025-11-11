@@ -1,0 +1,143 @@
+%% Diagrama de clases (Mermaid) para GestionInventarioBC Domain
+%% Archivo: docs/gestion_inventario_domain_classes.mmd
+classDiagram
+    %% Aggregates
+    class Almacen <<AggregateRoot>> {
+        +EmpresaId EmpresaId
+        +EstablecimientoId EstablecimientoId
+        +AlmacenId AlmacenId
+        +string Nombre
+        +bool Activo
+        +int Version
+        +static Crear(EmpresaId, EstablecimientoId, AlmacenId, string)
+        +ActualizarNombre(string)
+        +Deshabilitar()
+        +Habilitar()
+    }
+
+    class MovimientoInventario <<AggregateRoot>> {
+        +Guid MovimientoId
+        +EmpresaId EmpresaId
+        +EstablecimientoId EstablecimientoId
+        +AlmacenId AlmacenId
+        +DateTimeOffset Fecha
+        +TipoMovimiento Tipo
+        +MotivoMovimiento Motivo
+        +List~LineaMovimiento~ Lineas
+        +static Registrar(EmpresaId, EstablecimientoId, AlmacenId, DateTimeOffset, TipoMovimiento, MotivoMovimiento, IEnumerable~LineaMovimiento~)
+    }
+
+    class ReservaStock <<AggregateRoot>> {
+        +Guid ReservaId
+        +EmpresaId EmpresaId
+        +EstablecimientoId EstablecimientoId
+        +AlmacenId AlmacenId
+        +ProductoId ProductoId
+        +CantidadStock Cantidad
+        +EstadoReserva Estado
+        +DateTimeOffset CreadoEn
+        +DateTimeOffset? VenceEn
+        +static Crear(EmpresaId, EstablecimientoId, AlmacenId, ProductoId, CantidadStock, DateTimeOffset?)
+        +Confirmar()
+        +Liberar()
+        +Vencer()
+        +Cancelar()
+        +ExtenderHasta(DateTimeOffset)
+    }
+
+    class StockPorAlmacen <<AggregateRoot>> {
+        +EmpresaId EmpresaId
+        +EstablecimientoId EstablecimientoId
+        +AlmacenId AlmacenId
+        +ProductoId ProductoId
+        +CantidadStock Real
+        +CantidadStock Reservado
+        +CantidadStock Disponible
+        +int Version
+        +static CrearNuevo(EmpresaId, EstablecimientoId, AlmacenId, ProductoId)
+        +Ingresar(CantidadStock)
+        +Egresar(CantidadStock)
+        +Reservar(CantidadStock)
+        +LiberarReserva(CantidadStock)
+    }
+
+    class TransferenciaInventario <<AggregateRoot>> {
+        +Guid TransferenciaId
+        +EmpresaId EmpresaId
+        +EstablecimientoId OrigenEstablecimientoId
+        +AlmacenId OrigenAlmacenId
+        +EstablecimientoId DestinoEstablecimientoId
+        +AlmacenId DestinoAlmacenId
+        +ProductoId ProductoId
+        +CantidadStock Cantidad
+        +EstadoTransferencia Estado
+        +DateTimeOffset CreadoEn
+        +static Crear(EmpresaId, EstablecimientoId, OrigenAlmacenId, EstablecimientoId, DestinoAlmacenId, ProductoId, CantidadStock)
+        +Confirmar()
+        +Cancelar()
+    }
+
+    %% Entities / Value objects referenced
+    class LineaMovimiento {
+        +ProductoId ProductoId
+        +CantidadStock Cantidad
+        +CostoUnitario? CostoUnitario
+        +static Crear(ProductoId, CantidadStock, CostoUnitario?)
+    }
+
+    class AlertaStock {
+        +DateTimeOffset Fecha
+        +ProductoId ProductoId
+        +decimal Disponible
+        +decimal Minimo
+        +string? Observacion
+        +static Crear(ProductoId, decimal disponible, decimal minimo, string? observacion = null, DateTimeOffset? fecha = null)
+    }
+
+    %% Puertos / Repositorios
+    class IAlmacenRepository <<Repository>> {
+        +Task<Almacen?> ObtenerAsync(EmpresaId, EstablecimientoId, AlmacenId, CancellationToken)
+        +Task<IReadOnlyList~Almacen~> ListarAsync(EmpresaId, EstablecimientoId, CancellationToken)
+        +Task GuardarAsync(Almacen, CancellationToken)
+    }
+
+    class IMovimientoInventarioRepository <<Repository>> {
+        +Task<MovimientoInventario?> ObtenerAsync(EmpresaId, EstablecimientoId, AlmacenId, Guid, CancellationToken)
+        +Task<IReadOnlyList~MovimientoInventario~> ListarAsync(...)
+        +Task GuardarAsync(MovimientoInventario, CancellationToken)
+    }
+
+    class IReservaStockRepository <<Repository>> {
+        +Task<ReservaStock?> ObtenerAsync(EmpresaId, EstablecimientoId, AlmacenId, Guid, CancellationToken)
+        +Task GuardarAsync(ReservaStock, CancellationToken)
+    }
+
+    class IStockPorAlmacenRepository <<Repository>> {
+        +Task<StockPorAlmacen?> ObtenerAsync(EmpresaId, EstablecimientoId, AlmacenId, ProductoId, CancellationToken)
+        +Task<IReadOnlyList~StockPorAlmacen~> ListarPorAlmacenAsync(...)
+        +Task GuardarAsync(StockPorAlmacen, CancellationToken)
+    }
+
+    class ITransferenciaInventarioRepository <<Repository>> {
+        +Task<TransferenciaInventario?> ObtenerAsync(EmpresaId, Guid transferenciaId, CancellationToken)
+        +Task<IReadOnlyList~TransferenciaInventario~> ListarPendientesAsync(...)
+        +Task GuardarAsync(TransferenciaInventario, CancellationToken)
+    }
+
+    %% Relaciones
+    Almacen "1" o-- "*" StockPorAlmacen : contiene
+    StockPorAlmacen "1" o-- "*" LineaMovimiento : (por producto)
+    MovimientoInventario "1" o-- "*" LineaMovimiento : lineas
+    ReservaStock "1" o-- "1" ProductoId : reserva de
+    TransferenciaInventario ..> StockPorAlmacen : valida/ajusta via repositorio
+
+    %% Dependencias / notas
+    Almacen ..> IAlmacenRepository : persiste via
+    MovimientoInventario ..> IMovimientoInventarioRepository : persiste via
+    ReservaStock ..> IReservaStockRepository : persiste via
+    StockPorAlmacen ..> IStockPorAlmacenRepository : persiste via
+    TransferenciaInventario ..> ITransferenciaInventarioRepository : persiste via
+
+    note for StockPorAlmacen "Regla clave: Reservado <= Real; Disponible = Real - Reservado. Métodos lanzan BusinessRuleException si se vulnera la regla." 
+    note for ReservaStock "Estados: Pendiente -> Confirmada | Liberada | Vencida | Cancelada. Extensiones y validaciones según política de reserva." 
+    note for TransferenciaInventario "Origen != Destino. Solo transferencias en estado 'Creada' pueden confirmarse."

@@ -1,0 +1,95 @@
+%% Diagrama de clases (Mermaid) para ConfiguracionSistemaBC Domain
+%% Archivo: docs/configuracion_sistema_domain_classes.mmd
+classDiagram
+    %% Establecemos estereotipos para claridad
+    class ConfiguracionEmpresa <<AggregateRoot>> {
+        +Guid EmpresaId
+        +Guid TenantId
+        +string Ruc
+        +string NombreComercial
+        +string MonedaDefault
+        +string Ambiente
+        +List~Establecimiento~ Establecimientos
+        +List~SerieComprobante~ Series
+        +List~UnidadDeMedida~ UnidadesDeMedida
+        +List~FormaDePago~ FormasDePago
+        +List~UsuarioEmpresa~ Usuarios
+        +List~PerfilUsuario~ Perfiles
+        +RegistrarEstablecimiento(RegistrarEstablecimientoDto)
+        +RegistrarSerie(RegistrarSerieComprobanteDto)
+        +EstablecerSeriePorDefecto(serieId)
+        +RegistrarUnidadDeMedida(RegistrarUnidadDeMedidaDto)
+        +RegistrarFormaDePago(RegistrarFormaDePagoDto)
+        +RegistrarUsuarioEmpresa(RegistrarUsuarioEmpresaDto)
+        +HabilitarUsuario(usuarioId)
+        +InhabilitarUsuario(usuarioId)
+        +ActualizarConfiguracion(ActualizarConfiguracionEmpresaDto)
+        +CambiarAmbiente(nuevoAmbiente)
+    }
+
+    class Establecimiento {
+        +Guid EstablecimientoId
+        +string Codigo
+        +string Direccion
+        +string CodigoUbigeo
+        +List~SerieComprobante~ SeriesEnEstablecimiento
+    }
+
+    class SerieComprobante {
+        +Guid SerieId
+        +string Serie
+        +string TipoComprobante
+        +bool EsPorDefecto
+        +int? UltimoNumeroReservado
+    }
+
+    class UsuarioEmpresa {
+        +Guid UsuarioEmpresaId
+        +string Username
+        +string Nombre
+        +string Email
+        +List~string~ Roles
+        +bool EstaHabilitado
+    }
+
+    class UnidadDeMedida {
+        +string Codigo
+        +string Descripcion
+        +decimal Precision
+    }
+
+    class FormaDePago {
+        +string Codigo
+        +string Descripcion
+n    }
+
+    class PerfilUsuario {
+        +Guid PerfilId
+        +string Nombre
+        +List~string~ Permisos
+    }
+
+    %% Puertos / Repositorios / Factories
+    class IConfiguracionRepository <<Repository>> {
+        +Task<ConfiguracionEmpresa> GetByEmpresaId(Guid empresaId)
+        +Task Save(ConfiguracionEmpresa config)
+    }
+
+    class IUnitOfWork <<Port>> {
+        +Task CommitAsync()
+    }
+
+    %% Relaciones (agregado raíz tiene composicion hacia entidades internas)
+    ConfiguracionEmpresa "1" o-- "*" Establecimiento : contiene
+    ConfiguracionEmpresa "1" o-- "*" SerieComprobante : administra
+    ConfiguracionEmpresa "1" o-- "*" UnidadDeMedida : lista
+    ConfiguracionEmpresa "1" o-- "*" FormaDePago : lista
+    ConfiguracionEmpresa "1" o-- "*" UsuarioEmpresa : usuarios
+    ConfiguracionEmpresa "1" o-- "*" PerfilUsuario : perfiles
+
+    %% Relación a puertos (dependencias externas desde la capa de aplicación)
+    ConfiguracionEmpresa ..> IConfiguracionRepository : persiste via
+    ConfiguracionEmpresa ..> IUnitOfWork : transaction
+
+    %% Notas / aclaraciones
+    note for ConfiguracionEmpresa "Aggregate root: valida invariantes (RUC, series por tipo), asegura unicidad de serie por establecimiento cuando aplica y mantiene consistencia de configuración por tenant."

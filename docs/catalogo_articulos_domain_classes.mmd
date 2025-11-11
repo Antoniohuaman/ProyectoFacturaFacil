@@ -1,0 +1,80 @@
+classDiagram
+direction TB
+    class ImagenProducto {
+	    +Guid ImagenId
+	    +string Url
+	    +string NombreArchivo
+	    +int Orden
+    }
+
+    class Categoria {
+	    +Guid CategoriaId
+	    +string Codigo
+	    +string Nombre
+	    +Guid? ParentCategoriaId
+    }
+
+    class AtributoProducto {
+	    +string Nombre
+	    +string Valor
+    }
+
+    class UnidadDeMedida {
+	    +string Codigo
+	    +string Descripcion
+	    +int Precision
+    }
+
+    class Money {
+	    +decimal Amount
+	    +string Currency
+    }
+
+    class IProductoRepository {
+	    +Task GetById(Guid id)
+	    +Task Save(Producto producto)
+	    +Task Delete(Guid id)
+	    +Task List(FilterDto filter)
+    }
+
+    class IImportExportService {
+	    +Task Importar(Stream file, ImportOptions opts)
+	    +Task Exportar(FilterDto filter)
+    }
+
+    class IUnitOfWork {
+	    +Task CommitAsync()
+    }
+
+    class Producto {
+	    +Guid ProductoId
+	    +string Codigo
+	    +string Nombre
+	    +string Descripcion
+	    +List~ImagenProducto~ Imagenes
+	    +List~Categoria~ Categorias
+	    +List~AtributoProducto~ Atributos
+	    +UnidadDeMedida UnidadBase
+	    +Money PrecioVenta
+	    +bool EstaHabilitado
+	    +CrearProducto(CrearProductoDto)
+	    +EditarProducto(EditarProductoDto)
+	    +Habilitar()
+	    +Inhabilitar()
+	    +AplicarPrecio(PrecioDto)
+    }
+
+	<<Repository>> IProductoRepository
+	<<Port>> IImportExportService
+	<<Port>> IUnitOfWork
+	<<AggregateRoot>> Producto
+
+	note "Aggregate root: encapsula reglas de negocio de creación/edición, mantiene invariantes como unicidad de código/SKU, reglas de precios y stock (soft delete/habilitado)."
+
+    Producto "1" o-- "*" ImagenProducto : imagenes
+    Producto "1" o-- "*" Categoria : categorias
+    Producto "1" o-- "*" AtributoProducto : atributos
+    Producto "1" o-- "1" UnidadDeMedida : unidadBase
+    Producto ..> IProductoRepository : persiste via
+    Producto ..> IUnitOfWork : transaction
+    Producto ..> IImportExportService : usa para import/export
