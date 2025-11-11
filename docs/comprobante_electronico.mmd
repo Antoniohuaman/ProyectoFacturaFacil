@@ -1,0 +1,139 @@
+%% Diagrama de clases Mermaid — ComprobanteElectronico (ComprobantesElectronicosBC.Domain)
+classDiagram
+
+class ComprobanteElectronico {
+  +Guid ComprobanteId
+  +int Version
+  +EstadoComprobante Estado
+  +TipoDeComprobante Tipo
+  +SerieYNumero? SerieNumero
+  +FechaEmision Emision
+  +FechaVencimiento Vencimiento
+  +FormaDePago FormaDePago
+  +Moneda Moneda
+  +TipoCambio? TipoCambio
+  +EmpresaId EmpresaId
+  +TenantId TenantId
+  +EstablecimientoId EstablecimientoId
+  +ClienteSnapshot Cliente
+  +EmisorSnapshot Emisor
+  +IReadOnlyList<ComprobanteLinea> Lineas
+  +DescuentoGlobal DescuentoGlobal
+  +decimal SubtotalBase
+  +decimal IgvTotal
+  +decimal Total
+  +AgregarLinea(...)
+  +EditarLinea(...)
+  +EliminarLinea(int numero)
+  +CambiarMoneda(Moneda, TipoCambio, bool convertirPrecios)
+  +RecalcularTotales()
+  +Emitir()
+  +MarcarAceptado()
+  +MarcarRechazado(string codigo, string desc)
+  +MarcarAnulado(DateTimeOffset)
+  +DrainDomainEvents(): IReadOnlyCollection<IDomainEvent>
+}
+
+class ComprobanteLinea {
+  +int NumeroLinea
+  +DescripcionProducto Descripcion
+  +UnidadDeMedida UM
+  +Cantidad Cantidad
+  +ImporteMonetario PrecioUnitario
+  +bool PrecioIncluyeIgv
+  +AfectacionImpuesto AfectacionImpuesto
+  +TasaImpuesto TasaImpuesto
+  +DescuentoLinea? Descuento
+  +Dinero BaseImponible
+  +Dinero Igv
+  +Dinero ImporteTotal
+  +Recalcular()
+  +CambiarPrecio(ImporteMonetario, bool precioIncluyeIgv, bool permitirCambioDeMoneda=false)
+}
+
+class ImporteMonetario {
+  +decimal Monto
+  +Moneda Moneda
+}
+
+class Moneda {
+  +string Codigo
+  +string Simbolo
+  +int Decimales
+}
+
+class TipoCambio {
+  +Moneda Origen
+  +Moneda Destino
+  +decimal Valor
+  +Convertir(ImporteMonetario):ImporteMonetario
+}
+
+class ClienteSnapshot {
+  +DocumentoIdentidad Documento
+  +string RazonSocial
+  +bool EsRuc
+}
+
+class EmisorSnapshot {
+  +EmpresaId EmpresaId
+  +TenantId TenantId
+  +EstablecimientoId EstablecimientoId
+}
+
+class DescuentoGlobal {
+  +decimal Porcentaje
+}
+
+class DescuentoLinea {
+  +decimal Porcentaje
+  +Aplicar(Dinero):Dinero
+}
+
+class ComprobanteTotalesService {
+  +Calcular(lineas, descuentoGlobal): {SubtotalBase, DescuentoGlobalMonto, IgvTotal, Total}
+}
+
+class MonedaConversionService {
+  +Convertir(decimal monto, Moneda desde, Moneda hacia, TipoCambio):decimal
+}
+
+class EstadoComprobante <<enumeration>> {
+  Borrador
+  Enviado
+  Corregir
+  Aceptado
+  Rechazado
+  Anulado
+}
+
+%% Domain events
+class ComprobanteEnviadoDomainEvent
+class ComprobanteAceptadoDomainEvent
+class ComprobanteRechazadoDomainEvent
+class ComprobanteAnuladoDomainEvent
+class ComprobanteObservadoDomainEvent
+
+%% Relaciones
+ComprobanteElectronico "1" --> "*" ComprobanteLinea : lineas
+ComprobanteElectronico ..> TipoCambio : "tipoCambio (opcional)"
+ComprobanteElectronico ..> Moneda : moneda
+ComprobanteElectronico ..> ClienteSnapshot : cliente
+ComprobanteElectronico ..> EmisorSnapshot : emisor
+ComprobanteElectronico ..> ComprobanteTotalesService : usa
+ComprobanteElectronico ..> MonedaConversionService : usa
+
+ComprobanteLinea ..> ImporteMonetario : precioUnitario
+ComprobanteLinea ..> UnidadDeMedida : um
+ComprobanteLinea ..> DescuentoLinea : descuento
+ComprobanteLinea ..> AfectacionImpuesto : afectacion
+ComprobanteLinea ..> TasaImpuesto : tasa
+
+%% Eventos emitidos
+ComprobanteElectronico ..> ComprobanteEnviadoDomainEvent : "publish on Emitir()"
+ComprobanteElectronico ..> ComprobanteAceptadoDomainEvent : "publish on MarcarAceptado()"
+ComprobanteElectronico ..> ComprobanteRechazadoDomainEvent : "publish on MarcarRechazado()"
+ComprobanteElectronico ..> ComprobanteAnuladoDomainEvent : "publish on MarcarAnulado()"
+ComprobanteElectronico ..> ComprobanteObservadoDomainEvent : "publish on MarcarCorregir()"
+
+note for ComprobanteElectronico "Reglas clave:\n- Solo BORRADOR/CORREGIR son editables y emitibles.\n- Al emitir: SerieNumero obligatorio y al menos 1 línea.\n- Factura (01) requiere RUC de cliente.\n- Moneda distinta de PEN requiere TipoCambio.\n- Boleta (03) en PEN con Total > 700 exige DNI del cliente.\n- RecalcularTotales aplica validaciones (monto no negativo, tope máximo)."

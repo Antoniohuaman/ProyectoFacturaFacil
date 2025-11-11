@@ -1,0 +1,111 @@
+%% Diagrama de clases Mermaid para ComprobantesElectronicosBC.Domain
+classDiagram
+
+class ComprobanteElectronico {
+  +ComprobanteId Id
+  +Tipo Tipo
+  +string SerieNumero
+  +DateTime Emision
+  +DateTime? Vencimiento
+  +Moneda Moneda
+  +TipoCambio TipoCambio
+  +Dinero Total
+  +AgregarLinea(ComprobanteLinea linea)
+  +EditarLinea(Guid lineaId, ...)
+  +EliminarLinea(Guid lineaId)
+  +CambiarMoneda(Moneda nueva)
+  +RecalcularTotales()
+  +Emitir()
+}
+
+class ComprobanteLinea {
+  +LineaId Id
+  +ProductoId ProductoId
+  +UnidadDeMedida UM
+  +decimal Cantidad
+  +Dinero PrecioUnitario
+  +DescuentoLinea Descuento
+  +AfectacionImpuesto Afectacion
+  +TasaImpuesto Tasa
+  +Dinero BaseImponible
+  +Dinero Igv
+  +Dinero ImporteTotal
+  +Recalcular()
+  +CambiarPrecio(Dinero precio)
+  +CambiarCantidad(decimal cantidad)
+}
+
+class Dinero {
+  +decimal Monto
+  +Moneda Moneda
+  +Round()
+  +Sumar(Dinero)
+  +Restar(Dinero)
+}
+
+class Moneda {
+  +string Codigo
+  +string Simbolo
+  +int Decimales
+  +static PEN()
+  +static USD()
+}
+
+class TipoCambio {
+  +Moneda Origen
+  +Moneda Destino
+  +decimal Valor
+  +Convertir(Dinero):Dinero
+  +Invertir():TipoCambio
+}
+
+class DocumentoIdentidad {
+  +TipoDocumento Tipo
+  +string Numero
+}
+
+class AfectacionImpuesto {
+  +string Codigo
+  +string Descripcion
+}
+
+class TasaImpuesto {
+  +decimal Porcentaje
+}
+
+class UnidadDeMedida {
+  +string Codigo
+  +int Decimales
+}
+
+class DescuentoLinea {
+  +decimal Porcentaje
+  +Dinero Aplicar(Dinero base)
+}
+
+class ComprobanteTotalesService {
+  +Calcular(ComprobanteElectronico): object
+}
+
+class MonedaConversionService {
+  +Convertir(Dinero, Moneda): Dinero
+}
+
+%% Relaciones
+ComprobanteElectronico "1" --> "*" ComprobanteLinea : "lineas"
+ComprobanteElectronico ..> TipoCambio : "tipoCambio"
+ComprobanteElectronico ..> Moneda : "moneda"
+ComprobanteElectronico ..> DocumentoIdentidad : "cliente"
+ComprobanteElectronico ..> ComprobanteTotalesService : "usa"
+ComprobanteElectronico ..> MonedaConversionService : "usa"
+
+ComprobanteLinea ..> Dinero : "precio/base/total"
+ComprobanteLinea ..> UnidadDeMedida : "um"
+ComprobanteLinea ..> AfectacionImpuesto : "afectacion"
+ComprobanteLinea ..> TasaImpuesto : "tasa"
+ComprobanteLinea ..> DescuentoLinea : "descuento"
+
+Dinero ..> Moneda : "tiene"
+
+%% Nota
+note for ComprobanteElectronico "Reglas relevantes:\n- Boleta > 700 PEN requiere DNI cliente.\n- Moneda extranjera requiere TipoCambio.\n- Emitir genera eventos de dominio (Emitido, Aceptado, Rechazado, Anulado)."

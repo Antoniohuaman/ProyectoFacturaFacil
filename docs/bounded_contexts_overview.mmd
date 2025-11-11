@@ -1,0 +1,45 @@
+flowchart TD
+ subgraph SharedKernel["Shared Kernel"]
+        SK["Value Objects<br>EmpresaId, EstablecimientoId, AlmacenId, UsuarioId, Dinero, Moneda<br>AfectacionImpuesto..."]
+  end
+ subgraph ConfigSys["ConfiguracionSistemaBC"]
+        CS["Configuración<br>Series, Formas de pago<br>Unidades de medida, control de usuarios, establecimientos, ..."]
+  end
+ subgraph CatalogArt["CatalogoArticulosBC"]
+        CA["Catálogo Productos<br>SKU, Atributos<br>"]
+  end
+ subgraph ListaPrec["ListaPreciosBC"]
+        LP["Precios<br>Reglas, Descuentos<br>Promociones"]
+  end
+ subgraph GestClientes["GestionClientesBC"]
+        GC["Clientes<br>Contactos adicionales<br>Documentos"]
+  end
+ subgraph GestInventario["GestionInventarioBC"]
+        GI["Inventario<br>Stock, Movimientos<br>Reservas"]
+  end
+ subgraph CompElectronicos["ComprobantesElectronicosBC"]
+        CE["Comprobantes<br>Facturas, Boletas,borradores<br>"]
+  end
+ subgraph ControlCaja["ControlCajaBC"]
+        CC["Caja<br>Turnos<br>Movimientos"]
+  end
+ subgraph Indicadores["IndicadoresNegocioBC"]
+        IN["Reporting, Métricas<br>Consolidación"]
+  end
+ subgraph Integration["Integration"]
+        IT["API Service Facturación/SUNAT"]
+  end
+    CA -- API/Events --> CE
+    LP -- API --> CE
+    GC -- API/Events --> CE
+    GI -- API/Events --> CE
+    CS -- API/Cache --> CE
+    CC <-- Events --> CE
+    CE -- Events --> IN & IT
+    GI -- Events --> IN
+    GC -- Events --> IN
+    CC -- Events --> IN
+    CA -- Events --> LP
+    SK -. Shared .-> CE & GC & CS
+    IT -- Callbacks --> CE
+

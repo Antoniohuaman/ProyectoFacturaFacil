@@ -1,0 +1,145 @@
+%% Diagrama de clases Mermaid para GestionInventarioBC.Domain
+classDiagram
+
+%% Aggregates
+class Almacen {
+  +AlmacenId Id
+  +string Codigo
+  +string Nombre
+  +bool Activo
+  +CrearAlmacen(...)
+  +Actualizar(...)
+  +Deshabilitar()
+}
+
+class MovimientoInventario {
+  +MovimientoId Id
+  +AlmacenId AlmacenId
+  +DateTime Fecha
+  +TipoMovimiento Tipo
+  +RegistrarLinea(LineaMovimiento linea)
+  +Anular()
+}
+
+class ReservaStock {
+  +ReservaId Id
+  +AlmacenId AlmacenId
+  +ProductoId ProductoId
+  +Cantidad Cantidad
+  +DateTime Vencimiento
+  +Liberar()
+  +Confirmar()
+}
+
+class StockPorAlmacen {
+  +StockId Id
+  +AlmacenId AlmacenId
+  +ProductoId ProductoId
+  +Cantidad CantidadDisponible
+  +Ajustar(Cantidad cantidad)
+}
+
+class TransferenciaInventario {
+  +TransferenciaId Id
+  +AlmacenId Origen
+  +AlmacenId Destino
+  +DateTime Fecha
+  +Confirmar()
+  +Cancelar()
+}
+
+%% Entities
+class LineaMovimiento {
+  +LineaId Id
+  +ProductoId ProductoId
+  +Cantidad Cantidad
+  +UnidadDeMedida UM
+  +Lote Lote
+}
+
+class AlertaStock {
+  +AlertaId Id
+  +ProductoId ProductoId
+  +AlmacenId AlmacenId
+  +CantidadMinima Cantidad
+}
+
+%% Value Objects (representativos)
+class ProductoId {
+  +Guid Value
+}
+class AlmacenId {
+  +Guid Value
+}
+class ReservaId {
+  +Guid Value
+}
+class Cantidad {
+  +decimal Value
+}
+}
+class UnidadDeMedida {
+  +string Codigo
+  +int Decimales
+}
+class Lote {
+  +string Numero
+  +DateTime? FechaVencimiento
+}
+
+%% Policies, Specifications y Repositorios
+class PoliticaReserva {
+  +Validar(ReservaStock): bool
+}
+class PoliticaValoracionInventario {
+  +Aplicar(MovimientoInventario)
+}
+class IAlmacenRepository {
+  +Get(AlmacenId)
+  +Save(Almacen)
+}
+class IMovimientoInventarioRepository {
+  +Save(MovimientoInventario)
+  +GetById(MovimientoId)
+}
+class IReservaStockRepository {
+  +Save(ReservaStock)
+  +FindActiveByProducto(ProductoId)
+}
+class IStockPorAlmacenRepository {
+  +GetStock(AlmacenId, ProductoId)
+  +Save(StockPorAlmacen)
+}
+
+%% Events
+class MovimientoRegistrado {
+  +MovimientoId Id
+}
+class ReservaCreada {
+  +ReservaId Id
+}
+class TransferenciaConfirmada {
+  +TransferenciaId Id
+}
+
+%% Relaciones
+Almacen "1" --> "*" StockPorAlmacen : "stocks"
+Almacen "1" --> "*" MovimientoInventario : "movimientos"
+MovimientoInventario "1" --> "*" LineaMovimiento : "lineas"
+ReservaStock ..> ProductoId : "producto"
+ReservaStock ..> AlmacenId : "almacen"
+StockPorAlmacen ..> ProductoId : "producto"
+TransferenciaInventario ..> MovimientoInventario : "genera (movimiento)"
+MovimientoInventario ..> AlmacenId : "almacen"
+AlertaStock ..> ProductoId : "producto"
+AlertaStock ..> AlmacenId : "almacen"
+
+%% Dependencias
+MovimientoInventario ..> PoliticaValoracionInventario : "usa"
+ReservaStock ..> PoliticaReserva : "usa"
+MovimientoInventario ..> IMovimientoInventarioRepository : "persistencia"
+Almacen ..> IAlmacenRepository : "persistencia"
+StockPorAlmacen ..> IStockPorAlmacenRepository : "persistencia"
+ReservaStock ..> IReservaStockRepository : "persistencia"
+
+note for Almacen "Este diagrama se generó desde la estructura de carpetas de `src/GestionInventarioBC/Domain` y modela los Aggregates, Entities y VOs principales. Refinar con atributos y métodos reales desde el código cuando sea necesario."
