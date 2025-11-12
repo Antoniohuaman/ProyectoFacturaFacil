@@ -18,5 +18,7 @@ namespace GestionClientesBC.Application.Clientes.Deshabilitar
         /// Se normaliza a UTC internamente.
         /// </summary>
         public DateTime? FechaDeshabilitacion { get; init; }
+        /// <summary>Versión esperada del agregado para concurrencia optimista.</summary>
+        public int? ExpectedVersion { get; init; }
     }
 }

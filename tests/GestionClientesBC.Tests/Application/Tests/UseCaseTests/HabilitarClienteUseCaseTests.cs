@@ -42,7 +42,7 @@ namespace GestionClientesBC.Tests.Application.Clientes
             return new HabilitarClienteUseCase(repo.Object, uow.Object, tenant.Object);
         }
 
-        private static Cliente ClienteRucInhabilitado()
+    private static Cliente ClienteRucDeshabilitado()
         {
             // Cliente inicialmente INHABILITADO
             var c = new Cliente(
@@ -56,7 +56,7 @@ namespace GestionClientesBC.Tests.Application.Clientes
                 domicilioFiscal: null,
                 tipoCliente: TipoCliente.Cliente,
                 rolCliente: null,
-                estado: EstadoCliente.Inhabilitado);
+                estado: EstadoCliente.Deshabilitado);
 
             // (Opcional) ya tenía una deshabilitación previa
             c.Deshabilitar("Mora", new DateTime(2024, 12, 31, 23, 59, 59, DateTimeKind.Utc));
@@ -81,15 +81,15 @@ namespace GestionClientesBC.Tests.Application.Clientes
         }
 
         [Test]
-        public async Task Habilitar_Cliente_Inhabilitado_Exitoso_RegistraEvento()
+        public async Task Habilitar_Cliente_Deshabilitado_Exitoso_RegistraEvento()
         {
             var sut = SUT(out var repo, out var uow, out var tenant);
-            var existente = ClienteRucInhabilitado();
+            var existente = ClienteRucDeshabilitado();
 
             repo.Setup(r => r.GetByIdAsync(EmpresaDemo(), existente.ClienteId)).ReturnsAsync(existente);
-            repo.Setup(r => r.UpdateAsync(existente)).Returns(Task.CompletedTask);
+            repo.Setup(r => r.UpdateAsync(existente, It.IsAny<int>())).Returns(Task.CompletedTask);
 
-            var input = new HabilitarClienteInputDto { ClienteId = existente.ClienteId };
+            var input = new HabilitarClienteInputDto { ClienteId = existente.ClienteId, ExpectedVersion = existente.Version };
             var beforeEvents = existente.DomainEvents.Count;
 
             var outDto = await sut.Handle(input);
@@ -108,7 +108,7 @@ namespace GestionClientesBC.Tests.Application.Clientes
             Assert.That(outDto.FechaHabilitacionUtc.Kind, Is.EqualTo(DateTimeKind.Utc));
 
             // Persistencia
-            repo.Verify(r => r.UpdateAsync(existente), Times.Once);
+            repo.Verify(r => r.UpdateAsync(existente, It.IsAny<int>()), Times.Once);
             uow.Verify(u => u.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
         }
 
@@ -127,7 +127,7 @@ namespace GestionClientesBC.Tests.Application.Clientes
                       .With.Message.Contains("ya está habilitado"));
 
             // No se persiste
-            repo.Verify(r => r.UpdateAsync(It.IsAny<Cliente>()), Times.Never);
+            repo.Verify(r => r.UpdateAsync(It.IsAny<Cliente>(), It.IsAny<int>()), Times.Never);
             uow.Verify(u => u.CommitAsync(It.IsAny<CancellationToken>()), Times.Never);
         }
 
@@ -147,7 +147,7 @@ namespace GestionClientesBC.Tests.Application.Clientes
                 domicilioFiscal: null,
                 tipoCliente: TipoCliente.Cliente,
                 rolCliente: null,
-                estado: EstadoCliente.Inhabilitado);
+                estado: EstadoCliente.Deshabilitado);
 
             repo.Setup(r => r.GetByIdAsync(OtraEmpresa(), otro.ClienteId)).ReturnsAsync(otro);
             // Setup para simular que el cliente no existe en la empresa del tenant

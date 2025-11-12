@@ -72,7 +72,7 @@ namespace GestionClientesBC.Tests.Application.Clientes.Contactos
             var cliente = ClienteRucBase();
 
             repo.Setup(r => r.GetByIdAsync(cliente.EmpresaId, cliente.ClienteId)).ReturnsAsync(cliente);
-            repo.Setup(r => r.UpdateAsync(cliente)).Returns(Task.CompletedTask);
+            repo.Setup(r => r.UpdateAsync(cliente, It.IsAny<int>())).Returns(Task.CompletedTask);
 
             var input = new AgregarContactoClienteInputDto
             {
@@ -116,7 +116,7 @@ namespace GestionClientesBC.Tests.Application.Clientes.Contactos
             Assert.That(outDto.FechaCreacionUtc.Kind, Is.EqualTo(DateTimeKind.Utc));
 
             // Persistencia
-            repo.Verify(r => r.UpdateAsync(cliente), Times.Once);
+            repo.Verify(r => r.UpdateAsync(cliente, It.IsAny<int>()), Times.Once);
             uow.Verify(x => x.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
         }
 
@@ -156,7 +156,7 @@ namespace GestionClientesBC.Tests.Application.Clientes.Contactos
                 Throws.TypeOf<BusinessRuleException>()
                       .With.Message.Contains("Ya existe un contacto igual"));
 
-            repo.Verify(r => r.UpdateAsync(It.IsAny<Cliente>()), Times.Never);
+            repo.Verify(r => r.UpdateAsync(It.IsAny<Cliente>(), It.IsAny<int>()), Times.Never);
             uow.Verify(x => x.CommitAsync(It.IsAny<CancellationToken>()), Times.Never);
         }
 

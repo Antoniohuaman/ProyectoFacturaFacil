@@ -9,5 +9,7 @@ namespace GestionClientesBC.Application.Clientes.Habilitar
     {
         /// <summary>Identificador del cliente a habilitar.</summary>
         public Guid ClienteId { get; init; }
+        /// <summary>Versión esperada del agregado para concurrencia optimista.</summary>
+        public int? ExpectedVersion { get; init; }
     }
 }

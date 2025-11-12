@@ -93,7 +93,7 @@ namespace GestionClientesBC.Tests.Application.Clientes
                 domicilioFiscal: null,
                 tipoCliente: TipoCliente.Cliente,
                 rolCliente: RolCliente.SinDefinir,
-                estado: EstadoCliente.Inhabilitado);
+                estado: EstadoCliente.Deshabilitado);
             return c;
         }
 

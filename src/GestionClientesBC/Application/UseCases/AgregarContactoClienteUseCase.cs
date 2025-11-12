@@ -99,10 +99,11 @@ namespace GestionClientesBC.Application.Clientes.Contactos.Agregar
             );
 
             // 5) Agregar al agregado (verifica duplicados y registra ContactoAgregado)
+            var expectedVersion = input.ExpectedVersion ?? cliente.Version;
             cliente.AgregarContacto(contacto);
 
-            // 6) Persistir
-            await _repo.UpdateAsync(cliente);
+            // 6) Persistir con concurrencia
+            await _repo.UpdateAsync(cliente, expectedVersion);
             await _uow.CommitAsync(ct);
 
             // 7) Obtener el evento para timestamp

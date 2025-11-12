@@ -130,7 +130,7 @@ namespace GestionClientesBC.Tests.Domain
             var fechaLocal = new DateTime(2025, 9, 7, 10, 30, 0, DateTimeKind.Local);
             c.Deshabilitar("Prueba", fechaLocal);
 
-            Assert.That(c.Estado, Is.SameAs(EstadoCliente.Inhabilitado));
+            Assert.That(c.Estado, Is.SameAs(EstadoCliente.Deshabilitado));
             Assert.That(c.MotivoDeshabilitacion, Is.EqualTo("Prueba"));
             Assert.That(c.FechaDeshabilitacion.HasValue, Is.True);
             Assert.That(c.FechaUltimaModificacion.HasValue, Is.True);
@@ -288,7 +288,7 @@ namespace GestionClientesBC.Tests.Domain
             Assert.That(evAdded, Is.Not.Null);
             Assert.That(evAdded!.ClienteId, Is.EqualTo(c.ClienteId));
             Assert.That(evAdded.EmpresaId, Is.EqualTo(c.EmpresaId));
-            Assert.That(evAdded.Adjunto, Is.EqualTo(adj));
+            Assert.That(evAdded.AdjuntoId, Is.EqualTo(adj.AdjuntoId));
             Assert.That(c.DomainEvents.Count, Is.EqualTo(eventosPrevios + 1));
 
             // Eliminar

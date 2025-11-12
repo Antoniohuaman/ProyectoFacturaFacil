@@ -4,16 +4,16 @@ using SharedKernel.Exceptions; // BusinessRuleException
 namespace GestionClientesBC.Domain.ValueObjects
 {
     /// <summary>
-    /// Estado del cliente (habilitado/inhabilitado) como Value Object.
-    /// - Inhabilitado: no se permite realizar operaciones (emitir comprobantes, etc.)
+    /// Estado del cliente (habilitado/deshabilitado) como Value Object.
+    /// - Deshabilitado: no se permite realizar operaciones (emitir comprobantes, etc.)
     /// - Habilitado: se permiten operaciones.
     /// Las transiciones deben hacerse en el Aggregate (Cliente), este VO solo expresa el valor/semántica.
     /// </summary>
     public sealed class EstadoCliente : IEquatable<EstadoCliente>
     {
         // Códigos canónicos (útiles para persistencia/simple serialización)
-        public const string CodigoHabilitado = "HAB";
-        public const string CodigoInhabilitado = "INH";
+    public const string CodigoHabilitado = "HAB";
+    public const string CodigoDeshabilitado = "DES";
 
         public string Codigo { get; }   // "HAB" | "INH"
         public string Nombre { get; }   // "Habilitado" | "Inhabilitado"
@@ -23,7 +23,7 @@ namespace GestionClientesBC.Domain.ValueObjects
 
         // Instancias singleton (VOs por identidad de valor)
         public static readonly EstadoCliente Habilitado   = new EstadoCliente(CodigoHabilitado, "Habilitado");
-        public static readonly EstadoCliente Inhabilitado = new EstadoCliente(CodigoInhabilitado, "Inhabilitado");
+    public static readonly EstadoCliente Deshabilitado = new EstadoCliente(CodigoDeshabilitado, "Deshabilitado");
 
         // Para EF Core
         private EstadoCliente() { Codigo = null!; Nombre = null!; }
@@ -45,15 +45,15 @@ namespace GestionClientesBC.Domain.ValueObjects
             return norm switch
             {
                 CodigoHabilitado   => Habilitado,
-                CodigoInhabilitado => Inhabilitado,
-                _ => throw new BusinessRuleException($"Código de estado inválido: '{codigo}'. Valores permitidos: {CodigoHabilitado}, {CodigoInhabilitado}.")
+                CodigoDeshabilitado => Deshabilitado,
+                _ => throw new BusinessRuleException($"Código de estado inválido: '{codigo}'. Valores permitidos: {CodigoHabilitado}, {CodigoDeshabilitado}.")
             };
         }
 
         /// <summary>
-        /// Crea el estado desde un booleano (true = Habilitado, false = Inhabilitado).
+    /// Crea el estado desde un booleano (true = Habilitado, false = Deshabilitado).
         /// </summary>
-        public static EstadoCliente DesdeBool(bool habilitado) => habilitado ? Habilitado : Inhabilitado;
+    public static EstadoCliente DesdeBool(bool habilitado) => habilitado ? Habilitado : Deshabilitado;
 
         /// <summary>
         /// Lanza BusinessRuleException si el estado actual no permite la operación indicada.
@@ -62,7 +62,7 @@ namespace GestionClientesBC.Domain.ValueObjects
         public void AsegurarOperacionPermitida(string operacion = "operación")
         {
             if (!PermiteOperaciones)
-                throw new BusinessRuleException($"El cliente está inhabilitado: no se puede realizar la {operacion}.");
+                throw new BusinessRuleException($"El cliente está deshabilitado: no se puede realizar la {operacion}.");
         }
 
         public override string ToString() => Nombre;

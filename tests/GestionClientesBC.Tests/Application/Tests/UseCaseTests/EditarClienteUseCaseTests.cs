@@ -81,7 +81,7 @@ namespace GestionClientesBC.Tests.Application.Clientes
             repo.Setup(r => r.GetByIdAsync(EmpresaDemo(), existente.ClienteId)).ReturnsAsync(existente);
 
             // No se cambia documento, no se consulta duplicados
-            repo.Setup(r => r.UpdateAsync(existente)).Returns(Task.CompletedTask);
+            repo.Setup(r => r.UpdateAsync(existente, It.IsAny<int>())).Returns(Task.CompletedTask);
 
             var input = new EditarClienteInputDto
             {
@@ -111,7 +111,7 @@ namespace GestionClientesBC.Tests.Application.Clientes
             Assert.That(result.TipoCliente, Is.EqualTo("CP"));
             Assert.That(result.RolCliente, Is.EqualTo("MAY"));
 
-            repo.Verify(r => r.UpdateAsync(existente), Times.Once);
+            repo.Verify(r => r.UpdateAsync(existente, It.IsAny<int>()), Times.Once);
             uow.Verify(u => u.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
         }
 
@@ -170,7 +170,7 @@ namespace GestionClientesBC.Tests.Application.Clientes
 
             var existente = ClienteRucBase();
             repo.Setup(r => r.GetByIdAsync(EmpresaDemo(), existente.ClienteId)).ReturnsAsync(existente);
-            repo.Setup(r => r.UpdateAsync(existente)).Returns(Task.CompletedTask);
+            repo.Setup(r => r.UpdateAsync(existente, It.IsAny<int>())).Returns(Task.CompletedTask);
 
             var deshabilitar = new EditarClienteInputDto
             {
@@ -182,13 +182,13 @@ namespace GestionClientesBC.Tests.Application.Clientes
             };
 
             var out1 = await sut.Handle(deshabilitar);
-            Assert.That(out1.Estado, Is.EqualTo(EstadoCliente.Inhabilitado.Codigo));
+            Assert.That(out1.Estado, Is.EqualTo(EstadoCliente.Deshabilitado.Codigo));
 
             // Segunda llamada: habilitar
             repo.Invocations.Clear();
             uow.Invocations.Clear();
             repo.Setup(r => r.GetByIdAsync(EmpresaDemo(), existente.ClienteId)).ReturnsAsync(existente);
-            repo.Setup(r => r.UpdateAsync(existente)).Returns(Task.CompletedTask);
+            repo.Setup(r => r.UpdateAsync(existente, It.IsAny<int>())).Returns(Task.CompletedTask);
 
             var habilitar = new EditarClienteInputDto
             {

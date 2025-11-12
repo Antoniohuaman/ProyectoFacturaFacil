@@ -83,7 +83,7 @@ namespace GestionClientesBC.Tests.Application.Clientes
             var cliente = ClienteRuc();
 
             repo.Setup(r => r.GetByIdAsync(EmpresaDemo(), cliente.ClienteId)).ReturnsAsync(cliente);
-            repo.Setup(r => r.UpdateAsync(cliente)).Returns(Task.CompletedTask);
+            repo.Setup(r => r.UpdateAsync(cliente, It.IsAny<int>())).Returns(Task.CompletedTask);
 
             var fecha = new DateTime(2025, 01, 02, 03, 04, 05, DateTimeKind.Utc);
             var input = new IngresarAdjuntoClienteInputDto
@@ -124,7 +124,7 @@ namespace GestionClientesBC.Tests.Application.Clientes
             Assert.That(outDto.FechaEventoUtc!.Value.Kind, Is.EqualTo(DateTimeKind.Utc));
 
             // Persistencia
-            repo.Verify(r => r.UpdateAsync(cliente), Times.Once);
+            repo.Verify(r => r.UpdateAsync(cliente, It.IsAny<int>()), Times.Once);
             uow.Verify(u => u.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
         }
 
@@ -135,7 +135,7 @@ namespace GestionClientesBC.Tests.Application.Clientes
             var cliente = ClienteRuc();
 
             repo.Setup(r => r.GetByIdAsync(EmpresaDemo(), cliente.ClienteId)).ReturnsAsync(cliente);
-            repo.Setup(r => r.UpdateAsync(cliente)).Returns(Task.CompletedTask);
+            repo.Setup(r => r.UpdateAsync(cliente, It.IsAny<int>())).Returns(Task.CompletedTask);
 
             var input = new IngresarAdjuntoClienteInputDto
             {
@@ -161,7 +161,7 @@ namespace GestionClientesBC.Tests.Application.Clientes
             var cliente = ClienteRuc();
 
             repo.Setup(r => r.GetByIdAsync(EmpresaDemo(), cliente.ClienteId)).ReturnsAsync(cliente);
-            repo.Setup(r => r.UpdateAsync(cliente)).Returns(Task.CompletedTask);
+            repo.Setup(r => r.UpdateAsync(cliente, It.IsAny<int>())).Returns(Task.CompletedTask);
 
             var fechaUnspec = new DateTime(2025, 04, 05, 06, 07, 08, DateTimeKind.Unspecified);
 

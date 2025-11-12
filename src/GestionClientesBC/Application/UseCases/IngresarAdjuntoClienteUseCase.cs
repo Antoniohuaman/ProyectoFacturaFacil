@@ -69,10 +69,11 @@ namespace GestionClientesBC.Application.Clientes.Adjuntos.Ingresar
 
             // 4) Crear entidad de adjunto y agregar al agregado
             var adjunto = new AdjuntoCliente(adjuntoId, input.NombreArchivo.Trim(), input.Ruta.Trim(), fechaUtc, input.Comentario);
+            var expectedVersion = input.ExpectedVersion ?? cliente.Version;
             cliente.AgregarAdjunto(adjunto);
 
-            // 5) Persistir
-            await _repo.UpdateAsync(cliente);
+            // 5) Persistir con concurrencia
+            await _repo.UpdateAsync(cliente, expectedVersion);
             await _uow.CommitAsync(ct);
 
             // 6) Obtener evento para trazabilidad

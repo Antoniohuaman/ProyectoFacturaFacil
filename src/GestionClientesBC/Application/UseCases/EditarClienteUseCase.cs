@@ -219,13 +219,13 @@ namespace GestionClientesBC.Application.Clientes.Editar
                 if (input.Habilitado.Value && !estabaHabilitado)
                 {
                     cliente.Habilitar();
-                    cambios["Estado"] = ("INH", "HAB");
+                    cambios["Estado"] = ("DES", "HAB");
                 }
                 else if (!input.Habilitado.Value && estabaHabilitado)
                 {
                     var motivo = input.MotivoDeshabilitacion; // puede ser null
                     cliente.Deshabilitar(motivo, DateTime.UtcNow);
-                    cambios["Estado"] = ("HAB", "INH");
+                    cambios["Estado"] = ("HAB", "DES");
                     if (!string.IsNullOrWhiteSpace(motivo))
                         cambios["MotivoDeshabilitacion"] = (null, motivo);
                 }
@@ -235,7 +235,8 @@ namespace GestionClientesBC.Application.Clientes.Editar
             if (cambios.Count > 0)
             {
                 cliente.RegistrarModificacion(cambios);
-                await _repo.UpdateAsync(cliente);
+                var expectedVersion = input.ExpectedVersion ?? cliente.Version;
+                await _repo.UpdateAsync(cliente, expectedVersion);
                 await _uow.CommitAsync(ct);
             }
 

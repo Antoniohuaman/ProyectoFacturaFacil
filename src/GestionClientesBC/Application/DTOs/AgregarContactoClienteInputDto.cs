@@ -11,6 +11,8 @@ namespace GestionClientesBC.Application.Clientes.Contactos.Agregar
     {
         /// <summary>Cliente destino.</summary>
         public Guid ClienteId { get; init; }
+        /// <summary>Versión esperada del agregado para concurrencia optimista.</summary>
+        public int? ExpectedVersion { get; init; }
 
         /// <summary>Nombre completo del contacto (obligatorio).</summary>
         public string NombreContacto { get; init; } = null!;

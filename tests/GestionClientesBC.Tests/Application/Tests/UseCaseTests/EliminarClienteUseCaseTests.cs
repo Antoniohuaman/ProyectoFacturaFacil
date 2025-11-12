@@ -176,7 +176,7 @@ namespace GestionClientesBC.Tests.Application.Clientes
             Assert.DoesNotThrowAsync(async () => await sut.Handle(input));
 
             // Asegura que no se intentó un Update
-            repo.Verify(r => r.UpdateAsync(It.IsAny<Cliente>()), Times.Never);
+            repo.Verify(r => r.UpdateAsync(It.IsAny<Cliente>(), It.IsAny<int>()), Times.Never);
             repo.Verify(r => r.DeleteAsync(EmpresaDemo(), existente.ClienteId), Times.Once);
         }
     }

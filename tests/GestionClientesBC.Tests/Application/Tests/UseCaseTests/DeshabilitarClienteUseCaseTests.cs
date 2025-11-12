@@ -57,7 +57,7 @@ namespace GestionClientesBC.Tests.Application.Clientes
                 estado: EstadoCliente.Habilitado);
         }
 
-        private static Cliente ClienteDniInhabilitado()
+    private static Cliente ClienteDniDeshabilitado()
         {
             return new Cliente(
                 clienteId: Guid.NewGuid(),
@@ -70,7 +70,7 @@ namespace GestionClientesBC.Tests.Application.Clientes
                 domicilioFiscal: null,
                 tipoCliente: TipoCliente.Cliente,
                 rolCliente: null,
-                estado: EstadoCliente.Inhabilitado);
+        estado: EstadoCliente.Deshabilitado);
         }
 
         [Test]
@@ -83,7 +83,7 @@ namespace GestionClientesBC.Tests.Application.Clientes
             var motivo = "Solicitado por el usuario";
 
             repo.Setup(r => r.GetByIdAsync(EmpresaDemo(), existente.ClienteId)).ReturnsAsync(existente);
-            repo.Setup(r => r.UpdateAsync(existente)).Returns(Task.CompletedTask);
+            repo.Setup(r => r.UpdateAsync(existente, It.IsAny<int>())).Returns(Task.CompletedTask);
 
             var input = new DeshabilitarClienteInputDto
             {
@@ -96,7 +96,7 @@ namespace GestionClientesBC.Tests.Application.Clientes
             var outDto = await sut.Handle(input);
 
             // Estado interno
-            Assert.That(existente.Estado, Is.EqualTo(EstadoCliente.Inhabilitado));
+            Assert.That(existente.Estado, Is.EqualTo(EstadoCliente.Deshabilitado));
             Assert.That(existente.MotivoDeshabilitacion, Is.EqualTo(motivo));
             Assert.That(existente.FechaDeshabilitacion, Is.EqualTo(fechaUtc));
             Assert.That(existente.DomainEvents.Count, Is.GreaterThan(eventosAntes));
@@ -105,14 +105,14 @@ namespace GestionClientesBC.Tests.Application.Clientes
             // Salida
             Assert.That(outDto.Deshabilitado, Is.True);
             Assert.That(outDto.EmpresaId, Is.EqualTo(EmpresaDemo().Value));
-            Assert.That(outDto.EstadoCodigo, Is.EqualTo(EstadoCliente.Inhabilitado.Codigo)); // "INH"
+            Assert.That(outDto.EstadoCodigo, Is.EqualTo(EstadoCliente.Deshabilitado.Codigo)); // "DES"
             Assert.That(outDto.FechaDeshabilitacionUtc, Is.EqualTo(fechaUtc));
             Assert.That(outDto.MotivoDeshabilitacion, Is.EqualTo(motivo));
             Assert.That(outDto.TipoDocumento, Is.EqualTo(TipoDocumento.Ruc.ToString()));
             Assert.That(outDto.NumeroDocumento, Is.EqualTo("20661287099"));
 
             // Persistencia
-            repo.Verify(r => r.UpdateAsync(existente), Times.Once);
+            repo.Verify(r => r.UpdateAsync(existente, It.IsAny<int>()), Times.Once);
             uow.Verify(u => u.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
         }
 
@@ -120,10 +120,10 @@ namespace GestionClientesBC.Tests.Application.Clientes
         public void Deshabilitar_YaInhabilitado_NoFalla_Y_EmiteEvento()
         {
             var sut = SUT(out var repo, out var uow, out var tenant);
-            var existente = ClienteDniInhabilitado();
+            var existente = ClienteDniDeshabilitado();
 
             repo.Setup(r => r.GetByIdAsync(EmpresaDemo(), existente.ClienteId)).ReturnsAsync(existente);
-            repo.Setup(r => r.UpdateAsync(existente)).Returns(Task.CompletedTask);
+            repo.Setup(r => r.UpdateAsync(existente, It.IsAny<int>())).Returns(Task.CompletedTask);
 
             var input = new DeshabilitarClienteInputDto
             {
@@ -134,10 +134,10 @@ namespace GestionClientesBC.Tests.Application.Clientes
 
             Assert.DoesNotThrowAsync(async () => await sut.Handle(input));
 
-            Assert.That(existente.Estado, Is.EqualTo(EstadoCliente.Inhabilitado));
+            Assert.That(existente.Estado, Is.EqualTo(EstadoCliente.Deshabilitado));
             Assert.That(existente.DomainEvents.Any(e => e is GestionClientesBC.Domain.Events.ClienteDeshabilitado), Is.True);
 
-            repo.Verify(r => r.UpdateAsync(existente), Times.Once);
+            repo.Verify(r => r.UpdateAsync(existente, It.IsAny<int>()), Times.Once);
             uow.Verify(u => u.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
         }
 
@@ -200,7 +200,7 @@ namespace GestionClientesBC.Tests.Application.Clientes
             var fechaUnspec = new DateTime(2025, 03, 04, 10, 00, 00, DateTimeKind.Unspecified);
 
             repo.Setup(r => r.GetByIdAsync(EmpresaDemo(), existente.ClienteId)).ReturnsAsync(existente);
-            repo.Setup(r => r.UpdateAsync(existente)).Returns(Task.CompletedTask);
+            repo.Setup(r => r.UpdateAsync(existente, It.IsAny<int>())).Returns(Task.CompletedTask);
 
             var input = new DeshabilitarClienteInputDto
             {
@@ -215,7 +215,7 @@ namespace GestionClientesBC.Tests.Application.Clientes
             Assert.That(outDto.FechaDeshabilitacionUtc.Kind, Is.EqualTo(DateTimeKind.Utc));
             Assert.That(existente.FechaDeshabilitacion!.Value.Kind, Is.EqualTo(DateTimeKind.Utc));
 
-            repo.Verify(r => r.UpdateAsync(existente), Times.Once);
+            repo.Verify(r => r.UpdateAsync(existente, It.IsAny<int>()), Times.Once);
             uow.Verify(u => u.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
         }
 

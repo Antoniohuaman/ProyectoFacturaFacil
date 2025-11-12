@@ -36,6 +36,7 @@ namespace GestionClientesBC.Domain.Aggregates
     public IReadOnlyCollection<ContactoCliente> Contactos => _contactos.AsReadOnly();
     public IReadOnlyCollection<AdjuntoCliente> Adjuntos => _adjuntos.AsReadOnly();
     public DateTime? FechaUltimaModificacion { get; private set; } // Nueva: fecha de última modificación
+    public int Version { get; private set; } // Concurrencia optimista
 
         private readonly List<IDomainEvent> _domainEvents = new();
         public IReadOnlyCollection<IDomainEvent> DomainEvents => _domainEvents.AsReadOnly();
@@ -84,6 +85,7 @@ namespace GestionClientesBC.Domain.Aggregates
             RolCliente = rolCliente;
             Estado = estado ?? EstadoCliente.Habilitado;
             FechaRegistro = DateTime.UtcNow;
+            Version = 0;
 
             // Evento de dominio: ClienteCreado (ajustar según nuevos campos)
             _domainEvents.Add(new ClienteCreado(
@@ -103,6 +105,10 @@ namespace GestionClientesBC.Domain.Aggregates
                 throw new BusinessRuleException("El cliente ya está habilitado.");
 
             Estado = EstadoCliente.Habilitado;
+            MotivoDeshabilitacion = null;
+            FechaDeshabilitacion = null;
+            FechaUltimaModificacion = DateTime.UtcNow;
+            Version++;
             RegistrarEvento(new ClienteHabilitado(ClienteId, EmpresaId));
         }
 
@@ -115,6 +121,8 @@ namespace GestionClientesBC.Domain.Aggregates
 
             Correo = nuevoCorreo;
             Telefono = Telefono.FromTexto(nuevoCelular);
+            FechaUltimaModificacion = DateTime.UtcNow;
+            Version++;
         }
 
         // --- Métodos de edición para el caso de uso EditarCliente ---
@@ -125,6 +133,7 @@ namespace GestionClientesBC.Domain.Aggregates
                 throw new ArgumentNullException(nameof(nuevaDireccion));
             DomicilioFiscal = nuevaDireccion;
             FechaUltimaModificacion = DateTime.UtcNow;
+            Version++;
         }
 
         public void ActualizarNombre(object nuevoNombre)
@@ -142,18 +151,21 @@ namespace GestionClientesBC.Domain.Aggregates
                 Nombres = nombrePersona;
             }
             FechaUltimaModificacion = DateTime.UtcNow;
+            Version++;
         }
 
         public void ActualizarTipoCliente(TipoCliente nuevoTipo)
         {
             TipoCliente = nuevoTipo;
             FechaUltimaModificacion = DateTime.UtcNow;
+            Version++;
         }
 
         public void ActualizarRolCliente(RolCliente? nuevoRol)
         {
             RolCliente = nuevoRol;
             FechaUltimaModificacion = DateTime.UtcNow;
+            Version++;
         }
 
         public void ActualizarDocumentoIdentidad(DocumentoIdentidad nuevoDocumento)
@@ -175,6 +187,7 @@ namespace GestionClientesBC.Domain.Aggregates
 
             this.Documento = nuevoDocumento;
             FechaUltimaModificacion = DateTime.UtcNow;
+            Version++;
         }
 
         public void RegistrarModificacion(IDictionary<string, (object? anterior, object? nuevo)> cambios)
@@ -189,15 +202,17 @@ namespace GestionClientesBC.Domain.Aggregates
                 Nombres?.Completo ?? string.Empty,
                 DateTime.UtcNow
             ));
+            Version++;
         }
 
         public void Deshabilitar(string? motivo, DateTime fecha)
         {
-            Estado = EstadoCliente.Inhabilitado;
+            Estado = EstadoCliente.Deshabilitado;
             var fechaUtc = fecha.Kind == DateTimeKind.Utc ? fecha : fecha.ToUniversalTime();
             FechaDeshabilitacion = fechaUtc;
             MotivoDeshabilitacion = motivo;
             FechaUltimaModificacion = DateTime.UtcNow;
+            Version++;
             RegistrarEvento(new ClienteDeshabilitado(ClienteId, EmpresaId, motivo, fechaUtc));
         }
 
@@ -225,7 +240,9 @@ namespace GestionClientesBC.Domain.Aggregates
                     "Ya existe un contacto igual para este cliente.");
             }
             _contactos.Add(contacto);
-            RegistrarEvento(new ContactoAgregado(ClienteId, EmpresaId, contacto));
+            FechaUltimaModificacion = DateTime.UtcNow;
+            Version++;
+            RegistrarEvento(new ContactoAgregado(ClienteId, EmpresaId, contacto.ContactoId));
         }
 
         /// <summary>
@@ -237,6 +254,8 @@ namespace GestionClientesBC.Domain.Aggregates
             if (contacto == null)
                 throw new BusinessRuleException("Contacto no encontrado.");
             _contactos.Remove(contacto);
+            FechaUltimaModificacion = DateTime.UtcNow;
+            Version++;
             RegistrarEvento(new ContactoEliminado(ClienteId, EmpresaId, contactoId));
         }
 
@@ -249,9 +268,16 @@ namespace GestionClientesBC.Domain.Aggregates
         }
         public void AgregarAdjunto(AdjuntoCliente adjunto)
         {
+            if (_adjuntos.Any(a => a.AdjuntoId == adjunto.AdjuntoId))
+                throw new BusinessRuleException("Ya existe un adjunto con el mismo Id.");
+            if (_adjuntos.Any(a => string.Equals(a.NombreArchivo, adjunto.NombreArchivo, StringComparison.OrdinalIgnoreCase)
+                                 && string.Equals(a.Ruta, adjunto.Ruta, StringComparison.OrdinalIgnoreCase)))
+                throw new BusinessRuleException("Ya existe un adjunto con el mismo nombre y ruta.");
             _adjuntos.Add(adjunto);
+            FechaUltimaModificacion = DateTime.UtcNow;
+            Version++;
             // Registrar evento de dominio
-            _domainEvents.Add(new AdjuntoAgregado(ClienteId, EmpresaId, adjunto));
+            _domainEvents.Add(new AdjuntoAgregado(ClienteId, EmpresaId, adjunto.AdjuntoId));
         }
 
         public void EliminarAdjunto(Guid adjuntoId)
@@ -260,6 +286,8 @@ namespace GestionClientesBC.Domain.Aggregates
             if (adjunto != null)
             {
                 _adjuntos.Remove(adjunto);
+                FechaUltimaModificacion = DateTime.UtcNow;
+                Version++;
                 // Registrar evento de dominio
                 _domainEvents.Add(new AdjuntoEliminado(ClienteId, EmpresaId, adjuntoId));
             }
@@ -275,6 +303,7 @@ namespace GestionClientesBC.Domain.Aggregates
         public void EliminarCliente()
         {
             RegistrarEvento(new ClienteEliminado(ClienteId, EmpresaId));
+            Version++;
         }
     }
 }

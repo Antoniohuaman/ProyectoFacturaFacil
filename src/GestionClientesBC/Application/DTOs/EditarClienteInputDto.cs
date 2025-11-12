@@ -10,6 +10,8 @@ namespace GestionClientesBC.Application.Clientes.Editar
     public sealed class EditarClienteInputDto
     {
         public Guid ClienteId { get; init; }
+        /// <summary>Versión esperada del agregado para concurrencia optimista.</summary>
+        public int? ExpectedVersion { get; init; }
 
         // --- Documento (opcional) ---
         public TipoDocumento? TipoDocumento { get; init; }

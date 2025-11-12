@@ -56,10 +56,11 @@ namespace GestionClientesBC.Application.Clientes.Deshabilitar
             var fechaUtc = fecha.Kind == DateTimeKind.Utc ? fecha : fecha.ToUniversalTime();
 
             // 4) Deshabilitar (el agregado registra evento)
+            var expectedVersion = input.ExpectedVersion ?? cliente.Version;
             cliente.Deshabilitar(input.Motivo, fechaUtc);
 
-            // 5) Persistir
-            await _repo.UpdateAsync(cliente);
+            // 5) Persistir con concurrencia
+            await _repo.UpdateAsync(cliente, expectedVersion);
             await _uow.CommitAsync(ct);
 
             // 6) Tomar OccurredOn del evento si está disponible
@@ -72,7 +73,7 @@ namespace GestionClientesBC.Application.Clientes.Deshabilitar
                 ClienteId = cliente.ClienteId,
                 EmpresaId = empresaId.Value,
                 Deshabilitado = true,
-                EstadoCodigo = cliente.Estado?.Codigo ?? string.Empty, // "INH"
+                EstadoCodigo = cliente.Estado?.Codigo ?? string.Empty, // "DES"
                 FechaDeshabilitacionUtc = cliente.FechaDeshabilitacion ?? fechaEventoUtc,
                 MotivoDeshabilitacion = cliente.MotivoDeshabilitacion,
                 TipoDocumento = cliente.Documento.Tipo.ToString(),

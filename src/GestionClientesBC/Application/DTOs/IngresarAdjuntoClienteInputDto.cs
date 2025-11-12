@@ -9,6 +9,8 @@ namespace GestionClientesBC.Application.Clientes.Adjuntos.Ingresar
     {
         /// <summary>Cliente destino.</summary>
         public Guid ClienteId { get; init; }
+        /// <summary>Versión esperada del agregado para concurrencia optimista.</summary>
+        public int? ExpectedVersion { get; init; }
 
         /// <summary>Identificador del adjunto. Si no se envía o es Guid.Empty, se generará uno nuevo.</summary>
         public Guid? AdjuntoId { get; init; }

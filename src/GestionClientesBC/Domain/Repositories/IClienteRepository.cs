@@ -20,8 +20,8 @@ namespace GestionClientesBC.Domain.Repositories
 		// Agrega un nuevo cliente
 		Task AddAsync(Cliente cliente);
 
-		// Actualiza un cliente existente
-		Task UpdateAsync(Cliente cliente);
+	// Actualiza un cliente existente con concurrencia optimista
+	Task UpdateAsync(Cliente cliente, int expectedVersion);
 
 		// Elimina un cliente por Id y empresa
 		Task DeleteAsync(EmpresaId empresaId, Guid clienteId);

@@ -53,10 +53,11 @@ namespace GestionClientesBC.Application.Clientes.Habilitar
                 throw NotFoundException.For<Cliente>(input.ClienteId);
 
             // 3) Habilitar (regla de negocio: lanza si ya estaba habilitado)
+            var expectedVersion = input.ExpectedVersion ?? cliente.Version;
             cliente.Habilitar();
 
-            // 4) Persistir
-            await _repo.UpdateAsync(cliente);
+            // 4) Persistir con concurrencia
+            await _repo.UpdateAsync(cliente, expectedVersion);
             await _uow.CommitAsync(ct);
 
             // 5) Obtener fecha del evento si existe
