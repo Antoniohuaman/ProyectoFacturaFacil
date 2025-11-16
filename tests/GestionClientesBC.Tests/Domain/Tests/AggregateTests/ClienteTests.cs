@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using GestionClientesBC.Domain.Aggregates;
+using GestionClientesBC.Domain.Entities;
 using GestionClientesBC.Domain.Events;
 using GestionClientesBC.Domain.ValueObjects;
 using NUnit.Framework;
@@ -278,6 +279,121 @@ namespace GestionClientesBC.Tests.Domain.AggregateTests
             Assert.That(evt, Is.Not.Null);
             Assert.That(evt!.ClienteId, Is.EqualTo(cliente.ClienteId));
             Assert.That(cliente.Version, Is.GreaterThan(0));
+        }
+
+        [Test]
+        public void ActualizarDireccion_RegistraEvento()
+        {
+            var cliente = CrearClienteRucBasico();
+            var direccion = DomicilioFiscal.FromPeru(
+                linea: "Av. Primavera 123",
+                ubigeo: "150101",
+                departamento: "Lima",
+                provincia: "Lima",
+                distrito: "Lima",
+                addressTypeCode: "0000");
+
+            cliente.ActualizarDireccion(direccion);
+
+            Assert.That(cliente.DomainEvents, Has.Some.InstanceOf<DireccionClienteActualizada>());
+        }
+
+        [Test]
+        public void ActualizarFotoPerfil_RegistraEvento()
+        {
+            var cliente = CrearClienteRucBasico();
+            var foto = FotoPerfilCliente.Create("avatar.png", "https://cdn.test/avatar.png");
+
+            cliente.ActualizarFotoPerfil(foto);
+
+            var evt = cliente.DomainEvents.OfType<FotoPerfilClienteActualizada>().LastOrDefault();
+            Assert.That(evt, Is.Not.Null);
+            Assert.That(evt!.TieneFoto, Is.True);
+        }
+
+        [Test]
+        public void Habilitar_RegistraEvento()
+        {
+            var cliente = CrearClienteRucBasico();
+            cliente.Deshabilitar("Motivo", DateTime.UtcNow);
+
+            cliente.Habilitar();
+
+            Assert.That(cliente.DomainEvents, Has.Some.InstanceOf<ClienteHabilitado>());
+        }
+
+        [Test]
+        public void AgregarContacto_RegistraEvento()
+        {
+            var cliente = CrearClienteRucBasico();
+            var contacto = new ContactoCliente(
+                Guid.NewGuid(),
+                SharedKernel.ValueObjects.NombrePersona.Crear("Ana", "Lopez"),
+                DocumentoIdentidad.Crear(TipoDocumento.Dni, "12345678"));
+
+            cliente.AgregarContacto(contacto);
+
+            Assert.That(cliente.DomainEvents, Has.Some.InstanceOf<ContactoAgregado>());
+        }
+
+        [Test]
+        public void EliminarContacto_RegistraEvento()
+        {
+            var cliente = CrearClienteRucBasico();
+            var contacto = new ContactoCliente(
+                Guid.NewGuid(),
+                SharedKernel.ValueObjects.NombrePersona.Crear("Ana", "Lopez"));
+            cliente.AgregarContacto(contacto);
+
+            cliente.EliminarContacto(contacto.ContactoId);
+
+            Assert.That(cliente.DomainEvents, Has.Some.InstanceOf<ContactoEliminado>());
+        }
+
+        [Test]
+        public void AgregarAdjunto_RegistraEvento()
+        {
+            var cliente = CrearClienteRucBasico();
+            var adjunto = new AdjuntoCliente(Guid.NewGuid(), "contrato.pdf", "/files/contrato.pdf", DateTime.UtcNow, null);
+
+            cliente.AgregarAdjunto(adjunto);
+
+            Assert.That(cliente.DomainEvents, Has.Some.InstanceOf<AdjuntoAgregado>());
+        }
+
+        [Test]
+        public void EliminarAdjunto_RegistraEvento()
+        {
+            var cliente = CrearClienteRucBasico();
+            var adjunto = new AdjuntoCliente(Guid.NewGuid(), "contrato.pdf", "/files/contrato.pdf", DateTime.UtcNow, null);
+            cliente.AgregarAdjunto(adjunto);
+
+            cliente.EliminarAdjunto(adjunto.AdjuntoId);
+
+            Assert.That(cliente.DomainEvents, Has.Some.InstanceOf<AdjuntoEliminado>());
+        }
+
+        [Test]
+        public void RegistrarImportacion_RegistraEventoImportado()
+        {
+            var cliente = CrearClienteRucBasico();
+
+            cliente.RegistrarImportacion("BASICO", new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc));
+
+            Assert.That(cliente.DomainEvents, Has.Some.InstanceOf<ClienteImportado>());
+        }
+
+        [Test]
+        public void RegistrarActualizacionMasiva_RegistraEvento()
+        {
+            var cliente = CrearClienteRucBasico();
+            var campos = new System.Collections.Generic.List<string> { "Correo", "Telefono" };
+
+            cliente.RegistrarActualizacionMasiva(campos, DateTime.UtcNow);
+
+            var evt = cliente.DomainEvents.OfType<ClienteActualizadoMasivamente>().SingleOrDefault();
+            Assert.That(evt, Is.Not.Null);
+            Assert.That(evt!.CamposActualizados, Is.EquivalentTo(campos));
         }
     }
 }

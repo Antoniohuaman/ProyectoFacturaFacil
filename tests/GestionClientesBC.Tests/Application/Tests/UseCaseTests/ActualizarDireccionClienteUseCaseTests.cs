@@ -1,10 +1,12 @@
 using GestionClientesBC.Application.Interfaces; // IUnitOfWork
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using GestionClientesBC.Application.Clientes.Direccion.Actualizar;
 using GestionClientesBC.Domain.Aggregates;
 using GestionClientesBC.Domain.Repositories;
+using GestionClientesBC.Domain.Events;
 using GestionClientesBC.Domain.ValueObjects;
 using Moq;
 using NUnit.Framework;
@@ -85,6 +87,7 @@ namespace GestionClientesBC.Tests.Application.Clientes.Direccion
             Assert.That(output.Ubigeo, Is.EqualTo("150101"));
             Assert.That(output.Version, Is.EqualTo(cliente.Version));
             Assert.That(output.DireccionFormateada, Does.Contain("Av. Los Cedros 123"));
+            Assert.That(cliente.DomainEvents.OfType<DireccionClienteActualizada>().Any(), Is.True);
 
             repo.Verify(r => r.UpdateAsync(cliente, It.IsAny<int>()), Times.Once);
             uow.Verify(x => x.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);

@@ -179,6 +179,17 @@ namespace GestionClientesBC.Domain.Aggregates
 
             DomicilioFiscal = nuevaDireccion;
             Touch();
+            RegistrarEvento(new DireccionClienteActualizada(
+                ClienteId,
+                EmpresaId,
+                nuevaDireccion.PaisCodigoIso,
+                nuevaDireccion.Linea,
+                nuevaDireccion.Ubigeo,
+                nuevaDireccion.Departamento,
+                nuevaDireccion.Provincia,
+                nuevaDireccion.Distrito,
+                nuevaDireccion.AddressTypeCode,
+                DateTime.UtcNow));
         }
 
         /// <summary>
@@ -293,6 +304,13 @@ namespace GestionClientesBC.Domain.Aggregates
         {
             FotoPerfil = fotoPerfil;
             Touch();
+            RegistrarEvento(new FotoPerfilClienteActualizada(
+                ClienteId,
+                EmpresaId,
+                FotoPerfil?.TieneFoto ?? false,
+                FotoPerfil?.NombreArchivo,
+                FotoPerfil?.UrlPublica,
+                DateTime.UtcNow));
         }
 
         /// <summary>
@@ -363,7 +381,7 @@ namespace GestionClientesBC.Domain.Aggregates
 
             _adjuntos.Add(adjunto);
             Touch();
-            _domainEvents.Add(new AdjuntoAgregado(ClienteId, EmpresaId, adjunto.AdjuntoId));
+            RegistrarEvento(new AdjuntoAgregado(ClienteId, EmpresaId, adjunto.AdjuntoId));
         }
 
         public void EliminarAdjunto(Guid adjuntoId)
@@ -374,7 +392,7 @@ namespace GestionClientesBC.Domain.Aggregates
 
             _adjuntos.Remove(adjunto);
             Touch();
-            _domainEvents.Add(new AdjuntoEliminado(ClienteId, EmpresaId, adjuntoId));
+            RegistrarEvento(new AdjuntoEliminado(ClienteId, EmpresaId, adjuntoId));
         }
 
         #endregion
@@ -387,6 +405,22 @@ namespace GestionClientesBC.Domain.Aggregates
                 throw new ArgumentNullException(nameof(domainEvent));
 
             _domainEvents.Add(domainEvent);
+        }
+
+        public void RegistrarImportacion(string plantilla, DateTime fechaUtc)
+        {
+            var fechaNormalizada = fechaUtc.Kind == DateTimeKind.Utc ? fechaUtc : fechaUtc.ToUniversalTime();
+            RegistrarEvento(new ClienteImportado(ClienteId, EmpresaId, plantilla, fechaNormalizada));
+        }
+
+        public void RegistrarActualizacionMasiva(IReadOnlyCollection<string> camposActualizados, DateTime fechaUtc)
+        {
+            var fechaNormalizada = fechaUtc.Kind == DateTimeKind.Utc ? fechaUtc : fechaUtc.ToUniversalTime();
+            RegistrarEvento(new ClienteActualizadoMasivamente(
+                ClienteId,
+                EmpresaId,
+                camposActualizados ?? Array.Empty<string>(),
+                fechaNormalizada));
         }
 
         private void Touch()

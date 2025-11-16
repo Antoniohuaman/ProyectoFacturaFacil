@@ -1,10 +1,12 @@
 using GestionClientesBC.Application.Interfaces; // IUnitOfWork
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using GestionClientesBC.Application.Clientes.FotoPerfil.Actualizar;
 using GestionClientesBC.Domain.Aggregates;
 using GestionClientesBC.Domain.Repositories;
+using GestionClientesBC.Domain.Events;
 using GestionClientesBC.Domain.ValueObjects;
 using Moq;
 using NUnit.Framework;
@@ -79,6 +81,7 @@ namespace GestionClientesBC.Tests.Application.Clientes.FotoPerfil
             Assert.That(output.TieneFoto, Is.True);
             Assert.That(output.NombreArchivo, Is.EqualTo("avatar.png"));
             Assert.That(output.UrlPublica, Is.EqualTo("https://cdn.test/avatar.png"));
+            Assert.That(cliente.DomainEvents.OfType<FotoPerfilClienteActualizada>().Any(), Is.True);
 
             repo.Verify(r => r.UpdateAsync(cliente, It.IsAny<int>()), Times.Once);
             uow.Verify(x => x.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
