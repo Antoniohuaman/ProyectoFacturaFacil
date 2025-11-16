@@ -313,20 +313,11 @@ namespace GestionClientesBC.Application.Clientes.Importar.Completo
 				}
 			}
 
-			if (!string.IsNullOrWhiteSpace(fila.Correo) && !string.IsNullOrWhiteSpace(fila.Telefonos))
+			var correoNuevo = string.IsNullOrWhiteSpace(fila.Correo) ? null : Email.Create(fila.Correo!);
+			var telefonosNuevos = string.IsNullOrWhiteSpace(fila.Telefonos) ? null : fila.Telefonos;
+			if (cliente.ActualizarDatosContacto(correoNuevo, telefonosNuevos))
 			{
-				var nuevoCorreo = Email.Create(fila.Correo!);
-				var nuevoTelefono = Telefono.FromTexto(fila.Telefonos!);
-				var telefonoTexto = nuevoTelefono.UnirParaMostrar();
-
-				bool requiereCambio = !string.Equals(cliente.Correo?.Value, nuevoCorreo.Value, StringComparison.OrdinalIgnoreCase)
-					|| !string.Equals(cliente.Telefono?.UnirParaMostrar(), telefonoTexto, StringComparison.Ordinal);
-
-				if (requiereCambio)
-				{
-					cliente.ActualizarDatosContacto(nuevoCorreo, telefonoTexto);
-					cambios.Add("DatosContacto");
-				}
+				cambios.Add("DatosContacto");
 			}
 
 			return cambios;

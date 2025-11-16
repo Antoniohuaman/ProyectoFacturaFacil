@@ -74,7 +74,7 @@ namespace GestionClientesBC.Application.Clientes.Consultar
                 EstadoCodigo = c.Estado?.Codigo,
                 FechaRegistroUtc = c.FechaRegistro,
                 FechaDeshabilitacionUtc = c.FechaDeshabilitacion,
-                MotivoDeshabilitacion = c.MotivoDeshabilitacion,
+                MotivoDeshabilitacion = c.MotivoDeshabilitacion?.Valor,
                 FechaUltimaModificacionUtc = c.FechaUltimaModificacion,
                 DomicilioFiscalResumen = c.DomicilioFiscal?.ToString(),
                 DatosSunat = DatosSunatClienteDto.From(c.DatosSunat),

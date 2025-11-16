@@ -97,7 +97,7 @@ namespace GestionClientesBC.Tests.Application.Clientes
 
             // Estado interno
             Assert.That(existente.Estado, Is.EqualTo(EstadoCliente.Deshabilitado));
-            Assert.That(existente.MotivoDeshabilitacion, Is.EqualTo(motivo));
+            Assert.That(existente.MotivoDeshabilitacion?.Valor, Is.EqualTo(motivo));
             Assert.That(existente.FechaDeshabilitacion, Is.EqualTo(fechaUtc));
             Assert.That(existente.DomainEvents.Count, Is.GreaterThan(eventosAntes));
             Assert.That(existente.DomainEvents.Any(e => e is GestionClientesBC.Domain.Events.ClienteDeshabilitado), Is.True);

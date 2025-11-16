@@ -59,7 +59,7 @@ namespace GestionClientesBC.Tests.Application.Clientes
                 estado: EstadoCliente.Deshabilitado);
 
             // (Opcional) ya tenía una deshabilitación previa
-            c.Deshabilitar("Mora", new DateTime(2024, 12, 31, 23, 59, 59, DateTimeKind.Utc));
+            c.Deshabilitar(MotivoDeshabilitacionCliente.Create("Mora"), new DateTime(2024, 12, 31, 23, 59, 59, DateTimeKind.Utc));
             return c;
         }
 

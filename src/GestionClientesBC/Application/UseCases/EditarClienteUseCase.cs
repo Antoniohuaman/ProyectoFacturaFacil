@@ -138,26 +138,28 @@ namespace GestionClientesBC.Application.Clientes.Editar
                 }
             }
 
-            // 5) Contacto (correo/teléfonos) - requiere ambos valores para invocar el método del agregado
+            // 5) Contacto (correo/teléfonos)
             bool quiereCorreo = !string.IsNullOrWhiteSpace(input.Correo);
             bool quiereTel    = !string.IsNullOrWhiteSpace(input.Telefonos);
 
             if (quiereCorreo || quiereTel)
             {
-                var correoNuevo = quiereCorreo ? Email.Create(input.Correo!) : cliente.Correo
-                    ?? throw new BusinessRuleException("Para actualizar solo teléfono, el cliente debe tener un correo actual.");
-                var telNuevoStr = quiereTel ? input.Telefonos! : (cliente.Telefono?.UnirParaMostrar()
-                    ?? throw new BusinessRuleException("Para actualizar solo correo, el cliente debe tener un teléfono actual."));
+                var correoNuevo = quiereCorreo ? Email.Create(input.Correo!) : null;
+                var telNuevoStr = quiereTel ? input.Telefonos : null;
 
                 var correoAnterior = cliente.Correo?.Value;
                 var telAnterior    = cliente.Telefono?.UnirParaMostrar();
 
-                cliente.ActualizarDatosContacto(correoNuevo, telNuevoStr);
+                if (cliente.ActualizarDatosContacto(correoNuevo, telNuevoStr))
+                {
+                    var correoActual = cliente.Correo?.Value;
+                    var telActual    = cliente.Telefono?.UnirParaMostrar();
 
-                if (!string.Equals(correoAnterior, cliente.Correo?.Value, StringComparison.Ordinal))
-                    cambios["Correo"] = (correoAnterior, cliente.Correo?.Value);
-                if (!string.Equals(telAnterior, cliente.Telefono?.UnirParaMostrar(), StringComparison.Ordinal))
-                    cambios["Telefono"] = (telAnterior, cliente.Telefono?.UnirParaMostrar());
+                    if (!string.Equals(correoAnterior, correoActual, StringComparison.OrdinalIgnoreCase))
+                        cambios["Correo"] = (correoAnterior, correoActual);
+                    if (!string.Equals(telAnterior, telActual, StringComparison.Ordinal))
+                        cambios["Telefono"] = (telAnterior, telActual);
+                }
             }
 
             // 6) Dirección (opcional)
@@ -281,11 +283,11 @@ namespace GestionClientesBC.Application.Clientes.Editar
                 }
                 else if (!input.Habilitado.Value && estabaHabilitado)
                 {
-                    var motivo = input.MotivoDeshabilitacion; // puede ser null
+                    var motivo = MotivoDeshabilitacionCliente.Create(input.MotivoDeshabilitacion);
                     cliente.Deshabilitar(motivo, DateTime.UtcNow);
                     cambios["Estado"] = ("HAB", "DES");
-                    if (!string.IsNullOrWhiteSpace(motivo))
-                        cambios["MotivoDeshabilitacion"] = (null, motivo);
+                    if (motivo is not null)
+                        cambios["MotivoDeshabilitacion"] = (null, motivo.Valor);
                 }
             }
 

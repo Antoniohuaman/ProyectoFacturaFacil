@@ -1,5 +1,6 @@
 
 using System;
+using GestionClientesBC.Domain.ValueObjects;
 using SharedKernel.Events;
 using SharedKernel.ValueObjects;
 
@@ -12,10 +13,10 @@ namespace GestionClientesBC.Domain.Events
     {
         public Guid ClienteId { get; }
         public EmpresaId EmpresaId { get; }
-        public string? Motivo { get; }
+        public MotivoDeshabilitacionCliente? Motivo { get; }
         public DateTime Fecha { get; }
 
-        public ClienteDeshabilitado(Guid clienteId, EmpresaId empresaId, string? motivo, DateTime fecha, Guid? eventId = null, DateTime? occurredOnUtc = null)
+        public ClienteDeshabilitado(Guid clienteId, EmpresaId empresaId, MotivoDeshabilitacionCliente? motivo, DateTime fecha, Guid? eventId = null, DateTime? occurredOnUtc = null)
             : base(eventId, occurredOnUtc)
         {
             ClienteId = clienteId;

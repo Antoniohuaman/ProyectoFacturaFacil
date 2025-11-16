@@ -49,7 +49,7 @@ namespace GestionClientesBC.Domain.Aggregates
 
         // Estado de cuenta
         public DateTime FechaRegistro { get; private set; }       // Se inicializa en UtcNow
-        public string? MotivoDeshabilitacion { get; private set; } // Texto simple (para compatibilidad)
+        public MotivoDeshabilitacionCliente? MotivoDeshabilitacion { get; private set; }
         public DateTime? FechaDeshabilitacion { get; private set; } // Opcional
 
         // Navegación
@@ -147,29 +147,53 @@ namespace GestionClientesBC.Domain.Aggregates
             RegistrarEvento(new ClienteHabilitado(ClienteId, EmpresaId));
         }
 
-        public void Deshabilitar(string? motivo, DateTime fecha)
+        public void Deshabilitar(MotivoDeshabilitacionCliente? motivo, DateTime fecha)
         {
             Estado = EstadoCliente.Deshabilitado;
 
             var fechaUtc = fecha.Kind == DateTimeKind.Utc ? fecha : fecha.ToUniversalTime();
             FechaDeshabilitacion = fechaUtc;
-            MotivoDeshabilitacion = string.IsNullOrWhiteSpace(motivo) ? null : motivo.Trim();
+            MotivoDeshabilitacion = motivo;
 
             Touch();
             RegistrarEvento(new ClienteDeshabilitado(ClienteId, EmpresaId, MotivoDeshabilitacion, fechaUtc));
         }
 
-        public void ActualizarDatosContacto(Email nuevoCorreo, string nuevoCelular)
+        /// <summary>
+        /// Actualiza los datos de contacto principal del cliente. Permite cambios parciales.
+        /// </summary>
+        /// <returns>true si algún dato cambió.</returns>
+        public bool ActualizarDatosContacto(Email? nuevoCorreo, string? nuevoCelular)
         {
-            if (nuevoCorreo is null)
-                throw new ArgumentNullException(nameof(nuevoCorreo));
-            if (string.IsNullOrWhiteSpace(nuevoCelular))
-                throw new ArgumentNullException(nameof(nuevoCelular));
+            if (nuevoCorreo is null && string.IsNullOrWhiteSpace(nuevoCelular))
+                return false;
 
-            Correo = nuevoCorreo;
-            Telefono = Telefono.FromTexto(nuevoCelular);
+            var huboCambio = false;
 
-            Touch();
+            if (nuevoCorreo is not null)
+            {
+                var correoActual = Correo?.Value;
+                if (!string.Equals(correoActual, nuevoCorreo.Value, StringComparison.OrdinalIgnoreCase))
+                {
+                    Correo = nuevoCorreo;
+                    huboCambio = true;
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(nuevoCelular))
+            {
+                var telefonoNormalizado = Telefono.FromTexto(nuevoCelular);
+                if (Telefono is null || !Telefono.Equals(telefonoNormalizado))
+                {
+                    Telefono = telefonoNormalizado;
+                    huboCambio = true;
+                }
+            }
+
+            if (huboCambio)
+                Touch();
+
+            return huboCambio;
         }
 
         public void ActualizarDireccion(DomicilioFiscal nuevaDireccion)

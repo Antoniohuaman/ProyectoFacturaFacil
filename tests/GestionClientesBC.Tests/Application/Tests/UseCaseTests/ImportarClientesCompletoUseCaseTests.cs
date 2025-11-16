@@ -11,6 +11,7 @@ using GestionClientesBC.Domain.ValueObjects;
 using Moq;
 using NUnit.Framework;
 using SharedKernel.Application.Interfaces;
+using SharedKernel.Exceptions;
 using SharedKernel.ValueObjects;
 
 namespace GestionClientesBC.Tests.Application.Clientes.Importar
@@ -151,6 +152,73 @@ namespace GestionClientesBC.Tests.Application.Clientes.Importar
             repo.Verify(r => r.UpdateAsync(clienteExistente, It.IsAny<int>()), Times.Once);
             repo.Verify(r => r.AddAsync(It.IsAny<Cliente>()), Times.Never);
             uow.Verify(x => x.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Test]
+        public async Task Handle_ActualizaSoloTelefonos_CuandoNoHayCorreoEnFila()
+        {
+            var empresaId = EmpresaId.From("EMPRESA-IMPORT-C");
+            var repo = new Mock<IClienteRepository>(MockBehavior.Strict);
+            var uow = new Mock<IUnitOfWork>(MockBehavior.Strict);
+            var tenant = new Mock<ITenantContext>(MockBehavior.Strict);
+
+            var clienteExistente = CrearClienteRucBasico(empresaId, "20661287099", "Cliente Telefono SAC");
+
+            tenant.SetupGet(t => t.EmpresaId).Returns(empresaId);
+            repo.Setup(r => r.SearchAsync(empresaId, clienteExistente.Documento.Numero, It.IsAny<int?>(), It.IsAny<int?>()))
+                .ReturnsAsync(new List<Cliente> { clienteExistente });
+            repo.Setup(r => r.UpdateAsync(clienteExistente, It.IsAny<int>()))
+                .Returns(Task.CompletedTask);
+            uow.Setup(x => x.CommitAsync(It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+
+            var sut = new ImportarClientesCompletoUseCase(repo.Object, uow.Object, tenant.Object);
+
+            var fila = new ImportarClientesCompletoFilaDto
+            {
+                TipoDocumento = TipoDocumento.Ruc.ToString(),
+                NumeroDocumento = clienteExistente.Documento.Numero,
+                RazonSocial = "Cliente Telefono SAC",
+                Correo = null,
+                Telefonos = "+51 955 444 999"
+            };
+
+            var resultado = await sut.Handle(new ImportarClientesCompletoInputDto { Filas = new[] { fila } });
+
+            Assert.That(resultado.Actualizados, Is.EqualTo(1));
+            Assert.That(clienteExistente.Telefono!.UnirParaMostrar(), Is.EqualTo(Telefono.FromTexto("+51 955 444 999").UnirParaMostrar()));
+
+            repo.Verify(r => r.UpdateAsync(clienteExistente, It.IsAny<int>()), Times.Once);
+            uow.Verify(x => x.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Test]
+        public void Handle_SinEmpresaActual_LanzaRegla()
+        {
+            var repo = new Mock<IClienteRepository>(MockBehavior.Strict);
+            var uow = new Mock<IUnitOfWork>(MockBehavior.Strict);
+            var tenant = new Mock<ITenantContext>(MockBehavior.Strict);
+
+            tenant.SetupGet(t => t.EmpresaId).Returns((EmpresaId)null!);
+
+            var sut = new ImportarClientesCompletoUseCase(repo.Object, uow.Object, tenant.Object);
+
+            var input = new ImportarClientesCompletoInputDto
+            {
+                Filas = new[]
+                {
+                    new ImportarClientesCompletoFilaDto
+                    {
+                        TipoDocumento = TipoDocumento.Ruc.ToString(),
+                        NumeroDocumento = "20600893409",
+                        RazonSocial = "Cliente Completo"
+                    }
+                }
+            };
+
+            Assert.That(async () => await sut.Handle(input),
+                Throws.TypeOf<BusinessRuleException>()
+                    .With.Message.Contains("Empresa"));
         }
 
         private static Cliente CrearClienteRucBasico(EmpresaId empresaId, string numeroRuc, string razon)

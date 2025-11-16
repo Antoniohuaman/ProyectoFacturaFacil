@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using GestionClientesBC.Domain.Aggregates;
 using GestionClientesBC.Domain.Repositories;
 using GestionClientesBC.Domain.Events;
+using GestionClientesBC.Domain.ValueObjects;
 using SharedKernel.Application.Interfaces;
 using SharedKernel.Exceptions;
 using GestionClientesBC.Application.Interfaces; // IUnitOfWork
@@ -54,10 +55,11 @@ namespace GestionClientesBC.Application.Clientes.Deshabilitar
             // 3) Normalizar fecha a UTC
             var fecha = input.FechaDeshabilitacion ?? DateTime.UtcNow;
             var fechaUtc = fecha.Kind == DateTimeKind.Utc ? fecha : fecha.ToUniversalTime();
+            var motivoDeshabilitacion = MotivoDeshabilitacionCliente.Create(input.Motivo);
 
             // 4) Deshabilitar (el agregado registra evento)
             var expectedVersion = input.ExpectedVersion ?? cliente.Version;
-            cliente.Deshabilitar(input.Motivo, fechaUtc);
+            cliente.Deshabilitar(motivoDeshabilitacion, fechaUtc);
 
             // 5) Persistir con concurrencia
             await _repo.UpdateAsync(cliente, expectedVersion);
@@ -75,7 +77,7 @@ namespace GestionClientesBC.Application.Clientes.Deshabilitar
                 Deshabilitado = true,
                 EstadoCodigo = cliente.Estado?.Codigo ?? string.Empty, // "DES"
                 FechaDeshabilitacionUtc = cliente.FechaDeshabilitacion ?? fechaEventoUtc,
-                MotivoDeshabilitacion = cliente.MotivoDeshabilitacion,
+                MotivoDeshabilitacion = cliente.MotivoDeshabilitacion?.Valor,
                 TipoDocumento = cliente.Documento.Tipo.ToString(),
                 NumeroDocumento = cliente.Documento.Numero
             };

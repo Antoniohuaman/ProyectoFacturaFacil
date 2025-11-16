@@ -8,6 +8,7 @@ using GestionClientesBC.Domain.Repositories;
 using Moq;
 using NUnit.Framework;
 using SharedKernel.Application.Interfaces;
+using SharedKernel.Exceptions;
 using SharedKernel.ValueObjects;
 
 namespace GestionClientesBC.Tests.Application.Clientes.Exportar
@@ -80,6 +81,21 @@ namespace GestionClientesBC.Tests.Application.Clientes.Exportar
 
             repo.Verify(r => r.GetAllAsync(empresaId, It.IsAny<int?>(), It.IsAny<int?>()), Times.Once);
             tenant.VerifyGet(t => t.EmpresaId, Times.Once);
+        }
+
+        [Test]
+        public void Handle_SinEmpresaActual_LanzaRegla()
+        {
+            var repo = new Mock<IClienteRepository>(MockBehavior.Strict);
+            var tenant = new Mock<ITenantContext>(MockBehavior.Strict);
+
+            tenant.SetupGet(t => t.EmpresaId).Returns((EmpresaId)null!);
+
+            var sut = new ExportarClientesCompletoUseCase(repo.Object, tenant.Object);
+
+            Assert.That(async () => await sut.Handle(),
+                Throws.TypeOf<BusinessRuleException>()
+                    .With.Message.Contains("Empresa"));
         }
 
         private static Cliente CrearClienteCompleto(EmpresaId empresaId)

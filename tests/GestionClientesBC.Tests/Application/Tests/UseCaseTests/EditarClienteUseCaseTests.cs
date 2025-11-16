@@ -225,7 +225,7 @@ namespace GestionClientesBC.Tests.Application.Clientes
         }
 
         [Test]
-        public void Editar_SoloCorreo_SinTelefonoActual_Lanza()
+        public async Task Editar_SoloCorreo_SinTelefonoActual_ActualizaCorreo()
         {
             var sut = SUT(out var repo, out var uow, out var tenant);
 
@@ -235,14 +235,16 @@ namespace GestionClientesBC.Tests.Application.Clientes
                 RUC("20661287099"),
                 RS("FOO S.A.C."),
                 nombres: null,
-                correo: null,                        // <-- no correo actual
-                telefono: null,                      // <-- no teléfono actual
+                correo: null,
+                telefono: null,
                 domicilioFiscal: null,
                 tipoCliente: TipoCliente.Cliente,
                 rolCliente: null,
                 estado: EstadoCliente.Habilitado);
 
             repo.Setup(r => r.GetByIdAsync(EmpresaDemo(), existente.ClienteId)).ReturnsAsync(existente);
+            repo.Setup(r => r.UpdateAsync(existente, It.IsAny<int>())).Returns(Task.CompletedTask);
+            uow.Setup(x => x.CommitAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
 
             var input = new EditarClienteInputDto
             {
@@ -250,9 +252,13 @@ namespace GestionClientesBC.Tests.Application.Clientes
                 Correo = "ventas@foo.com"
             };
 
-            Assert.That(async () => await sut.Handle(input),
-                Throws.TypeOf<BusinessRuleException>()
-                    .With.Message.Contains("teléfono")); // no se puede invocar ActualizarDatosContacto sin ambos datos
+            var output = await sut.Handle(input);
+
+            Assert.That(output.Correo, Is.EqualTo("ventas@foo.com"));
+            Assert.That(existente.Correo!.Value, Is.EqualTo("ventas@foo.com"));
+
+            repo.Verify(r => r.UpdateAsync(existente, It.IsAny<int>()), Times.Once);
+            uow.Verify(x => x.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Test]

@@ -182,7 +182,7 @@ namespace GestionClientesBC.Tests.Domain.AggregateTests
         {
             var cliente = CrearClienteRucBasico();
             var fecha = new DateTime(2025, 1, 1, 10, 30, 0, DateTimeKind.Local);
-            var motivo = "Morosidad";
+            var motivo = MotivoDeshabilitacionCliente.Create("Morosidad");
 
             cliente.Deshabilitar(motivo, fecha);
 
@@ -195,6 +195,32 @@ namespace GestionClientesBC.Tests.Domain.AggregateTests
             var evt = cliente.DomainEvents.OfType<ClienteDeshabilitado>().SingleOrDefault();
             Assert.That(evt, Is.Not.Null);
             Assert.That(evt!.Motivo, Is.EqualTo(motivo));
+        }
+
+        [Test]
+        public void ActualizarDatosContacto_PermiteCambiosParciales()
+        {
+            var cliente = CrearClienteRucBasico();
+            var correoNuevo = Email.Create("nuevo@cliente.com");
+
+            var cambio = cliente.ActualizarDatosContacto(correoNuevo, null);
+
+            Assert.That(cambio, Is.True);
+            Assert.That(cliente.Correo!.Value, Is.EqualTo("nuevo@cliente.com"));
+            Assert.That(cliente.Telefono, Is.Null);
+            Assert.That(cliente.FechaUltimaModificacion, Is.Not.Null);
+        }
+
+        [Test]
+        public void ActualizarDatosContacto_SinDatos_NoRealizaCambios()
+        {
+            var cliente = CrearClienteRucBasico();
+            var versionAntes = cliente.Version;
+
+            var cambio = cliente.ActualizarDatosContacto(null, null);
+
+            Assert.That(cambio, Is.False);
+            Assert.That(cliente.Version, Is.EqualTo(versionAntes));
         }
 
         [Test]
@@ -315,7 +341,7 @@ namespace GestionClientesBC.Tests.Domain.AggregateTests
         public void Habilitar_RegistraEvento()
         {
             var cliente = CrearClienteRucBasico();
-            cliente.Deshabilitar("Motivo", DateTime.UtcNow);
+            cliente.Deshabilitar(MotivoDeshabilitacionCliente.Create("Motivo"), DateTime.UtcNow);
 
             cliente.Habilitar();
 
