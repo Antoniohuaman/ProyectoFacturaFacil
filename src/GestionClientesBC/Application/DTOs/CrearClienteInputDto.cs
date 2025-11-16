@@ -17,11 +17,21 @@ namespace GestionClientesBC.Application.Clientes.Crear
 
         /// <summary>Obligatorio si TipoDocumento != Ruc (se validará en el caso de uso).</summary>
         public string? NombresCompletos { get; init; }
+        public string? Nombres { get; init; }
+        public string? Apellidos { get; init; }
 
         // Opcionales
         public string? Correo { get; init; }
         /// <summary>Teléfonos en un solo campo (VO Telefono.FromTexto los normaliza).</summary>
         public string? Telefonos { get; init; }
+
+        // Metadatos opcionales
+        /// <summary>Nombre comercial o amigable (VO NombreCliente).</summary>
+        public string? NombreComercial { get; init; }
+        public string? PaginaWeb { get; init; }
+        public string? Observaciones { get; init; }
+        public string? FotoPerfilNombreArchivo { get; init; }
+        public string? FotoPerfilUrl { get; init; }
 
         // Dirección (opcional)
         public string? PaisCodigoIso { get; init; } = "PE"; // por defecto PE

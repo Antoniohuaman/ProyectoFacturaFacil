@@ -164,6 +164,30 @@ namespace GestionClientesBC.Tests.Application.Clientes
         }
 
         [Test]
+        public async Task Editar_Dni_Actualiza_NombrePersona_DesdeCamposExplícitos()
+        {
+            var sut = SUT(out var repo, out var uow, out var tenant);
+
+            var existente = ClienteDniBase("12345678");
+            repo.Setup(r => r.GetByIdAsync(EmpresaDemo(), existente.ClienteId)).ReturnsAsync(existente);
+            repo.Setup(r => r.UpdateAsync(existente, It.IsAny<int>())).Returns(Task.CompletedTask);
+
+            var input = new EditarClienteInputDto
+            {
+                ClienteId = existente.ClienteId,
+                Nombres = "Ana María",
+                Apellidos = "García Torres"
+            };
+
+            var result = await sut.Handle(input);
+
+            Assert.That(result.Nombres, Is.EqualTo("Ana María García Torres"));
+
+            repo.Verify(r => r.UpdateAsync(existente, It.IsAny<int>()), Times.Once);
+            uow.Verify(u => u.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Test]
         public async Task Editar_Estado_Deshabilitar_y_Luego_Habilitar()
         {
             var sut = SUT(out var repo, out var uow, out var tenant);
@@ -229,6 +253,37 @@ namespace GestionClientesBC.Tests.Application.Clientes
             Assert.That(async () => await sut.Handle(input),
                 Throws.TypeOf<BusinessRuleException>()
                     .With.Message.Contains("teléfono")); // no se puede invocar ActualizarDatosContacto sin ambos datos
+        }
+
+        [Test]
+        public async Task Editar_Actualiza_MetadatosOpcionales()
+        {
+            var sut = SUT(out var repo, out var uow, out var tenant);
+
+            var existente = ClienteRucBase();
+            repo.Setup(r => r.GetByIdAsync(EmpresaDemo(), existente.ClienteId)).ReturnsAsync(existente);
+            repo.Setup(r => r.UpdateAsync(existente, It.IsAny<int>())).Returns(Task.CompletedTask);
+
+            var input = new EditarClienteInputDto
+            {
+                ClienteId = existente.ClienteId,
+                NombreComercial = "Cliente Premium",
+                PaginaWeb = "https://acme.pe",
+                Observaciones = "VIP",
+                FotoPerfilNombreArchivo = "logo.png",
+                FotoPerfilUrl = "https://cdn.acme.pe/logo.png"
+            };
+
+            var result = await sut.Handle(input);
+
+            Assert.That(result.NombreComercial, Is.EqualTo("Cliente Premium"));
+            Assert.That(result.PaginaWeb, Is.EqualTo("https://acme.pe"));
+            Assert.That(result.Observaciones, Is.EqualTo("VIP"));
+            Assert.That(result.FotoPerfilNombreArchivo, Is.EqualTo("logo.png"));
+            Assert.That(result.FotoPerfilUrl, Is.EqualTo("https://cdn.acme.pe/logo.png"));
+
+            repo.Verify(r => r.UpdateAsync(existente, It.IsAny<int>()), Times.Once);
+            uow.Verify(u => u.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Test]

@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using GestionClientesBC.Domain.Aggregates;
 using GestionClientesBC.Domain.Entities;
+using GestionClientesBC.Domain.ValueObjects;
 
 namespace GestionClientesBC.Application.Clientes.Consultar
 {
@@ -18,10 +19,17 @@ namespace GestionClientesBC.Application.Clientes.Consultar
         // Nombre
         public string? RazonSocial { get; init; }
         public string? Nombres { get; init; }
+        public string? NombreComercial { get; init; }
 
         // Contacto principal
         public string? Correo { get; init; }
         public string? Telefonos { get; init; }
+
+        // Metadatos opcionales
+        public string? PaginaWeb { get; init; }
+        public string? Observaciones { get; init; }
+        public string? FotoPerfilNombreArchivo { get; init; }
+        public string? FotoPerfilUrl { get; init; }
 
         // Segmentación y estado
         public string? TipoClienteCodigo { get; init; } // "C","P","CP"
@@ -37,6 +45,9 @@ namespace GestionClientesBC.Application.Clientes.Consultar
         // Dirección (resumen textual)
         public string? DomicilioFiscalResumen { get; init; }
 
+        // Datos informativos de SUNAT (solo lectura)
+        public DatosSunatClienteDto DatosSunat { get; init; } = DatosSunatClienteDto.Empty;
+
         // Colecciones
         public ContactoClienteDto[] Contactos { get; init; } = Array.Empty<ContactoClienteDto>();
         public AdjuntoClienteDto[] Adjuntos { get; init; } = Array.Empty<AdjuntoClienteDto>();
@@ -51,8 +62,13 @@ namespace GestionClientesBC.Application.Clientes.Consultar
                 NumeroDocumento = c.Documento.Numero,
                 RazonSocial = c.RazonSocial?.Valor,
                 Nombres = c.Nombres?.Completo,
+                NombreComercial = c.NombreComercial?.ParaMostrar,
                 Correo = c.Correo?.Value,
                 Telefonos = c.Telefono?.UnirParaMostrar(),
+                PaginaWeb = c.PaginaWeb?.Valor,
+                Observaciones = c.Observaciones?.Valor,
+                FotoPerfilNombreArchivo = c.FotoPerfil?.NombreArchivo,
+                FotoPerfilUrl = c.FotoPerfil?.UrlPublica,
                 TipoClienteCodigo = c.TipoCliente?.Codigo,
                 RolClienteCodigo = c.RolCliente?.Codigo,
                 EstadoCodigo = c.Estado?.Codigo,
@@ -61,6 +77,7 @@ namespace GestionClientesBC.Application.Clientes.Consultar
                 MotivoDeshabilitacion = c.MotivoDeshabilitacion,
                 FechaUltimaModificacionUtc = c.FechaUltimaModificacion,
                 DomicilioFiscalResumen = c.DomicilioFiscal?.ToString(),
+                DatosSunat = DatosSunatClienteDto.From(c.DatosSunat),
                 Contactos = incluirContactos
                     ? c.Contactos.Select(ContactoClienteDto.From).ToArray()
                     : Array.Empty<ContactoClienteDto>(),
@@ -111,5 +128,43 @@ namespace GestionClientesBC.Application.Clientes.Consultar
             FechaSubidaUtc = a.FechaSubida,
             Comentario = a.Comentario
         };
+    }
+
+    public sealed class DatosSunatClienteDto
+    {
+        public static DatosSunatClienteDto Empty { get; } = new DatosSunatClienteDto();
+
+        public string? TipoContribuyente { get; init; }
+        public string? EstadoContribuyente { get; init; }
+        public string? CondicionDomicilio { get; init; }
+        public string? SistemaEmision { get; init; }
+        public DateTime? FechaInscripcion { get; init; }
+        public bool? EsEmisorElectronico { get; init; }
+        public bool? EsAgenteRetencion { get; init; }
+        public bool? EsAgentePercepcion { get; init; }
+        public bool? EsBuenContribuyente { get; init; }
+        public bool? ExceptuadaPercepcion { get; init; }
+        public string[] ActividadesEconomicas { get; init; } = Array.Empty<string>();
+
+        public static DatosSunatClienteDto From(DatosSunatCliente? datos)
+        {
+            if (datos is null)
+                return Empty;
+
+            return new DatosSunatClienteDto
+            {
+                TipoContribuyente = datos.TipoContribuyente,
+                EstadoContribuyente = datos.EstadoContribuyente,
+                CondicionDomicilio = datos.CondicionDomicilio,
+                SistemaEmision = datos.SistemaEmision,
+                FechaInscripcion = datos.FechaInscripcion,
+                EsEmisorElectronico = datos.EsEmisorElectronico,
+                EsAgenteRetencion = datos.EsAgenteRetencion,
+                EsAgentePercepcion = datos.EsAgentePercepcion,
+                EsBuenContribuyente = datos.EsBuenContribuyente,
+                ExceptuadaPercepcion = datos.ExceptuadaPercepcion,
+                ActividadesEconomicas = datos.ActividadesEconomicas.ToArray()
+            };
+        }
     }
 }

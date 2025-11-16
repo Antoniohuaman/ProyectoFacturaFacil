@@ -10,6 +10,11 @@ namespace GestionClientesBC.Application.Clientes.Crear
         public string NumeroDocumento { get; init; } = null!;
         public string? RazonSocial { get; init; }
         public string Nombres { get; init; } = string.Empty;
+        public string? NombreComercial { get; init; }
+        public string? PaginaWeb { get; init; }
+        public string? Observaciones { get; init; }
+        public string? FotoPerfilNombreArchivo { get; init; }
+        public string? FotoPerfilUrl { get; init; }
         public string Estado { get; init; } = null!;
         public DateTime FechaRegistroUtc { get; init; }
     }

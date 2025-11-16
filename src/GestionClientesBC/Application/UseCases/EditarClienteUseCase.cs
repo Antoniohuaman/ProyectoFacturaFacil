@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using GestionClientesBC.Domain.Aggregates;
 using GestionClientesBC.Domain.Repositories;
 using GestionClientesBC.Domain.ValueObjects;
+using GestionClientesBC.Application.Helpers;
 using GestionClientesBC.Application.Interfaces; // IUnitOfWork
 using SharedKernel.Application.Interfaces;
 using SharedKernel.Exceptions;
@@ -85,8 +86,11 @@ namespace GestionClientesBC.Application.Clientes.Editar
                     }
                     else
                     {
-                        var nombresTxt = input.NombresCompletos ?? cliente.Nombres?.Completo;
-                        if (string.IsNullOrWhiteSpace(nombresTxt))
+                        var tieneNombresNuevos =
+                            (!string.IsNullOrWhiteSpace(input.Nombres) && !string.IsNullOrWhiteSpace(input.Apellidos)) ||
+                            !string.IsNullOrWhiteSpace(input.NombresCompletos);
+
+                        if (!tieneNombresNuevos && (cliente.Nombres is null || string.IsNullOrWhiteSpace(cliente.Nombres.Completo)))
                             throw new BusinessRuleException("Para documentos distintos de RUC se requieren nombres válidos.");
                     }
 
@@ -96,11 +100,17 @@ namespace GestionClientesBC.Application.Clientes.Editar
             }
 
             // 4) Nombre / Razón social (opcional)
-            if (!string.IsNullOrWhiteSpace(input.RazonSocial) || !string.IsNullOrWhiteSpace(input.NombresCompletos))
+            bool quiereActualizarRazon = input.RazonSocial is not null;
+            bool quiereActualizarNombrePersona =
+                input.Nombres is not null ||
+                input.Apellidos is not null ||
+                input.NombresCompletos is not null;
+
+            if (quiereActualizarRazon || quiereActualizarNombrePersona)
             {
                 if (cliente.Documento.EsRuc)
                 {
-                    if (string.IsNullOrWhiteSpace(input.RazonSocial))
+                    if (!quiereActualizarRazon || string.IsNullOrWhiteSpace(input.RazonSocial))
                         throw new BusinessRuleException("Para RUC debe proporcionar una razón social.");
                     var nuevo = SharedKernel.ValueObjects.RazonSocial.Crear(input.RazonSocial!);
                     if (cliente.RazonSocial is null || !string.Equals(cliente.RazonSocial.Valor, nuevo.Valor, StringComparison.Ordinal))
@@ -111,13 +121,15 @@ namespace GestionClientesBC.Application.Clientes.Editar
                 }
                 else
                 {
-                    if (string.IsNullOrWhiteSpace(input.NombresCompletos))
+                    if (!quiereActualizarNombrePersona)
                         throw new BusinessRuleException("Para documento no RUC debe proporcionar nombres.");
-                    // Se asume que input.NombresCompletos contiene ambos nombres y apellidos separados por espacio
-                    var nombresSplit = input.NombresCompletos!.Trim().Split(' ', 2);
-                    var nombre = nombresSplit.Length > 0 ? nombresSplit[0] : string.Empty;
-                    var apellidos = nombresSplit.Length > 1 ? nombresSplit[1] : string.Empty;
-                    var nuevo = SharedKernel.ValueObjects.NombrePersona.Crear(nombre, apellidos);
+
+                    var nuevo = NombrePersonaInputMapper.CrearDesdeInput(
+                        input.Nombres,
+                        input.Apellidos,
+                        input.NombresCompletos,
+                        "Para documento no RUC debe proporcionar nombres.");
+
                     if (cliente.Nombres is null || !string.Equals(cliente.Nombres.Completo, nuevo.Completo, StringComparison.Ordinal))
                     {
                         cambios["Nombres"] = (cliente.Nombres?.Completo, nuevo.Completo);
@@ -212,6 +224,52 @@ namespace GestionClientesBC.Application.Clientes.Editar
                 }
             }
 
+            if (input.NombreComercial is not null)
+            {
+                var nuevoNombreComercial = string.IsNullOrWhiteSpace(input.NombreComercial)
+                    ? null
+                    : NombreCliente.Crear(input.NombreComercial);
+
+                if (!Equals(cliente.NombreComercial, nuevoNombreComercial))
+                {
+                    cambios["NombreComercial"] = (cliente.NombreComercial?.ParaMostrar, nuevoNombreComercial?.ParaMostrar);
+                    cliente.ActualizarNombreComercial(nuevoNombreComercial);
+                }
+            }
+
+            if (input.PaginaWeb is not null)
+            {
+                var nuevaPaginaWeb = PaginaWebCliente.Create(input.PaginaWeb);
+                if (!Equals(cliente.PaginaWeb, nuevaPaginaWeb))
+                {
+                    cambios["PaginaWeb"] = (cliente.PaginaWeb?.Valor, nuevaPaginaWeb?.Valor);
+                    cliente.ActualizarPaginaWeb(nuevaPaginaWeb);
+                }
+            }
+
+            if (input.Observaciones is not null)
+            {
+                var nuevasObservaciones = ObservacionesCliente.Create(input.Observaciones);
+                if (!Equals(cliente.Observaciones, nuevasObservaciones))
+                {
+                    cambios["Observaciones"] = (cliente.Observaciones?.Valor, nuevasObservaciones?.Valor);
+                    cliente.ActualizarObservaciones(nuevasObservaciones);
+                }
+            }
+
+            if (input.FotoPerfilNombreArchivo is not null || input.FotoPerfilUrl is not null)
+            {
+                var nuevoFotoPerfil = string.IsNullOrWhiteSpace(input.FotoPerfilNombreArchivo) && string.IsNullOrWhiteSpace(input.FotoPerfilUrl)
+                    ? null
+                    : FotoPerfilCliente.Create(input.FotoPerfilNombreArchivo, input.FotoPerfilUrl);
+
+                if (!Equals(cliente.FotoPerfil, nuevoFotoPerfil))
+                {
+                    cambios["FotoPerfil"] = (cliente.FotoPerfil?.ToString(), nuevoFotoPerfil?.ToString());
+                    cliente.ActualizarFotoPerfil(nuevoFotoPerfil);
+                }
+            }
+
             // 8) Estado (opcional)
             if (input.Habilitado.HasValue)
             {
@@ -249,6 +307,11 @@ namespace GestionClientesBC.Application.Clientes.Editar
                 NumeroDocumento = cliente.Documento.Numero,
                 RazonSocial = cliente.RazonSocial?.Valor,
                 Nombres = cliente.Nombres?.Completo ?? string.Empty,
+                NombreComercial = cliente.NombreComercial?.ParaMostrar,
+                PaginaWeb = cliente.PaginaWeb?.Valor,
+                Observaciones = cliente.Observaciones?.Valor,
+                FotoPerfilNombreArchivo = cliente.FotoPerfil?.NombreArchivo,
+                FotoPerfilUrl = cliente.FotoPerfil?.UrlPublica,
                 Correo = cliente.Correo?.Value,
                 Telefonos = cliente.Telefono?.UnirParaMostrar(),
                 TipoCliente = cliente.TipoCliente?.Codigo,

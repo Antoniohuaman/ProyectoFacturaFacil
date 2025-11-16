@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using GestionClientesBC.Domain.Aggregates;
 using GestionClientesBC.Domain.Repositories;
 using GestionClientesBC.Domain.ValueObjects;
+using GestionClientesBC.Application.Helpers;
 using GestionClientesBC.Application.Interfaces; // IUnitOfWork
 using SharedKernel.Application.Interfaces;
 using SharedKernel.Exceptions;
@@ -12,15 +13,6 @@ using SharedKernel.ValueObjects;
 
 namespace GestionClientesBC.Application.Clientes.Crear
 {
-    /// <summary>
-    /// Fábrica para construir NombrePersona desde un texto (p.ej., "Nombres Apellidos").
-    /// Se inyecta para no acoplar a la implementación concreta de SK.
-    /// </summary>
-    public interface INombrePersonaFactory
-    {
-        NombrePersona FromCompleto(string nombresCompletos);
-    }
-
     public interface ICrearClienteUseCase
     {
         Task<CrearClienteOutputDto> Handle(CrearClienteInputDto input, CancellationToken ct = default);
@@ -31,18 +23,15 @@ namespace GestionClientesBC.Application.Clientes.Crear
         private readonly IClienteRepository _repo;
         private readonly IUnitOfWork _uow;
         private readonly ITenantContext _tenant;
-        private readonly INombrePersonaFactory _nombrePersonaFactory;
 
         public CrearClienteUseCase(
             IClienteRepository repo,
             IUnitOfWork uow,
-            ITenantContext tenant,
-            INombrePersonaFactory nombrePersonaFactory)
+            ITenantContext tenant)
         {
             _repo = repo ?? throw new ArgumentNullException(nameof(repo));
             _uow = uow ?? throw new ArgumentNullException(nameof(uow));
             _tenant = tenant ?? throw new ArgumentNullException(nameof(tenant));
-            _nombrePersonaFactory = nombrePersonaFactory ?? throw new ArgumentNullException(nameof(nombrePersonaFactory));
         }
 
         public async Task<CrearClienteOutputDto> Handle(CrearClienteInputDto input, CancellationToken ct = default)
@@ -69,9 +58,11 @@ namespace GestionClientesBC.Application.Clientes.Crear
             }
             else
             {
-                if (string.IsNullOrWhiteSpace(input.NombresCompletos))
-                    throw new BusinessRuleException("Los nombres son obligatorios para documento no RUC.");
-                nombres = _nombrePersonaFactory.FromCompleto(input.NombresCompletos!);
+                nombres = NombrePersonaInputMapper.CrearDesdeInput(
+                    input.Nombres,
+                    input.Apellidos,
+                    input.NombresCompletos,
+                    "Los nombres son obligatorios para documento no RUC.");
             }
 
             // 4) Detección de duplicado por EmpresaId + Documento (usando SearchAsync existente)
@@ -133,7 +124,16 @@ namespace GestionClientesBC.Application.Clientes.Crear
             if (!string.IsNullOrWhiteSpace(input.RolClienteCodigo))
                 rolCliente = RolCliente.DesdeCodigo(input.RolClienteCodigo);
 
-            // 7) Crear agregado y persistir
+            // 7) Metadatos opcionales
+            NombreCliente? nombreComercial = null;
+            if (!string.IsNullOrWhiteSpace(input.NombreComercial))
+                nombreComercial = NombreCliente.Crear(input.NombreComercial);
+
+            var paginaWeb = PaginaWebCliente.Create(input.PaginaWeb);
+            var observaciones = ObservacionesCliente.Create(input.Observaciones);
+            var fotoPerfil = FotoPerfilCliente.Create(input.FotoPerfilNombreArchivo, input.FotoPerfilUrl);
+
+            // 8) Crear agregado y persistir
             var cliente = new Cliente(
                 clienteId: Guid.NewGuid(),
                 empresaId: empresaId,
@@ -145,13 +145,18 @@ namespace GestionClientesBC.Application.Clientes.Crear
                 domicilioFiscal: domicilio,
                 tipoCliente: tipoCliente,
                 rolCliente: rolCliente,
-                estado: EstadoCliente.Habilitado
+                estado: EstadoCliente.Habilitado,
+                nombreComercial: nombreComercial,
+                paginaWeb: paginaWeb,
+                observaciones: observaciones,
+                fotoPerfil: fotoPerfil,
+                datosSunat: null
             );
 
             await _repo.AddAsync(cliente);
             await _uow.CommitAsync(ct);
 
-            // 8) Salida
+            // 9) Salida
             return new CrearClienteOutputDto
             {
                 ClienteId = cliente.ClienteId,
@@ -160,6 +165,11 @@ namespace GestionClientesBC.Application.Clientes.Crear
                 NumeroDocumento = cliente.Documento.Numero,
                 RazonSocial = cliente.RazonSocial?.Valor,
                 Nombres = cliente.Nombres?.Completo ?? string.Empty,
+                NombreComercial = cliente.NombreComercial?.ParaMostrar,
+                PaginaWeb = cliente.PaginaWeb?.Valor,
+                Observaciones = cliente.Observaciones?.Valor,
+                FotoPerfilNombreArchivo = cliente.FotoPerfil?.NombreArchivo,
+                FotoPerfilUrl = cliente.FotoPerfil?.UrlPublica,
                 Estado = cliente.Estado!.Nombre,
                 FechaRegistroUtc = cliente.FechaRegistro
             };

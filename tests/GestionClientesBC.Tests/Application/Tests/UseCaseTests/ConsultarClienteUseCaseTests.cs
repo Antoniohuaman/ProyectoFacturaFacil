@@ -58,6 +58,23 @@ namespace GestionClientesBC.Tests.Application.Clientes
                 rolCliente: RolCliente.Mayorista,
                 estado: EstadoCliente.Habilitado);
 
+            c.ActualizarNombreComercial(NombreCliente.Crear("Acme Retail"));
+            c.ActualizarPaginaWeb(PaginaWebCliente.Create("https://acme.com"));
+            c.ActualizarObservaciones(ObservacionesCliente.Create("Top client"));
+            c.ActualizarFotoPerfil(FotoPerfilCliente.Create("logo.png", "https://cdn.acme.com/logo.png"));
+            c.ActualizarDatosSunat(DatosSunatCliente.Create(
+                tipoContribuyente: "SOCIEDAD ANONIMA",
+                estadoContribuyente: "ACTIVO",
+                condicionDomicilio: "HABIDO",
+                sistemaEmision: "SEE",
+                fechaInscripcion: new DateTime(2010, 5, 1),
+                esEmisorElectronico: true,
+                esAgenteRetencion: false,
+                esAgentePercepcion: false,
+                esBuenContribuyente: false,
+                exceptuadaPercepcion: false,
+                actividadesEconomicas: new[] { "VENTA DE SOFTWARE" }));
+
             // Contacto
             var contacto = new ContactoCliente(
                 contactoId: Guid.NewGuid(),
@@ -120,12 +137,19 @@ namespace GestionClientesBC.Tests.Application.Clientes
             Assert.That(outDto.NumeroDocumento, Is.EqualTo("20661287099"));
             Assert.That(outDto.RazonSocial, Is.EqualTo("ACME S.A.C."));
             Assert.That(outDto.Nombres, Is.Null);
+            Assert.That(outDto.NombreComercial, Is.EqualTo("Acme Retail"));
             Assert.That(outDto.Correo, Is.EqualTo("ventas@acme.com"));
             Assert.That(outDto.Telefonos, Does.Contain("999").Or.Contain("+51"));
+            Assert.That(outDto.PaginaWeb, Is.EqualTo("https://acme.com"));
+            Assert.That(outDto.Observaciones, Is.EqualTo("Top client"));
+            Assert.That(outDto.FotoPerfilNombreArchivo, Is.EqualTo("logo.png"));
+            Assert.That(outDto.FotoPerfilUrl, Is.EqualTo("https://cdn.acme.com/logo.png"));
             Assert.That(outDto.TipoClienteCodigo, Is.EqualTo(TipoCliente.ClienteProveedor.Codigo));
             Assert.That(outDto.RolClienteCodigo, Is.EqualTo(RolCliente.Mayorista.Codigo));
             Assert.That(outDto.EstadoCodigo, Is.EqualTo(EstadoCliente.Habilitado.Codigo));
             Assert.That(outDto.DomicilioFiscalResumen, Does.Contain("Av. Siempre Viva 742").And.Contain("Lima"));
+            Assert.That(outDto.DatosSunat.TipoContribuyente, Is.EqualTo("SOCIEDAD ANONIMA"));
+            Assert.That(outDto.DatosSunat.ActividadesEconomicas, Has.Length.EqualTo(1));
             Assert.That(outDto.Contactos.Length, Is.EqualTo(1));
             Assert.That(outDto.Contactos[0].NombreContacto, Is.EqualTo("María Gomez"));
             Assert.That(outDto.Contactos[0].DocumentoIdentidad, Does.StartWith("DNI"));
@@ -159,6 +183,7 @@ namespace GestionClientesBC.Tests.Application.Clientes
             Assert.That(outDto.TipoDocumento, Is.EqualTo(TipoDocumento.Dni.ToString()));
             Assert.That(outDto.NumeroDocumento, Is.EqualTo("12345678"));
             Assert.That(outDto.Nombres, Is.EqualTo("Juan Pérez"));
+            Assert.That(outDto.NombreComercial, Is.Null);
             Assert.That(outDto.Contactos, Is.Empty);
             Assert.That(outDto.Adjuntos, Is.Empty);
         }

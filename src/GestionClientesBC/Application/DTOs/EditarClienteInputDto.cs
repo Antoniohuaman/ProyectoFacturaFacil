@@ -22,11 +22,20 @@ namespace GestionClientesBC.Application.Clientes.Editar
 
         /// <summary>Si el documento final no es RUC, se requieren nombres (si el cliente aún no los tiene).</summary>
         public string? NombresCompletos { get; init; }
+        public string? Nombres { get; init; }
+        public string? Apellidos { get; init; }
 
         // --- Contacto (opcionales) ---
         public string? Correo { get; init; }
         /// <summary>Teléfonos en un solo campo (VO Telefono.FromTexto los normaliza).</summary>
         public string? Telefonos { get; init; }
+
+        // --- Metadatos opcionales ---
+        public string? NombreComercial { get; init; }
+        public string? PaginaWeb { get; init; }
+        public string? Observaciones { get; init; }
+        public string? FotoPerfilNombreArchivo { get; init; }
+        public string? FotoPerfilUrl { get; init; }
 
         // --- Dirección (opcionales) ---
         public string? PaisCodigoIso { get; init; } = "PE";

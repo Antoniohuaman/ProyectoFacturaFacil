@@ -1,7 +1,6 @@
 using GestionClientesBC.Application.Interfaces; // IUnitOfWork
 using System;
 using System.Collections.Generic;
-using System.Runtime.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using GestionClientesBC.Application.Clientes.Crear;
@@ -25,34 +24,28 @@ namespace GestionClientesBC.Tests.Application.Clientes
         private static DocumentoIdentidad Dni(string n) => DocumentoIdentidad.Crear(TipoDocumento.Dni, n);
         private static SharedKernel.ValueObjects.RazonSocial RS(string s) => SharedKernel.ValueObjects.RazonSocial.Crear(s);
 
-        // NombrePersona stub (no asumimos fábricas concretas)
-        private static NombrePersona StubNombrePersona()
-            => NombrePersona.Crear("Juan", "Pérez");
-
         // UseCase factory
         private static CrearClienteUseCase BuildSut(
             out Mock<IClienteRepository> repo,
             out Mock<IUnitOfWork> uow,
-            out Mock<ITenantContext> tenant,
-            out Mock<INombrePersonaFactory> nombreFactory)
+            out Mock<ITenantContext> tenant)
         {
             repo = new Mock<IClienteRepository>(MockBehavior.Strict);
             uow = new Mock<IUnitOfWork>(MockBehavior.Strict);
             tenant = new Mock<ITenantContext>(MockBehavior.Strict);
-            nombreFactory = new Mock<INombrePersonaFactory>(MockBehavior.Strict);
 
             tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaDemo());
 
             uow.Setup(x => x.CommitAsync(It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
-            return new CrearClienteUseCase(repo.Object, uow.Object, tenant.Object, nombreFactory.Object);
+            return new CrearClienteUseCase(repo.Object, uow.Object, tenant.Object);
         }
 
         [Test]
         public async Task Crear_RUC_Minimo_Obligatorio_Ok()
         {
-            var sut = BuildSut(out var repo, out var uow, out var tenant, out var nombreFactory);
+            var sut = BuildSut(out var repo, out var uow, out var tenant);
 
             // No hay duplicados
             repo.Setup(r => r.SearchAsync(EmpresaDemo(), "20661287099", null, null))
@@ -86,15 +79,11 @@ namespace GestionClientesBC.Tests.Application.Clientes
         [Test]
         public async Task Crear_DNI_Minimo_Obligatorio_Ok()
         {
-            var sut = BuildSut(out var repo, out var uow, out var tenant, out var nombreFactory);
+            var sut = BuildSut(out var repo, out var uow, out var tenant);
 
             // No hay duplicados
             repo.Setup(r => r.SearchAsync(EmpresaDemo(), "12345678", null, null))
                 .ReturnsAsync(Array.Empty<Cliente>());
-
-            // Fábrica de nombre
-            nombreFactory.Setup(f => f.FromCompleto("Juan Pérez"))
-                         .Returns(StubNombrePersona());
 
             // Persistencia
             repo.Setup(r => r.AddAsync(It.IsAny<Cliente>())).Returns(Task.CompletedTask);
@@ -103,7 +92,8 @@ namespace GestionClientesBC.Tests.Application.Clientes
             {
                 TipoDocumento = TipoDocumento.Dni,
                 NumeroDocumento = "12345678",
-                NombresCompletos = "Juan Pérez"
+                Nombres = "Juan",
+                Apellidos = "Pérez"
             };
 
             var result = await sut.Handle(input);
@@ -120,9 +110,33 @@ namespace GestionClientesBC.Tests.Application.Clientes
         }
 
         [Test]
+        public async Task Crear_DNI_SoloNombresCompletos_Ok()
+        {
+            var sut = BuildSut(out var repo, out var uow, out var tenant);
+
+            repo.Setup(r => r.SearchAsync(EmpresaDemo(), "87654321", null, null))
+                .ReturnsAsync(Array.Empty<Cliente>());
+            repo.Setup(r => r.AddAsync(It.IsAny<Cliente>())).Returns(Task.CompletedTask);
+
+            var input = new CrearClienteInputDto
+            {
+                TipoDocumento = TipoDocumento.Dni,
+                NumeroDocumento = "87654321",
+                NombresCompletos = "Juan Carlos Pérez López"
+            };
+
+            var result = await sut.Handle(input);
+
+            Assert.That(result.Nombres, Is.EqualTo("Juan Carlos Pérez López"));
+
+            repo.Verify(r => r.AddAsync(It.IsAny<Cliente>()), Times.Once);
+            uow.Verify(u => u.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Test]
         public void Crear_RUC_Sin_RazonSocial_Lanza()
         {
-            var sut = BuildSut(out var repo, out _, out _, out _);
+            var sut = BuildSut(out var repo, out _, out _);
 
             var input = new CrearClienteInputDto
             {
@@ -139,7 +153,7 @@ namespace GestionClientesBC.Tests.Application.Clientes
         [Test]
         public void Crear_DNI_Sin_Nombres_Lanza()
         {
-            var sut = BuildSut(out var repo, out _, out _, out _);
+            var sut = BuildSut(out var repo, out _, out _);
 
             var input = new CrearClienteInputDto
             {
@@ -156,7 +170,7 @@ namespace GestionClientesBC.Tests.Application.Clientes
         [Test]
         public void Crear_Duplicado_PorEmpresaYDocumento_Lanza()
         {
-            var sut = BuildSut(out var repo, out _, out var tenant, out var nombreFactory);
+            var sut = BuildSut(out var repo, out _, out var tenant);
 
             // Cliente existente con mismo doc y misma empresa
             var existente = new Cliente(
@@ -184,7 +198,7 @@ namespace GestionClientesBC.Tests.Application.Clientes
         [Test]
         public async Task Crear_Con_Extras_Opcionales_Ok()
         {
-            var sut = BuildSut(out var repo, out var uow, out var tenant, out var nombreFactory);
+            var sut = BuildSut(out var repo, out var uow, out var tenant);
 
             repo.Setup(r => r.SearchAsync(EmpresaDemo(), "20661287099", null, null))
                 .ReturnsAsync(Array.Empty<Cliente>());
@@ -198,6 +212,11 @@ namespace GestionClientesBC.Tests.Application.Clientes
                 RazonSocial = "FOO S.A.C.",
                 Correo = "ventas@foo.com",
                 Telefonos = "999 888 777 / (01) 234 5678",
+                NombreComercial = "Mi Cliente Top",
+                PaginaWeb = "https://foo.com",
+                Observaciones = "Cliente preferente",
+                FotoPerfilNombreArchivo = "logo.png",
+                FotoPerfilUrl = "https://cdn.foo.com/logo.png",
                 PaisCodigoIso = "PE",
                 DireccionLinea = "Av. Siempre Viva 742",
                 Ubigeo = "150101",
@@ -214,6 +233,11 @@ namespace GestionClientesBC.Tests.Application.Clientes
             Assert.That(result.EmpresaId, Is.EqualTo(EmpresaDemo().Value));
             Assert.That(result.RazonSocial, Is.EqualTo("FOO S.A.C."));
             Assert.That(result.Estado, Is.EqualTo(EstadoCliente.Habilitado.Nombre));
+            Assert.That(result.NombreComercial, Is.EqualTo("Mi Cliente Top"));
+            Assert.That(result.PaginaWeb, Is.EqualTo("https://foo.com"));
+            Assert.That(result.Observaciones, Is.EqualTo("Cliente preferente"));
+            Assert.That(result.FotoPerfilNombreArchivo, Is.EqualTo("logo.png"));
+            Assert.That(result.FotoPerfilUrl, Is.EqualTo("https://cdn.foo.com/logo.png"));
 
             repo.Verify(r => r.AddAsync(It.IsAny<Cliente>()), Times.Once);
             uow.Verify(u => u.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
