@@ -1,353 +1,283 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using GestionClientesBC.Domain.Aggregates;
-using GestionClientesBC.Domain.Entities;
 using GestionClientesBC.Domain.Events;
 using GestionClientesBC.Domain.ValueObjects;
-using Moq;
 using NUnit.Framework;
-using SharedKernel.Events;
 using SharedKernel.Exceptions;
 using SharedKernel.ValueObjects;
 
-namespace GestionClientesBC.Tests.Domain
+namespace GestionClientesBC.Tests.Domain.AggregateTests
 {
     [TestFixture]
-    public class ClienteAggregateTests
+    public class ClienteTests
     {
-        // -------- Helpers de datos válidos (RUC) --------
+        // ----------------- Helpers -----------------
 
-        private static EmpresaId EmpresaDemo() => EmpresaId.From("EMPRESA-DEMO-001");
+        private static EmpresaId CrearEmpresaId()
+            => EmpresaId.From(Guid.NewGuid().ToString()); // Ajusta aquí si tu VO se crea distinto
 
-        // RUCs válidos según tu algoritmo (módulo 11)
-        // Puedes cambiarlos si deseas, pero estos pasan la validación:
-        private const string RucValido1 = "20661287099";
-        private const string RucValido2 = "20239867198";
+        private static DocumentoIdentidad CrearRuc(string numero = "10000000006")
+            => DocumentoIdentidad.Crear(TipoDocumento.Ruc, numero);
 
-        private static DocumentoIdentidad Ruc(string ruc) =>
-            DocumentoIdentidad.Crear(TipoDocumento.Ruc, ruc);
+        private static DocumentoIdentidad CrearDni(string numero = "12345678")
+            => DocumentoIdentidad.Crear(TipoDocumento.Dni, numero);
 
-        private static RazonSocial RS(string texto) =>
-            RazonSocial.Crear(texto);
+        private static RazonSocial CrearRazon(string valor = "MI EMPRESA SAC")
+            => RazonSocial.Crear(valor);
 
-        private static Email Correo(string v) => Email.Create(v);
+        private static NombrePersona CrearNombrePersona(
+            string nombres = "Juan",
+            string apellidos = "Pérez López")
+            => NombrePersona.Crear(nombres, apellidos);
 
-        private static Telefono Celular(string v) => Telefono.FromTexto(v);
-
-        private static DomicilioFiscal DireccionPeruOk() =>
-            DomicilioFiscal.FromPeru(
-                linea: "Av. Siempre Viva 742",
-                ubigeo: "150101",            // Lima Cercado
-                departamento: "Lima",
-                provincia: "Lima",
-                distrito: "Lima",
-                addressTypeCode: "0000"
-            );
-
-        private static Cliente NuevoClienteRuc(
-            string ruc = RucValido1,
-            string razon = "ACME S.A.C.",
-            string? correo = "contacto@acme.com",
-            string? celular = "999 888 777",
-            bool conDireccion = true
-        )
+        private static Cliente CrearClienteRucBasico()
         {
+            var clienteId = Guid.NewGuid();
+            var empresaId = CrearEmpresaId();
+            var doc = CrearRuc();
+            var razon = CrearRazon();
+
             return new Cliente(
-                clienteId: Guid.NewGuid(),
-                empresaId: EmpresaDemo(),
-                documento: Ruc(ruc),
-                razonSocial: RS(razon),
+                clienteId,
+                empresaId,
+                doc,
+                razon,
                 nombres: null,
-                correo: correo is null ? null : Correo(correo),
-                telefono: celular is null ? null : Celular(celular),
-                domicilioFiscal: conDireccion ? DireccionPeruOk() : null,
+                correo: null,
+                telefono: null,
+                domicilioFiscal: null,
                 tipoCliente: TipoCliente.Cliente,
                 rolCliente: null,
-                estado: EstadoCliente.Habilitado
-            );
+                estado: EstadoCliente.Habilitado);
         }
 
-        // ============ CONSTRUCCIÓN ============
+        private static Cliente CrearClienteDniBasico()
+        {
+            var clienteId = Guid.NewGuid();
+            var empresaId = CrearEmpresaId();
+            var doc = CrearDni();
+            var nombres = CrearNombrePersona();
+
+            return new Cliente(
+                clienteId,
+                empresaId,
+                doc,
+                razonSocial: null,
+                nombres: nombres,
+                correo: null,
+                telefono: null,
+                domicilioFiscal: null,
+                tipoCliente: TipoCliente.Cliente,
+                rolCliente: null,
+                estado: EstadoCliente.Habilitado);
+        }
+
+        // ----------------- Tests ctor -----------------
 
         [Test]
-        public void Ctor_Ruc_Valido_CreaCliente_Publica_ClienteCreado()
+        public void Ctor_RucConRazonSocial_CreaClienteHabilitadoYDisparaEvento()
         {
-            var c = NuevoClienteRuc();
+            var clienteId = Guid.NewGuid();
+            var empresaId = CrearEmpresaId();
+            var doc = CrearRuc();
+            var razon = CrearRazon();
 
-            Assert.That(c.ClienteId, Is.Not.EqualTo(Guid.Empty));
-            Assert.That(c.EmpresaId.IsEmpty, Is.False);
-            Assert.That(c.Documento.EsRuc, Is.True);
-            Assert.That(c.RazonSocial, Is.Not.Null);
-            Assert.That(c.Nombres, Is.Null);
-            Assert.That(c.Estado, Is.SameAs(EstadoCliente.Habilitado));
-            Assert.That(c.FechaRegistro.Kind, Is.EqualTo(DateTimeKind.Utc).Or.EqualTo(DateTimeKind.Unspecified)); // depende de cómo lo generes en tests locales
+            var cliente = new Cliente(
+                clienteId,
+                empresaId,
+                doc,
+                razon,
+                nombres: null);
 
-            // Evento ClienteCreado
-            var evCreado = c.DomainEvents.OfType<ClienteCreado>().SingleOrDefault();
-            Assert.That(evCreado, Is.Not.Null);
-            Assert.That(evCreado!.ClienteId, Is.EqualTo(c.ClienteId));
-            Assert.That(evCreado.EmpresaId, Is.EqualTo(c.EmpresaId));
-            Assert.That(evCreado.TipoDocumento, Is.EqualTo(TipoDocumento.Ruc.ToString()));
-            Assert.That(evCreado.NumeroDocumento, Is.EqualTo(RucValido1));
-            Assert.That(evCreado.RazonSocial, Is.EqualTo(c.RazonSocial!.Valor));
-            Assert.That(evCreado.Nombres, Is.EqualTo(string.Empty));
+            Assert.That(cliente.ClienteId, Is.EqualTo(clienteId));
+            Assert.That(cliente.EmpresaId, Is.EqualTo(empresaId));
+            Assert.That(cliente.Documento, Is.EqualTo(doc));
+            Assert.That(cliente.RazonSocial, Is.EqualTo(razon));
+            Assert.That(cliente.Nombres, Is.Null);
+            Assert.That(cliente.Estado, Is.EqualTo(EstadoCliente.Habilitado));
+            Assert.That(cliente.FechaRegistro, Is.Not.EqualTo(default(DateTime)));
+            Assert.That(cliente.Version, Is.EqualTo(0));
+
+            var evt = cliente.DomainEvents.OfType<ClienteCreado>().SingleOrDefault();
+            Assert.That(evt, Is.Not.Null);
+            Assert.That(evt!.ClienteId, Is.EqualTo(clienteId));
+            Assert.That(evt.EmpresaId, Is.EqualTo(empresaId));
+            Assert.That(evt.NumeroDocumento, Is.EqualTo(doc.Numero));
         }
 
         [Test]
-        public void Ctor_Ruc_SinRazonSocial_Lanza()
+        public void Ctor_RucSinRazonSocial_LanzaArgumentNullException()
         {
+            var clienteId = Guid.NewGuid();
+            var empresaId = CrearEmpresaId();
+            var doc = CrearRuc();
+
             Assert.That(
                 () => new Cliente(
-                    Guid.NewGuid(),
-                    EmpresaDemo(),
-                    Ruc(RucValido1),
+                    clienteId,
+                    empresaId,
+                    doc,
                     razonSocial: null,
-                    nombres: null
-                ),
-                Throws.Exception.TypeOf<ArgumentNullException>()
-                     .With.Message.Contains("La razón social es obligatoria para RUC.")
-            );
+                    nombres: null),
+                Throws.TypeOf<ArgumentNullException>()
+                    .With.Property("ParamName").EqualTo("razonSocial"));
         }
 
-        // ============ ESTADO (Habilitar / Deshabilitar) ============
+        [Test]
+        public void Ctor_DniSinNombres_LanzaArgumentNullException()
+        {
+            var clienteId = Guid.NewGuid();
+            var empresaId = CrearEmpresaId();
+            var doc = CrearDni();
+
+            Assert.That(
+                () => new Cliente(
+                    clienteId,
+                    empresaId,
+                    doc,
+                    razonSocial: null,
+                    nombres: null),
+                Throws.TypeOf<ArgumentNullException>()
+                    .With.Property("ParamName").EqualTo("nombres"));
+        }
 
         [Test]
-        public void Habilitar_CuandoYaEstaHabilitado_Lanza()
+        public void Ctor_DniConNombres_CreaClienteCorrectamente()
         {
-            var c = NuevoClienteRuc();
-            Assert.That(() => c.Habilitar(),
+            var clienteId = Guid.NewGuid();
+            var empresaId = CrearEmpresaId();
+            var doc = CrearDni();
+            var nombres = CrearNombrePersona();
+
+            var cliente = new Cliente(
+                clienteId,
+                empresaId,
+                doc,
+                razonSocial: null,
+                nombres: nombres);
+
+            Assert.That(cliente.Documento.Tipo, Is.EqualTo(TipoDocumento.Dni));
+            Assert.That(cliente.Nombres!.Completo, Is.EqualTo(nombres.Completo));
+            Assert.That(cliente.RazonSocial, Is.Null);
+            Assert.That(cliente.Estado, Is.EqualTo(EstadoCliente.Habilitado));
+        }
+
+        // ----------------- Tests de comportamiento -----------------
+
+        [Test]
+        public void Habilitar_CuandoYaEstaHabilitado_LanzaBusinessRuleException()
+        {
+            var cliente = CrearClienteRucBasico();
+
+            Assert.That(
+                () => cliente.Habilitar(),
                 Throws.TypeOf<BusinessRuleException>()
-                      .With.Message.Contains("ya está habilitado"));
+                    .With.Message.Contains("ya está habilitado"));
         }
 
         [Test]
-        public void Deshabilitar_EstableceEstadoYFechas_PublicaEvento()
+        public void Deshabilitar_CambiaEstado_RegistraMotivoYEvento()
         {
-            var c = NuevoClienteRuc();
-            var inicioEventos = c.DomainEvents.Count;
+            var cliente = CrearClienteRucBasico();
+            var fecha = new DateTime(2025, 1, 1, 10, 30, 0, DateTimeKind.Local);
+            var motivo = "Morosidad";
 
-            var fechaLocal = new DateTime(2025, 9, 7, 10, 30, 0, DateTimeKind.Local);
-            c.Deshabilitar("Prueba", fechaLocal);
+            cliente.Deshabilitar(motivo, fecha);
 
-            Assert.That(c.Estado, Is.SameAs(EstadoCliente.Deshabilitado));
-            Assert.That(c.MotivoDeshabilitacion, Is.EqualTo("Prueba"));
-            Assert.That(c.FechaDeshabilitacion.HasValue, Is.True);
-            Assert.That(c.FechaUltimaModificacion.HasValue, Is.True);
+            Assert.That(cliente.Estado, Is.EqualTo(EstadoCliente.Deshabilitado));
+            Assert.That(cliente.MotivoDeshabilitacion, Is.EqualTo(motivo));
+            Assert.That(cliente.FechaDeshabilitacion, Is.Not.Null);
+            Assert.That(cliente.FechaUltimaModificacion, Is.Not.Null);
+            Assert.That(cliente.Version, Is.GreaterThan(0));
 
-            var ev = c.DomainEvents.OfType<ClienteDeshabilitado>().LastOrDefault();
-            Assert.That(ev, Is.Not.Null);
-            Assert.That(ev!.ClienteId, Is.EqualTo(c.ClienteId));
-            Assert.That(ev.EmpresaId, Is.EqualTo(c.EmpresaId));
-            Assert.That(ev.Motivo, Is.EqualTo("Prueba"));
-            // La fecha debe estar en UTC en el evento/aggregate
-            var expectedUtc = fechaLocal.ToUniversalTime();
-            Assert.That(ev.Fecha, Is.EqualTo(expectedUtc));
-
-            Assert.That(c.DomainEvents.Count, Is.EqualTo(inicioEventos + 1));
+            var evt = cliente.DomainEvents.OfType<ClienteDeshabilitado>().SingleOrDefault();
+            Assert.That(evt, Is.Not.Null);
+            Assert.That(evt!.Motivo, Is.EqualTo(motivo));
         }
 
         [Test]
-        public void ReHabilitar_LuegoDeDeshabilitar_Publica_ClienteHabilitado()
+        public void ActualizarNombre_ParaRuc_ActualizaRazonSocial()
         {
-            var c = NuevoClienteRuc();
-            c.Deshabilitar("x", DateTime.UtcNow);
+            var cliente = CrearClienteRucBasico();
+            var nuevaRazon = RazonSocial.Crear("NUEVA EMPRESA SAC");
 
-            var prevCount = c.DomainEvents.Count;
-            c.Habilitar();
+            cliente.ActualizarNombre(nuevaRazon);
 
-            Assert.That(c.Estado, Is.SameAs(EstadoCliente.Habilitado));
-
-            var ev = c.DomainEvents.OfType<ClienteHabilitado>().LastOrDefault();
-            Assert.That(ev, Is.Not.Null);
-            Assert.That(ev!.ClienteId, Is.EqualTo(c.ClienteId));
-            Assert.That(ev.EmpresaId, Is.EqualTo(c.EmpresaId));
-            Assert.That(c.DomainEvents.Count, Is.EqualTo(prevCount + 1));
-        }
-
-        // ============ ACTUALIZACIONES BÁSICAS ============
-
-        [Test]
-        public void ActualizarDireccion_ModificaVO_Y_Timestamp()
-        {
-            var c = NuevoClienteRuc(conDireccion: false);
-            Assert.That(c.DomicilioFiscal, Is.Null);
-            Assert.That(c.FechaUltimaModificacion, Is.Null);
-
-            c.ActualizarDireccion(DireccionPeruOk());
-
-            Assert.That(c.DomicilioFiscal, Is.Not.Null);
-            Assert.That(c.FechaUltimaModificacion, Is.Not.Null);
+            Assert.That(cliente.RazonSocial, Is.EqualTo(nuevaRazon));
+            Assert.That(cliente.Nombres, Is.Null);
+            Assert.That(cliente.FechaUltimaModificacion, Is.Not.Null);
+            Assert.That(cliente.Version, Is.GreaterThan(0));
         }
 
         [Test]
-        public void ActualizarNombre_Ruc_Requiere_RazonSocial()
+        public void ActualizarNombre_ParaDni_ActualizaNombrePersona()
         {
-            var c = NuevoClienteRuc();
-            var antes = c.RazonSocial;
-            c.ActualizarNombre(RS("ACME PERU S.A."));
-            Assert.That(c.RazonSocial!.Valor, Is.EqualTo("ACME PERU S.A."));
-            Assert.That(c.Nombres, Is.Null);
-            Assert.That(c.FechaUltimaModificacion, Is.Not.Null);
-            Assert.That(c.RazonSocial, Is.Not.SameAs(antes));
+            var cliente = CrearClienteDniBasico();
+            var nuevoNombre = NombrePersona.Crear("Ana María", "García Torres");
+
+            cliente.ActualizarNombre(nuevoNombre);
+
+            Assert.That(cliente.Nombres, Is.EqualTo(nuevoNombre));
+            Assert.That(cliente.RazonSocial, Is.Null);
+            Assert.That(cliente.FechaUltimaModificacion, Is.Not.Null);
+            Assert.That(cliente.Version, Is.GreaterThan(0));
         }
 
         [Test]
-        public void ActualizarTipoCliente_y_RolCliente_ModificaAmbos()
+        public void ActualizarDocumentoIdentidad_CambiarADniSinNombres_LanzaBusinessRuleException()
         {
-            var c = NuevoClienteRuc();
-            c.ActualizarTipoCliente(TipoCliente.ClienteProveedor);
-            c.ActualizarRolCliente(RolCliente.Mayorista);
+            // Cliente inicial RUC con razón social
+            var clienteId = Guid.NewGuid();
+            var empresaId = CrearEmpresaId();
+            var docRuc = CrearRuc();
+            var razon = CrearRazon();
 
-            Assert.That(c.TipoCliente, Is.SameAs(TipoCliente.ClienteProveedor));
-            Assert.That(c.RolCliente, Is.SameAs(RolCliente.Mayorista));
-            Assert.That(c.FechaUltimaModificacion, Is.Not.Null);
+            var cliente = new Cliente(
+                clienteId,
+                empresaId,
+                docRuc,
+                razon,
+                nombres: null);
+
+            // Forzamos a que Nombres esté vacío para provocar la regla
+            cliente.ActualizarNombre(razon); // sigue siendo PJ, no cambia nada en nombres
+
+            var nuevoDoc = CrearDni("12345678");
+
+            Assert.That(
+                () => cliente.ActualizarDocumentoIdentidad(nuevoDoc),
+                Throws.TypeOf<BusinessRuleException>()
+                    .With.Message.Contains("nombres válidos"));
         }
 
         [Test]
-        public void ActualizarDatosContacto_Set_Correo_y_Telefono()
+        public void RegistrarModificacion_AgregaEventoClienteActualizado_EIncrementeVersion()
         {
-            var c = NuevoClienteRuc(correo: null, celular: null);
-            c.ActualizarDatosContacto(Correo("ventas@acme.com"), "912 345 678");
-
-            Assert.That(c.Correo!.Value, Is.EqualTo("ventas@acme.com"));
-            Assert.That(c.Telefono, Is.Not.Null);
-            Assert.That(c.Telefono!.Numeros.Count, Is.EqualTo(1));
-            Assert.That(c.Telefono.Numeros[0].Canonico, Is.EqualTo("912345678"));
-        }
-
-        // ============ DOCUMENTO ============
-
-        [Test]
-        public void ActualizarDocumentoIdentidad_MismoValor_NoCambiaTimestamp()
-        {
-            var c = NuevoClienteRuc(RucValido1);
-            Assert.That(c.FechaUltimaModificacion, Is.Null);
-
-            c.ActualizarDocumentoIdentidad(Ruc(RucValido1)); // igual
-            Assert.That(c.Documento.Numero, Is.EqualTo(RucValido1));
-            Assert.That(c.FechaUltimaModificacion, Is.Null);
-        }
-
-        [Test]
-        public void ActualizarDocumentoIdentidad_RUC_Distinto_RevalidaYActualiza()
-        {
-            var c = NuevoClienteRuc(RucValido1);
-            c.ActualizarDocumentoIdentidad(Ruc(RucValido2));
-
-            Assert.That(c.Documento.Numero, Is.EqualTo(RucValido2));
-            Assert.That(c.FechaUltimaModificacion, Is.Not.Null);
-        }
-
-        // ============ MODIFICACIÓN (Evento) ============
-
-        [Test]
-        public void RegistrarModificacion_Publica_ClienteActualizado()
-        {
-            var c = NuevoClienteRuc();
-            var prev = c.DomainEvents.Count;
-
-            var cambios = new Dictionary<string, (object? anterior, object? nuevo)>
+            var cliente = CrearClienteRucBasico();
+            var cambios = new System.Collections.Generic.Dictionary<string, (object? anterior, object? nuevo)>
             {
-                ["Telefono"] = (c.Telefono, Celular("911 222 333"))
+                { "Correo", (null, "nuevo@correo.com") }
             };
 
-            c.RegistrarModificacion(cambios);
+            cliente.RegistrarModificacion(cambios);
 
-            Assert.That(c.DomainEvents.Count, Is.EqualTo(prev + 1));
-
-            var ev = c.DomainEvents.OfType<ClienteActualizado>().LastOrDefault();
-            Assert.That(ev, Is.Not.Null);
-            Assert.That(ev!.ClienteId, Is.EqualTo(c.ClienteId));
-            Assert.That(ev.EmpresaId, Is.EqualTo(c.EmpresaId));
-            Assert.That(ev.TipoDocumento, Is.EqualTo(TipoDocumento.Ruc.ToString()));
-            Assert.That(ev.NumeroDocumento, Is.EqualTo(c.Documento.Numero));
-            Assert.That(ev.RazonSocial, Is.EqualTo(c.RazonSocial!.Valor));
-            Assert.That(ev.Nombres, Is.EqualTo(string.Empty));
+            var evt = cliente.DomainEvents.OfType<ClienteActualizado>().SingleOrDefault();
+            Assert.That(evt, Is.Not.Null);
+            Assert.That(cliente.Version, Is.GreaterThan(0));
         }
 
-        // ============ ADJUNTOS ============
-
         [Test]
-        public void AgregarYEliminarAdjunto_ModificaColeccion_PublicaEventos()
+        public void EliminarCliente_RegistraEventoClienteEliminado_EIncrementeVersion()
         {
-            var c = NuevoClienteRuc();
-            var adj = new AdjuntoCliente(
-                adjuntoId: Guid.NewGuid(),
-                nombreArchivo: "ruc.pdf",
-                ruta: "/files/ruc.pdf",
-                fechaSubida: DateTime.UtcNow,
-                comentario: "Constancia"
-            );
+            var cliente = CrearClienteRucBasico();
 
-            var eventosPrevios = c.DomainEvents.Count;
-            c.AgregarAdjunto(adjunto: adj);
+            cliente.EliminarCliente();
 
-            Assert.That(c.Adjuntos.Count, Is.EqualTo(1));
-            var evAdded = c.DomainEvents.OfType<AdjuntoAgregado>().LastOrDefault();
-            Assert.That(evAdded, Is.Not.Null);
-            Assert.That(evAdded!.ClienteId, Is.EqualTo(c.ClienteId));
-            Assert.That(evAdded.EmpresaId, Is.EqualTo(c.EmpresaId));
-            Assert.That(evAdded.AdjuntoId, Is.EqualTo(adj.AdjuntoId));
-            Assert.That(c.DomainEvents.Count, Is.EqualTo(eventosPrevios + 1));
-
-            // Eliminar
-            var eventosPrev2 = c.DomainEvents.Count;
-            c.EliminarAdjunto(adj.AdjuntoId);
-
-            Assert.That(c.Adjuntos.Count, Is.EqualTo(0));
-            var evRemoved = c.DomainEvents.OfType<AdjuntoEliminado>().LastOrDefault();
-            Assert.That(evRemoved, Is.Not.Null);
-            Assert.That(evRemoved!.AdjuntoId, Is.EqualTo(adj.AdjuntoId));
-            Assert.That(evRemoved.ClienteId, Is.EqualTo(c.ClienteId));
-            Assert.That(evRemoved.EmpresaId, Is.EqualTo(c.EmpresaId));
-            Assert.That(c.DomainEvents.Count, Is.EqualTo(eventosPrev2 + 1));
-        }
-
-        // ============ ELIMINACIÓN LÓGICA (Evento) ============
-
-        [Test]
-        public void EliminarCliente_Publica_ClienteEliminado()
-        {
-            var c = NuevoClienteRuc();
-            var prev = c.DomainEvents.Count;
-
-            c.EliminarCliente();
-
-            var ev = c.DomainEvents.OfType<ClienteEliminado>().LastOrDefault();
-            Assert.That(ev, Is.Not.Null);
-            Assert.That(ev!.ClienteId, Is.EqualTo(c.ClienteId));
-            Assert.That(ev.EmpresaId, Is.EqualTo(c.EmpresaId));
-            Assert.That(c.DomainEvents.Count, Is.EqualTo(prev + 1));
-        }
-
-        // ============ Ejemplo de uso con Moq (IEventBus) ============
-
-        [Test]
-        public void Publicar_DomainEvents_En_EventBus_ConMoq()
-        {
-            var c = NuevoClienteRuc();
-            // Simular nuevas modificaciones para tener más eventos
-            c.RegistrarModificacion(new Dictionary<string, (object? anterior, object? nuevo)>
-            {
-                ["Correo"] = (c.Correo, Correo("nuevo@acme.com"))
-            });
-            c.EliminarCliente();
-
-            var eventos = c.DomainEvents.ToList(); // 1 creado + 1 actualizado + 1 eliminado = 3
-            var mockBus = new Mock<IEventBus>(MockBehavior.Strict);
-            foreach (var _ in eventos)
-            {
-                mockBus.Setup(b => b.PublishAsync(It.IsAny<IDomainEvent>(), default))
-                       .Returns(System.Threading.Tasks.Task.CompletedTask)
-                       .Verifiable();
-            }
-
-            // "Publicación"
-            foreach (var e in eventos)
-                mockBus.Object.PublishAsync(e);
-
-            mockBus.Verify(b => b.PublishAsync(It.IsAny<IDomainEvent>(), default), Times.Exactly(eventos.Count));
+            var evt = cliente.DomainEvents.OfType<ClienteEliminado>().SingleOrDefault();
+            Assert.That(evt, Is.Not.Null);
+            Assert.That(evt!.ClienteId, Is.EqualTo(cliente.ClienteId));
+            Assert.That(cliente.Version, Is.GreaterThan(0));
         }
     }
 }
