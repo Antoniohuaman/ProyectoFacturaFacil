@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using System.Linq;
 using ListaPreciosBC.Domain.Aggregates;
 using ListaPreciosBC.Domain.ValueObjects;
 using SharedKernel.ValueObjects; // Sku, AfectacionImpuesto
@@ -69,8 +70,10 @@ namespace ListaPreciosBC.Domain.Services
             int? tramoDesde = null, tramoHasta = null;
             if (res.Origen == PrecioResueltoOrigen.PorVolumen)
             {
-                var key = objetivo.Numero;
-                if (producto.MatricesVolumen.TryGetValue(key, out var matriz))
+                var registro = producto.PreciosPorUnidad
+                    .FirstOrDefault(x => x.ColumnaId.Equals(objetivo) && x.UnidadDeMedida.Equals(UnidadDeMedida.NIU));
+                var matriz = registro?.MatrizVolumen;
+                if (matriz is not null)
                 {
                     var tramo = matriz.ObtenerTramo(cantidad);
                     if (tramo is not null)

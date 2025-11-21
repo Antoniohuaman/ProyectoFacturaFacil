@@ -17,6 +17,7 @@ namespace ListaPreciosBC.Tests.UnitTests.Aggregates
     private static ProductoId PID() => ProductoId.New();
 
         private static IdentificadorColumnaPrecio P(byte n) => IdentificadorColumnaPrecio.DesdeNumero(n);
+        private static UnidadDeMedida U(string codigo = "NIU") => UnidadDeMedida.From(codigo);
 
         private static PeriodoVigencia Vigencia(DateTimeOffset desde, DateTimeOffset? hasta = null)
             => PeriodoVigencia.Crear(desde, hasta);
@@ -50,8 +51,7 @@ namespace ListaPreciosBC.Tests.UnitTests.Aggregates
             Assert.That(agg.EmpresaId, Is.EqualTo(emp));
             Assert.That(agg.ProductoId, Is.EqualTo(pid));
             Assert.That(agg.Version, Is.EqualTo(0));
-            Assert.That(agg.PreciosFijos.Count, Is.EqualTo(0));
-            Assert.That(agg.MatricesVolumen.Count, Is.EqualTo(0));
+            Assert.That(agg.PreciosPorUnidad, Is.Empty);
         }
 
         [Test]
@@ -61,10 +61,13 @@ namespace ListaPreciosBC.Tests.UnitTests.Aggregates
             var v0 = agg.Version;
 
             var hoy = new DateTimeOffset(2025, 1, 1, 10, 0, 0, TimeSpan.Zero);
-            agg.UpsertPrecioFijo(P(1), Vp(10m), Vigencia(hoy.AddDays(-1), null), "u", hoy);
+            agg.UpsertPrecioFijo(P(1), U(), Vp(10m), Vigencia(hoy.AddDays(-1), null), "u", hoy);
 
             Assert.That(agg.Version, Is.EqualTo(v0 + 1));
-            Assert.That(agg.PreciosFijos.ContainsKey(1), Is.True);
+            var registro = agg.PreciosPorUnidad.Single();
+            Assert.That(registro.ColumnaId.Numero, Is.EqualTo(1));
+            Assert.That(registro.UnidadDeMedida, Is.EqualTo(U()));
+            Assert.That(registro.TienePrecioFijo, Is.True);
 
             // Eventos: PrecioColumnaActualizada (+ PrecioBaseVigenteEstablecido porque es P1 vigente)
             Assert.That(agg.DomainEvents, Has.Exactly(1).InstanceOf<PrecioColumnaActualizada>());
@@ -78,14 +81,14 @@ namespace ListaPreciosBC.Tests.UnitTests.Aggregates
         public void EliminarPrecioFijo_remueve_y_emite_evento()
         {
             var agg = PrecioProducto.CrearNuevo(EMP(), PID());
-            agg.UpsertPrecioFijo(P(2), Vp(12m), Vigencia(DateTimeOffset.UtcNow.AddDays(-1)));
+            agg.UpsertPrecioFijo(P(2), U(), Vp(12m), Vigencia(DateTimeOffset.UtcNow.AddDays(-1)));
 
             agg.ClearDomainEvents();
             var v0 = agg.Version;
 
-            agg.EliminarPrecioFijo(P(2), "u2", new DateTimeOffset(2025, 1, 2, 9, 0, 0, TimeSpan.Zero));
+            agg.EliminarPrecioFijo(P(2), U(), "u2", new DateTimeOffset(2025, 1, 2, 9, 0, 0, TimeSpan.Zero));
 
-            Assert.That(agg.PreciosFijos.ContainsKey(2), Is.False);
+            Assert.That(agg.PreciosPorUnidad.Any(x => x.ColumnaId.Numero == 2 && x.UnidadDeMedida == U()), Is.False);
             Assert.That(agg.Version, Is.EqualTo(v0 + 1));
             Assert.That(agg.DomainEvents, Has.Exactly(1).InstanceOf<PrecioColumnaActualizada>());
         }
@@ -99,10 +102,10 @@ namespace ListaPreciosBC.Tests.UnitTests.Aggregates
             var matriz = Mat((1, 10, 9m), (11, 20, 8m), (21, null, 7m));
             var cuando = new DateTimeOffset(2025, 1, 3, 8, 0, 0, TimeSpan.Zero);
 
-            agg.UpsertMatrizVolumen(P(1), matriz, "u3", cuando, cantidadReferenciaParaEventoBase: 5);
+            agg.UpsertMatrizVolumen(P(1), U(), matriz, "u3", cuando, cantidadReferenciaParaEventoBase: 5);
 
             Assert.That(agg.Version, Is.EqualTo(v0 + 1));
-            Assert.That(agg.MatricesVolumen.ContainsKey(1), Is.True);
+            Assert.That(agg.PreciosPorUnidad.Single().TieneMatrizVolumen, Is.True);
 
             Assert.That(agg.DomainEvents, Has.Exactly(1).InstanceOf<MatrizVolumenActualizada>());
             Assert.That(agg.DomainEvents, Has.Exactly(1).InstanceOf<PrecioBaseVigenteEstablecido>());
@@ -112,14 +115,14 @@ namespace ListaPreciosBC.Tests.UnitTests.Aggregates
         public void EliminarMatrizVolumen_remueve_y_emite_evento()
         {
             var agg = PrecioProducto.CrearNuevo(EMP(), PID());
-            agg.UpsertMatrizVolumen(P(3), Mat((1, 10, 15m)), "u", DateTimeOffset.UtcNow);
+            agg.UpsertMatrizVolumen(P(3), U(), Mat((1, 10, 15m)), "u", DateTimeOffset.UtcNow);
 
             agg.ClearDomainEvents();
             var v0 = agg.Version;
 
-            agg.EliminarMatrizVolumen(P(3), "u4", new DateTimeOffset(2025, 1, 4, 9, 0, 0, TimeSpan.Zero));
+            agg.EliminarMatrizVolumen(P(3), U(), "u4", new DateTimeOffset(2025, 1, 4, 9, 0, 0, TimeSpan.Zero));
 
-            Assert.That(agg.MatricesVolumen.ContainsKey(3), Is.False);
+            Assert.That(agg.PreciosPorUnidad.Any(x => x.ColumnaId.Numero == 3 && x.UnidadDeMedida == U()), Is.False);
             Assert.That(agg.Version, Is.EqualTo(v0 + 1));
             Assert.That(agg.DomainEvents, Has.Exactly(1).InstanceOf<MatrizVolumenActualizada>());
         }
@@ -131,23 +134,23 @@ namespace ListaPreciosBC.Tests.UnitTests.Aggregates
 
             // En P4 configuramos fijo vigente
             var hoy = new DateTimeOffset(2025, 1, 5, 10, 0, 0, TimeSpan.Zero);
-            agg.UpsertPrecioFijo(P(4), Vp(20m), Vigencia(hoy.AddDays(-1), hoy.AddDays(1)), "u", hoy);
+            agg.UpsertPrecioFijo(P(4), U(), Vp(20m), Vigencia(hoy.AddDays(-1), hoy.AddDays(1)), "u", hoy);
 
             // En P5 configuramos sólo matriz
-            agg.UpsertMatrizVolumen(P(5), Mat((1, 10, 30m), (11, 50, 25m)));
+            agg.UpsertMatrizVolumen(P(5), U(), Mat((1, 10, 30m), (11, 50, 25m)));
 
             // 1) Fijo vigente en P4
-            var r1 = agg.ObtenerPrecioVigente(P(4), hoy, 3)!;
+            var r1 = agg.ObtenerPrecioVigente(P(4), U(), hoy, 3)!;
             Assert.That(r1.Valor.Monto, Is.EqualTo(20m));
             Assert.That(r1.Origen, Is.EqualTo(PrecioResueltoOrigen.Fijo));
 
             // 2) Matriz en P5, cantidad 15 → tramo de 25
-            var r2 = agg.ObtenerPrecioVigente(P(5), hoy, 15)!;
+            var r2 = agg.ObtenerPrecioVigente(P(5), U(), hoy, 15)!;
             Assert.That(r2.Valor.Monto, Is.EqualTo(25m));
             Assert.That(r2.Origen, Is.EqualTo(PrecioResueltoOrigen.PorVolumen));
 
             // 3) Cantidad inválida o sin configuración → null
-            var r3 = agg.ObtenerPrecioVigente(P(5), hoy, 0);
+            var r3 = agg.ObtenerPrecioVigente(P(5), U(), hoy, 0);
             Assert.That(r3, Is.Null);
         }
 
@@ -157,13 +160,63 @@ namespace ListaPreciosBC.Tests.UnitTests.Aggregates
             var agg = PrecioProducto.CrearNuevo(EMP(), PID());
 
             // Primero matriz en P2
-            agg.UpsertMatrizVolumen(P(2), Mat((1, 10, 15m)));
+            agg.UpsertMatrizVolumen(P(2), U(), Mat((1, 10, 15m)));
 
             // Luego fijo en P2 -> debe eliminar la matriz
-            agg.UpsertPrecioFijo(P(2), Vp(12m), Vigencia(DateTimeOffset.UtcNow.AddDays(-1)));
+            agg.UpsertPrecioFijo(P(2), U(), Vp(12m), Vigencia(DateTimeOffset.UtcNow.AddDays(-1)));
 
-            Assert.That(agg.MatricesVolumen.ContainsKey(2), Is.False);
-            Assert.That(agg.PreciosFijos.ContainsKey(2), Is.True);
+            var registro = agg.PreciosPorUnidad.Single(x => x.ColumnaId.Numero == 2 && x.UnidadDeMedida == U());
+            Assert.That(registro.TieneMatrizVolumen, Is.False);
+            Assert.That(registro.TienePrecioFijo, Is.True);
+        }
+
+        [Test]
+        public void UpsertPrecioFijo_por_unidad_crea_registros_independientes()
+        {
+            var agg = PrecioProducto.CrearNuevo(EMP(), PID());
+            var fecha = DateTimeOffset.UtcNow;
+
+            agg.UpsertPrecioFijo(P(2), U("NIU"), Vp(10m), Vigencia(fecha.AddDays(-1), fecha.AddDays(1)));
+            agg.UpsertPrecioFijo(P(2), U("KGM"), Vp(25m), Vigencia(fecha.AddDays(-1), fecha.AddDays(1)));
+
+            Assert.That(agg.PreciosPorUnidad.Count, Is.EqualTo(2));
+
+            var resNiu = agg.ObtenerPrecioVigente(P(2), U("NIU"), fecha, 5)!;
+            var resKgm = agg.ObtenerPrecioVigente(P(2), U("KGM"), fecha, 5)!;
+
+            Assert.That(resNiu.Valor.Monto, Is.EqualTo(10m));
+            Assert.That(resKgm.Valor.Monto, Is.EqualTo(25m));
+        }
+
+        [Test]
+        public void Eliminar_precio_fijo_por_unidad_no_afecta_otros()
+        {
+            var agg = PrecioProducto.CrearNuevo(EMP(), PID());
+            var fecha = DateTimeOffset.UtcNow;
+
+            agg.UpsertPrecioFijo(P(3), U("NIU"), Vp(8m), Vigencia(fecha.AddDays(-1), fecha.AddDays(1)));
+            agg.UpsertPrecioFijo(P(3), U("KGM"), Vp(30m), Vigencia(fecha.AddDays(-1), fecha.AddDays(1)));
+
+            agg.EliminarPrecioFijo(P(3), U("KGM"));
+
+            Assert.That(agg.ObtenerPrecioVigente(P(3), U("KGM"), fecha, 2), Is.Null);
+            Assert.That(agg.ObtenerPrecioVigente(P(3), U("NIU"), fecha, 2), Is.Not.Null);
+        }
+
+        [Test]
+        public void Matriz_por_unidad_se_resuelve_individualmente()
+        {
+            var agg = PrecioProducto.CrearNuevo(EMP(), PID());
+            var fecha = DateTimeOffset.UtcNow;
+
+            agg.UpsertMatrizVolumen(P(4), U("NIU"), Mat((1, 10, 50m), (11, null, 40m)));
+            agg.UpsertMatrizVolumen(P(4), U("KGM"), Mat((1, null, 70m)));
+
+            var resUnidad = agg.ObtenerPrecioVigente(P(4), U("NIU"), fecha, 12)!;
+            var resKg = agg.ObtenerPrecioVigente(P(4), U("KGM"), fecha, 12)!;
+
+            Assert.That(resUnidad.Valor.Monto, Is.EqualTo(40m));
+            Assert.That(resKg.Valor.Monto, Is.EqualTo(70m));
         }
     }
 }

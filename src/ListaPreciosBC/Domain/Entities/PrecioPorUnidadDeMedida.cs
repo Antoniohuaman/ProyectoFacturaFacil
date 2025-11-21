@@ -1,3 +1,4 @@
+using System;
 using ListaPreciosBC.Domain.ValueObjects;
 using SharedKernel.ValueObjects;
 
@@ -21,6 +22,14 @@ public sealed class PrecioPorUnidadDeMedida
     /// </summary>
     public bool EstaHabilitada { get; private set; }
 
+    public ValorPrecio? PrecioFijo { get; private set; }
+    public PeriodoVigencia? Vigencia { get; private set; }
+    public MatrizVolumen? MatrizVolumen { get; private set; }
+
+    public bool TienePrecioFijo => PrecioFijo is not null && Vigencia is not null;
+    public bool TieneMatrizVolumen => MatrizVolumen is not null;
+    public bool EstaVacia => !TienePrecioFijo && !TieneMatrizVolumen;
+
     public PrecioPorUnidadDeMedida(
         IdentificadorColumnaPrecio columnaId,
         UnidadDeMedida unidadDeMedida,
@@ -28,8 +37,8 @@ public sealed class PrecioPorUnidadDeMedida
     {
         // Las invariantes propias de los VOs (rangos, formatos, etc.)
         // se validan en sus propias factories; aquí asumimos que llegan válidos.
-        ColumnaId = columnaId;
-        UnidadDeMedida = unidadDeMedida;
+        ColumnaId = columnaId ?? throw new ArgumentNullException(nameof(columnaId));
+        UnidadDeMedida = unidadDeMedida ?? throw new ArgumentNullException(nameof(unidadDeMedida));
         EstaHabilitada = estaHabilitada;
     }
 
@@ -41,6 +50,31 @@ public sealed class PrecioPorUnidadDeMedida
     public void Deshabilitar()
     {
         EstaHabilitada = false;
+    }
+
+    public void EstablecerPrecioFijo(ValorPrecio valor, PeriodoVigencia vigencia)
+    {
+        PrecioFijo = valor ?? throw new ArgumentNullException(nameof(valor));
+        Vigencia = vigencia ?? throw new ArgumentNullException(nameof(vigencia));
+        MatrizVolumen = null;
+    }
+
+    public void EliminarPrecioFijo()
+    {
+        PrecioFijo = null;
+        Vigencia = null;
+    }
+
+    public void EstablecerMatrizVolumen(MatrizVolumen matriz)
+    {
+        MatrizVolumen = matriz ?? throw new ArgumentNullException(nameof(matriz));
+        PrecioFijo = null;
+        Vigencia = null;
+    }
+
+    public void EliminarMatrizVolumen()
+    {
+        MatrizVolumen = null;
     }
 
     public override string ToString()

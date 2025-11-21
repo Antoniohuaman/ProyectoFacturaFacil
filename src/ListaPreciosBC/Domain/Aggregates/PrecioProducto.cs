@@ -2,12 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using ListaPreciosBC.Domain.Entities;
 using ListaPreciosBC.Domain.Policies;
 using ListaPreciosBC.Domain.Specifications;
 using ListaPreciosBC.Domain.Events;
 using ListaPreciosBC.Domain.ValueObjects;
 using SharedKernel.Events;
-using SharedKernel.ValueObjects; // ProductoId, EmpresaId
+using SharedKernel.ValueObjects; // ProductoId, EmpresaId, UnidadDeMedida
 
 namespace ListaPreciosBC.Domain.Aggregates
 {
@@ -18,7 +19,7 @@ namespace ListaPreciosBC.Domain.Aggregates
     ///   - Matriz por Volumen (tramos de cantidad → precio).
     /// Exclusividad por columna: sólo uno de los dos.
     /// </summary>
-    [DebuggerDisplay("{ProductoId} v{Version} (Fijos={_preciosFijos.Count}, Volumen={_matricesVolumen.Count})")]
+    [DebuggerDisplay("{ProductoId} v{Version} (Entradas={_preciosPorUnidad.Count})")]
     public sealed class PrecioProducto
     {
         // ------------ Identidad / Concurrencia / Auditoría ------------
@@ -34,13 +35,13 @@ namespace ListaPreciosBC.Domain.Aggregates
         public DateTimeOffset? UltimaActualizacion { get; private set; }
         public string? UltimoUsuario { get; private set; }
 
-        // ------------ Estado ------------
-        // Clave por Id de columna (P1..P10 => 1..10)
-        private readonly Dictionary<byte, PrecioFijo> _preciosFijos = new();
-        private readonly Dictionary<byte, MatrizVolumen> _matricesVolumen = new();
+        private static UnidadDeMedida UnidadPorDefecto => UnidadDeMedida.NIU;
 
-        public IReadOnlyDictionary<byte, PrecioFijo> PreciosFijos => _preciosFijos;
-        public IReadOnlyDictionary<byte, MatrizVolumen> MatricesVolumen => _matricesVolumen;
+        // ------------ Estado ------------
+        // Clave por par (Id de columna, Unidad de medida)
+        private readonly Dictionary<(byte Columna, string Unidad), PrecioPorUnidadDeMedida> _preciosPorUnidad = new();
+
+        public IReadOnlyCollection<PrecioPorUnidadDeMedida> PreciosPorUnidad => _preciosPorUnidad.Values;
 
         // ------------ Domain events (acumulados hasta publicar) ------------
         private readonly List<IDomainEvent> _domainEvents = new();
@@ -52,6 +53,32 @@ namespace ListaPreciosBC.Domain.Aggregates
             EmpresaId = empresaId ?? throw new ArgumentNullException(nameof(empresaId));
             ProductoId = productoId;
             EstablecimientoId = establecimientoId;
+        }
+
+        private static string NormalizarUnidad(UnidadDeMedida unidad)
+            => (unidad ?? throw new ArgumentNullException(nameof(unidad))).Codigo.ToUpperInvariant();
+
+        private static (byte Columna, string Unidad) Clave(IdentificadorColumnaPrecio columna, UnidadDeMedida unidad)
+            => ((columna ?? throw new ArgumentNullException(nameof(columna))).Numero, NormalizarUnidad(unidad));
+
+        private PrecioPorUnidadDeMedida ObtenerOCrearRegistro(IdentificadorColumnaPrecio columna, UnidadDeMedida unidad)
+        {
+            var key = Clave(columna, unidad);
+            if (!_preciosPorUnidad.TryGetValue(key, out var registro))
+            {
+                registro = new PrecioPorUnidadDeMedida(columna, unidad);
+                _preciosPorUnidad[key] = registro;
+            }
+
+            return registro;
+        }
+
+        private void RemoverRegistroSiVacio((byte Columna, string Unidad) key, PrecioPorUnidadDeMedida registro)
+        {
+            if (registro.EstaVacia)
+            {
+                _preciosPorUnidad.Remove(key);
+            }
         }
 
         // Ejemplo de uso de la policy en un método relevante
@@ -130,8 +157,8 @@ namespace ListaPreciosBC.Domain.Aggregates
         // =========================
         // Fábrica
         // =========================
-    public static PrecioProducto CrearNuevo(EmpresaId empresaId, ProductoId productoId, Guid? establecimientoId = null)
-        => new(empresaId, productoId, establecimientoId);
+        public static PrecioProducto CrearNuevo(EmpresaId empresaId, ProductoId productoId, Guid? establecimientoId = null)
+            => new(empresaId, productoId, establecimientoId);
 
         // =========================
         // Comportamientos
@@ -146,6 +173,7 @@ namespace ListaPreciosBC.Domain.Aggregates
         /// </param>
         public void UpsertPrecioFijo(
             IdentificadorColumnaPrecio columna,
+            UnidadDeMedida unidadDeMedida,
             ValorPrecio valor,
             PeriodoVigencia vigencia,
             string? usuario = null,
@@ -153,6 +181,7 @@ namespace ListaPreciosBC.Domain.Aggregates
             int cantidadReferenciaParaEventoBase = 1)
         {
             if (columna is null) throw new ArgumentNullException(nameof(columna));
+            if (unidadDeMedida is null) throw new ArgumentNullException(nameof(unidadDeMedida));
             if (valor   is null) throw new ArgumentNullException(nameof(valor));
             if (vigencia is null) throw new ArgumentNullException(nameof(vigencia));
 
@@ -160,17 +189,15 @@ namespace ListaPreciosBC.Domain.Aggregates
             if (!PuedeEstablecerPeriodoVigenciaPolicy.Validar(vigencia.Desde, vigencia.Hasta))
                 throw new InvalidOperationException("El periodo de vigencia no es válido.");
 
-            var key = columna.Numero;
-
-            _matricesVolumen.Remove(key);                 // exclusividad
-            _preciosFijos[key] = new PrecioFijo(valor, vigencia);
+            var registro = ObtenerOCrearRegistro(columna, unidadDeMedida);
+            registro.EstablecerPrecioFijo(valor, vigencia);
 
             Versionar(usuario, cuando);
             _domainEvents.Add(new PrecioColumnaActualizada(EmpresaId, EstablecimientoId, ProductoId, columna, UltimaActualizacion!.Value));
             _domainEvents.Add(new PrecioFijoActualizado(EmpresaId, EstablecimientoId, ProductoId, columna, UltimaActualizacion!.Value));
 
             // Si es Base (P1) y está vigente a "cuando", publicar evento específico
-            if (key == 1 && vigencia.Contiene(UltimaActualizacion!.Value))
+            if (columna.Numero == 1 && vigencia.Contiene(UltimaActualizacion!.Value))
             {
                 _domainEvents.Add(new PrecioBaseVigenteEstablecido(
                     EmpresaId,
@@ -182,18 +209,34 @@ namespace ListaPreciosBC.Domain.Aggregates
             }
         }
 
-        /// <summary>Elimina el precio fijo de la columna (si existe).</summary>
-        public void EliminarPrecioFijo(IdentificadorColumnaPrecio columna, string? usuario = null, DateTimeOffset? cuando = null)
+        public void UpsertPrecioFijo(
+            IdentificadorColumnaPrecio columna,
+            ValorPrecio valor,
+            PeriodoVigencia vigencia,
+            string? usuario = null,
+            DateTimeOffset? cuando = null,
+            int cantidadReferenciaParaEventoBase = 1)
+            => UpsertPrecioFijo(columna, UnidadPorDefecto, valor, vigencia, usuario, cuando, cantidadReferenciaParaEventoBase);
+
+        /// <summary>Elimina el precio fijo de la columna/unidad (si existe).</summary>
+        public void EliminarPrecioFijo(IdentificadorColumnaPrecio columna, UnidadDeMedida unidadDeMedida, string? usuario = null, DateTimeOffset? cuando = null)
         {
             if (columna is null) throw new ArgumentNullException(nameof(columna));
+            if (unidadDeMedida is null) throw new ArgumentNullException(nameof(unidadDeMedida));
 
-            var key = columna.Numero;
-            if (_preciosFijos.Remove(key))
+            var key = Clave(columna, unidadDeMedida);
+            if (_preciosPorUnidad.TryGetValue(key, out var registro) && registro.TienePrecioFijo)
             {
+                registro.EliminarPrecioFijo();
+                RemoverRegistroSiVacio(key, registro);
+
                 Versionar(usuario, cuando);
                 _domainEvents.Add(new PrecioColumnaActualizada(EmpresaId, EstablecimientoId, ProductoId, columna, UltimaActualizacion!.Value));
             }
         }
+
+        public void EliminarPrecioFijo(IdentificadorColumnaPrecio columna, string? usuario = null, DateTimeOffset? cuando = null)
+            => EliminarPrecioFijo(columna, UnidadPorDefecto, usuario, cuando);
 
         /// <summary>
         /// Crea/actualiza una matriz por volumen para la columna.
@@ -201,24 +244,24 @@ namespace ListaPreciosBC.Domain.Aggregates
         /// </summary>
         public void UpsertMatrizVolumen(
             IdentificadorColumnaPrecio columna,
+            UnidadDeMedida unidadDeMedida,
             MatrizVolumen matriz,
             string? usuario = null,
             DateTimeOffset? cuando = null,
             int cantidadReferenciaParaEventoBase = 1)
         {
             if (columna is null) throw new ArgumentNullException(nameof(columna));
+            if (unidadDeMedida is null) throw new ArgumentNullException(nameof(unidadDeMedida));
             if (matriz   is null) throw new ArgumentNullException(nameof(matriz));
 
-            var key = columna.Numero;
-
-            _preciosFijos.Remove(key);           // exclusividad
-            _matricesVolumen[key] = matriz;
+            var registro = ObtenerOCrearRegistro(columna, unidadDeMedida);
+            registro.EstablecerMatrizVolumen(matriz);
 
             Versionar(usuario, cuando);
             _domainEvents.Add(new MatrizVolumenActualizada(EmpresaId, EstablecimientoId, ProductoId, columna, UltimaActualizacion!.Value));
 
             // Si es Base (P1), publicar evento con el tramo para la cantidad de referencia (si existe)
-            if (key == 1)
+            if (columna.Numero == 1)
             {
                 var cant = Math.Max(1, cantidadReferenciaParaEventoBase);
                 var tramo = matriz.ObtenerTramo(cant);
@@ -235,18 +278,33 @@ namespace ListaPreciosBC.Domain.Aggregates
             }
         }
 
-        /// <summary>Elimina la matriz por volumen de la columna (si existe).</summary>
-        public void EliminarMatrizVolumen(IdentificadorColumnaPrecio columna, string? usuario = null, DateTimeOffset? cuando = null)
+        public void UpsertMatrizVolumen(
+            IdentificadorColumnaPrecio columna,
+            MatrizVolumen matriz,
+            string? usuario = null,
+            DateTimeOffset? cuando = null,
+            int cantidadReferenciaParaEventoBase = 1)
+            => UpsertMatrizVolumen(columna, UnidadPorDefecto, matriz, usuario, cuando, cantidadReferenciaParaEventoBase);
+
+        /// <summary>Elimina la matriz por volumen de la columna/unidad (si existe).</summary>
+        public void EliminarMatrizVolumen(IdentificadorColumnaPrecio columna, UnidadDeMedida unidadDeMedida, string? usuario = null, DateTimeOffset? cuando = null)
         {
             if (columna is null) throw new ArgumentNullException(nameof(columna));
+            if (unidadDeMedida is null) throw new ArgumentNullException(nameof(unidadDeMedida));
 
-            var key = columna.Numero;
-            if (_matricesVolumen.Remove(key))
+            var key = Clave(columna, unidadDeMedida);
+            if (_preciosPorUnidad.TryGetValue(key, out var registro) && registro.TieneMatrizVolumen)
             {
+                registro.EliminarMatrizVolumen();
+                RemoverRegistroSiVacio(key, registro);
+
                 Versionar(usuario, cuando);
                 _domainEvents.Add(new MatrizVolumenActualizada(EmpresaId, EstablecimientoId, ProductoId, columna, UltimaActualizacion!.Value));
             }
         }
+
+        public void EliminarMatrizVolumen(IdentificadorColumnaPrecio columna, string? usuario = null, DateTimeOffset? cuando = null)
+            => EliminarMatrizVolumen(columna, UnidadPorDefecto, usuario, cuando);
 
         /// <summary>
         /// Resuelve el precio vigente para la columna, fecha y cantidad indicadas.
@@ -256,26 +314,35 @@ namespace ListaPreciosBC.Domain.Aggregates
         /// </summary>
         public PrecioResuelto? ObtenerPrecioVigente(
             IdentificadorColumnaPrecio columna,
+            UnidadDeMedida unidadDeMedida,
             DateTimeOffset fecha,
             int cantidad)
         {
             if (columna is null) throw new ArgumentNullException(nameof(columna));
+            if (unidadDeMedida is null) throw new ArgumentNullException(nameof(unidadDeMedida));
             if (cantidad < 1) return null;
 
-            var key = columna.Numero;
+            if (!_preciosPorUnidad.TryGetValue(Clave(columna, unidadDeMedida), out var registro))
+                return null;
 
-            if (_preciosFijos.TryGetValue(key, out var fijo) && fijo.Vigencia.Contiene(fecha))
-                return new PrecioResuelto(fijo.Valor, PrecioResueltoOrigen.Fijo, cantidad);
+            if (registro.TienePrecioFijo && registro.Vigencia!.Contiene(fecha))
+                return new PrecioResuelto(registro.PrecioFijo!, PrecioResueltoOrigen.Fijo, cantidad);
 
-            if (_matricesVolumen.TryGetValue(key, out var matriz))
+            if (registro.MatrizVolumen is not null)
             {
-                var tramo = matriz.ObtenerTramo(cantidad);
+                var tramo = registro.MatrizVolumen.ObtenerTramo(cantidad);
                 if (tramo is not null)
                     return new PrecioResuelto(tramo.Precio, PrecioResueltoOrigen.PorVolumen, cantidad);
             }
 
             return null;
         }
+
+        public PrecioResuelto? ObtenerPrecioVigente(
+            IdentificadorColumnaPrecio columna,
+            DateTimeOffset fecha,
+            int cantidad)
+            => ObtenerPrecioVigente(columna, UnidadPorDefecto, fecha, cantidad);
 
         // =========================
         // Internals
@@ -288,7 +355,5 @@ namespace ListaPreciosBC.Domain.Aggregates
             UltimoUsuario = string.IsNullOrWhiteSpace(usuario) ? null : usuario;
         }
 
-        // ------------- Estructura interna para fijo -------------
-        public sealed record PrecioFijo(ValorPrecio Valor, PeriodoVigencia Vigencia);
     }
 }
