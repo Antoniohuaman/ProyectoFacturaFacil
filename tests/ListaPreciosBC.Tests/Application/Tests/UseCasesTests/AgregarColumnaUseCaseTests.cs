@@ -31,7 +31,13 @@ namespace ListaPreciosBC.Tests.Application.Tests.UseCasesTests
             ModoValorizacionColumna? modo = null)
         {
             var m = modo ?? ModoValorizacionColumna.Fijo;
-            return ConfiguracionColumnaPrecio.Crear(P(id), N(nombre), m, esBase, visible, orden);
+            return ConfiguracionColumnaPrecio.Crear(
+                P(id),
+                N(nombre),
+                m,
+                esBase: esBase,
+                visible: visible,
+                orden: orden);
         }
 
         private static ListaPrecio NuevaListaPrecioConP1(Guid id)

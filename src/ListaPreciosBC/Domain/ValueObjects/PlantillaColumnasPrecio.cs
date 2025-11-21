@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using SharedKernel.Exceptions;
 
 namespace ListaPreciosBC.Domain.ValueObjects
 {
@@ -17,6 +18,8 @@ namespace ListaPreciosBC.Domain.ValueObjects
     [DebuggerDisplay("Columnas={Count}")]
     public sealed class PlantillaColumnasPrecio : IEquatable<PlantillaColumnasPrecio>
     {
+        private const int MaxColumnasManuales = 10;
+
         private readonly IReadOnlyList<ConfiguracionColumnaPrecio> _columnas;
 
         /// <summary>Columnas ordenadas por <see cref="ConfiguracionColumnaPrecio.Orden"/> ascendente.</summary>
@@ -24,6 +27,12 @@ namespace ListaPreciosBC.Domain.ValueObjects
 
         /// <summary>Cantidad de columnas.</summary>
         public int Count => _columnas.Count;
+
+        /// <summary>Columnas globales de descuento/recargo.</summary>
+        public IEnumerable<ConfiguracionColumnaPrecio> ColumnasGlobales => _columnas.Where(c => c.Tipo.EsGlobal);
+
+        /// <summary>Columnas manuales (limite 10).</summary>
+        public IEnumerable<ConfiguracionColumnaPrecio> ColumnasManuales => _columnas.Where(c => c.Tipo.EsManual);
 
         private PlantillaColumnasPrecio(IReadOnlyList<ConfiguracionColumnaPrecio> columnasOrdenadas)
         {
@@ -44,10 +53,10 @@ namespace ListaPreciosBC.Domain.ValueObjects
 
             var lista = columnas.OrderBy(c => c).ToList(); // orden natural: Orden, luego Id
 
-            ValidarCantidad(lista);
             ValidarIdsUnicos(lista);
             ValidarOrdenUnico(lista);
             ValidarBaseUnica(lista);
+            ValidarLimiteColumnasManuales(lista);
             ValidarAlMenosUnaVisible(lista);
 
             // Normaliza a lista inmutable ordenada por Orden
@@ -180,6 +189,7 @@ namespace ListaPreciosBC.Domain.ValueObjects
 
             ValidarOrdenUnico(lista);
             ValidarBaseUnica(lista);
+            ValidarLimiteColumnasManuales(lista);
             ValidarAlMenosUnaVisible(lista);
 
             return new PlantillaColumnasPrecio(lista);
@@ -199,10 +209,10 @@ namespace ListaPreciosBC.Domain.ValueObjects
             lista.Add(nueva);
             lista.Sort();
 
-            ValidarCantidad(lista);
             ValidarIdsUnicos(lista);
             ValidarOrdenUnico(lista);
             ValidarBaseUnica(lista);
+            ValidarLimiteColumnasManuales(lista);
             ValidarAlMenosUnaVisible(lista);
 
             return new PlantillaColumnasPrecio(lista);
@@ -219,7 +229,7 @@ namespace ListaPreciosBC.Domain.ValueObjects
 
             var lista = _columnas.Where(c => !c.Id.Equals(id)).OrderBy(c => c).ToList();
 
-            ValidarCantidad(lista);
+            ValidarLimiteColumnasManuales(lista);
             ValidarAlMenosUnaVisible(lista); // si justo eliminamos la única visible, fallará
 
             return new PlantillaColumnasPrecio(lista);
@@ -257,12 +267,6 @@ namespace ListaPreciosBC.Domain.ValueObjects
         // Validaciones internas
         // -------------------------------------------------------------------------------------
 
-        private static void ValidarCantidad(List<ConfiguracionColumnaPrecio> cols)
-        {
-            if (cols.Count < 1 || cols.Count > 10)
-                throw new InvalidOperationException("La plantilla debe tener entre 1 y 10 columnas.");
-        }
-
         private static void ValidarIdsUnicos(List<ConfiguracionColumnaPrecio> cols)
         {
             if (cols.Select(c => c.Id.Numero).Distinct().Count() != cols.Count)
@@ -277,15 +281,28 @@ namespace ListaPreciosBC.Domain.ValueObjects
 
         private static void ValidarBaseUnica(List<ConfiguracionColumnaPrecio> cols)
         {
-            var countBase = cols.Count(c => c.EsBase);
-            if (countBase != 1)
-                throw new InvalidOperationException("Debe existir exactamente una columna marcada como Base.");
+            var baseCols = cols.Where(c => c.Tipo.EsBase).ToList();
+            if (baseCols.Count != 1)
+                throw new InvalidOperationException("Debe existir exactamente una columna de tipo Base.");
+
+            if (!baseCols[0].EsBase)
+                throw new InvalidOperationException("La columna de tipo Base debe estar marcada como base.");
+
+            if (cols.Any(c => c.EsBase && !c.Tipo.EsBase))
+                throw new InvalidOperationException("Solo las columnas de tipo Base pueden estar marcadas como base.");
         }
 
         private static void ValidarAlMenosUnaVisible(List<ConfiguracionColumnaPrecio> cols)
         {
             if (!cols.Any(c => c.Visible))
                 throw new InvalidOperationException("Debe existir al menos una columna visible.");
+        }
+
+        private static void ValidarLimiteColumnasManuales(List<ConfiguracionColumnaPrecio> cols)
+        {
+            var manuales = cols.Count(c => c.Tipo.EsManual);
+            if (manuales > MaxColumnasManuales)
+                throw new BusinessRuleException($"No se pueden registrar más de {MaxColumnasManuales} columnas manuales en la plantilla.");
         }
     }
 }

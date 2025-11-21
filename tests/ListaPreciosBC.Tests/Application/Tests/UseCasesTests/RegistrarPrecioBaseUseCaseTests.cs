@@ -26,7 +26,13 @@ namespace ListaPreciosBC.Tests.UnitTests.Application
             byte id, string nombre, bool esBase, bool visible, byte orden, ModoValorizacionColumna? modo = null)
         {
             var m = modo ?? ModoValorizacionColumna.Fijo;
-            return ConfiguracionColumnaPrecio.Crear(P(id), N(nombre), m, esBase, visible, orden);
+            return ConfiguracionColumnaPrecio.Crear(
+                P(id),
+                N(nombre),
+                m,
+                esBase: esBase,
+                visible: visible,
+                orden: orden);
         }
 
         private static ListaPrecio ListaActivaPorDefecto(Guid idLista)

@@ -13,7 +13,13 @@ namespace ListaPreciosBC.Tests.Domain.Tests.BusinessRulesTests.PoliciesTests
             var idVO = IdentificadorColumnaPrecio.Crear(id);
             var nombreVO = NombreColumnaPrecio.Crear(nombre);
             var modoVO = ModoValorizacionColumna.Crear(modo);
-            return ConfiguracionColumnaPrecio.Crear(idVO, nombreVO, modoVO, esBase, visible, orden);
+            return ConfiguracionColumnaPrecio.Crear(
+                idVO,
+                nombreVO,
+                modoVO,
+                esBase: esBase,
+                visible: visible,
+                orden: orden);
         }
 
         [Test]

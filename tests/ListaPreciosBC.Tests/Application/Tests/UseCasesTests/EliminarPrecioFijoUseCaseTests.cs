@@ -133,9 +133,9 @@ namespace ListaPreciosBC.Tests.Application.UseCases
                 IdentificadorColumnaPrecio.DesdeNumero(numero),
                 NombreColumnaPrecio.Crear(esBase ? "Base" : $"Col{numero}"),
                 ModoValorizacionColumna.Fijo,
-                esBase,
-                visible,
-                numero
+                esBase: esBase,
+                visible: visible,
+                orden: numero
             );
             var plantilla = PlantillaColumnasPrecio.Crear(new[] { cfg });
             return ListaPrecio.CrearNueva(EmpresaId.From("EMP-01"), Guid.NewGuid(), plantilla);
@@ -147,17 +147,17 @@ namespace ListaPreciosBC.Tests.Application.UseCases
                 IdentificadorColumnaPrecio.DesdeNumero(1),
                 NombreColumnaPrecio.Crear("Base"),
                 ModoValorizacionColumna.Fijo,
-                true,
-                true,
-                1
+                esBase: true,
+                visible: true,
+                orden: 1
             );
             var volumenCfg = ConfiguracionColumnaPrecio.Crear(
                 IdentificadorColumnaPrecio.DesdeNumero(numero),
                 NombreColumnaPrecio.Crear($"Vol{numero}"),
                 ModoValorizacionColumna.PorVolumen,
-                false,
-                visible,
-                numero
+                esBase: false,
+                visible: visible,
+                orden: numero
             );
             var plantilla = PlantillaColumnasPrecio.Crear(new[] { baseCfg, volumenCfg });
             return ListaPrecio.CrearNueva(EmpresaId.From("EMP-01"), Guid.NewGuid(), plantilla);

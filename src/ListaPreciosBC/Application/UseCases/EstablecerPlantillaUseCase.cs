@@ -81,9 +81,9 @@ namespace ListaPreciosBC.Application.UseCases
                     id,
                     nombre,
                     c.Modo,
-                    c.EsBase,
-                    c.Visible,
-                    c.Orden
+                    esBase: c.EsBase,
+                    visible: c.Visible,
+                    orden: c.Orden
                 );
                 configuraciones.Add(cfg);
             }

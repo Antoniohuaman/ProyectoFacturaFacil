@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using NUnit.Framework;
 using ListaPreciosBC.Domain.ValueObjects;
+using SharedKernel.Exceptions;
 
 namespace ListaPreciosBC.Tests.ValueObjects
 {
@@ -12,6 +13,8 @@ namespace ListaPreciosBC.Tests.ValueObjects
         private static NombreColumnaPrecio N(string s) => NombreColumnaPrecio.Crear(s);
         private static ModoValorizacionColumna Fijo => ModoValorizacionColumna.Fijo;
         private static ModoValorizacionColumna Vol  => ModoValorizacionColumna.PorVolumen;
+        private static ReglaGlobalColumnaPrecio Regla(decimal valor)
+            => ReglaGlobalColumnaPrecio.Crear(TipoReglaGlobalColumnaPrecio.Porcentaje, valor);
 
         [Test]
         public void Crear_valido_con_defaults_y_orden_por_defecto_igual_a_Id()
@@ -23,6 +26,8 @@ namespace ListaPreciosBC.Tests.ValueObjects
             Assert.That(cfg.EsBase, Is.False);
             Assert.That(cfg.Visible, Is.True);
             Assert.That(cfg.Orden, Is.EqualTo(3)); // por defecto usa Id.Numero
+            Assert.That(cfg.Tipo, Is.EqualTo(TipoColumnaPrecio.Manual));
+            Assert.That(cfg.ReglaGlobal, Is.Null);
         }
 
         [Test]
@@ -33,6 +38,7 @@ namespace ListaPreciosBC.Tests.ValueObjects
             Assert.That(cfg.Visible, Is.False);
             Assert.That(cfg.Orden, Is.EqualTo(7));
             Assert.That(cfg.Modo, Is.EqualTo(Vol));
+            Assert.That(cfg.Tipo, Is.EqualTo(TipoColumnaPrecio.Base));
         }
 
         [Test]
@@ -42,7 +48,12 @@ namespace ListaPreciosBC.Tests.ValueObjects
             Assert.That(() => ConfiguracionColumnaPrecio.Crear(P(1), null!, Fijo), Throws.TypeOf<ArgumentNullException>());
             Assert.That(() => ConfiguracionColumnaPrecio.Crear(P(1), N("X"), null!), Throws.TypeOf<ArgumentNullException>());
             Assert.That(() => ConfiguracionColumnaPrecio.Crear(P(1), N("X"), Fijo, orden: 0),  Throws.TypeOf<ArgumentOutOfRangeException>());
-            Assert.That(() => ConfiguracionColumnaPrecio.Crear(P(1), N("X"), Fijo, orden: 11), Throws.TypeOf<ArgumentOutOfRangeException>());
+            Assert.That(() => ConfiguracionColumnaPrecio.Crear(P(1), N("X"), Fijo, orden: (byte)(ConfiguracionColumnaPrecio.MaxOrden + 1)),
+                Throws.TypeOf<ArgumentOutOfRangeException>());
+            Assert.That(() => ConfiguracionColumnaPrecio.Crear(P(1), N("X"), Fijo, tipo: TipoColumnaPrecio.Manual, esBase: true),
+                Throws.TypeOf<BusinessRuleException>());
+            Assert.That(() => ConfiguracionColumnaPrecio.Crear(P(2), N("G"), Fijo, tipo: TipoColumnaPrecio.Base, esBase: false),
+                Throws.TypeOf<BusinessRuleException>());
         }
 
         [Test]
@@ -52,6 +63,7 @@ namespace ListaPreciosBC.Tests.ValueObjects
             Assert.That(ok, Is.True);
             Assert.That(cfg, Is.Not.Null);
             Assert.That(cfg!.Orden, Is.EqualTo(5));
+            Assert.That(cfg.Tipo, Is.EqualTo(TipoColumnaPrecio.Manual));
 
             var bad = ConfiguracionColumnaPrecio.TryCrear(P(2), N("X"), Fijo, out var cfg2, orden: 0);
             Assert.That(bad, Is.False);
@@ -60,6 +72,40 @@ namespace ListaPreciosBC.Tests.ValueObjects
             var badNull = ConfiguracionColumnaPrecio.TryCrear(null, N("X"), Fijo, out var cfg3);
             Assert.That(badNull, Is.False);
             Assert.That(cfg3, Is.Null);
+        }
+
+        [Test]
+        public void Crear_columna_base_configura_tipo_y_regla_correctamente()
+        {
+            var cfg = ConfiguracionColumnaPrecio.CrearBase(P(1), N("Base"), Fijo, visible: true, orden: 1);
+
+            Assert.That(cfg.Tipo, Is.EqualTo(TipoColumnaPrecio.Base));
+            Assert.That(cfg.EsBase, Is.True);
+            Assert.That(cfg.ReglaGlobal, Is.Null);
+        }
+
+        [Test]
+        public void Crear_columna_global_descuento_requiere_regla()
+        {
+            var regla = Regla(10m);
+            var cfg = ConfiguracionColumnaPrecio.CrearGlobalDescuento(P(5), N("Descuento"), Fijo, regla, visible: true, orden: 5);
+
+            Assert.That(cfg.Tipo, Is.EqualTo(TipoColumnaPrecio.GlobalDescuento));
+            Assert.That(cfg.ReglaGlobal, Is.EqualTo(regla));
+            Assert.That(cfg.EsBase, Is.False);
+
+            Assert.That(() => ConfiguracionColumnaPrecio.Crear(P(6), N("Recargo"), Fijo, tipo: TipoColumnaPrecio.GlobalRecargo),
+                Throws.TypeOf<BusinessRuleException>());
+        }
+
+        [Test]
+        public void Crear_columna_manual_no_permitem_regla_global()
+        {
+            var manual = ConfiguracionColumnaPrecio.CrearManual(P(7), N("Manual"), Fijo, orden: 7);
+            Assert.That(manual.Tipo, Is.EqualTo(TipoColumnaPrecio.Manual));
+            Assert.That(manual.ReglaGlobal, Is.Null);
+            Assert.That(() => ConfiguracionColumnaPrecio.Crear(P(7), N("Manual"), Fijo, tipo: TipoColumnaPrecio.Manual, reglaGlobal: Regla(5m)),
+                Throws.TypeOf<BusinessRuleException>());
         }
 
         [Test]
@@ -90,6 +136,7 @@ namespace ListaPreciosBC.Tests.ValueObjects
 
             var reorden = original.ConOrden(1);
             Assert.That(reorden.Orden, Is.EqualTo(1));
+            Assert.That(reorden.Tipo, Is.EqualTo(original.Tipo));
         }
 
         [Test]
@@ -131,6 +178,7 @@ namespace ListaPreciosBC.Tests.ValueObjects
             Assert.That(s, Does.Contain("P1"));
             Assert.That(s, Does.Contain("Base"));
             Assert.That(s, Does.Contain("Fijo"));
+            Assert.That(s, Does.Contain("Tipo=BASE"));
         }
     }
 }
