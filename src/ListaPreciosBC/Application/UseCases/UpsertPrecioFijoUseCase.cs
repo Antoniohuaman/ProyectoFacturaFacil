@@ -31,6 +31,7 @@ namespace ListaPreciosBC.Application.UseCases
             bool IncluyeImpuesto,
             DateTimeOffset VigenciaDesde,
             DateTimeOffset? VigenciaHasta,
+            string? UnidadMedidaCodigo = null,
             string? Usuario = null,
             DateTimeOffset? Cuando = null,
             Guid? SucursalId = null
@@ -44,6 +45,7 @@ namespace ListaPreciosBC.Application.UseCases
             decimal Monto,
             string Moneda,
             bool IncluyeImpuesto,
+            string UnidadMedidaCodigo,
             int Version
         );
 
@@ -121,10 +123,11 @@ namespace ListaPreciosBC.Application.UseCases
             var moneda = Moneda.PEN();
             var valor  = ValorPrecio.DesdeMonto(req.Monto, moneda, req.IncluyeImpuesto);
             var vig    = PeriodoVigencia.Crear(req.VigenciaDesde, req.VigenciaHasta);
+            var unidad = UnidadDeMedida.From(req.UnidadMedidaCodigo ?? UnidadDeMedida.NIU.Codigo);
 
             // 5) Mutar el agregado
             var cuando = req.Cuando ?? DateTimeOffset.UtcNow;
-            agregado.UpsertPrecioFijo(colId, valor, vig, req.Usuario, cuando);
+            agregado.UpsertPrecioFijo(colId, unidad, valor, vig, req.Usuario, cuando);
 
             // 6) Persistencia + UoW
             await _precioRepo.GuardarAsync(agregado, empresaId, estId, expectedVersion, ct);
@@ -139,6 +142,7 @@ namespace ListaPreciosBC.Application.UseCases
                 Monto: valor.Monto,
                 Moneda: moneda.Codigo,
                 IncluyeImpuesto: valor.IncluyeImpuesto,
+                UnidadMedidaCodigo: unidad.Codigo,
                 Version: agregado.Version
             );
         }

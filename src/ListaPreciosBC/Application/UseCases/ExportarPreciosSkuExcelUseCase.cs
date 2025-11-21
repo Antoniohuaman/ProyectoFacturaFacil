@@ -9,13 +9,14 @@ using ListaPreciosBC.Domain.ValueObjects;    // IdentificadorColumnaPrecio
 using SharedKernel.Exceptions;               // NotFoundException
 using SharedKernel.Application.Interfaces;   // ITenantContext
 using ListaPreciosBC.Application.Interfaces; // ICatalogoReadModel
+using SharedKernel.ValueObjects;
 
 namespace ListaPreciosBC.Application.UseCases
 {
     /// <summary>
     /// Exporta a CSV (compatible con Excel) los precios vigentes por columna para un SKU,
     /// en una fecha y cantidad dadas. No requiere UoW (consulta).
-    /// Columnas del CSV: SKU;Fecha;Cantidad;ColumnaNumero;Nombre;Modo;EsBase;Visible;Monto;IncluyeImpuesto;Moneda
+    /// Columnas del CSV: SKU;Fecha;Cantidad;ColumnaNumero;Nombre;Modo;EsBase;Visible;UnidadMedida;Monto;IncluyeImpuesto;Moneda
     /// </summary>
     public sealed class ExportarPreciosSkuExcelUseCase
     {
@@ -23,7 +24,8 @@ namespace ListaPreciosBC.Application.UseCases
             string Sku,
             int Cantidad,
             DateTimeOffset? Fecha = null,
-            bool SoloVisibles = false
+            bool SoloVisibles = false,
+            string? UnidadMedidaCodigo = null
         );
 
         public readonly record struct Response(
@@ -31,6 +33,7 @@ namespace ListaPreciosBC.Application.UseCases
             string ContentType,
             byte[] Contenido,
             int ColumnasIncluidas,
+            string UnidadMedidaCodigo,
             int VersionAgregado
         );
 
@@ -87,6 +90,7 @@ namespace ListaPreciosBC.Application.UseCases
 
             // 3) Fecha
             var fecha = req.Fecha ?? DateTimeOffset.UtcNow;
+            var unidad = UnidadDeMedida.From(req.UnidadMedidaCodigo ?? UnidadDeMedida.NIU.Codigo);
 
             // 4) Columnas a exportar
             var columnas = lista.Plantilla.Columnas
@@ -100,24 +104,25 @@ namespace ListaPreciosBC.Application.UseCases
             var ci = CultureInfo.InvariantCulture;
 
             // Header
-            sb.Append("SKU").Append(sep)
-              .Append("Fecha").Append(sep)
-              .Append("Cantidad").Append(sep)
-              .Append("ColumnaNumero").Append(sep)
-              .Append("Nombre").Append(sep)
-              .Append("Modo").Append(sep)
-              .Append("EsBase").Append(sep)
-              .Append("Visible").Append(sep)
-              .Append("Monto").Append(sep)
-              .Append("IncluyeImpuesto").Append(sep)
-              .Append("Moneda")
-              .AppendLine();
+                        sb.Append("SKU").Append(sep)
+                            .Append("Fecha").Append(sep)
+                            .Append("Cantidad").Append(sep)
+                            .Append("ColumnaNumero").Append(sep)
+                            .Append("Nombre").Append(sep)
+                            .Append("Modo").Append(sep)
+                            .Append("EsBase").Append(sep)
+                            .Append("Visible").Append(sep)
+                            .Append("UnidadMedida").Append(sep)
+                            .Append("Monto").Append(sep)
+                            .Append("IncluyeImpuesto").Append(sep)
+                            .Append("Moneda")
+                            .AppendLine();
 
             // Rows
             foreach (var col in columnas)
             {
 
-                var resuelto = agregado.ObtenerPrecioVigente(col.Id, fecha, req.Cantidad);
+                var resuelto = agregado.ObtenerPrecioVigente(col.Id, unidad, fecha, req.Cantidad);
                 var montoStr   = resuelto is null ? "" : resuelto.Valor.Monto.ToString(ci);
                 var incluyeStr = resuelto is null ? "" : resuelto.Valor.IncluyeImpuesto.ToString(ci);
                 var monedaStr  = resuelto is null ? "" : resuelto.Valor.Importe.Moneda.Codigo;
@@ -131,6 +136,7 @@ namespace ListaPreciosBC.Application.UseCases
                   .Append(col.Modo.ToString()).Append(sep)
                   .Append(col.EsBase.ToString(ci)).Append(sep)
                   .Append(col.Visible.ToString(ci)).Append(sep)
+                  .Append(unidad.Codigo).Append(sep)
                   .Append(montoStr).Append(sep)
                   .Append(incluyeStr).Append(sep)
                   .Append(monedaStr)
@@ -147,6 +153,7 @@ namespace ListaPreciosBC.Application.UseCases
                 ContentType: "text/csv; charset=utf-8",
                 Contenido: bytes,
                 ColumnasIncluidas: columnas.Length,
+                UnidadMedidaCodigo: unidad.Codigo,
                 VersionAgregado: agregado.Version
             );
         }

@@ -52,8 +52,12 @@ namespace ListaPreciosBC.Tests.Application.Tests.UseCasesTests
             byte orden = 2,
             ModoValorizacionColumna? modo = null,
             string? usuario = "u@test",
-            DateTimeOffset? cuando = null)
+            DateTimeOffset? cuando = null,
+            string? tipoColumnaCodigo = null,
+            string? tipoReglaCodigo = null,
+            decimal? valorRegla = null)
         {
+            var tipoCodigo = tipoColumnaCodigo ?? (esBase ? TipoColumnaPrecio.Base.Codigo : TipoColumnaPrecio.Manual.Codigo);
             return new AgregarColumnaDto
             {
                 ListaPrecioId   = listaPrecioId,
@@ -64,7 +68,10 @@ namespace ListaPreciosBC.Tests.Application.Tests.UseCasesTests
                 Orden           = orden,
                 Modo            = modo ?? ModoValorizacionColumna.Fijo,
                 Usuario         = usuario,
-                Cuando          = cuando ?? DateTimeOffset.UtcNow
+                Cuando          = cuando ?? DateTimeOffset.UtcNow,
+                TipoColumnaCodigo = tipoCodigo,
+                TipoReglaGlobalCodigo = tipoReglaCodigo,
+                ValorReglaGlobal = valorRegla
             };
         }
 
@@ -111,6 +118,62 @@ namespace ListaPreciosBC.Tests.Application.Tests.UseCasesTests
 
             // UoW SaveChanges fue invocado
             Assert.That(uow.CommitCount, Is.EqualTo(1));
+        }
+
+        [Test]
+        public async Task Agrega_columna_global_descuento_con_regla_obligatoria()
+        {
+            var lpId = Guid.NewGuid();
+            var agg  = NuevaListaPrecioConP1(lpId);
+            var repo = new ListaPrecioRepoInMemory();
+            repo.Semilla(agg);
+
+            var uow  = new UnitOfWorkInMemory();
+            var tenant = new Mock<ITenantContext>();
+            tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
+            var uc   = new AgregarColumnaUseCase(repo, uow, tenant.Object);
+
+            var dto = Dto(
+                listaPrecioId: lpId,
+                numeroColumna: 2,
+                nombre: "Global Descuento",
+                tipoColumnaCodigo: TipoColumnaPrecio.GlobalDescuento.Codigo,
+                tipoReglaCodigo: TipoReglaGlobalColumnaPrecio.Porcentaje.Codigo,
+                valorRegla: 5m);
+
+            var res = await uc.ExecuteAsync(dto, CancellationToken.None);
+
+            Assert.That(res.IdColumna.Numero, Is.EqualTo(2));
+            var recargada = await repo.ObtenerPorIdAsync(lpId, CancellationToken.None);
+            var columna = recargada!.Plantilla.Obtener(P(2));
+            Assert.That(columna.Tipo, Is.EqualTo(TipoColumnaPrecio.GlobalDescuento));
+            Assert.That(columna.ReglaGlobal, Is.Not.Null);
+            Assert.That(columna.ReglaGlobal!.Tipo, Is.EqualTo(TipoReglaGlobalColumnaPrecio.Porcentaje));
+            Assert.That(columna.ReglaGlobal.Valor, Is.EqualTo(5m));
+        }
+
+        [Test]
+        public void Falla_si_columna_global_no_envia_regla()
+        {
+            var lpId = Guid.NewGuid();
+            var agg  = NuevaListaPrecioConP1(lpId);
+            var repo = new ListaPrecioRepoInMemory();
+            repo.Semilla(agg);
+
+            var uow  = new UnitOfWorkInMemory();
+            var tenant = new Mock<ITenantContext>();
+            tenant.SetupGet(t => t.EmpresaId).Returns(EmpresaId.From("EMP-01"));
+            var uc   = new AgregarColumnaUseCase(repo, uow, tenant.Object);
+
+            var dto = Dto(
+                listaPrecioId: lpId,
+                numeroColumna: 2,
+                nombre: "Global Recargo",
+                tipoColumnaCodigo: TipoColumnaPrecio.GlobalRecargo.Codigo);
+
+            Assert.That(
+                async () => await uc.ExecuteAsync(dto, CancellationToken.None),
+                Throws.TypeOf<BusinessRuleException>());
         }
 
         [Test]

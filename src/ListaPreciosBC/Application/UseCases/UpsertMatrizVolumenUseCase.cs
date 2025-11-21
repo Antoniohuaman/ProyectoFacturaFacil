@@ -37,6 +37,7 @@ namespace ListaPreciosBC.Application.UseCases
             byte ColumnaNumero,
             IReadOnlyList<Tramo> Tramos,
             int CantidadReferenciaParaEventoBase = 1,
+            string? UnidadMedidaCodigo = null,
             string? Usuario = null,
             DateTimeOffset? Cuando = null,
             Guid? SucursalId = null
@@ -46,6 +47,7 @@ namespace ListaPreciosBC.Application.UseCases
             string Sku,
             byte ColumnaNumero,
             int TramosActualizados,
+            string UnidadMedidaCodigo,
             int Version
         );
 
@@ -129,10 +131,11 @@ namespace ListaPreciosBC.Application.UseCases
                 tramos.Add(TramoVolumen.Crear(t.DesdeCantidad, t.HastaCantidad, valor));
             }
             var matriz = MatrizVolumen.Crear(tramos);
+            var unidad = UnidadDeMedida.From(req.UnidadMedidaCodigo ?? UnidadDeMedida.NIU.Codigo);
 
             // 5) Mutación del agregado
             var cuando = req.Cuando ?? DateTimeOffset.UtcNow;
-            agregado.UpsertMatrizVolumen(colId, matriz, req.Usuario, cuando, req.CantidadReferenciaParaEventoBase);
+            agregado.UpsertMatrizVolumen(colId, unidad, matriz, req.Usuario, cuando, req.CantidadReferenciaParaEventoBase);
 
             // 6) Persistencia + UoW
             await _precioRepo.GuardarAsync(agregado, empresaId, estId, expectedVersion, ct);
@@ -143,6 +146,7 @@ namespace ListaPreciosBC.Application.UseCases
                 Sku: sku,
                 ColumnaNumero: req.ColumnaNumero,
                 TramosActualizados: req.Tramos.Count,
+                UnidadMedidaCodigo: unidad.Codigo,
                 Version: agregado.Version
             );
         }

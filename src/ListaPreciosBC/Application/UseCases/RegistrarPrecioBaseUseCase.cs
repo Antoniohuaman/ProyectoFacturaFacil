@@ -67,6 +67,7 @@ namespace ListaPreciosBC.Application.UseCases
             DateTime? Hasta,           // fin de vigencia (opcional)
             string? Usuario,           // auditoría
             DateTimeOffset? Cuando,    // auditoría
+            string? UnidadMedidaCodigo = null,
             int CantidadReferenciaParaEventoBase = 1 // para el evento de base (P1)
         );
 
@@ -75,6 +76,7 @@ namespace ListaPreciosBC.Application.UseCases
             byte ColumnaBaseNumero,
             ValorPrecio Valor,
             PeriodoVigencia Vigencia,
+            string UnidadMedidaCodigo,
             int Version // versión final del agregado PrecioProducto
         );
 
@@ -111,10 +113,12 @@ namespace ListaPreciosBC.Application.UseCases
             // 4) Construir valor y vigencia
             var valor    = ValorPrecio.DesdeMonto(req.Monto, req.Moneda, req.IncluyeImpuesto);
             var vigencia = PeriodoVigencia.Crear(req.Desde, req.Hasta);
+            var unidad   = UnidadDeMedida.From(req.UnidadMedidaCodigo ?? UnidadDeMedida.NIU.Codigo);
 
             // 5) Upsert fijo en la columna base
             agregado.UpsertPrecioFijo(
                 columna: idBase,
+                unidadDeMedida: unidad,
                 valor: valor,
                 vigencia: vigencia,
                 usuario: req.Usuario,
@@ -131,6 +135,7 @@ namespace ListaPreciosBC.Application.UseCases
                 ColumnaBaseNumero: idBase.Numero,
                 Valor: valor,
                 Vigencia: vigencia,
+                UnidadMedidaCodigo: unidad.Codigo,
                 Version: agregado.Version
             );
         }

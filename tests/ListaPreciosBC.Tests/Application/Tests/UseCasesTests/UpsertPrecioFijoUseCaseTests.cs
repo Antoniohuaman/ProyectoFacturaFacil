@@ -181,13 +181,14 @@ namespace ListaPreciosBC.Tests.Application.UseCases
         var sut = new UpsertPrecioFijoUseCase(precioRepo, listaRepo, uow, tenant.Object, catalogo.Object);
 
             var req = new UpsertPrecioFijoUseCase.Request(
-                "SKU-001",
-                1,
-                10.50m,
-                true,
-                DateTimeOffset.UtcNow.Date,
-                null,
-                "tester"
+                Sku: "SKU-001",
+                ColumnaNumero: 1,
+                Monto: 10.50m,
+                IncluyeImpuesto: true,
+                VigenciaDesde: DateTimeOffset.UtcNow.Date,
+                VigenciaHasta: null,
+                UnidadMedidaCodigo: UnidadDeMedida.KGM.Codigo,
+                Usuario: "tester"
             );
 
             // Act
@@ -199,11 +200,18 @@ namespace ListaPreciosBC.Tests.Application.UseCases
             Assert.That(res.Monto, Is.EqualTo(10.50m));
             Assert.That(res.Moneda, Is.EqualTo("PEN"));
             Assert.That(res.Version, Is.GreaterThanOrEqualTo(0));
+            Assert.That(res.UnidadMedidaCodigo, Is.EqualTo(UnidadDeMedida.KGM.Codigo));
 
             // Assert de evento de dominio
             var agg = await precioRepo.ObtenerPorProductoIdAsync(productoId);
             Assert.That(agg, Is.Not.Null);
             Assert.That(agg!.DomainEvents.OfType<PrecioFijoActualizado>().Any(), Is.True);
+
+            var registroKg = agg!.PreciosPorUnidad.SingleOrDefault(p =>
+                p.UnidadDeMedida.Codigo == UnidadDeMedida.KGM.Codigo &&
+                p.ColumnaId.Equals(IdentificadorColumnaPrecio.DesdeNumero(1)));
+            Assert.That(registroKg, Is.Not.Null);
+            Assert.That(registroKg!.TienePrecioFijo, Is.True);
 
             // Assert del tenant en el evento
             var evt = agg!.DomainEvents.OfType<PrecioFijoActualizado>().Last();
@@ -226,12 +234,13 @@ namespace ListaPreciosBC.Tests.Application.UseCases
         var sut = new UpsertPrecioFijoUseCase(precioRepo, listaRepo, uow, tenant.Object, catalogo.Object);
 
             var req = new UpsertPrecioFijoUseCase.Request(
-                "SKU-404",
-                1,
-                1m,
-                true,
-                DateTimeOffset.UtcNow.Date,
-                null
+                Sku: "SKU-404",
+                ColumnaNumero: 1,
+                Monto: 1m,
+                IncluyeImpuesto: true,
+                VigenciaDesde: DateTimeOffset.UtcNow.Date,
+                VigenciaHasta: null,
+                UnidadMedidaCodigo: UnidadDeMedida.NIU.Codigo
             );
 
             // Act + Assert
@@ -257,12 +266,13 @@ namespace ListaPreciosBC.Tests.Application.UseCases
         var sut = new UpsertPrecioFijoUseCase(precioRepo, listaRepo, uow, tenant.Object, catalogo.Object);
 
             var req = new UpsertPrecioFijoUseCase.Request(
-                "SKU-001",
-                9,
-                10m,
-                true,
-                DateTimeOffset.UtcNow.Date,
-                null
+                Sku: "SKU-001",
+                ColumnaNumero: 9,
+                Monto: 10m,
+                IncluyeImpuesto: true,
+                VigenciaDesde: DateTimeOffset.UtcNow.Date,
+                VigenciaHasta: null,
+                UnidadMedidaCodigo: UnidadDeMedida.NIU.Codigo
             );
 
             // Act + Assert
@@ -288,12 +298,13 @@ namespace ListaPreciosBC.Tests.Application.UseCases
         var sut = new UpsertPrecioFijoUseCase(precioRepo, listaRepo, uow, tenant.Object, catalogo.Object);
 
             var req = new UpsertPrecioFijoUseCase.Request(
-                "SKU-001",
-                2,
-                10m,
-                true,
-                DateTimeOffset.UtcNow.Date,
-                null
+                Sku: "SKU-001",
+                ColumnaNumero: 2,
+                Monto: 10m,
+                IncluyeImpuesto: true,
+                VigenciaDesde: DateTimeOffset.UtcNow.Date,
+                VigenciaHasta: null,
+                UnidadMedidaCodigo: UnidadDeMedida.NIU.Codigo
             );
 
             // Act + Assert
@@ -332,13 +343,14 @@ namespace ListaPreciosBC.Tests.Application.UseCases
         var sut = new UpsertPrecioFijoUseCase(precioRepo, listaRepo, uow, tenant.Object, catalogo.Object);
 
             var req = new UpsertPrecioFijoUseCase.Request(
-                "SKU-001",
-                1,
-                10.50m,
-                true,
-                DateTimeOffset.UtcNow.Date,
-                null,
-                "tester"
+                Sku: "SKU-001",
+                ColumnaNumero: 1,
+                Monto: 10.50m,
+                IncluyeImpuesto: true,
+                VigenciaDesde: DateTimeOffset.UtcNow.Date,
+                VigenciaHasta: null,
+                UnidadMedidaCodigo: UnidadDeMedida.NIU.Codigo,
+                Usuario: "tester"
             );
 
             // Act + Assert
@@ -377,6 +389,7 @@ namespace ListaPreciosBC.Tests.Application.UseCases
                 IncluyeImpuesto: true,
                 VigenciaDesde: DateTimeOffset.UtcNow.Date,
                 VigenciaHasta: null,
+                UnidadMedidaCodigo: UnidadDeMedida.NIU.Codigo,
                 Usuario: "tester",
                 Cuando: DateTimeOffset.UtcNow,
                 SucursalId: sucursalId

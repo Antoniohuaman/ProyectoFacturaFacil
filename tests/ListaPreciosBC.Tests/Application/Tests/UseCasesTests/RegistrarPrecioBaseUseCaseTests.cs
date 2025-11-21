@@ -70,6 +70,7 @@ namespace ListaPreciosBC.Tests.UnitTests.Application
                 Hasta: null,
                 Usuario: "tester",
                 Cuando: DateTimeOffset.UtcNow,
+                UnidadMedidaCodigo: "KGM",
                 CantidadReferenciaParaEventoBase: 1
             );
 
@@ -83,6 +84,7 @@ namespace ListaPreciosBC.Tests.UnitTests.Application
             Assert.That(res.Valor.Importe.Moneda, Is.EqualTo(Moneda.PEN()));
             Assert.That(res.Vigencia.Desde.Date, Is.EqualTo(DateTime.Today));
             Assert.That(res.Vigencia.Hasta, Is.Null);
+            Assert.That(res.UnidadMedidaCodigo, Is.EqualTo("KGM"));
             Assert.That(res.Version, Is.EqualTo(1)); // nuevo agregado: primera mutación
 
             // Persistencia y evento con tenant
@@ -133,6 +135,7 @@ namespace ListaPreciosBC.Tests.UnitTests.Application
                 Hasta: DateTime.Today.AddDays(7),
                 Usuario: "tester",
                 Cuando: DateTimeOffset.UtcNow,
+                UnidadMedidaCodigo: UnidadDeMedida.NIU.Codigo,
                 CantidadReferenciaParaEventoBase: 1
             );
 
@@ -172,7 +175,8 @@ namespace ListaPreciosBC.Tests.UnitTests.Application
                 Desde: DateTime.Today,
                 Hasta: null,
                 Usuario: null,
-                Cuando: null
+                Cuando: null,
+                UnidadMedidaCodigo: UnidadDeMedida.NIU.Codigo
             );
 
             // Act + Assert
@@ -212,7 +216,8 @@ namespace ListaPreciosBC.Tests.UnitTests.Application
                 Desde: DateTime.Today,
                 Hasta: null,
                 Usuario: "tester",
-                Cuando: DateTimeOffset.UtcNow
+                Cuando: DateTimeOffset.UtcNow,
+                UnidadMedidaCodigo: UnidadDeMedida.NIU.Codigo
             );
 
             // Act + Assert

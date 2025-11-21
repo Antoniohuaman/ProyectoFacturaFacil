@@ -106,6 +106,30 @@ namespace ListaPreciosBC.Tests.Application.UseCases
             return lista;
         }
 
+        private static EstablecerPlantillaUseCase.Columna Col(
+            byte numero,
+            string nombre,
+            ModoValorizacionColumna modo,
+            bool esBase,
+            bool visible,
+            byte orden,
+            TipoColumnaPrecio? tipo = null,
+            TipoReglaGlobalColumnaPrecio? tipoRegla = null,
+            decimal? valorRegla = null)
+        {
+            var resolvedTipo = tipo ?? (esBase ? TipoColumnaPrecio.Base : TipoColumnaPrecio.Manual);
+            return new EstablecerPlantillaUseCase.Columna(
+                Numero: numero,
+                Nombre: nombre,
+                Modo: modo,
+                EsBase: esBase,
+                Visible: visible,
+                Orden: orden,
+                TipoColumnaCodigo: resolvedTipo.Codigo,
+                TipoReglaGlobalCodigo: tipoRegla?.Codigo,
+                ValorReglaGlobal: valorRegla);
+        }
+
         // ---------------------- Tests ----------------------
 
         [Test]
@@ -123,9 +147,9 @@ namespace ListaPreciosBC.Tests.Application.UseCases
 
             var columnas = new List<EstablecerPlantillaUseCase.Columna>
             {
-                new(Numero: 2, Nombre: "NuevaBase",  Modo: ModoValorizacionColumna.Fijo,       EsBase: true,  Visible: true,  Orden: 1),
-                new(Numero: 3, Nombre: "Mayorista",  Modo: ModoValorizacionColumna.PorVolumen, EsBase: false, Visible: true,  Orden: 2),
-                new(Numero: 4, Nombre: "VIP",        Modo: ModoValorizacionColumna.Fijo,       EsBase: false, Visible: false, Orden: 3),
+                Col(2, "NuevaBase",  ModoValorizacionColumna.Fijo,       esBase: true,  visible: true,  orden: 1),
+                Col(3, "Mayorista",  ModoValorizacionColumna.PorVolumen, esBase: false, visible: true,  orden: 2),
+                Col(4, "VIP",        ModoValorizacionColumna.Fijo,       esBase: false, visible: false, orden: 3),
             };
 
             var req = new EstablecerPlantillaUseCase.Request(
@@ -164,7 +188,7 @@ namespace ListaPreciosBC.Tests.Application.UseCases
 
             var columnas = new List<EstablecerPlantillaUseCase.Columna>
             {
-                new(1, "Base", ModoValorizacionColumna.Fijo, true, true, 1)
+                Col(1, "Base", ModoValorizacionColumna.Fijo, true, true, 1)
             };
 
             var req = new EstablecerPlantillaUseCase.Request(Columnas: columnas);
@@ -207,8 +231,8 @@ namespace ListaPreciosBC.Tests.Application.UseCases
 
             var columnas = new List<EstablecerPlantillaUseCase.Columna>
             {
-                new(1, "BaseA",  ModoValorizacionColumna.Fijo,       true,  true,  1),
-                new(2, "BaseB",  ModoValorizacionColumna.PorVolumen, true,  true,  2),
+                Col(1, "BaseA",  ModoValorizacionColumna.Fijo,       true,  true,  1),
+                Col(2, "BaseB",  ModoValorizacionColumna.PorVolumen, true,  true,  2),
             };
 
             var req = new EstablecerPlantillaUseCase.Request(Columnas: columnas);
@@ -231,8 +255,8 @@ namespace ListaPreciosBC.Tests.Application.UseCases
 
             var columnas = new List<EstablecerPlantillaUseCase.Columna>
             {
-                new(2, "Minorista",  ModoValorizacionColumna.Fijo,       false, true, 1),
-                new(3, "Mayorista",  ModoValorizacionColumna.PorVolumen, false, true, 2),
+                Col(2, "Minorista",  ModoValorizacionColumna.Fijo,       false, true, 1),
+                Col(3, "Mayorista",  ModoValorizacionColumna.PorVolumen, false, true, 2),
             };
 
             var req = new EstablecerPlantillaUseCase.Request(Columnas: columnas);
@@ -255,8 +279,8 @@ namespace ListaPreciosBC.Tests.Application.UseCases
 
             var columnas = new List<EstablecerPlantillaUseCase.Columna>
             {
-                new(2, "NuevaBase",  ModoValorizacionColumna.Fijo,       true,  true,  1),
-                new(3, "Mayorista",  ModoValorizacionColumna.PorVolumen, false, true,  2),
+                Col(2, "NuevaBase",  ModoValorizacionColumna.Fijo,       true,  true,  1),
+                Col(3, "Mayorista",  ModoValorizacionColumna.PorVolumen, false, true,  2),
             };
 
             var req = new EstablecerPlantillaUseCase.Request(

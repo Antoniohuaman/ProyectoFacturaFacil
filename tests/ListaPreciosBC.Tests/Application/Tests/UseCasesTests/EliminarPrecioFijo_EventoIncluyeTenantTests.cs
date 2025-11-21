@@ -139,6 +139,7 @@ namespace ListaPreciosBC.Tests.Application.UseCases
             var res = await sut.Handle(new EliminarPrecioFijoUseCase.Request(
                 Sku: "SKU-DEL",
                 ColumnaNumero: 1,
+                UnidadMedidaCodigo: UnidadDeMedida.NIU.Codigo,
                 LanzarSiNoExiste: true,
                 Usuario: "tester",
                 Cuando: DateTimeOffset.UtcNow
@@ -148,6 +149,7 @@ namespace ListaPreciosBC.Tests.Application.UseCases
             Assert.That(uow.CommitCount, Is.EqualTo(1));
             Assert.That(res.Sku, Is.EqualTo("SKU-DEL"));
             Assert.That(res.ColumnaNumero, Is.EqualTo(1));
+            Assert.That(res.UnidadMedidaCodigo, Is.EqualTo(UnidadDeMedida.NIU.Codigo));
 
             var post = await precioRepo.ObtenerPorProductoIdAsync(productoId);
             Assert.That(post, Is.Not.Null);

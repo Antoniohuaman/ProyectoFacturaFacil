@@ -148,10 +148,11 @@ namespace ListaPreciosBC.Tests.Application.UseCases
             return PrecioProducto.CrearNuevo(EmpresaId.From("EMP-01"), ProductoId.New());
         }
 
-        private static bool ExistePrecioParaCantidad(PrecioProducto agg, byte columnaNumero, int cantidad)
+        private static bool ExistePrecioParaCantidad(PrecioProducto agg, byte columnaNumero, int cantidad, UnidadDeMedida? unidad = null)
         {
             var colId = IdentificadorColumnaPrecio.DesdeNumero(columnaNumero);
-            var vigente = agg.ObtenerPrecioVigente(colId, DateTimeOffset.UtcNow.Date, cantidad);
+            var unidadEvaluacion = unidad ?? UnidadDeMedida.NIU;
+            var vigente = agg.ObtenerPrecioVigente(colId, unidadEvaluacion, DateTimeOffset.UtcNow.Date, cantidad);
             return vigente is not null;
         }
 
@@ -185,6 +186,7 @@ namespace ListaPreciosBC.Tests.Application.UseCases
                     new(DesdeCantidad: 10, HastaCantidad: null, Monto: 9.90m, IncluyeImpuesto: true)
                 },
                 CantidadReferenciaParaEventoBase: 1,
+                UnidadMedidaCodigo: UnidadDeMedida.KGM.Codigo,
                 Usuario: "tester"
             );
 
@@ -193,13 +195,20 @@ namespace ListaPreciosBC.Tests.Application.UseCases
             Assert.That(res.Sku, Is.EqualTo("SKU-001"));
             Assert.That(res.ColumnaNumero, Is.EqualTo(2));
             Assert.That(res.TramosActualizados, Is.EqualTo(2));
+            Assert.That(res.UnidadMedidaCodigo, Is.EqualTo(UnidadDeMedida.KGM.Codigo));
             Assert.That(res.Version, Is.GreaterThanOrEqualTo(0));
 
             // Efecto observable: el agregado debe resolver precio para cantidades en ambos tramos
             var post = await precioRepo.ObtenerPorProductoIdAsync(productoId);
             Assert.That(post, Is.Not.Null);
-            Assert.That(ExistePrecioParaCantidad(post!, 2, cantidad: 1), Is.True);
-            Assert.That(ExistePrecioParaCantidad(post!, 2, cantidad: 10), Is.True);
+            Assert.That(ExistePrecioParaCantidad(post!, 2, cantidad: 1, unidad: UnidadDeMedida.KGM), Is.True);
+            Assert.That(ExistePrecioParaCantidad(post!, 2, cantidad: 10, unidad: UnidadDeMedida.KGM), Is.True);
+
+            var registroKg = post!.PreciosPorUnidad.SingleOrDefault(p =>
+                p.UnidadDeMedida.Codigo == UnidadDeMedida.KGM.Codigo &&
+                p.ColumnaId.Equals(IdentificadorColumnaPrecio.DesdeNumero(2)));
+            Assert.That(registroKg, Is.Not.Null);
+            Assert.That(registroKg!.MatrizVolumen, Is.Not.Null);
 
             // Assert de evento con tenant
             var ev = post!.DomainEvents.OfType<ListaPreciosBC.Domain.Events.MatrizVolumenActualizada>().LastOrDefault();
@@ -227,7 +236,8 @@ namespace ListaPreciosBC.Tests.Application.UseCases
                 Tramos: new List<UpsertMatrizVolumenUseCase.Tramo>
                 {
                     new(1, 10, 10m, true)
-                }
+                },
+                UnidadMedidaCodigo: UnidadDeMedida.NIU.Codigo
             );
 
             Assert.That(async () => await sut.Handle(req, CancellationToken.None),
@@ -258,7 +268,8 @@ namespace ListaPreciosBC.Tests.Application.UseCases
                 Tramos: new List<UpsertMatrizVolumenUseCase.Tramo>
                 {
                     new(1, 10, 10m, true)
-                }
+                },
+                UnidadMedidaCodigo: UnidadDeMedida.NIU.Codigo
             );
 
             Assert.That(async () => await sut.Handle(req, CancellationToken.None),
@@ -296,7 +307,8 @@ namespace ListaPreciosBC.Tests.Application.UseCases
                 Tramos: new List<UpsertMatrizVolumenUseCase.Tramo>
                 {
                     new(1, 10, 10m, true)
-                }
+                },
+                UnidadMedidaCodigo: UnidadDeMedida.NIU.Codigo
             );
 
             Assert.That(async () => await sut.Handle(req, CancellationToken.None),
@@ -340,6 +352,7 @@ namespace ListaPreciosBC.Tests.Application.UseCases
                 {
                     new(1, 10, 10m, true)
                 },
+                UnidadMedidaCodigo: UnidadDeMedida.NIU.Codigo,
                 Usuario: "tester"
             );
 
@@ -373,7 +386,8 @@ namespace ListaPreciosBC.Tests.Application.UseCases
                 {
                     new(1, 10, 10m, true),
                     new(8, null, 9m, true)
-                }
+                },
+                UnidadMedidaCodigo: UnidadDeMedida.NIU.Codigo
             );
 
             Assert.That(async () => await sut.Handle(req, CancellationToken.None),
@@ -414,6 +428,7 @@ namespace ListaPreciosBC.Tests.Application.UseCases
                     new(1, 10, 10m, true)
                 },
                 CantidadReferenciaParaEventoBase: 1,
+                UnidadMedidaCodigo: UnidadDeMedida.NIU.Codigo,
                 Usuario: "tester",
                 Cuando: DateTimeOffset.UtcNow,
                 SucursalId: sucursalId

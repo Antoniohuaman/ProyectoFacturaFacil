@@ -25,7 +25,10 @@ namespace ListaPreciosBC.Application.UseCases
             string Modo,   // "Fijo" | "PorVolumen" (ToString del enum del dominio)
             bool EsBase,
             bool Visible,
-            byte Orden
+            byte Orden,
+            string TipoColumnaCodigo,
+            string? TipoReglaGlobalCodigo,
+            decimal? ValorReglaGlobal
         );
 
         public readonly record struct Response(
@@ -58,13 +61,20 @@ namespace ListaPreciosBC.Application.UseCases
             var columnas = lista.Plantilla
                                 .Columnas
                                 .OrderBy(c => c.Orden)
-                                .Select(c => new ColumnaDto(
-                                    Nombre: c.Nombre.Valor,
-                                    Modo: c.Modo.ToString(),
-                                    EsBase: c.EsBase,
-                                    Visible: c.Visible,
-                                    Orden: c.Orden
-                                ))
+                                .Select(c =>
+                                {
+                                    var regla = ColumnaPrecioApplicationMapper.ExtraerRegla(c.ReglaGlobal);
+                                    return new ColumnaDto(
+                                        Nombre: c.Nombre.Valor,
+                                        Modo: c.Modo.ToString(),
+                                        EsBase: c.EsBase,
+                                        Visible: c.Visible,
+                                        Orden: c.Orden,
+                                        TipoColumnaCodigo: c.Tipo.Codigo,
+                                        TipoReglaGlobalCodigo: regla.TipoCodigo,
+                                        ValorReglaGlobal: regla.Valor
+                                    );
+                                })
                                 .ToArray();
 
             // 3) Respuesta

@@ -103,6 +103,8 @@ namespace ListaPreciosBC.Tests.Application.UseCases
             Assert.That(res.EsBase, Is.False);
             Assert.That(res.Visible, Is.True);
             Assert.That(res.Orden, Is.EqualTo((byte)2));
+            Assert.That(res.TipoColumnaCodigo, Is.EqualTo(TipoColumnaPrecio.Manual.Codigo));
+            Assert.That(res.TipoReglaGlobalCodigo, Is.Null);
         }
 
         [Test]
@@ -125,6 +127,8 @@ namespace ListaPreciosBC.Tests.Application.UseCases
             Assert.That(res.EsBase, Is.True);
             Assert.That(res.Visible, Is.True);
             Assert.That(res.Orden, Is.EqualTo((byte)1));
+            Assert.That(res.TipoColumnaCodigo, Is.EqualTo(TipoColumnaPrecio.Base.Codigo));
+            Assert.That(res.TipoReglaGlobalCodigo, Is.Null);
         }
 
         [Test]

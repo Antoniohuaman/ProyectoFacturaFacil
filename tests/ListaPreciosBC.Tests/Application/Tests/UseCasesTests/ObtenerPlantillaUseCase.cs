@@ -115,6 +115,14 @@ namespace ListaPreciosBC.Tests.Application.UseCases
 
             // Visibilidad de la última
             Assert.That(res.Columnas.Single(c => c.Nombre == "Mayorista").Visible, Is.False);
+
+            var baseCol = res.Columnas.Single(c => c.Nombre == "Base");
+            Assert.That(baseCol.TipoColumnaCodigo, Is.EqualTo(TipoColumnaPrecio.Base.Codigo));
+            Assert.That(baseCol.TipoReglaGlobalCodigo, Is.Null);
+
+            var minorista = res.Columnas.Single(c => c.Nombre == "Minorista");
+            Assert.That(minorista.TipoColumnaCodigo, Is.EqualTo(TipoColumnaPrecio.Manual.Codigo));
+            Assert.That(minorista.TipoReglaGlobalCodigo, Is.Null);
         }
 
         [Test]
@@ -155,6 +163,7 @@ namespace ListaPreciosBC.Tests.Application.UseCases
             Assert.That(res.CantidadColumnas, Is.EqualTo(1));
             Assert.That(res.Columnas.Single().Nombre, Is.EqualTo("Base"));
             Assert.That(res.Columnas.Single().EsBase, Is.True);
+            Assert.That(res.Columnas.Single().TipoColumnaCodigo, Is.EqualTo(TipoColumnaPrecio.Base.Codigo));
         }
     }
 }

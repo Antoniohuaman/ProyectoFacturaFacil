@@ -12,7 +12,7 @@ namespace ListaPreciosBC.Application.UseCases
 {
     /// <summary>
     /// Exporta la PLANTILLA (todas las columnas) de la Lista de Precios ACTIVA a CSV (compatible con Excel).
-    /// Columnas del CSV: ColumnaNumero;Nombre;Modo;EsBase;Visible;Orden
+    /// Columnas del CSV: ColumnaNumero;Nombre;Modo;EsBase;Visible;Orden;TipoColumna;TipoReglaGlobal;ValorReglaGlobal
     /// </summary>
     public sealed class ExportarPlantillaExcelUseCase
     {
@@ -60,25 +60,33 @@ namespace ListaPreciosBC.Application.UseCases
             var ci = CultureInfo.InvariantCulture;
 
             // Header
-            sb.Append("ColumnaNumero").Append(sep)
-              .Append("Nombre").Append(sep)
-              .Append("Modo").Append(sep)
-              .Append("EsBase").Append(sep)
-              .Append("Visible").Append(sep)
-              .Append("Orden")
-              .AppendLine();
+                        sb.Append("ColumnaNumero").Append(sep)
+                            .Append("Nombre").Append(sep)
+                            .Append("Modo").Append(sep)
+                            .Append("EsBase").Append(sep)
+                            .Append("Visible").Append(sep)
+                            .Append("Orden").Append(sep)
+                            .Append("TipoColumna").Append(sep)
+                            .Append("TipoReglaGlobal").Append(sep)
+                            .Append("ValorReglaGlobal")
+                            .AppendLine();
 
             // Rows
-            foreach (var col in columnas)
-            {
-                sb.Append(col.Id.Numero.ToString(ci)).Append(sep)
-                  .Append(Escape(col.Nombre.Valor)).Append(sep)
-                  .Append(col.Modo.ToString()).Append(sep)
-                  .Append(col.EsBase.ToString(ci)).Append(sep)
-                  .Append(col.Visible.ToString(ci)).Append(sep)
-                  .Append(col.Orden.ToString(ci))
-                  .AppendLine();
-            }
+                        foreach (var col in columnas)
+                        {
+                                var regla = ColumnaPrecioApplicationMapper.ExtraerRegla(col.ReglaGlobal);
+
+                                sb.Append(col.Id.Numero.ToString(ci)).Append(sep)
+                                    .Append(Escape(col.Nombre.Valor)).Append(sep)
+                                    .Append(col.Modo.ToString()).Append(sep)
+                                    .Append(col.EsBase.ToString(ci)).Append(sep)
+                                    .Append(col.Visible.ToString(ci)).Append(sep)
+                                    .Append(col.Orden.ToString(ci)).Append(sep)
+                                    .Append(col.Tipo.Codigo).Append(sep)
+                                    .Append(regla.TipoCodigo ?? string.Empty).Append(sep)
+                                    .Append(regla.Valor?.ToString(ci) ?? string.Empty)
+                                    .AppendLine();
+                        }
 
             // 4) Empaquetar archivo
             var bytes = Encoding.UTF8.GetBytes(sb.ToString());

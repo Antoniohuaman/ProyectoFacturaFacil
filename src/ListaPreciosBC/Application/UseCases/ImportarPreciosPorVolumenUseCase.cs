@@ -34,7 +34,8 @@ namespace ListaPreciosBC.Application.UseCases
 
         public readonly record struct ItemColumna(
             byte ColumnaNumero,
-            IReadOnlyList<Rango> Rangos
+            IReadOnlyList<Rango> Rangos,
+            string? UnidadMedidaCodigo = null
         );
 
         public readonly record struct Fila(
@@ -183,10 +184,12 @@ namespace ListaPreciosBC.Application.UseCases
                         }
 
                         var matriz = MatrizVolumen.Crear(tramos);
+                        var unidad = UnidadDeMedida.From(item.UnidadMedidaCodigo ?? UnidadDeMedida.NIU.Codigo);
 
                         // 6) Mutación
                         agregado.UpsertMatrizVolumen(
                             IdentificadorColumnaPrecio.DesdeNumero(item.ColumnaNumero),
+                            unidad,
                             matriz,
                             req.Usuario,
                             cuando,

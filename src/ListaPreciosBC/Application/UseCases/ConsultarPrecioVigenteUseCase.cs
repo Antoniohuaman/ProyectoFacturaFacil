@@ -9,6 +9,7 @@ using System.Text.RegularExpressions;
 using SharedKernel.Exceptions;               // NotFoundException
 using SharedKernel.Application.Interfaces;   // ITenantContext
 using ListaPreciosBC.Application.Interfaces; // ICatalogoReadModel
+using SharedKernel.ValueObjects;
 
 namespace ListaPreciosBC.Application.UseCases
 {
@@ -26,7 +27,8 @@ namespace ListaPreciosBC.Application.UseCases
             string Sku,
             byte ColumnaNumero,
             int Cantidad,
-            DateTimeOffset? Fecha = null
+            DateTimeOffset? Fecha = null,
+            string? UnidadMedidaCodigo = null
         );
 
         public readonly record struct Response(
@@ -37,6 +39,7 @@ namespace ListaPreciosBC.Application.UseCases
             decimal Monto,
             bool IncluyeImpuesto,
             string Moneda,
+            string UnidadMedidaCodigo,
             string ModoColumna,   // "Fijo" | "PorVolumen"
             int VersionAgregado   // versión del PrecioProducto consultado
         );
@@ -99,7 +102,8 @@ namespace ListaPreciosBC.Application.UseCases
 
             // 4) Resolver precio vigente
             var fecha = req.Fecha ?? DateTimeOffset.UtcNow;
-            var resuelto = agregado.ObtenerPrecioVigente(colId, fecha, req.Cantidad);
+            var unidad = UnidadDeMedida.From(req.UnidadMedidaCodigo ?? UnidadDeMedida.NIU.Codigo);
+            var resuelto = agregado.ObtenerPrecioVigente(colId, unidad, fecha, req.Cantidad);
             if (resuelto is null)
                 throw new NotFoundException($"No hay precio vigente para SKU {req.Sku} en la columna {req.ColumnaNumero}.");
 
@@ -114,6 +118,7 @@ namespace ListaPreciosBC.Application.UseCases
                 Monto: valor.Monto,
                 IncluyeImpuesto: valor.IncluyeImpuesto,
                 Moneda: valor.Importe.Moneda.Codigo,  // ADAPTA si tu Moneda expone otra propiedad (p.ej., CodigoIso)
+                UnidadMedidaCodigo: unidad.Codigo,
                 ModoColumna: columnaCfg.Modo.ToString(),
                 VersionAgregado: agregado.Version
             );

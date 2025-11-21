@@ -44,14 +44,16 @@ namespace ListaPreciosBC.Application.UseCases
             var expectedVersion = listaPrecio.Version;
 
             // 3) Construir VO de configuración
-            var nuevaColumna = ConfiguracionColumnaPrecio.Crear(
-                id:     IdentificadorColumnaPrecio.DesdeNumero(dto.NumeroColumna),
-                nombre: NombreColumnaPrecio.Crear(dto.Nombre),
-                modo:   dto.Modo,               // si tu DTO trae string, mapea aquí al VO
-                esBase: dto.EsBase,
-                visible:dto.Visible,
-                orden:  dto.Orden
-            );
+            var nuevaColumna = ColumnaPrecioApplicationMapper.CrearConfiguracionColumna(
+                numeroColumna: dto.NumeroColumna,
+                nombre: dto.Nombre,
+                modo: dto.Modo,
+                esBaseDeclarado: dto.EsBase,
+                visible: dto.Visible,
+                orden: dto.Orden,
+                tipoColumnaCodigo: dto.TipoColumnaCodigo,
+                tipoReglaGlobalCodigo: dto.TipoReglaGlobalCodigo,
+                valorReglaGlobal: dto.ValorReglaGlobal);
 
             // 4) Mutar agregado (invariantes se validan adentro)
             listaPrecio.AgregarColumna(nuevaColumna, dto.Usuario, dto.Cuando);

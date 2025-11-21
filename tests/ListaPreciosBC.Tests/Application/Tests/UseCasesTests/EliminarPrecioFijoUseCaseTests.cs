@@ -212,6 +212,7 @@ namespace ListaPreciosBC.Tests.Application.UseCases
             var req = new EliminarPrecioFijoUseCase.Request(
                 Sku: sku,
                 ColumnaNumero: 1,
+                UnidadMedidaCodigo: UnidadDeMedida.NIU.Codigo,
                 LanzarSiNoExiste: true,
                 Usuario: "tester"
             );
@@ -220,6 +221,7 @@ namespace ListaPreciosBC.Tests.Application.UseCases
 
             Assert.That(res.Sku, Is.EqualTo(sku));
             Assert.That(res.ColumnaNumero, Is.EqualTo(1));
+            Assert.That(res.UnidadMedidaCodigo, Is.EqualTo(UnidadDeMedida.NIU.Codigo));
             Assert.That(res.Version, Is.GreaterThanOrEqualTo(0));
 
             // Verificación de efecto: el precio vigente ya no debe existir
@@ -244,6 +246,7 @@ namespace ListaPreciosBC.Tests.Application.UseCases
             var req = new EliminarPrecioFijoUseCase.Request(
                 Sku: "SKU-404",
                 ColumnaNumero: 1,
+                UnidadMedidaCodigo: UnidadDeMedida.NIU.Codigo,
                 LanzarSiNoExiste: true
             );
 
@@ -275,6 +278,7 @@ namespace ListaPreciosBC.Tests.Application.UseCases
             var req = new EliminarPrecioFijoUseCase.Request(
                 Sku: "SKU-001",
                 ColumnaNumero: 9,
+                UnidadMedidaCodigo: UnidadDeMedida.NIU.Codigo,
                 LanzarSiNoExiste: true
             );
 
@@ -301,6 +305,7 @@ namespace ListaPreciosBC.Tests.Application.UseCases
             var req = new EliminarPrecioFijoUseCase.Request(
                 Sku: "SKU-001",
                 ColumnaNumero: 2,
+                UnidadMedidaCodigo: UnidadDeMedida.NIU.Codigo,
                 LanzarSiNoExiste: true
             );
 
@@ -328,12 +333,14 @@ namespace ListaPreciosBC.Tests.Application.UseCases
             var req = new EliminarPrecioFijoUseCase.Request(
                 Sku: "SKU-NEW",
                 ColumnaNumero: 1,
+                UnidadMedidaCodigo: UnidadDeMedida.NIU.Codigo,
                 LanzarSiNoExiste: false // idempotente
             );
 
             var res = await sut.Handle(req, CancellationToken.None);
             Assert.That(res.Sku, Is.EqualTo("SKU-NEW"));
             Assert.That(res.ColumnaNumero, Is.EqualTo(1));
+            Assert.That(res.UnidadMedidaCodigo, Is.EqualTo(UnidadDeMedida.NIU.Codigo));
             Assert.That(res.Version, Is.EqualTo(0)); // no se creó/mutó agregado
         }
 
@@ -370,6 +377,7 @@ namespace ListaPreciosBC.Tests.Application.UseCases
             var req = new EliminarPrecioFijoUseCase.Request(
                 Sku: sku,
                 ColumnaNumero: 1,
+                UnidadMedidaCodigo: UnidadDeMedida.NIU.Codigo,
                 LanzarSiNoExiste: true,
                 Usuario: "tester"
             );

@@ -171,16 +171,16 @@ namespace ListaPreciosBC.Tests.Application.UseCases
             var lines = csv.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
 
             // header + 3 rows (puede tener línea final vacía)
-            Assert.That(lines[0], Does.Contain("SKU;Fecha;Cantidad;ColumnaNumero;Nombre;Modo;EsBase;Visible;Monto;IncluyeImpuesto;Moneda"));
+            Assert.That(lines[0], Does.Contain("SKU;Fecha;Cantidad;ColumnaNumero;Nombre;Modo;EsBase;Visible;UnidadMedida;Monto;IncluyeImpuesto;Moneda"));
 
             // Base: monto 10.50
-            Assert.That(csv, Does.Contain("Base;Fijo;True;True;10.50;True;PEN"));
+            Assert.That(csv, Does.Contain("Base;Fijo;True;True;NIU;10.50;True;PEN"));
 
             // Mayorista (volumen) con cantidad 1 => 9
-            Assert.That(csv, Does.Contain("Mayorista;PorVolumen;False;True;9;True;PEN"));
+            Assert.That(csv, Does.Contain("Mayorista;PorVolumen;False;True;NIU;9;True;PEN"));
 
             // VIP oculta sin precio (campos vacíos al final de la fila)
-            Assert.That(csv, Does.Contain("VIP;Fijo;False;False;;;"));
+            Assert.That(csv, Does.Contain("VIP;Fijo;False;False;NIU;;;"));
         }
 
         [Test]
@@ -210,8 +210,8 @@ namespace ListaPreciosBC.Tests.Application.UseCases
             Assert.That(res.ColumnasIncluidas, Is.EqualTo(2)); // Base + Mayorista
             var csv = CsvToString(res.Contenido);
 
-            Assert.That(csv, Does.Contain("Base;Fijo;True;True;10.50;True;PEN"));
-            Assert.That(csv, Does.Contain("Mayorista;PorVolumen;False;True;8.5;True;PEN"));
+            Assert.That(csv, Does.Contain("Base;Fijo;True;True;NIU;10.50;True;PEN"));
+            Assert.That(csv, Does.Contain("Mayorista;PorVolumen;False;True;NIU;8.5;True;PEN"));
             Assert.That(csv, Does.Not.Contain("VIP")); // excluida
         }
 

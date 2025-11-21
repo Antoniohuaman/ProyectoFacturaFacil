@@ -28,7 +28,10 @@ namespace ListaPreciosBC.Application.UseCases
             ModoValorizacionColumna Modo,
             bool EsBase,
             bool Visible,
-            byte Orden
+            byte Orden,
+            string TipoColumnaCodigo,
+            string? TipoReglaGlobalCodigo,
+            decimal? ValorReglaGlobal
         );
 
         public readonly record struct Request(
@@ -75,16 +78,16 @@ namespace ListaPreciosBC.Application.UseCases
             var configuraciones = new List<ConfiguracionColumnaPrecio>(req.Columnas.Count);
             foreach (var c in req.Columnas)
             {
-                var id = IdentificadorColumnaPrecio.DesdeNumero(c.Numero);
-                var nombre = NombreColumnaPrecio.Crear(c.Nombre);
-                var cfg = ConfiguracionColumnaPrecio.Crear(
-                    id,
-                    nombre,
-                    c.Modo,
-                    esBase: c.EsBase,
+                var cfg = ColumnaPrecioApplicationMapper.CrearConfiguracionColumna(
+                    numeroColumna: c.Numero,
+                    nombre: c.Nombre,
+                    modo: c.Modo,
+                    esBaseDeclarado: c.EsBase,
                     visible: c.Visible,
-                    orden: c.Orden
-                );
+                    orden: c.Orden,
+                    tipoColumnaCodigo: c.TipoColumnaCodigo,
+                    tipoReglaGlobalCodigo: c.TipoReglaGlobalCodigo,
+                    valorReglaGlobal: c.ValorReglaGlobal);
                 configuraciones.Add(cfg);
             }
 
@@ -101,10 +104,9 @@ namespace ListaPreciosBC.Application.UseCases
             await _uow.CommitAsync(ct);
 
             // 6) Respuesta (usamos el número marcado como base en el request)
-            var baseNumero = req.Columnas.Single(x => x.EsBase).Numero;
             return new Response(
                 CantidadColumnas: req.Columnas.Count,
-                ColumnaBaseNumero: baseNumero,
+                ColumnaBaseNumero: lista.NumeroColumnaBase,
                 Version: lista.Version
             );
         }

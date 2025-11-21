@@ -29,6 +29,7 @@ namespace ListaPreciosBC.Application.UseCases
         public readonly record struct Request(
             string Sku,
             byte ColumnaNumero,
+            string? UnidadMedidaCodigo = null,
             bool LanzarSiNoExiste = true,
             string? Usuario = null,
             DateTimeOffset? Cuando = null
@@ -37,6 +38,7 @@ namespace ListaPreciosBC.Application.UseCases
         public readonly record struct Response(
             string Sku,
             byte ColumnaNumero,
+            string UnidadMedidaCodigo,
             int Version
         );
 
@@ -109,14 +111,16 @@ namespace ListaPreciosBC.Application.UseCases
                     throw new NotFoundException($"No existe PrecioProducto para el SKU {req.Sku}.");
 
                 // Idempotente: nada que eliminar
-                return new Response(req.Sku, req.ColumnaNumero, Version: 0);
+                var unidadCodigo = req.UnidadMedidaCodigo ?? UnidadDeMedida.NIU.Codigo;
+                return new Response(req.Sku, req.ColumnaNumero, unidadCodigo, Version: 0);
             }
 
             var expectedVersion = agregado.Version; // captura antes de mutar
+            var unidad = UnidadDeMedida.From(req.UnidadMedidaCodigo ?? UnidadDeMedida.NIU.Codigo);
 
             // 4) Mutación del agregado (nombre del método según tu dominio)
             var cuando = req.Cuando ?? DateTimeOffset.UtcNow;
-                agregado.EliminarPrecioFijo(colId, req.Usuario, cuando);
+            agregado.EliminarPrecioFijo(colId, unidad, req.Usuario, cuando);
 
             // 5) Persistencia + UoW
             await _precioRepo.GuardarAsync(agregado, empresaId, estId, expectedVersion, ct);
@@ -126,6 +130,7 @@ namespace ListaPreciosBC.Application.UseCases
             return new Response(
                 Sku: skuNorm,
                 ColumnaNumero: req.ColumnaNumero,
+                UnidadMedidaCodigo: unidad.Codigo,
                 Version: agregado.Version
             );
         }

@@ -29,7 +29,8 @@ namespace ListaPreciosBC.Application.UseCases
             decimal Monto,
             DateTime? Desde,             // null => hoy (UTC date)
             DateTime? Hasta,             // null => abierto
-            bool IncluyeImpuesto = true
+            bool IncluyeImpuesto = true,
+            string? UnidadMedidaCodigo = null
         );
 
         public readonly record struct Fila(
@@ -164,10 +165,12 @@ namespace ListaPreciosBC.Application.UseCases
                         var valor = ValorPrecio.DesdeMonto(item.Monto, moneda, item.IncluyeImpuesto);
                         var desde = item.Desde ?? DateTime.UtcNow.Date;
                         var vigencia = PeriodoVigencia.Crear(desde, item.Hasta);
+                        var unidad = UnidadDeMedida.From(item.UnidadMedidaCodigo ?? UnidadDeMedida.NIU.Codigo);
 
                         // 5) Mutación
                         agregado.UpsertPrecioFijo(
                             IdentificadorColumnaPrecio.DesdeNumero(item.ColumnaNumero),
+                            unidad,
                             valor,
                             vigencia,
                             req.Usuario,

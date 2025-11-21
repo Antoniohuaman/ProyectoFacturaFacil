@@ -8,6 +8,7 @@ using ListaPreciosBC.Domain.ValueObjects;    // IdentificadorColumnaPrecio
 using SharedKernel.Exceptions;               // NotFoundException
 using SharedKernel.Application.Interfaces;   // ITenantContext
 using ListaPreciosBC.Application.Interfaces; // ICatalogoReadModel
+using SharedKernel.ValueObjects;
 
 namespace ListaPreciosBC.Application.UseCases
 {
@@ -21,7 +22,8 @@ namespace ListaPreciosBC.Application.UseCases
             string Sku,
             int Cantidad,
             DateTimeOffset? Fecha = null,
-            bool SoloVisibles = false
+            bool SoloVisibles = false,
+            string? UnidadMedidaCodigo = null
         );
 
         public readonly record struct ItemPrecio(
@@ -39,6 +41,7 @@ namespace ListaPreciosBC.Application.UseCases
             string Sku,
             DateTimeOffset FechaConsulta,
             int Cantidad,
+            string UnidadMedidaCodigo,
             ItemPrecio[] PreciosPorColumna,
             int VersionAgregado // versión del PrecioProducto consultado
         );
@@ -96,6 +99,7 @@ namespace ListaPreciosBC.Application.UseCases
 
             // 3) Fecha de consulta
             var fecha = req.Fecha ?? DateTimeOffset.UtcNow;
+            var unidad = UnidadDeMedida.From(req.UnidadMedidaCodigo ?? UnidadDeMedida.NIU.Codigo);
 
             // 4) Iterar columnas (opcionalmente solo visibles) y resolver precio vigente
             var columnas = lista.Plantilla.Columnas
@@ -105,7 +109,7 @@ namespace ListaPreciosBC.Application.UseCases
 
             var items = columnas.Select(col =>
             {
-                var resuelto = agregado.ObtenerPrecioVigente(col.Id, fecha, req.Cantidad);
+                var resuelto = agregado.ObtenerPrecioVigente(col.Id, unidad, fecha, req.Cantidad);
                 if (resuelto is null)
                 {
                     return new ItemPrecio(
@@ -138,6 +142,7 @@ namespace ListaPreciosBC.Application.UseCases
                 Sku: sku,
                 FechaConsulta: fecha,
                 Cantidad: req.Cantidad,
+                UnidadMedidaCodigo: unidad.Codigo,
                 PreciosPorColumna: items,
                 VersionAgregado: agregado.Version
             );

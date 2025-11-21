@@ -29,7 +29,10 @@ namespace ListaPreciosBC.Application.UseCases
             string Modo,   // "Fijo" | "PorVolumen" (ToString del enum)
             bool EsBase,
             bool Visible,
-            byte Orden
+            byte Orden,
+            string TipoColumnaCodigo,
+            string? TipoReglaGlobalCodigo,
+            decimal? ValorReglaGlobal
         );
 
     private readonly IListaPrecioRepository _listaRepo;
@@ -61,13 +64,18 @@ namespace ListaPreciosBC.Application.UseCases
                 throw new NotFoundException($"La columna #{req.ColumnaNumero} no existe en la plantilla activa.");
 
             // 3) Mapear respuesta
+            var regla = ColumnaPrecioApplicationMapper.ExtraerRegla(columna.ReglaGlobal);
+
             return new Response(
                 ColumnaNumero: req.ColumnaNumero,
                 Nombre: columna.Nombre.Valor,
                 Modo: columna.Modo.ToString(),
                 EsBase: columna.EsBase,
                 Visible: columna.Visible,
-                Orden: columna.Orden
+                Orden: columna.Orden,
+                TipoColumnaCodigo: columna.Tipo.Codigo,
+                TipoReglaGlobalCodigo: regla.TipoCodigo,
+                ValorReglaGlobal: regla.Valor
             );
         }
     }
