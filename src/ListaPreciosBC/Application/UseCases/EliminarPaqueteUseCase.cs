@@ -38,6 +38,8 @@ namespace ListaPreciosBC.Application.UseCases
                     $"No se encontró el paquete con Id {paqueteId} para la empresa {empresaId}.");
             }
 
+            paquete.MarcarComoEliminado(DateTime.UtcNow);
+
             await _paqueteRepository.EliminarAsync(paquete, cancellationToken)
                 .ConfigureAwait(false);
 

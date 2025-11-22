@@ -1,4 +1,5 @@
 using System;
+using ListaPreciosBC.Domain.ValueObjects;
 using SharedKernel.Events;
 using SharedKernel.ValueObjects;
 
@@ -11,16 +12,25 @@ namespace ListaPreciosBC.Domain.Events
     {
         public EmpresaId EmpresaId { get; }
         public Guid PaqueteId { get; }
+        public NombrePaquete Nombre { get; }
+        public string? Descripcion { get; }
+        public PorcentajeDescuentoPaquete Descuento { get; }
 
         public PaqueteEliminado(
             EmpresaId empresaId,
             Guid paqueteId,
+            NombrePaquete nombre,
+            string? descripcion,
+            PorcentajeDescuentoPaquete descuento,
             Guid? eventId = null,
             DateTime? occurredOnUtc = null)
             : base(eventId, occurredOnUtc)
         {
             EmpresaId = empresaId;
             PaqueteId = paqueteId;
+            Nombre = nombre ?? throw new ArgumentNullException(nameof(nombre));
+            Descripcion = descripcion;
+            Descuento = descuento ?? throw new ArgumentNullException(nameof(descuento));
         }
     }
 }

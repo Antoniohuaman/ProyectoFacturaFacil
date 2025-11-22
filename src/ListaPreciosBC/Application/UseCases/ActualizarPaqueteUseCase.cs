@@ -54,10 +54,12 @@ namespace ListaPreciosBC.Application.UseCases
             var nuevoNombre = NombrePaquete.Crear(comando.Nombre);
             var nuevoDescuento = PorcentajeDescuentoPaquete.Crear(comando.DescuentoPorcentaje);
 
-            paquete.ActualizarNombre(nuevoNombre);
-            paquete.ActualizarDescripcion(comando.Descripcion);
-            paquete.ActualizarDescuento(nuevoDescuento);
-            paquete.ReemplazarProductos(comando.Productos);
+            paquete.ActualizarDatos(
+                nuevoNombre,
+                comando.Descripcion,
+                nuevoDescuento,
+                comando.Productos,
+                DateTime.UtcNow);
 
             await _paqueteRepository.GuardarAsync(paquete, cancellationToken)
                 .ConfigureAwait(false);
