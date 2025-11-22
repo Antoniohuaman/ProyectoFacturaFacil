@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using ListaPreciosBC.Domain.Aggregates;
 
 namespace ListaPreciosBC.Application.DTOs
 {
@@ -9,10 +8,7 @@ namespace ListaPreciosBC.Application.DTOs
         public string? Descripcion { get; init; }
         public decimal DescuentoPorcentaje { get; init; }
 
-        /// <summary>
-        /// Productos incluidos en el paquete.
-        /// </summary>
-        public IReadOnlyCollection<ProductoPaquete.LineaProductoPaquete> Productos { get; init; } =
-            new List<ProductoPaquete.LineaProductoPaquete>();
+        public IReadOnlyCollection<PaqueteProductoLineaDto> Productos { get; init; } =
+            new List<PaqueteProductoLineaDto>();
     }
 }

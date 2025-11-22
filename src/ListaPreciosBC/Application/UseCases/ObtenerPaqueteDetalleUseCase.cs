@@ -1,27 +1,32 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using ListaPreciosBC.Application.DTOs;
+using ListaPreciosBC.Application.Mappers;
 using ListaPreciosBC.Domain.Repositories;
+using SharedKernel.Application.Interfaces;
 using SharedKernel.Exceptions;
 using SharedKernel.ValueObjects;
-using System;
 
 namespace ListaPreciosBC.Application.UseCases
 {
     public sealed class ObtenerPaqueteDetalleUseCase
     {
         private readonly IProductoPaqueteRepository _paqueteRepository;
+        private readonly ITenantContext _tenant;
 
-        public ObtenerPaqueteDetalleUseCase(IProductoPaqueteRepository paqueteRepository)
+        public ObtenerPaqueteDetalleUseCase(IProductoPaqueteRepository paqueteRepository, ITenantContext tenant)
         {
-            _paqueteRepository = paqueteRepository;
+            _paqueteRepository = paqueteRepository ?? throw new ArgumentNullException(nameof(paqueteRepository));
+            _tenant = tenant ?? throw new ArgumentNullException(nameof(tenant));
         }
 
         public async Task<PaqueteDetalleDto> EjecutarAsync(
-            EmpresaId empresaId,
             Guid paqueteId,
             CancellationToken cancellationToken)
         {
+            var empresaId = ObtenerEmpresaId();
+
             var paquete = await _paqueteRepository.ObtenerPorIdAsync(
                     empresaId,
                     paqueteId,
@@ -41,8 +46,14 @@ namespace ListaPreciosBC.Application.UseCases
                 Descripcion = paquete.Descripcion,
                 DescuentoPorcentaje = paquete.Descuento.Valor,
                 FechaCreacionUtc = paquete.FechaCreacionUtc,
-                Productos = paquete.Productos
+                Productos = PaqueteApplicationMapper.ConvertirLineasDto(paquete.Productos)
             };
+        }
+
+        private EmpresaId ObtenerEmpresaId()
+        {
+            return _tenant.EmpresaId
+                ?? throw new InvalidOperationException("El contexto de tenant no proporciona EmpresaId.");
         }
     }
 }

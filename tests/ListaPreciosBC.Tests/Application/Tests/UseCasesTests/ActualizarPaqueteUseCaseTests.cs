@@ -12,6 +12,8 @@ using ListaPreciosBC.Domain.Repositories;
 using ListaPreciosBC.Domain.ValueObjects;
 using Moq;
 using NUnit.Framework;
+using SharedKernel.Application.Interfaces;
+using SharedKernel.Events;
 using SharedKernel.Exceptions;
 using SharedKernel.ValueObjects;
 
@@ -22,28 +24,34 @@ namespace ListaPreciosBC.Tests.Application.Tests.UseCasesTests
     {
         private Mock<IProductoPaqueteRepository> _paqueteRepositoryMock = null!;
         private Mock<IUnitOfWork> _unitOfWorkMock = null!;
+        private Mock<ITenantContext> _tenantContextMock = null!;
+        private Mock<IEventBus> _eventBusMock = null!;
         private ActualizarPaqueteUseCase _useCase = null!;
+        private EmpresaId _empresaId = null!;
 
         [SetUp]
         public void SetUp()
         {
             _paqueteRepositoryMock = new Mock<IProductoPaqueteRepository>(MockBehavior.Strict);
             _unitOfWorkMock = new Mock<IUnitOfWork>(MockBehavior.Strict);
+            _tenantContextMock = new Mock<ITenantContext>(MockBehavior.Strict);
+            _eventBusMock = new Mock<IEventBus>(MockBehavior.Strict);
+            _empresaId = EmpresaId.From("EMP-UNIT-TEST");
+            _tenantContextMock.SetupGet(t => t.EmpresaId).Returns(_empresaId);
 
             _useCase = new ActualizarPaqueteUseCase(
                 _paqueteRepositoryMock.Object,
-                _unitOfWorkMock.Object);
+                _unitOfWorkMock.Object,
+                _tenantContextMock.Object,
+                _eventBusMock.Object);
         }
 
         [Test]
         public void EjecutarAsync_DebeLanzarArgumentNullException_SiComandoEsNull()
         {
-            // Arrange
-            var empresaId = EmpresaId.From("EMP-UNIT-TEST");
-
             // Act
             AsyncTestDelegate act = () =>
-                _useCase.EjecutarAsync(empresaId, null!, CancellationToken.None);
+                _useCase.EjecutarAsync(null!, CancellationToken.None);
 
             // Assert
             Assert.That(act, Throws.TypeOf<ArgumentNullException>());
@@ -53,7 +61,6 @@ namespace ListaPreciosBC.Tests.Application.Tests.UseCasesTests
         public void EjecutarAsync_DebeLanzarNotFoundException_SiPaqueteNoExiste()
         {
             // Arrange
-            var empresaId = EmpresaId.From("EMP-UNIT-TEST");
             var paqueteId = Guid.NewGuid();
 
             var comando = new ActualizarPaqueteDto
@@ -61,22 +68,22 @@ namespace ListaPreciosBC.Tests.Application.Tests.UseCasesTests
                 PaqueteId = paqueteId,
                 Nombre = "PAQUETE EDITADO",
                 DescuentoPorcentaje = 15m,
-                Productos = Array.Empty<ProductoPaquete.LineaProductoPaquete>()
+                Productos = Array.Empty<PaqueteProductoLineaDto>()
             };
 
             _paqueteRepositoryMock
-                .Setup(r => r.ObtenerPorIdAsync(empresaId, paqueteId, It.IsAny<CancellationToken>()))
+                .Setup(r => r.ObtenerPorIdAsync(_empresaId, paqueteId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync((ProductoPaquete?)null);
 
             // Act
             AsyncTestDelegate act = () =>
-                _useCase.EjecutarAsync(empresaId, comando, CancellationToken.None);
+                _useCase.EjecutarAsync(comando, CancellationToken.None);
 
             // Assert
             Assert.That(act, Throws.TypeOf<NotFoundException>());
 
             _paqueteRepositoryMock.Verify(
-                r => r.ObtenerPorIdAsync(empresaId, paqueteId, It.IsAny<CancellationToken>()),
+                r => r.ObtenerPorIdAsync(_empresaId, paqueteId, It.IsAny<CancellationToken>()),
                 Times.Once);
 
             _unitOfWorkMock.Verify(
@@ -87,9 +94,8 @@ namespace ListaPreciosBC.Tests.Application.Tests.UseCasesTests
         [Test]
         public async Task EjecutarAsync_DebeEmitirEventoPaqueteActualizado()
         {
-            var empresaId = EmpresaId.From("EMP-UNIT-TEST");
             var paquete = ProductoPaquete.Crear(
-                empresaId,
+                _empresaId,
                 Guid.NewGuid(),
                 NombrePaquete.Crear("Inicial"),
                 PorcentajeDescuentoPaquete.Crear(5m),
@@ -102,10 +108,11 @@ namespace ListaPreciosBC.Tests.Application.Tests.UseCasesTests
             paquete.ClearDomainEvents();
 
             _paqueteRepositoryMock
-                .Setup(r => r.ObtenerPorIdAsync(empresaId, paquete.Id, It.IsAny<CancellationToken>()))
+                .Setup(r => r.ObtenerPorIdAsync(_empresaId, paquete.Id, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(paquete);
 
             PaqueteActualizado? eventoCapturado = null;
+            IReadOnlyCollection<IDomainEvent>? eventosPublicados = null;
 
             _paqueteRepositoryMock
                 .Setup(r => r.GuardarAsync(paquete, It.IsAny<CancellationToken>()))
@@ -113,11 +120,24 @@ namespace ListaPreciosBC.Tests.Application.Tests.UseCasesTests
                 .Callback<ProductoPaquete, CancellationToken>((agg, _) =>
                 {
                     eventoCapturado = agg.DomainEvents.OfType<PaqueteActualizado>().SingleOrDefault();
+                    var linea = agg.Productos.Single();
+                    Assert.That(linea.Cantidad.Valor, Is.EqualTo(5));
+                    Assert.That(linea.PrecioUnitario, Is.EqualTo(15m));
+                    Assert.That(linea.UnidadDeMedida.Codigo, Is.EqualTo("NIU"));
+                    Assert.That((Guid)linea.ProductoId, Is.EqualTo(Guid.Parse("bbbbbbbb-cccc-dddd-eeee-222222222222")));
                 });
 
             _unitOfWorkMock
                 .Setup(u => u.CommitAsync(It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
+
+            _eventBusMock
+                .Setup(b => b.PublishAsync(It.IsAny<System.Collections.Generic.IEnumerable<IDomainEvent>>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask)
+                .Callback<System.Collections.Generic.IEnumerable<IDomainEvent>, CancellationToken>((eventos, _) =>
+                {
+                    eventosPublicados = eventos.ToList();
+                });
 
             var comando = new ActualizarPaqueteDto
             {
@@ -127,16 +147,23 @@ namespace ListaPreciosBC.Tests.Application.Tests.UseCasesTests
                 DescuentoPorcentaje = 20m,
                 Productos = new[]
                 {
-                    ProductoPaquete.CrearLinea(default(ProductoId)!, default(UnidadDeMedida)!, CantidadProductoPaquete.Crear(2), 15m)
+                    new PaqueteProductoLineaDto
+                    {
+                        ProductoId = Guid.Parse("bbbbbbbb-cccc-dddd-eeee-222222222222"),
+                        UnidadMedidaCodigo = "NIU",
+                        Cantidad = 5,
+                        PrecioUnitario = 15m
+                    }
                 }
             };
 
-            await _useCase.EjecutarAsync(empresaId, comando, CancellationToken.None);
+            await _useCase.EjecutarAsync(comando, CancellationToken.None);
 
             Assert.That(eventoCapturado, Is.Not.Null);
-            Assert.That(eventoCapturado!.EmpresaId, Is.EqualTo(empresaId));
+            Assert.That(eventoCapturado!.EmpresaId, Is.EqualTo(_empresaId));
             Assert.That(eventoCapturado!.PaqueteId, Is.EqualTo(paquete.Id));
             Assert.That(eventoCapturado!.Nombre.Valor, Is.EqualTo("Editado"));
+            Assert.That(eventosPublicados, Is.Not.Null);
 
             _paqueteRepositoryMock.Verify(
                 r => r.GuardarAsync(paquete, It.IsAny<CancellationToken>()),
@@ -144,6 +171,10 @@ namespace ListaPreciosBC.Tests.Application.Tests.UseCasesTests
 
             _unitOfWorkMock.Verify(
                 u => u.CommitAsync(It.IsAny<CancellationToken>()),
+                Times.Once);
+
+            _eventBusMock.Verify(
+                b => b.PublishAsync(It.IsAny<System.Collections.Generic.IEnumerable<IDomainEvent>>(), It.IsAny<CancellationToken>()),
                 Times.Once);
         }
     }
