@@ -73,8 +73,10 @@ namespace IndicadoresNegocioBC.Tests.Application.UseCases
             repo.Setup(r => r.UpdateAsync(agg, It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
-            bus.Setup(b => b.PublishAsync(It.IsAny<IDomainEvent>(), It.IsAny<CancellationToken>()))
-               .Returns(Task.CompletedTask);
+                var publicados = new System.Collections.Generic.List<IDomainEvent>();
+                bus.Setup(b => b.PublishAsync(It.IsAny<IDomainEvent>(), It.IsAny<CancellationToken>()))
+                    .Callback<IDomainEvent, CancellationToken>((e, _) => publicados.Add(e))
+                    .Returns(Task.CompletedTask);
 
             var input = new ConsolidarIndicadorInputDto(tipo, periodo, segmento, ahora: new DateTimeOffset(2025, 1, 31, 23, 59, 59, TimeSpan.Zero));
 
@@ -89,7 +91,12 @@ namespace IndicadoresNegocioBC.Tests.Application.UseCases
             Assert.That(output.Version, Is.EqualTo(2)); // 1 (venta) + 1 (consolidación)
 
             repo.Verify(r => r.UpdateAsync(agg, It.IsAny<CancellationToken>()), Times.Once);
-            bus.Verify(b => b.PublishAsync(It.IsAny<IDomainEvent>(), It.IsAny<CancellationToken>()), Times.Once);
+            bus.Verify(b => b.PublishAsync(It.IsAny<IDomainEvent>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
+
+            Assert.That(publicados.Count, Is.EqualTo(2));
+            var tipos = publicados.ConvertAll(e => e.GetType().Name);
+            Assert.That(tipos, Does.Contain("IndicadorNegocioActualizado"));
+            Assert.That(tipos, Does.Contain("IndicadorNegocioConsolidado"));
         }
 
         [Test]

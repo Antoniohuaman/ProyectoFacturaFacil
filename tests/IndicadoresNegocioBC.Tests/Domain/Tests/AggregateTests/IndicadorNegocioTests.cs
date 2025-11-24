@@ -166,5 +166,43 @@ namespace IndicadoresNegocioBC.Tests.Domain
             agg.RegistrarAnulacion(v.ComprobanteId);
             Assert.That(agg.TotalVentas.Monto, Is.EqualTo(totalDespues.Monto));
         }
+
+        [Test]
+        public void RegistrarVentaAceptada_EnIndicadorConsolidado_DeberiaFallarYSinCambios()
+        {
+            var agg = NuevoIndicador();
+            var ventaInicial = Venta(tipo: "Factura", subtotal: 150m);
+            agg.RegistrarVentaAceptada(ventaInicial);
+            var versionAntes = agg.Version;
+            var totalAntes = agg.TotalVentas;
+
+            agg.ConsolidarPeriodo();
+            Assert.That(agg.Estado, Is.EqualTo(EstadoIndicador.Consolidado));
+            var versionConsolidado = agg.Version;
+
+            var nuevaVenta = Venta(tipo: "Factura", subtotal: 50m);
+
+            Assert.That(() => agg.RegistrarVentaAceptada(nuevaVenta), Throws.InvalidOperationException);
+            Assert.That(agg.Version, Is.EqualTo(versionConsolidado));
+            Assert.That(agg.TotalVentas.Monto, Is.EqualTo(totalAntes.Monto));
+        }
+
+        [Test]
+        public void RegistrarAnulacion_EnIndicadorConsolidado_DeberiaFallarYSinCambios()
+        {
+            var agg = NuevoIndicador();
+            var venta = Venta(tipo: "Factura", subtotal: 100m);
+            agg.RegistrarVentaAceptada(venta);
+            var versionAntes = agg.Version;
+            var totalAntes = agg.TotalVentas;
+
+            agg.ConsolidarPeriodo();
+            Assert.That(agg.Estado, Is.EqualTo(EstadoIndicador.Consolidado));
+            var versionConsolidado = agg.Version;
+
+            Assert.That(() => agg.RegistrarAnulacion(venta.ComprobanteId), Throws.InvalidOperationException);
+            Assert.That(agg.Version, Is.EqualTo(versionConsolidado));
+            Assert.That(agg.TotalVentas.Monto, Is.EqualTo(totalAntes.Monto));
+        }
     }
 }

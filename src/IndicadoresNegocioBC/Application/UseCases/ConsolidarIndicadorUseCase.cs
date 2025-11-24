@@ -69,7 +69,7 @@ namespace IndicadoresNegocioBC.Application.UseCases.IndicadorNegocio
             // 3) Consolidar (mutación de dominio)
             agregado.ConsolidarPeriodo(input.Ahora);
 
-            // 4) Persistir y publicar evento de actualización de estado
+            // 4) Persistir y publicar eventos de dominio
             await _repository.UpdateAsync(agregado, ct);
 
             var evtEstado = new Domain.Events.IndicadorNegocioEvents.IndicadorNegocioActualizado(
@@ -79,6 +79,14 @@ namespace IndicadoresNegocioBC.Application.UseCases.IndicadorNegocio
                 version: agregado.Version
             );
             await _eventBus.PublishAsync(evtEstado, ct);
+
+            var evtConsolidado = new Domain.Events.IndicadorNegocioEvents.IndicadorNegocioConsolidado(
+                indicadorId: agregado.IndicadorId,
+                periodo: agregado.Periodo,
+                consolidadoEn: agregado.ConsolidadoEn ?? input.Ahora ?? DateTimeOffset.UtcNow,
+                version: agregado.Version
+            );
+            await _eventBus.PublishAsync(evtConsolidado, ct);
 
             // 5) Salida
             return new ConsolidarIndicadorOutputDto(

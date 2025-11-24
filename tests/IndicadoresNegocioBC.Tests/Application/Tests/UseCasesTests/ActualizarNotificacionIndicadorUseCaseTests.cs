@@ -89,6 +89,39 @@ namespace IndicadoresNegocioBC.Tests.Application.UseCases.Notificaciones
         }
 
         [Test]
+        public async Task Actualizar_MismosDiasEnDistintoOrden_NoDebeGenerarEventoDeDiasSemana()
+        {
+            var repo = new Mock<INotificacionIndicadorRepository>(MockBehavior.Strict);
+            var tenant = new Mock<ITenantContext>(MockBehavior.Strict);
+            var publisher = new Mock<IEventPublisher>(MockBehavior.Strict);
+            var uow = new Mock<IUnitOfWork>(MockBehavior.Strict);
+            var empresa = EmpresaDemo();
+            tenant.SetupGet(t => t.EmpresaId).Returns(empresa);
+            var agregado = CrearAgregadoInicial(empresa);
+            agregado.CambiarDiasSemana(new[] { DayOfWeek.Monday, DayOfWeek.Friday });
+            repo.Setup(r => r.GetByIdAsync(agregado.Id)).ReturnsAsync(agregado);
+            repo.Setup(r => r.UpdateAsync(agregado)).Returns(Task.CompletedTask);
+            uow.Setup(u => u.CommitAsync(default)).Returns(Task.CompletedTask);
+            var publicados = new List<IDomainEvent>();
+            publisher.Setup(p => p.PublishAsync(It.IsAny<IDomainEvent>(), default))
+                .Callback<IDomainEvent, System.Threading.CancellationToken>((e, _) => publicados.Add(e))
+                .Returns(Task.CompletedTask);
+
+            var useCase = new ActualizarNotificacionIndicadorUseCase(repo.Object, tenant.Object, publisher.Object, uow.Object);
+            // mismos días pero en distinto orden
+            var input = new ActualizarNotificacionIndicadorInputDto(
+                agregado.Id,
+                nuevosDiasSemana: new[] { DayOfWeek.Friday, DayOfWeek.Monday });
+
+            var output = await useCase.ExecuteAsync(input);
+
+            Assert.That(output.HuboCambios, Is.False);
+            Assert.That(publicados, Is.Empty);
+            repo.Verify(r => r.UpdateAsync(It.IsAny<NotificacionIndicador>()), Times.Never);
+            uow.Verify(u => u.CommitAsync(default), Times.Never);
+        }
+
+        [Test]
         public async Task Actualizar_SinCambios_DeberiaSerIdempotente_SinEventos()
         {
             var repo = new Mock<INotificacionIndicadorRepository>(MockBehavior.Strict);

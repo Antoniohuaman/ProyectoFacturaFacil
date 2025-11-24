@@ -63,17 +63,23 @@ namespace IndicadoresNegocioBC.Application.UseCases.Notificaciones
 
 			if (input.NuevosDiasSemana is not null)
 			{
-				// Comparación simple de arrays (orden irrelevante). Si difieren, aplicar.
-				bool difieren = agregado.DiasSemana is null || agregado.DiasSemana.Length != input.NuevosDiasSemana.Length;
-				if (!difieren)
+				var actuales = agregado.DiasSemana;
+				var nuevos = input.NuevosDiasSemana;
+
+				bool difieren;
+				if (actuales is null || actuales.Length == 0)
 				{
-					for (int i = 0; i < agregado.DiasSemana!.Length; i++)
-					{
-						if (agregado.DiasSemana[i] != input.NuevosDiasSemana[i]) { difieren = true; break; }
-					}
+					difieren = nuevos.Length > 0;
 				}
+				else
+				{
+					var setActuales = actuales.ToHashSet();
+					var setNuevos = nuevos.ToHashSet();
+					difieren = !setActuales.SetEquals(setNuevos);
+				}
+
 				if (difieren)
-					agregado.CambiarDiasSemana(input.NuevosDiasSemana);
+					agregado.CambiarDiasSemana(nuevos);
 			}
 
 			if (input.NuevoDestinatario is not null && input.NuevoDestinatario.ToString() != agregado.Destinatario.ToString())
