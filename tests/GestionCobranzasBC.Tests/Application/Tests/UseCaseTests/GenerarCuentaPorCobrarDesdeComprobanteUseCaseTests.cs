@@ -7,6 +7,7 @@ using GestionCobranzasBC.Application.Interfaces;
 using GestionCobranzasBC.Application.UseCases;
 using Moq;
 using NUnit.Framework;
+using SharedKernel.ValueObjects;
 
 namespace GestionCobranzasBC.Tests.Application.UseCases;
 
@@ -29,9 +30,9 @@ public class GenerarCuentaPorCobrarDesdeComprobanteUseCaseTests
         var domainServiceMock = new Mock<ICobranzasDomainService>();
         domainServiceMock
             .Setup(s => s.GenerarCuentaPorCobrarDesdeComprobanteAsync(
-                tenantId,
-                empresaId,
-                establecimientoId,
+                It.Is<TenantId>(t => t.Value == tenantId),
+                It.Is<EmpresaId>(e => e.Value == empresaId.ToString()),
+                It.Is<EstablecimientoId?>(e => e != null && e.Value == establecimientoId),
                 comprobanteId,
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(cuentaEsperada);
@@ -51,11 +52,11 @@ public class GenerarCuentaPorCobrarDesdeComprobanteUseCaseTests
         Assert.That(resultado, Is.SameAs(cuentaEsperada));
 
         domainServiceMock.Verify(s => s.GenerarCuentaPorCobrarDesdeComprobanteAsync(
-                tenantId,
-                empresaId,
-                establecimientoId,
-                comprobanteId,
-                It.IsAny<CancellationToken>()),
+            It.Is<TenantId>(t => t.Value == tenantId),
+            It.Is<EmpresaId>(e => e.Value == empresaId.ToString()),
+            It.Is<EstablecimientoId?>(e => e != null && e.Value == establecimientoId),
+            comprobanteId,
+            It.IsAny<CancellationToken>()),
             Times.Once);
 
         uowMock.Verify(u => u.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
@@ -76,8 +77,10 @@ public class GenerarCuentaPorCobrarDesdeComprobanteUseCaseTests
             domainServiceMock.Object,
             uowMock.Object);
 
-        Assert.ThrowsAsync<ArgumentException>(async () =>
+        var ex = Assert.ThrowsAsync<ArgumentException>(async () =>
             await useCase.ExecuteAsync(tenantId, empresaId, establecimientoId, comprobanteId));
+
+        Assert.That(ex!.ParamName, Is.EqualTo("tenantId"));
     }
 
     [Test]
@@ -97,9 +100,9 @@ public class GenerarCuentaPorCobrarDesdeComprobanteUseCaseTests
         var domainServiceMock = new Mock<ICobranzasDomainService>();
         domainServiceMock
             .Setup(s => s.GenerarCuentaPorCobrarDesdeComprobanteAsync(
-                tenantId,
-                empresaId,
-                establecimientoId,
+                It.Is<TenantId>(t => t.Value == tenantId),
+                It.Is<EmpresaId>(e => e.Value == empresaId.ToString()),
+                It.Is<EstablecimientoId?>(e => e == null),
                 comprobanteId,
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(cuentaEsperada);
@@ -118,11 +121,11 @@ public class GenerarCuentaPorCobrarDesdeComprobanteUseCaseTests
 
         Assert.That(resultado, Is.SameAs(cuentaEsperada));
         domainServiceMock.Verify(s => s.GenerarCuentaPorCobrarDesdeComprobanteAsync(
-                tenantId,
-                empresaId,
-                establecimientoId,
-                comprobanteId,
-                It.IsAny<CancellationToken>()),
+            It.Is<TenantId>(t => t.Value == tenantId),
+            It.Is<EmpresaId>(e => e.Value == empresaId.ToString()),
+            It.Is<EstablecimientoId?>(e => e == null),
+            comprobanteId,
+            It.IsAny<CancellationToken>()),
             Times.Once);
 
         uowMock.Verify(u => u.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);

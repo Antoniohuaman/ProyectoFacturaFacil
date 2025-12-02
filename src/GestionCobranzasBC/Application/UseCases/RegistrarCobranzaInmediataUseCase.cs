@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using GestionCobranzasBC.Application.DTOs;
 using GestionCobranzasBC.Application.Interfaces;
+using SharedKernel.ValueObjects;
 
 public sealed class RegistrarCobranzaInmediataUseCase
 {
@@ -29,9 +30,28 @@ public sealed class RegistrarCobranzaInmediataUseCase
         {
             throw new ArgumentException("CuentaPorCobrarId no puede ser vacío.", nameof(comando));
         }
+        if (comando.TenantId == Guid.Empty)
+        {
+            throw new ArgumentException("TenantId no puede ser vacío.", nameof(comando));
+        }
+        if (comando.EmpresaId == Guid.Empty)
+        {
+            throw new ArgumentException("EmpresaId no puede ser vacío.", nameof(comando));
+        }
+
+        var tenant = TenantId.From(comando.TenantId);
+        var empresa = EmpresaId.From(comando.EmpresaId.ToString());
+        var establecimiento = comando.EstablecimientoId.HasValue
+            ? EstablecimientoId.From(comando.EstablecimientoId.Value)
+            : null;
 
         var resultado = await _cobranzasDomainService
-            .RegistrarCobranzaInmediataAsync(comando, cancellationToken)
+            .RegistrarCobranzaInmediataAsync(
+                tenant,
+                empresa,
+                establecimiento,
+                comando,
+                cancellationToken)
             .ConfigureAwait(false);
 
         await _unitOfWork.CommitAsync(cancellationToken).ConfigureAwait(false);

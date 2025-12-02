@@ -26,6 +26,7 @@ public sealed class CuentaPorCobrar
     private readonly List<CuotaCredito> _cuotas = new();
 
     private CuentaPorCobrar(
+        TenantId tenantId,
         EmpresaId empresaId,
         EstablecimientoId? establecimientoId,
         CuentaPorCobrarId id,
@@ -37,6 +38,12 @@ public sealed class CuentaPorCobrar
         DateOnly fechaRegistro,
         ToleranciaRedondeo tolerancia)
     {
+        if (tenantId.Value == Guid.Empty)
+        {
+            throw new ArgumentException("TenantId es obligatorio.", nameof(tenantId));
+        }
+
+        TenantId = tenantId;
         EmpresaId = empresaId ?? throw new ArgumentNullException(nameof(empresaId));
         EstablecimientoId = establecimientoId;
 
@@ -73,6 +80,8 @@ public sealed class CuentaPorCobrar
         FechaRegistro = fechaRegistro;
         ToleranciaRedondeo = tolerancia ?? throw new ArgumentNullException(nameof(tolerancia));
     }
+
+    public TenantId TenantId { get; }
 
     public EmpresaId EmpresaId { get; }
 
@@ -112,6 +121,7 @@ public sealed class CuentaPorCobrar
     /// y se suministra como Value Objects para mantener la lógica aislada.
     /// </summary>
     public static CuentaPorCobrar CrearNueva(
+        TenantId tenantId,
         EmpresaId empresaId,
         EstablecimientoId? establecimientoId,
         CuentaPorCobrarId id,
@@ -124,6 +134,7 @@ public sealed class CuentaPorCobrar
         ToleranciaRedondeo tolerancia)
     {
         var cuenta = new CuentaPorCobrar(
+            tenantId,
             empresaId,
             establecimientoId,
             id,
@@ -136,6 +147,7 @@ public sealed class CuentaPorCobrar
             tolerancia);
 
         cuenta.AgregarEvento(new CuentaPorCobrarCreada(
+            cuenta.TenantId,
             cuenta.EmpresaId,
             cuenta.EstablecimientoId,
             cuenta.Id,
@@ -171,6 +183,7 @@ public sealed class CuentaPorCobrar
         FechaUltimaActualizacion = fechaActualizacion;
 
         AgregarEvento(new CuentaPorCobrarActualizada(
+            TenantId,
             EmpresaId,
             EstablecimientoId,
             Id,
@@ -183,6 +196,7 @@ public sealed class CuentaPorCobrar
         if (Estado.EsCancelado)
         {
             AgregarEvento(new CuentaPorCobrarCancelada(
+                TenantId,
                 EmpresaId,
                 EstablecimientoId,
                 Id,
@@ -194,6 +208,7 @@ public sealed class CuentaPorCobrar
         else if (Estado.EsVencido)
         {
             AgregarEvento(new CuentaPorCobrarVencida(
+                TenantId,
                 EmpresaId,
                 EstablecimientoId,
                 Id,
@@ -221,6 +236,7 @@ public sealed class CuentaPorCobrar
         ActualizarEstado(saldoDespuesDePago, estadoDespuesDePago, fechaAplicacion);
 
         AgregarEvento(new PagoAplicadoACuota(
+            TenantId,
             EmpresaId,
             EstablecimientoId,
             Id,

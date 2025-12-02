@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using GestionCobranzasBC.Application.DTOs;
 using GestionCobranzasBC.Application.Interfaces;
+using SharedKernel.ValueObjects;
 
 public sealed class GenerarCuentaPorCobrarDesdeComprobanteUseCase
 {
@@ -31,11 +32,17 @@ public sealed class GenerarCuentaPorCobrarDesdeComprobanteUseCase
         if (empresaId == Guid.Empty) throw new ArgumentException("EmpresaId no puede ser vacío.", nameof(empresaId));
         if (comprobanteId == Guid.Empty) throw new ArgumentException("ComprobanteId no puede ser vacío.", nameof(comprobanteId));
 
+        var tenant = TenantId.From(tenantId);
+        var empresa = EmpresaId.From(empresaId.ToString());
+        var establecimiento = establecimientoId.HasValue
+            ? EstablecimientoId.From(establecimientoId.Value)
+            : null;
+
         var cuenta = await _cobranzasDomainService
             .GenerarCuentaPorCobrarDesdeComprobanteAsync(
-                tenantId,
-                empresaId,
-                establecimientoId,
+                tenant,
+                empresa,
+                establecimiento,
                 comprobanteId,
                 cancellationToken)
             .ConfigureAwait(false);

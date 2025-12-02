@@ -12,6 +12,7 @@ namespace GestionCobranzasBC.Domain.Events;
 public sealed class PagoAplicadoACuota : DomainEvent
 {
     public PagoAplicadoACuota(
+        TenantId tenantId,
         EmpresaId empresaId,
         EstablecimientoId? establecimientoId,
         CuentaPorCobrarId cuentaPorCobrarId,
@@ -24,6 +25,7 @@ public sealed class PagoAplicadoACuota : DomainEvent
         DateTime? occurredOnUtc = null)
         : base(eventId, occurredOnUtc)
     {
+        TenantId = tenantId;
         EmpresaId = empresaId ?? throw new ArgumentNullException(nameof(empresaId));
         EstablecimientoId = establecimientoId;
         CuentaPorCobrarId = cuentaPorCobrarId;
@@ -34,6 +36,7 @@ public sealed class PagoAplicadoACuota : DomainEvent
         FechaPago = fechaPago;
     }
 
+    public TenantId TenantId { get; }
     public EmpresaId EmpresaId { get; }
     public EstablecimientoId? EstablecimientoId { get; }
     public CuentaPorCobrarId CuentaPorCobrarId { get; }

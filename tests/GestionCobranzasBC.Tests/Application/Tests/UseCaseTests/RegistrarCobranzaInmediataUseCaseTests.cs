@@ -5,9 +5,9 @@ using System.Threading.Tasks;
 using GestionCobranzasBC.Application.DTOs;
 using GestionCobranzasBC.Application.Interfaces;
 using GestionCobranzasBC.Application.UseCases;
-using GestionCobranzasBC.Domain.Services;
 using Moq;
 using NUnit.Framework;
+using SharedKernel.ValueObjects;
 
 namespace GestionCobranzasBC.Tests.Application.UseCases;
 
@@ -19,6 +19,9 @@ public class RegistrarCobranzaInmediataUseCaseTests
         var comando = new CobranzaDto
         {
             CuentaPorCobrarId = Guid.NewGuid(),
+            TenantId = Guid.NewGuid(),
+            EmpresaId = Guid.NewGuid(),
+            EstablecimientoId = Guid.NewGuid(),
             MontoTotal = 100m
         };
 
@@ -32,6 +35,9 @@ public class RegistrarCobranzaInmediataUseCaseTests
         var domainServiceMock = new Mock<ICobranzasDomainService>();
         domainServiceMock
             .Setup(s => s.RegistrarCobranzaInmediataAsync(
+                It.Is<TenantId>(t => t.Value == comando.TenantId),
+                It.Is<EmpresaId>(e => e.Value == comando.EmpresaId.ToString()),
+                It.Is<EstablecimientoId?>(e => e != null && e.Value == comando.EstablecimientoId),
                 comando,
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(esperado);
@@ -47,7 +53,10 @@ public class RegistrarCobranzaInmediataUseCaseTests
         Assert.That(resultado, Is.SameAs(esperado));
 
         domainServiceMock.Verify(s => s.RegistrarCobranzaInmediataAsync(
-                comando,
+            It.Is<TenantId>(t => t.Value == comando.TenantId),
+            It.Is<EmpresaId>(e => e.Value == comando.EmpresaId.ToString()),
+            It.Is<EstablecimientoId?>(e => e != null && e.Value == comando.EstablecimientoId),
+            comando,
                 It.IsAny<CancellationToken>()),
             Times.Once);
 
@@ -73,6 +82,50 @@ public class RegistrarCobranzaInmediataUseCaseTests
         var comando = new CobranzaDto
         {
             CuentaPorCobrarId = Guid.Empty,
+            TenantId = Guid.NewGuid(),
+            EmpresaId = Guid.NewGuid(),
+            MontoTotal = 10m
+        };
+
+        var useCase = new RegistrarCobranzaInmediataUseCase(
+            new Mock<ICobranzasDomainService>().Object,
+            new Mock<IUnitOfWorkGestionCobranzas>().Object);
+
+        var ex = Assert.ThrowsAsync<ArgumentException>(async () =>
+            await useCase.ExecuteAsync(comando));
+
+        Assert.That(ex!.ParamName, Is.EqualTo("comando"));
+    }
+
+    [Test]
+    public void ExecuteAsync_TenantIdVacio_LanzaArgumentException()
+    {
+        var comando = new CobranzaDto
+        {
+            CuentaPorCobrarId = Guid.NewGuid(),
+            TenantId = Guid.Empty,
+            EmpresaId = Guid.NewGuid(),
+            MontoTotal = 10m
+        };
+
+        var useCase = new RegistrarCobranzaInmediataUseCase(
+            new Mock<ICobranzasDomainService>().Object,
+            new Mock<IUnitOfWorkGestionCobranzas>().Object);
+
+        var ex = Assert.ThrowsAsync<ArgumentException>(async () =>
+            await useCase.ExecuteAsync(comando));
+
+        Assert.That(ex!.ParamName, Is.EqualTo("comando"));
+    }
+
+    [Test]
+    public void ExecuteAsync_EmpresaIdVacio_LanzaArgumentException()
+    {
+        var comando = new CobranzaDto
+        {
+            CuentaPorCobrarId = Guid.NewGuid(),
+            TenantId = Guid.NewGuid(),
+            EmpresaId = Guid.Empty,
             MontoTotal = 10m
         };
 

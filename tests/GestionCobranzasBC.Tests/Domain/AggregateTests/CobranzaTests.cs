@@ -14,6 +14,7 @@ namespace GestionCobranzasBC.Tests.Domain.AggregateTests;
 public class CobranzaTests
 {
     private static Dinero CrearPen(decimal monto) => Dinero.Create(monto, Moneda.PEN());
+    private static readonly TenantId Tenant = TenantId.From(Guid.Parse("99999999-8888-7777-6666-555555555555"));
     private static readonly EmpresaId Empresa = EmpresaId.From("20123456789");
     private static readonly EstablecimientoId Establecimiento = EstablecimientoId.From(Guid.Parse("bbbbbbbb-cccc-dddd-eeee-ffffffffffff"));
 
@@ -51,6 +52,7 @@ public class CobranzaTests
 
         // Act
         var cobranza = Cobranza.CrearRegistrada(
+            Tenant,
             Empresa,
             Establecimiento,
             cobranzaId,
@@ -69,6 +71,7 @@ public class CobranzaTests
         Assert.That(cobranza.CuentaPorCobrarId, Is.EqualTo(cuentaId));
         Assert.That(cobranza.NumeroCompleto, Is.EqualTo("CB01-00000011"));
         Assert.That(cobranza.MontoTotal.Monto, Is.EqualTo(2500m));
+        Assert.That(cobranza.TenantId, Is.EqualTo(Tenant));
         Assert.That(cobranza.EmpresaId, Is.EqualTo(Empresa));
         Assert.That(cobranza.EstablecimientoId, Is.EqualTo(Establecimiento));
         Assert.That(cobranza.LineasCobro.Count, Is.EqualTo(2));
@@ -76,7 +79,8 @@ public class CobranzaTests
 
         var evento = cobranza.DomainEvents.OfType<CobranzaRegistrada>().SingleOrDefault();
         Assert.That(evento, Is.Not.Null);
-        Assert.That(evento!.CobranzaId, Is.EqualTo(cobranzaId));
+        Assert.That(evento!.TenantId, Is.EqualTo(Tenant));
+        Assert.That(evento.CobranzaId, Is.EqualTo(cobranzaId));
         Assert.That(evento.NumeroCompleto, Is.EqualTo("CB01-00000011"));
         Assert.That(evento.EmpresaId, Is.EqualTo(Empresa));
         Assert.That(evento.EstablecimientoId, Is.EqualTo(Establecimiento));
@@ -107,6 +111,7 @@ public class CobranzaTests
         // Act + Assert
         Assert.That(
             () => Cobranza.CrearRegistrada(
+                Tenant,
                 Empresa,
                 Establecimiento,
                 cobranzaId,
@@ -121,4 +126,44 @@ public class CobranzaTests
                 tolerancia),
             Throws.TypeOf<CobranzaInvalidaException>());
     }
+
+        [Test]
+        public void CrearRegistrada_con_distribuciones_inconsistentes_lanza_excepcion()
+        {
+            var cobranzaId = CobranzaId.Crear(Guid.NewGuid());
+            var cuentaId = CuentaPorCobrarId.Crear(Guid.NewGuid());
+            var fecha = DateOnly.FromDateTime(DateTime.Today);
+
+            var cajaDestino = CajaDestino.CajaFisica("CAJA PRINCIPAL");
+
+            var linea = LineaCobro.Crear(
+                1,
+                MedioPagoCobranza.DesdeCodigo("001"),
+                CrearPen(300m),
+                cajaDestino,
+                "DEP-002");
+
+            var distribucion1 = DistribucionCuota.Crear(1, CrearPen(200m));
+            var distribucion2 = DistribucionCuota.Crear(2, CrearPen(200m));
+
+            var montoTotal = CrearPen(300m);
+            var tolerancia = ToleranciaRedondeo.Crear(0.01m);
+
+            Assert.That(
+                () => Cobranza.CrearRegistrada(
+                    Tenant,
+                    Empresa,
+                    Establecimiento,
+                    cobranzaId,
+                    cuentaId,
+                    fecha,
+                    "CB02",
+                    2,
+                    cajaDestino,
+                    new[] { linea },
+                    new[] { distribucion1, distribucion2 },
+                    montoTotal,
+                    tolerancia),
+                Throws.TypeOf<CobranzaInvalidaException>());
+        }
 }

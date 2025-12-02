@@ -5,9 +5,9 @@ using System.Threading.Tasks;
 using GestionCobranzasBC.Application.DTOs;
 using GestionCobranzasBC.Application.Interfaces;
 using GestionCobranzasBC.Application.UseCases;
-using GestionCobranzasBC.Domain.Services;
 using Moq;
 using NUnit.Framework;
+using SharedKernel.ValueObjects;
 
 namespace GestionCobranzasBC.Tests.Application.UseCases;
 
@@ -30,9 +30,9 @@ public class EmitirSinCobranzaUseCaseTests
         var domainServiceMock = new Mock<ICobranzasDomainService>();
         domainServiceMock
             .Setup(s => s.EmitirSinCobranzaAsync(
-                tenantId,
-                empresaId,
-                establecimientoId,
+                It.Is<TenantId>(t => t.Value == tenantId),
+                It.Is<EmpresaId>(e => e.Value == empresaId.ToString()),
+                It.Is<EstablecimientoId?>(e => e != null && e.Value == establecimientoId),
                 comprobanteId,
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(cuentaEsperada);
@@ -52,14 +52,32 @@ public class EmitirSinCobranzaUseCaseTests
         Assert.That(resultado, Is.SameAs(cuentaEsperada));
 
         domainServiceMock.Verify(s => s.EmitirSinCobranzaAsync(
-                tenantId,
-                empresaId,
-                establecimientoId,
-                comprobanteId,
-                It.IsAny<CancellationToken>()),
+            It.Is<TenantId>(t => t.Value == tenantId),
+            It.Is<EmpresaId>(e => e.Value == empresaId.ToString()),
+            It.Is<EstablecimientoId?>(e => e != null && e.Value == establecimientoId),
+            comprobanteId,
+            It.IsAny<CancellationToken>()),
             Times.Once);
 
+
         uowMock.Verify(u => u.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Test]
+    public void ExecuteAsync_TenantIdVacio_LanzaArgumentException()
+    {
+        var useCase = new EmitirSinCobranzaUseCase(
+            new Mock<ICobranzasDomainService>().Object,
+            new Mock<IUnitOfWorkGestionCobranzas>().Object);
+
+        var ex = Assert.ThrowsAsync<ArgumentException>(async () =>
+            await useCase.ExecuteAsync(
+                Guid.Empty,
+                Guid.NewGuid(),
+                Guid.NewGuid(),
+                Guid.NewGuid()));
+
+        Assert.That(ex!.ParamName, Is.EqualTo("tenantId"));
     }
 
     [Test]

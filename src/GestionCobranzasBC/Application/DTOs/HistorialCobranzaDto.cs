@@ -9,6 +9,10 @@ public sealed class HistorialCobranzaDto
 {
     public Guid CuentaPorCobrarId { get; init; }
 
+    public Guid TenantId { get; init; }
+    public Guid EmpresaId { get; init; }
+    public Guid? EstablecimientoId { get; init; }
+
     public string NumeroCuentaPorCobrar { get; init; } = string.Empty;
     public string NumeroComprobante { get; init; } = string.Empty;
 

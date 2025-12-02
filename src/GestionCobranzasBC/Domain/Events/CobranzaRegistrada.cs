@@ -10,9 +10,11 @@ namespace GestionCobranzasBC.Domain.Events;
 /// <summary>
 /// Evento emitido cuando se registra una cobranza sobre una cuenta por cobrar.
 /// </summary>
+
 public sealed class CobranzaRegistrada : DomainEvent
 {
 	public CobranzaRegistrada(
+		TenantId tenantId,
 		EmpresaId empresaId,
 		EstablecimientoId? establecimientoId,
 		CobranzaId cobranzaId,
@@ -26,6 +28,7 @@ public sealed class CobranzaRegistrada : DomainEvent
 		DateTime? occurredOnUtc = null)
 		: base(eventId, occurredOnUtc)
 	{
+		TenantId = tenantId;
 		EmpresaId = empresaId ?? throw new ArgumentNullException(nameof(empresaId));
 		EstablecimientoId = establecimientoId;
 		CobranzaId = cobranzaId;
@@ -37,6 +40,7 @@ public sealed class CobranzaRegistrada : DomainEvent
 		LineasCobro = lineasCobro;
 	}
 
+	public TenantId TenantId { get; }
 	public EmpresaId EmpresaId { get; }
 	public EstablecimientoId? EstablecimientoId { get; }
 	public CobranzaId CobranzaId { get; }
