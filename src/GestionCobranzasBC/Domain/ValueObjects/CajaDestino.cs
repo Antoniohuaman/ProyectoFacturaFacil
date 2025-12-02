@@ -19,6 +19,9 @@ public sealed record CajaDestino
     public static CajaDestino Caja(string nombre)
         => Crear(nombre, true);
 
+    /// <summary>Alias para representar cajas físicas internas.</summary>
+    public static CajaDestino CajaFisica(string nombre) => Caja(nombre);
+
     public static CajaDestino Banco(string nombre)
         => Crear(nombre, false);
 

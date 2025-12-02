@@ -1,3 +1,4 @@
+using System;
 using SharedKernel.Exceptions;
 
 namespace GestionCobranzasBC.Domain.ValueObjects;
@@ -17,10 +18,8 @@ public sealed record ToleranciaRedondeo
 
     public static ToleranciaRedondeo Ninguna => new(0m);
 
-    /// <summary>
-    /// Crea una tolerancia entre 0 y 0.05 (5 centimos).
-    /// </summary>
-    public static ToleranciaRedondeo Desde(decimal valor)
+    /// <summary>Crea una tolerancia entre 0 y 0.05 (5 céntimos).</summary>
+    public static ToleranciaRedondeo Crear(decimal valor)
     {
         if (valor < 0m)
         {
@@ -35,6 +34,14 @@ public sealed record ToleranciaRedondeo
         return new ToleranciaRedondeo(decimal.Round(valor, 4));
     }
 
+    /// <summary>
+    /// Alias para compatibilidad con versiones previas del dominio.
+    /// </summary>
+    public static ToleranciaRedondeo Desde(decimal valor) => Crear(valor);
+
     public bool EstaDentro(decimal diferencia)
         => Math.Abs(diferencia) <= Valor;
+
+    public bool EstaDentro(SharedKernel.ValueObjects.Dinero diferencia)
+        => Math.Abs(diferencia.Monto) <= Valor;
 }

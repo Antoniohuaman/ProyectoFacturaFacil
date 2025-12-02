@@ -1,4 +1,5 @@
 using SharedKernel.Exceptions;
+using SharedKernel.ValueObjects;
 
 namespace GestionCobranzasBC.Domain.ValueObjects;
 
@@ -8,26 +9,31 @@ namespace GestionCobranzasBC.Domain.ValueObjects;
 public sealed record DistribucionCuota
 {
     public int NumeroCuota { get; }
-    public decimal Monto { get; }
+    public Dinero Monto { get; }
 
-    private DistribucionCuota(int numeroCuota, decimal monto)
+    private DistribucionCuota(int numeroCuota, Dinero monto)
     {
         NumeroCuota = numeroCuota;
         Monto = monto;
     }
 
-    public static DistribucionCuota Crear(int numeroCuota, decimal monto)
+    public static DistribucionCuota Crear(int numeroCuota, Dinero monto)
     {
         if (numeroCuota <= 0)
         {
             throw new BusinessRuleException("El número de cuota debe ser mayor o igual a 1.");
         }
 
-        if (monto <= 0m)
+        if (monto is null)
+        {
+            throw new BusinessRuleException("El monto asignado no puede ser nulo.");
+        }
+
+        if (monto.Monto <= 0m)
         {
             throw new BusinessRuleException("El monto asignado a la cuota debe ser mayor a cero.");
         }
 
-        return new DistribucionCuota(numeroCuota, decimal.Round(monto, 2));
+        return new DistribucionCuota(numeroCuota, monto);
     }
 }

@@ -1,18 +1,38 @@
 using System;
+using GestionCobranzasBC.Domain.Entities;
+using GestionCobranzasBC.Domain.ValueObjects;
 using SharedKernel.Events;
 
 namespace GestionCobranzasBC.Domain.Events;
 
 /// <summary>
-/// Se dispara cuando se crea una cuenta por cobrar a partir de un comprobante.
+/// Evento emitido cuando se crea una cuenta por cobrar.
 /// </summary>
-public sealed record CuentaPorCobrarCreada(
-    string CuentaPorCobrarId,
-    string ComprobanteId,
-    string TipoDocumento, // 01, 03, etc.
-    string Serie,
-    string Numero,
-    DateOnly FechaEmision,
-    string MonedaCodigo,
-    decimal ImporteTotal
-) : DomainEvent;
+public sealed class CuentaPorCobrarCreada : DomainEvent
+{
+    public CuentaPorCobrarCreada(
+        CuentaPorCobrarId cuentaPorCobrarId,
+        DocumentoOrigen documentoOrigen,
+        Guid clienteId,
+        SaldoPendiente saldo,
+        EstadoCuentaPorCobrar estado,
+        DateOnly fechaRegistro,
+        Guid? eventId = null,
+        DateTime? occurredOnUtc = null)
+        : base(eventId, occurredOnUtc)
+    {
+        CuentaPorCobrarId = cuentaPorCobrarId;
+        DocumentoOrigen = documentoOrigen;
+        ClienteId = clienteId;
+        Saldo = saldo;
+        Estado = estado;
+        FechaRegistro = fechaRegistro;
+    }
+
+    public CuentaPorCobrarId CuentaPorCobrarId { get; }
+    public DocumentoOrigen DocumentoOrigen { get; }
+    public Guid ClienteId { get; }
+    public SaldoPendiente Saldo { get; }
+    public EstadoCuentaPorCobrar Estado { get; }
+    public DateOnly FechaRegistro { get; }
+}

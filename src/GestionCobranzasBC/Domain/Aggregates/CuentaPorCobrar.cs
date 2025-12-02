@@ -34,7 +34,12 @@ public sealed class CuentaPorCobrar
         DateOnly fechaRegistro,
         ToleranciaRedondeo tolerancia)
     {
-        Id = id ?? throw new ArgumentNullException(nameof(id));
+        if (id == default)
+        {
+            throw new ArgumentException("El identificador de la cuenta por cobrar es obligatorio.", nameof(id));
+        }
+
+        Id = id;
         DocumentoOrigen = documentoOrigen ?? throw new ArgumentNullException(nameof(documentoOrigen));
 
         if (clienteId == Guid.Empty)
@@ -189,7 +194,7 @@ public sealed class CuentaPorCobrar
         EstadoCuentaPorCobrar estadoDespuesDePago,
         DateOnly fechaAplicacion)
     {
-        if (cobranzaId is null) throw new ArgumentNullException(nameof(cobranzaId));
+        if (cobranzaId == default) throw new ArgumentException("El identificador de la cobranza es obligatorio.", nameof(cobranzaId));
 
         ActualizarEstado(saldoDespuesDePago, estadoDespuesDePago, fechaAplicacion);
 
@@ -200,6 +205,11 @@ public sealed class CuentaPorCobrar
             Saldo,
             Estado,
             fechaAplicacion));
+    }
+
+    public bool TieneCuotasVencidas(DateOnly fechaReferencia)
+    {
+        return _cuotas.Any(c => c.Saldo.Monto > 0m && c.FechaVencimiento < fechaReferencia);
     }
 
     #endregion

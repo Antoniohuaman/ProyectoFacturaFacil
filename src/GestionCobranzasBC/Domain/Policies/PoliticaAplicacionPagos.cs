@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using ProyectoFacturaFacil.GestionCobranzasBC.Domain.Entities;
+using GestionCobranzasBC.Domain.Entities;
 
-namespace ProyectoFacturaFacil.GestionCobranzasBC.Domain.Policies;
+namespace GestionCobranzasBC.Domain.Policies;
 
 /// <summary>
 /// Define la política de cómo se deben aplicar los pagos sobre las cuotas.

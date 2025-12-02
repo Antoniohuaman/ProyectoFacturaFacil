@@ -1,3 +1,4 @@
+using System;
 using SharedKernel.Exceptions;
 
 namespace GestionCobranzasBC.Domain.ValueObjects;
@@ -10,6 +11,12 @@ public readonly record struct CobranzaId
     {
         Value = value;
     }
+
+    public static CobranzaId New()
+        => new(Guid.NewGuid());
+
+    public static CobranzaId From(Guid value)
+        => Crear(value);
 
     public static CobranzaId Crear(Guid value)
     {

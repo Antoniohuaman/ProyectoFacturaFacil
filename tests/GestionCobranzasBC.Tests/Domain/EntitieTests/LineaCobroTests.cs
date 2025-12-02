@@ -2,6 +2,7 @@ using GestionCobranzasBC.Domain.Entities;
 using GestionCobranzasBC.Domain.ValueObjects;
 using NUnit.Framework;
 using SharedKernel.Exceptions;
+using SharedKernel.ValueObjects;
 
 namespace GestionCobranzasBC.Tests.Domain.EntitieTests;
 
@@ -14,6 +15,9 @@ public class LineaCobroTests
     private static CajaDestino CrearCajaDestinoDefault()
         => CajaDestino.Crear("CAJA PRINCIPAL");
 
+    private static Dinero CrearDinero(decimal monto)
+        => Dinero.Crear(monto, Moneda.Soles());
+
     [Test]
     public void Crear_con_datos_validos_inicializa_correctamente()
     {
@@ -21,13 +25,13 @@ public class LineaCobroTests
         var linea = LineaCobro.Crear(
             1,
             CrearMedioPagoDefault(),
-            250m,
+            CrearDinero(250m),
             CrearCajaDestinoDefault(),
             "OP-123");
 
         // Assert
         Assert.That(linea.NumeroLinea, Is.EqualTo(1));
-        Assert.That(linea.Importe, Is.EqualTo(250m));
+        Assert.That(linea.Monto.Monto, Is.EqualTo(250m));
         Assert.That(linea.MedioPago.Codigo, Is.EqualTo("008"));
         Assert.That(linea.ReferenciaOperacion, Is.EqualTo("OP-123"));
         Assert.That(linea.CajaDestino, Is.Not.Null);
@@ -42,12 +46,12 @@ public class LineaCobroTests
             _ = LineaCobro.Crear(
                 1,
                 CrearMedioPagoDefault(),
-                0m,
+                CrearDinero(0m),
                 CrearCajaDestinoDefault(),
                 null);
         });
 
-        Assert.That(ex!.Message, Does.Contain("importe de la línea de cobro"));
+        Assert.That(ex!.Message, Does.Contain("monto de la línea de cobro"));
     }
 
     [Test]
@@ -59,50 +63,12 @@ public class LineaCobroTests
             _ = LineaCobro.Crear(
                 0,
                 CrearMedioPagoDefault(),
-                100m,
+                CrearDinero(100m),
                 CrearCajaDestinoDefault(),
                 null);
         });
 
         Assert.That(ex!.Message, Does.Contain("número de línea"));
-    }
-
-    [Test]
-    public void ActualizarImporte_con_valor_valido_actualiza_propiedad()
-    {
-        // Arrange
-        var linea = LineaCobro.Crear(
-            1,
-            CrearMedioPagoDefault(),
-            100m,
-            CrearCajaDestinoDefault(),
-            null);
-
-        // Act
-        linea.ActualizarImporte(180m);
-
-        // Assert
-        Assert.That(linea.Importe, Is.EqualTo(180m));
-    }
-
-    [Test]
-    public void ActualizarImporte_con_valor_no_valido_lanza_excepcion()
-    {
-        // Arrange
-        var linea = LineaCobro.Crear(
-            1,
-            CrearMedioPagoDefault(),
-            100m,
-            CrearCajaDestinoDefault(),
-            null);
-
-        // Act & Assert
-        var ex = Assert.Throws<BusinessRuleException>(() =>
-        {
-            linea.ActualizarImporte(0m);
-        });
-
-        Assert.That(ex!.Message, Does.Contain("importe de la línea de cobro"));
     }
 
     [Test]
@@ -112,7 +78,7 @@ public class LineaCobroTests
         var linea = LineaCobro.Crear(
             1,
             CrearMedioPagoDefault(),
-            100m,
+            CrearDinero(100m),
             CrearCajaDestinoDefault(),
             "   OP-1   ");
 

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using GestionCobranzasBC.Domain.Entities;
 using GestionCobranzasBC.Domain.Events;
+using GestionCobranzasBC.Domain.Exceptions;
 using GestionCobranzasBC.Domain.ValueObjects;
 using SharedKernel.Events;
 using SharedKernel.ValueObjects;
@@ -39,10 +40,18 @@ public sealed class Cobranza
         Dinero montoTotal,
         ToleranciaRedondeo tolerancia)
     {
-        Id = id ?? throw new ArgumentNullException(nameof(id));
+        if (id == default)
+        {
+            throw new ArgumentException("El identificador de cobranza es obligatorio.", nameof(id));
+        }
 
-        CuentaPorCobrarId = cuentaPorCobrarId
-            ?? throw new ArgumentNullException(nameof(cuentaPorCobrarId));
+        if (cuentaPorCobrarId == default)
+        {
+            throw new ArgumentException("El identificador de la cuenta por cobrar es obligatorio.", nameof(cuentaPorCobrarId));
+        }
+
+        Id = id;
+        CuentaPorCobrarId = cuentaPorCobrarId;
 
         if (string.IsNullOrWhiteSpace(serie))
         {

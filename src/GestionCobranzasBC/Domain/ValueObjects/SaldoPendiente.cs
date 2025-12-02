@@ -1,83 +1,115 @@
+using System;
 using SharedKernel.Exceptions;
+using SharedKernel.ValueObjects;
 
 namespace GestionCobranzasBC.Domain.ValueObjects;
 
 /// <summary>
-/// Modelo de saldo de una cuenta por cobrar:
-/// Total emitido, monto cobrado y saldo restante.
+/// Modelo de saldo de una cuenta por cobrar expresado con <see cref="Dinero"/>.
+/// Mantiene el total emitido, lo cobrado y el saldo restante respetando la tolerancia.
 /// </summary>
-public sealed record SaldoPendiente
+public sealed class SaldoPendiente
 {
-    public decimal Total { get; }
-    public decimal Cobrado { get; }
-    public decimal Pendiente => Total - Cobrado;
+    public Dinero Total { get; }
+    public Dinero Cobrado { get; }
+    public Dinero Saldo { get; }
+    public ToleranciaRedondeo Tolerancia { get; }
 
-    private SaldoPendiente(decimal total, decimal cobrado)
+    private SaldoPendiente(Dinero total, Dinero cobrado, Dinero saldo, ToleranciaRedondeo tolerancia)
     {
         Total = total;
         Cobrado = cobrado;
+        Saldo = saldo;
+        Tolerancia = tolerancia;
     }
 
-    public static SaldoPendiente DesdeTotal(decimal total)
+    public static SaldoPendiente Crear(
+        Dinero total,
+        Dinero cobrado,
+        Dinero saldo,
+        ToleranciaRedondeo tolerancia)
     {
-        if (total < 0m)
+        ValidarArgumentos(total, cobrado, saldo, tolerancia);
+
+        var saldoCalculado = total - cobrado;
+        var diferenciaContraParametro = (saldoCalculado - saldo).Monto;
+
+        if (Math.Abs(diferenciaContraParametro) > tolerancia.Valor)
+        {
+            throw new BusinessRuleException("El saldo informado no coincide con el total y lo cobrado dentro de la tolerancia permitida.");
+        }
+
+        var saldoNormalizado = saldoCalculado;
+
+        if (saldoNormalizado.Monto < 0m && tolerancia.EstaDentro(saldoNormalizado.Monto))
+        {
+            saldoNormalizado = Dinero.Crear(0m, total.Moneda);
+            cobrado = total;
+        }
+
+        return new SaldoPendiente(total, cobrado, saldoNormalizado, tolerancia);
+    }
+
+    public SaldoPendiente AplicarCobro(Dinero monto)
+    {
+        if (monto is null)
+        {
+            throw new BusinessRuleException("El monto aplicado no puede ser nulo.");
+        }
+
+        if (monto.Moneda != Total.Moneda)
+        {
+            throw new BusinessRuleException("La moneda del cobro debe coincidir con la de la cuenta.");
+        }
+
+        if (monto.Monto <= 0m)
+        {
+            throw new BusinessRuleException("El monto aplicado debe ser mayor a cero.");
+        }
+
+        var nuevoCobrado = Cobrado + monto;
+        var nuevoSaldo = Total - nuevoCobrado;
+
+        if (nuevoSaldo.Monto < 0m && !Tolerancia.EstaDentro(nuevoSaldo.Monto))
+        {
+            throw new BusinessRuleException("El monto cobrado excede el saldo permitido por la tolerancia.");
+        }
+
+        if (nuevoSaldo.Monto < 0m && Tolerancia.EstaDentro(nuevoSaldo.Monto))
+        {
+            nuevoCobrado = Total;
+            nuevoSaldo = Dinero.Crear(0m, Total.Moneda);
+        }
+
+        return new SaldoPendiente(Total, nuevoCobrado, nuevoSaldo, Tolerancia);
+    }
+
+    public bool EsCancelado => Saldo.Monto <= 0m || Tolerancia.EstaDentro(Saldo.Monto);
+
+    private static void ValidarArgumentos(
+        Dinero total,
+        Dinero cobrado,
+        Dinero saldo,
+        ToleranciaRedondeo tolerancia)
+    {
+        if (total is null) throw new ArgumentNullException(nameof(total));
+        if (cobrado is null) throw new ArgumentNullException(nameof(cobrado));
+        if (saldo is null) throw new ArgumentNullException(nameof(saldo));
+        if (tolerancia is null) throw new ArgumentNullException(nameof(tolerancia));
+
+        if (total.Moneda != cobrado.Moneda || total.Moneda != saldo.Moneda)
+        {
+            throw new BusinessRuleException("Todas las cantidades de dinero deben estar en la misma moneda.");
+        }
+
+        if (total.Monto < 0m)
         {
             throw new BusinessRuleException("El total de la cuenta por cobrar no puede ser negativo.");
         }
 
-        return new SaldoPendiente(decimal.Round(total, 2), 0m);
+        if (cobrado.Monto < 0m)
+        {
+            throw new BusinessRuleException("El monto cobrado no puede ser negativo.");
+        }
     }
-
-    public static SaldoPendiente Restaurar(decimal total, decimal cobrado, ToleranciaRedondeo tolerancia)
-    {
-        if (total < 0m || cobrado < 0m)
-        {
-            throw new BusinessRuleException("Los importes no pueden ser negativos.");
-        }
-
-        var diff = total - cobrado;
-
-        if (diff < 0m && !tolerancia.EstaDentro(diff))
-        {
-            throw new BusinessRuleException("El monto cobrado no puede superar al total más allá de la tolerancia permitida.");
-        }
-
-        var totalRedondeado = decimal.Round(total, 2);
-        var cobradoRedondeado = decimal.Round(cobrado, 2);
-
-        if (diff < 0m && tolerancia.EstaDentro(diff))
-        {
-            // Se acepta sobrediferencia mínima, se ajusta a cero.
-            cobradoRedondeado = totalRedondeado;
-        }
-
-        return new SaldoPendiente(totalRedondeado, cobradoRedondeado);
-    }
-
-    public SaldoPendiente AplicarCobro(decimal monto, ToleranciaRedondeo tolerancia)
-    {
-        if (monto <= 0m)
-        {
-            throw new BusinessRuleException("El monto de la cobranza debe ser mayor a cero.");
-        }
-
-        var nuevoCobrado = Cobrado + monto;
-        var diff = Total - nuevoCobrado;
-
-        if (diff < 0m && !tolerancia.EstaDentro(diff))
-        {
-            throw new BusinessRuleException("El monto cobrado excede el saldo permitido.");
-        }
-
-        if (diff < 0m && tolerancia.EstaDentro(diff))
-        {
-            // Ajuste por redondeo: consideramos la cuenta totalmente cancelada.
-            nuevoCobrado = Total;
-        }
-
-        return new SaldoPendiente(Total, decimal.Round(nuevoCobrado, 2));
-    }
-
-    public bool EstaCancelado(ToleranciaRedondeo tolerancia)
-        => Pendiente <= 0m || tolerancia.EstaDentro(Pendiente);
 }

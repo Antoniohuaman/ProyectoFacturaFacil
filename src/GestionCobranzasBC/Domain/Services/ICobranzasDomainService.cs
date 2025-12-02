@@ -1,8 +1,8 @@
 using System.Threading;
 using System.Threading.Tasks;
-using ProyectoFacturaFacil.GestionCobranzasBC.Domain.Aggregates;
+using GestionCobranzasBC.Domain.Aggregates;
 
-namespace ProyectoFacturaFacil.GestionCobranzasBC.Domain.Services;
+namespace GestionCobranzasBC.Domain.Services;
 
 /// <summary>
 /// Servicio de dominio que coordina la operación de registrar una cobranza

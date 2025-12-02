@@ -4,6 +4,7 @@ using NUnit.Framework;
 using GestionCobranzasBC.Domain.Aggregates;
 using GestionCobranzasBC.Domain.Entities;
 using GestionCobranzasBC.Domain.Events;
+using GestionCobranzasBC.Domain.Exceptions;
 using GestionCobranzasBC.Domain.ValueObjects;
 using SharedKernel.ValueObjects;
 
@@ -30,15 +31,15 @@ public class CobranzaTests
             1,
             MedioPagoCobranza.DesdeCodigo("001"),
             CrearPen(1500m),
-            "DEP-001",
-            cajaDestino);
+            cajaDestino,
+            "DEP-001");
 
         var linea2 = LineaCobro.Crear(
             2,
             MedioPagoCobranza.DesdeCodigo("005"),
             CrearPen(1000m),
-            "TARJ-001",
-            cajaDestino);
+            cajaDestino,
+            "TARJ-001");
 
         var distribucion1 = DistribucionCuota.Crear(1, CrearPen(1250m));
         var distribucion2 = DistribucionCuota.Crear(2, CrearPen(1250m));
@@ -89,8 +90,8 @@ public class CobranzaTests
             1,
             MedioPagoCobranza.DesdeCodigo("001"),
             CrearPen(1000m),
-            "DEP-001",
-            cajaDestino);
+            cajaDestino,
+            "DEP-001");
 
         var montoTotal = CrearPen(500m); // diferente al total de líneas
         var tolerancia = ToleranciaRedondeo.Crear(0.01m);

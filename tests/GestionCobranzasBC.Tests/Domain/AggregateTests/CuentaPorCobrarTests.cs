@@ -45,7 +45,7 @@ public class CuentaPorCobrarTests
             saldo: CrearDinero(250m),
             tolerancia);
 
-        var estado = EstadoCuentaPorCobrar.Pendiente();
+        var estado = EstadoCuentaPorCobrar.Pendiente;
 
         var fechaRegistro = DateOnly.FromDateTime(DateTime.Today);
 
@@ -97,7 +97,7 @@ public class CuentaPorCobrarTests
             CrearDinero(100m),
             tolerancia);
 
-        var estadoInicial = EstadoCuentaPorCobrar.Pendiente();
+        var estadoInicial = EstadoCuentaPorCobrar.Pendiente;
         var fechaRegistro = DateOnly.FromDateTime(DateTime.Today);
 
         var cuenta = CuentaPorCobrar.CrearNueva(
@@ -120,7 +120,7 @@ public class CuentaPorCobrarTests
             CrearDinero(0m),
             tolerancia);
 
-        var estadoDespues = EstadoCuentaPorCobrar.Cancelado();
+        var estadoDespues = EstadoCuentaPorCobrar.Cancelado;
         var fechaPago = DateOnly.FromDateTime(DateTime.Today.AddDays(10));
 
         // Act

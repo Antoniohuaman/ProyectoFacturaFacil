@@ -80,6 +80,11 @@ public sealed record MedioPagoCobranza
     }
 
     /// <summary>
+    /// Alias semántico usado en los tests para expresar la creación desde el catálogo SUNAT.
+    /// </summary>
+    public static MedioPagoCobranza DesdeCodigo(string codigo) => Crear(codigo);
+
+    /// <summary>
     /// Intenta crear un medio de pago sin lanzar excepciones.
     /// </summary>
     public static bool TryCreate(string? codigo, out MedioPagoCobranza? medioPago)

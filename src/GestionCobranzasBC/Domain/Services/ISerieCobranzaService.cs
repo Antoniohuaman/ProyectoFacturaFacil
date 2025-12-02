@@ -2,7 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace ProyectoFacturaFacil.GestionCobranzasBC.Domain.Services;
+namespace GestionCobranzasBC.Domain.Services;
 
 /// <summary>
 /// Servicio de integración con el BC de Configuración para obtener y consumir

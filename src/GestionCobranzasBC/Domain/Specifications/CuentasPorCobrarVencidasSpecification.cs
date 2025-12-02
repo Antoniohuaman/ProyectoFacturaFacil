@@ -1,9 +1,9 @@
 using System;
-using ProyectoFacturaFacil.GestionCobranzasBC.Domain.Aggregates;
-using ProyectoFacturaFacil.GestionCobranzasBC.Domain.ValueObjects;
-using ProyectoFacturaFacil.SharedKernel.Specifications;
+using GestionCobranzasBC.Domain.Aggregates;
+using GestionCobranzasBC.Domain.ValueObjects;
+using SharedKernel.Specifications;
 
-namespace ProyectoFacturaFacil.GestionCobranzasBC.Domain.Specifications;
+namespace GestionCobranzasBC.Domain.Specifications;
 
 /// <summary>
 /// Selecciona cuentas por cobrar vencidas (tienen saldo y al menos una cuota

@@ -1,8 +1,8 @@
-using ProyectoFacturaFacil.GestionCobranzasBC.Domain.Aggregates;
-using ProyectoFacturaFacil.GestionCobranzasBC.Domain.ValueObjects;
-using ProyectoFacturaFacil.SharedKernel.Specifications;
+using GestionCobranzasBC.Domain.Aggregates;
+using GestionCobranzasBC.Domain.ValueObjects;
+using SharedKernel.Specifications;
 
-namespace ProyectoFacturaFacil.GestionCobranzasBC.Domain.Specifications;
+namespace GestionCobranzasBC.Domain.Specifications;
 
 /// <summary>
 /// Selecciona cuentas por cobrar que aún tienen saldo (pendientes o parciales).
@@ -18,7 +18,7 @@ public sealed class CuentasPorCobrarPendientesSpecification : IBooleanSpecificat
 
         var estado = candidate.Estado;
 
-        return estado == EstadoCuentaPorCobrar.Pendiente
+           return estado == EstadoCuentaPorCobrar.Pendiente
                || estado == EstadoCuentaPorCobrar.Parcial;
     }
 }

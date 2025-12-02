@@ -1,71 +1,101 @@
 using GestionCobranzasBC.Domain.ValueObjects;
 using NUnit.Framework;
 using SharedKernel.Exceptions;
+using SharedKernel.ValueObjects;
 
 namespace GestionCobranzasBC.Tests.Domain.ValueObjectsTests;
 
 public class SaldoPendienteTests
 {
-    [Test]
-    public void DesdeTotal_conValorValido_iniciaConCobradoCero()
-    {
-        var saldo = SaldoPendiente.DesdeTotal(100m);
+    private static Dinero CrearDinero(decimal monto) => Dinero.Crear(monto, Moneda.Soles());
 
-        Assert.That(saldo.Total, Is.EqualTo(100m));
-        Assert.That(saldo.Cobrado, Is.EqualTo(0m));
-        Assert.That(saldo.Pendiente, Is.EqualTo(100m));
+    [Test]
+    public void Crear_con_valores_validos_inicia_con_cobrado_cero()
+    {
+        var tolerancia = ToleranciaRedondeo.Crear(0.01m);
+        var saldo = SaldoPendiente.Crear(
+            CrearDinero(100m),
+            CrearDinero(0m),
+            CrearDinero(100m),
+            tolerancia);
+
+        Assert.That(saldo.Total.Monto, Is.EqualTo(100m));
+        Assert.That(saldo.Cobrado.Monto, Is.EqualTo(0m));
+        Assert.That(saldo.Saldo.Monto, Is.EqualTo(100m));
     }
 
     [Test]
-    public void DesdeTotal_conTotalNegativo_lanzaBusinessRuleException()
+    public void Crear_con_total_negativo_lanza_excepcion()
     {
+        var tolerancia = ToleranciaRedondeo.Crear(0.01m);
+
         Assert.That(
-            () => SaldoPendiente.DesdeTotal(-1m),
+            () => SaldoPendiente.Crear(
+                CrearDinero(-1m),
+                CrearDinero(0m),
+                CrearDinero(-1m),
+                tolerancia),
             Throws.TypeOf<BusinessRuleException>());
     }
 
     [Test]
-    public void AplicarCobro_conMontoValido_actualizaCobradoYPendiente()
+    public void AplicarCobro_con_monto_valido_actualiza_totales()
     {
-        var saldo = SaldoPendiente.DesdeTotal(100m);
-        var tolerancia = ToleranciaRedondeo.Ninguna;
+        var tolerancia = ToleranciaRedondeo.Crear(0.01m);
+        var saldo = SaldoPendiente.Crear(
+            CrearDinero(100m),
+            CrearDinero(0m),
+            CrearDinero(100m),
+            tolerancia);
 
-        var actualizado = saldo.AplicarCobro(40m, tolerancia);
+        var actualizado = saldo.AplicarCobro(CrearDinero(40m));
 
-        Assert.That(actualizado.Cobrado, Is.EqualTo(40m));
-        Assert.That(actualizado.Pendiente, Is.EqualTo(60m));
+        Assert.That(actualizado.Cobrado.Monto, Is.EqualTo(40m));
+        Assert.That(actualizado.Saldo.Monto, Is.EqualTo(60m));
     }
 
     [Test]
-    public void AplicarCobro_conMontoMayorTotalSinTolerancia_lanzaBusinessRuleException()
+    public void AplicarCobro_con_monto_mayor_sin_tolerancia_lanza_excepcion()
     {
-        var saldo = SaldoPendiente.DesdeTotal(100m);
-        var tolerancia = ToleranciaRedondeo.Ninguna;
+        var tolerancia = ToleranciaRedondeo.Crear(0m);
+        var saldo = SaldoPendiente.Crear(
+            CrearDinero(100m),
+            CrearDinero(0m),
+            CrearDinero(100m),
+            tolerancia);
 
         Assert.That(
-            () => saldo.AplicarCobro(150m, tolerancia),
+            () => saldo.AplicarCobro(CrearDinero(150m)),
             Throws.TypeOf<BusinessRuleException>());
     }
 
     [Test]
-    public void AplicarCobro_conSobrepagoMenorATolerancia_ajustaACancelado()
+    public void AplicarCobro_con_sobrepago_menor_a_tolerancia_ajusta_a_cero()
     {
-        var saldo = SaldoPendiente.DesdeTotal(100m);
-        var tolerancia = ToleranciaRedondeo.Desde(0.05m);
+        var tolerancia = ToleranciaRedondeo.Crear(0.05m);
+        var saldo = SaldoPendiente.Crear(
+            CrearDinero(100m),
+            CrearDinero(0m),
+            CrearDinero(100m),
+            tolerancia);
 
-        var actualizado = saldo.AplicarCobro(100.03m, tolerancia);
+        var actualizado = saldo.AplicarCobro(CrearDinero(100.03m));
 
-        Assert.That(actualizado.Cobrado, Is.EqualTo(100m));
-        Assert.That(actualizado.Pendiente, Is.EqualTo(0m));
-        Assert.That(actualizado.EstaCancelado(tolerancia), Is.True);
+        Assert.That(actualizado.Cobrado.Monto, Is.EqualTo(100m));
+        Assert.That(actualizado.Saldo.Monto, Is.EqualTo(0m));
+        Assert.That(actualizado.EsCancelado, Is.True);
     }
 
     [Test]
-    public void EstaCancelado_conPendienteDentroDeTolerancia_retornaTrue()
+    public void EsCancelado_con_saldo_dentro_de_tolerancia_retorna_true()
     {
-        var tolerancia = ToleranciaRedondeo.Desde(0.05m);
-        var restaurado = SaldoPendiente.Restaurar(100m, 99.97m, tolerancia);
+        var tolerancia = ToleranciaRedondeo.Crear(0.05m);
+        var saldo = SaldoPendiente.Crear(
+            CrearDinero(100m),
+            CrearDinero(99.97m),
+            CrearDinero(0.03m),
+            tolerancia);
 
-        Assert.That(restaurado.EstaCancelado(tolerancia), Is.True);
+        Assert.That(saldo.EsCancelado, Is.True);
     }
 }

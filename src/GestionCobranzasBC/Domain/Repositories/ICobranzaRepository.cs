@@ -2,11 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using ProyectoFacturaFacil.GestionCobranzasBC.Domain.Aggregates;
-using ProyectoFacturaFacil.GestionCobranzasBC.Domain.ValueObjects;
-using ProyectoFacturaFacil.SharedKernel.Specifications;
+using GestionCobranzasBC.Domain.Aggregates;
+using GestionCobranzasBC.Domain.ValueObjects;
+using SharedKernel.Specifications;
 
-namespace ProyectoFacturaFacil.GestionCobranzasBC.Domain.Repositories;
+namespace GestionCobranzasBC.Domain.Repositories;
 
 /// <summary>
 /// Contrato de persistencia para el agregado Cobranza (documento C1).

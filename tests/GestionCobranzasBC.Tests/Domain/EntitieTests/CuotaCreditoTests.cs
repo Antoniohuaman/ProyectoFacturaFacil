@@ -1,13 +1,18 @@
 using System;
 using GestionCobranzasBC.Domain.Entities;
+using GestionCobranzasBC.Domain.ValueObjects;
 using NUnit.Framework;
 using SharedKernel.Exceptions;
+using SharedKernel.ValueObjects;
 
 namespace GestionCobranzasBC.Tests.Domain.EntitieTests;
 
 [TestFixture]
 public class CuotaCreditoTests
 {
+    private static Dinero CrearDinero(decimal monto)
+        => Dinero.Crear(monto, Moneda.Soles());
+
     [Test]
     public void Crear_con_datos_validos_inicializa_correctamente()
     {
@@ -15,14 +20,14 @@ public class CuotaCreditoTests
         var fecha = new DateOnly(2025, 1, 15);
 
         // Act
-        var cuota = CuotaCredito.Crear(1, fecha, 100m);
+        var cuota = CuotaCredito.Crear(1, fecha, CrearDinero(100m));
 
         // Assert
-        Assert.That(cuota.Numero, Is.EqualTo(1));
+        Assert.That(cuota.NumeroCuota, Is.EqualTo(1));
         Assert.That(cuota.FechaVencimiento, Is.EqualTo(fecha));
-        Assert.That(cuota.ImporteOriginal, Is.EqualTo(100m));
-        Assert.That(cuota.MontoPagado, Is.EqualTo(0m));
-        Assert.That(cuota.Saldo, Is.EqualTo(100m));
+        Assert.That(cuota.ImporteProgramado.Monto, Is.EqualTo(100m));
+        Assert.That(cuota.MontoPagado.Monto, Is.EqualTo(0m));
+        Assert.That(cuota.Saldo.Monto, Is.EqualTo(100m));
     }
 
     [Test]
@@ -31,7 +36,7 @@ public class CuotaCreditoTests
         // Act & Assert
         var ex = Assert.Throws<BusinessRuleException>(() =>
         {
-            _ = CuotaCredito.Crear(0, new DateOnly(2025, 1, 1), 100m);
+            _ = CuotaCredito.Crear(0, new DateOnly(2025, 1, 1), CrearDinero(100m));
         });
 
         Assert.That(ex!.Message, Does.Contain("número de cuota"));
@@ -43,52 +48,55 @@ public class CuotaCreditoTests
         // Act & Assert
         var ex = Assert.Throws<BusinessRuleException>(() =>
         {
-            _ = CuotaCredito.Crear(1, new DateOnly(2025, 1, 1), 0m);
+            _ = CuotaCredito.Crear(1, new DateOnly(2025, 1, 1), CrearDinero(0m));
         });
 
-        Assert.That(ex!.Message, Does.Contain("importe de la cuota"));
+        Assert.That(ex!.Message, Does.Contain("importe programado"));
     }
 
     [Test]
     public void RegistrarPago_actualiza_monto_pagado_y_saldo()
     {
         // Arrange
-        var cuota = CuotaCredito.Crear(1, new DateOnly(2025, 1, 1), 100m);
+        var cuota = CuotaCredito.Crear(1, new DateOnly(2025, 1, 1), CrearDinero(100m));
+        var tolerancia = ToleranciaRedondeo.Crear(0.01m);
 
         // Act
-        cuota.RegistrarPago(40m, 0.01m);
+        cuota.AplicarPago(CrearDinero(40m), tolerancia);
 
         // Assert
-        Assert.That(cuota.MontoPagado, Is.EqualTo(40m));
-        Assert.That(cuota.Saldo, Is.EqualTo(60m));
-        Assert.That(cuota.EstaCancelada(0.01m), Is.False);
+        Assert.That(cuota.MontoPagado.Monto, Is.EqualTo(40m));
+        Assert.That(cuota.Saldo.Monto, Is.EqualTo(60m));
+        Assert.That(cuota.EstaCancelada(tolerancia), Is.False);
     }
 
     [Test]
     public void RegistrarPago_por_el_total_deja_saldo_cero_y_cuota_cancelada()
     {
         // Arrange
-        var cuota = CuotaCredito.Crear(1, new DateOnly(2025, 1, 1), 100m);
+        var cuota = CuotaCredito.Crear(1, new DateOnly(2025, 1, 1), CrearDinero(100m));
+        var tolerancia = ToleranciaRedondeo.Crear(0.01m);
 
         // Act
-        cuota.RegistrarPago(100m, 0.01m);
+        cuota.AplicarPago(CrearDinero(100m), tolerancia);
 
         // Assert
-        Assert.That(cuota.MontoPagado, Is.EqualTo(100m));
-        Assert.That(cuota.Saldo, Is.EqualTo(0m));
-        Assert.That(cuota.EstaCancelada(0.01m), Is.True);
+        Assert.That(cuota.MontoPagado.Monto, Is.EqualTo(100m));
+        Assert.That(cuota.Saldo.Monto, Is.EqualTo(0m));
+        Assert.That(cuota.EstaCancelada(tolerancia), Is.True);
     }
 
     [Test]
     public void RegistrarPago_que_excede_saldo_lanza_excepcion()
     {
         // Arrange
-        var cuota = CuotaCredito.Crear(1, new DateOnly(2025, 1, 1), 100m);
+        var cuota = CuotaCredito.Crear(1, new DateOnly(2025, 1, 1), CrearDinero(100m));
+        var tolerancia = ToleranciaRedondeo.Crear(0.01m);
 
         // Act & Assert
         var ex = Assert.Throws<BusinessRuleException>(() =>
         {
-            cuota.RegistrarPago(150m, 0.01m);
+            cuota.AplicarPago(CrearDinero(150m), tolerancia);
         });
 
         Assert.That(ex!.Message, Does.Contain("excede el saldo permitido"));

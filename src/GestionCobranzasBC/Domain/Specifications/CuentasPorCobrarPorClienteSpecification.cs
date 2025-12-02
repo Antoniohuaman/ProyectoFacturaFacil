@@ -1,8 +1,8 @@
 using System;
-using ProyectoFacturaFacil.GestionCobranzasBC.Domain.Aggregates;
-using ProyectoFacturaFacil.SharedKernel.Specifications;
+using GestionCobranzasBC.Domain.Aggregates;
+using SharedKernel.Specifications;
 
-namespace ProyectoFacturaFacil.GestionCobranzasBC.Domain.Specifications;
+namespace GestionCobranzasBC.Domain.Specifications;
 
 /// <summary>
 /// Filtra cuentas por cobrar pertenecientes a un cliente específico.

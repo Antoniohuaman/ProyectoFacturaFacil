@@ -1,5 +1,6 @@
 using GestionCobranzasBC.Domain.ValueObjects;
 using SharedKernel.Exceptions;
+using SharedKernel.ValueObjects;
 
 namespace GestionCobranzasBC.Domain.Entities;
 
@@ -11,20 +12,20 @@ public sealed class LineaCobro
 {
     public int NumeroLinea { get; private set; }
     public MedioPagoCobranza MedioPago { get; private set; }
-    public decimal Importe { get; private set; }
+    public Dinero Monto { get; private set; }
     public string? ReferenciaOperacion { get; private set; }
     public CajaDestino CajaDestino { get; private set; }
 
     private LineaCobro(
         int numeroLinea,
         MedioPagoCobranza medioPago,
-        decimal importe,
+        Dinero monto,
         CajaDestino cajaDestino,
         string? referenciaOperacion)
     {
         NumeroLinea = numeroLinea;
         MedioPago = medioPago;
-        Importe = importe;
+        Monto = monto;
         CajaDestino = cajaDestino;
         ReferenciaOperacion = string.IsNullOrWhiteSpace(referenciaOperacion)
             ? null
@@ -34,7 +35,7 @@ public sealed class LineaCobro
     public static LineaCobro Crear(
         int numeroLinea,
         MedioPagoCobranza medioPago,
-        decimal importe,
+        Dinero monto,
         CajaDestino cajaDestino,
         string? referenciaOperacion)
     {
@@ -53,22 +54,17 @@ public sealed class LineaCobro
             throw new BusinessRuleException("La caja destino es obligatoria.");
         }
 
-        if (importe <= 0m)
+        if (monto is null)
         {
-            throw new BusinessRuleException("El importe de la línea de cobro debe ser mayor que cero.");
+            throw new BusinessRuleException("El monto de la línea de cobro es obligatorio.");
         }
 
-        return new LineaCobro(numeroLinea, medioPago, importe, cajaDestino, referenciaOperacion);
-    }
-
-    public void ActualizarImporte(decimal nuevoImporte)
-    {
-        if (nuevoImporte <= 0m)
+        if (monto.Monto <= 0m)
         {
-            throw new BusinessRuleException("El importe de la línea de cobro debe ser mayor que cero.");
+            throw new BusinessRuleException("El monto de la línea de cobro debe ser mayor que cero.");
         }
 
-        Importe = nuevoImporte;
+        return new LineaCobro(numeroLinea, medioPago, monto, cajaDestino, referenciaOperacion);
     }
 
     public void ActualizarReferencia(string? nuevaReferencia)

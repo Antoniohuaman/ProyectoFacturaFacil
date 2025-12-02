@@ -11,7 +11,7 @@ public class EstadoCobranzaTests
     {
         var estado = EstadoCobranza.DesdeCodigo("reg");
 
-        Assert.That(estado, Is.EqualTo(EstadoCobranza.Registrada));
+        Assert.That(estado, Is.EqualTo(EstadoCobranza.Registrada()));
         Assert.That(estado.EstaActiva, Is.True);
     }
 
@@ -20,7 +20,7 @@ public class EstadoCobranzaTests
     {
         var estado = EstadoCobranza.DesdeCodigo("ANU");
 
-        Assert.That(estado, Is.EqualTo(EstadoCobranza.Anulada));
+        Assert.That(estado, Is.EqualTo(EstadoCobranza.Anulada("Sin especificar")));
         Assert.That(estado.EstaActiva, Is.False);
     }
 

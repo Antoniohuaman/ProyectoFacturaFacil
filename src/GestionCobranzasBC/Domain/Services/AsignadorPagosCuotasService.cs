@@ -1,11 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using ProyectoFacturaFacil.GestionCobranzasBC.Domain.Entities;
-using ProyectoFacturaFacil.GestionCobranzasBC.Domain.Policies;
-using ProyectoFacturaFacil.GestionCobranzasBC.Domain.ValueObjects;
+using GestionCobranzasBC.Domain.Entities;
+using GestionCobranzasBC.Domain.Policies;
+using GestionCobranzasBC.Domain.ValueObjects;
 
-namespace ProyectoFacturaFacil.GestionCobranzasBC.Domain.Services;
+namespace GestionCobranzasBC.Domain.Services;
 
 /// <summary>
 /// Implementación por defecto del servicio de asignación de pagos

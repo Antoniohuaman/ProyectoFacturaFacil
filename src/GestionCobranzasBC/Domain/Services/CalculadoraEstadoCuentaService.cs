@@ -1,10 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using ProyectoFacturaFacil.GestionCobranzasBC.Domain.Entities;
-using ProyectoFacturaFacil.GestionCobranzasBC.Domain.ValueObjects;
+using GestionCobranzasBC.Domain.Entities;
+using GestionCobranzasBC.Domain.ValueObjects;
+using SharedKernel.ValueObjects;
 
-namespace ProyectoFacturaFacil.GestionCobranzasBC.Domain.Services;
+namespace GestionCobranzasBC.Domain.Services;
 
 /// <summary>
 /// Servicio que calcula el saldo pendiente y el estado de una cuenta por cobrar
@@ -19,13 +20,15 @@ public sealed class CalculadoraEstadoCuentaService
         if (cuotas is null) throw new ArgumentNullException(nameof(cuotas));
         if (tolerancia is null) throw new ArgumentNullException(nameof(tolerancia));
 
+        var moneda = cuotas.First().ImporteProgramado.Moneda;
+
         var total = cuotas.Aggregate(
-            0m,
-            (acc, cuota) => acc + cuota.ImporteOriginal.Monto);
+            Dinero.Crear(0m, moneda),
+            (acc, cuota) => acc + cuota.ImporteProgramado);
 
         var cobrado = cuotas.Aggregate(
-            0m,
-            (acc, cuota) => acc + cuota.MontoPagado.Monto);
+            Dinero.Crear(0m, moneda),
+            (acc, cuota) => acc + cuota.MontoPagado);
 
         var saldo = total - cobrado;
 
@@ -59,8 +62,8 @@ public sealed class CalculadoraEstadoCuentaService
             return EstadoCuentaPorCobrar.Vencido;
         }
 
-        // Si no está cancelada y no hay vencidas, pero hay saldo > 0,
-        // consideramos que está parcial.
-        return EstadoCuentaPorCobrar.Parcial;
+        return saldo.Saldo.Monto < saldo.Total.Monto
+            ? EstadoCuentaPorCobrar.Parcial
+            : EstadoCuentaPorCobrar.Pendiente;
     }
 }

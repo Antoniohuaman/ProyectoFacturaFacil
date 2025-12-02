@@ -1,8 +1,8 @@
 using System.Collections.Generic;
-using ProyectoFacturaFacil.GestionCobranzasBC.Domain.Entities;
-using ProyectoFacturaFacil.GestionCobranzasBC.Domain.ValueObjects;
+using GestionCobranzasBC.Domain.Entities;
+using GestionCobranzasBC.Domain.ValueObjects;
 
-namespace ProyectoFacturaFacil.GestionCobranzasBC.Domain.Services;
+namespace GestionCobranzasBC.Domain.Services;
 
 /// <summary>
 /// Servicio de dominio encargado de aplicar un pago sobre las cuotas
