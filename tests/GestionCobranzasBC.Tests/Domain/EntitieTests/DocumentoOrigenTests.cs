@@ -22,7 +22,7 @@ public class DocumentoOrigenTests
             "fe01",
             "33",
             fecha,
-            Moneda.Soles());
+            Moneda.PEN());
 
         // Assert
         Assert.That(doc.ComprobanteId, Is.EqualTo(comprobanteId));
@@ -55,7 +55,7 @@ public class DocumentoOrigenTests
                 "",
                 "",
                 new DateOnly(2025, 3, 10),
-                Moneda.Soles()),
+                Moneda.PEN()),
             Throws.TypeOf<BusinessRuleException>());
     }
 }

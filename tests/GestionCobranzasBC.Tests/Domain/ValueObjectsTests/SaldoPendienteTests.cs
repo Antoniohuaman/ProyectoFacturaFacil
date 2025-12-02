@@ -7,7 +7,7 @@ namespace GestionCobranzasBC.Tests.Domain.ValueObjectsTests;
 
 public class SaldoPendienteTests
 {
-    private static Dinero CrearDinero(decimal monto) => Dinero.Crear(monto, Moneda.Soles());
+    private static Dinero CrearDinero(decimal monto) => Dinero.Create(monto, Moneda.PEN());
 
     [Test]
     public void Crear_con_valores_validos_inicia_con_cobrado_cero()

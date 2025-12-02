@@ -43,7 +43,7 @@ public sealed class SaldoPendiente
 
         if (saldoNormalizado.Monto < 0m && tolerancia.EstaDentro(saldoNormalizado.Monto))
         {
-            saldoNormalizado = Dinero.Crear(0m, total.Moneda);
+            saldoNormalizado = Dinero.Create(0m, total.Moneda);
             cobrado = total;
         }
 
@@ -78,7 +78,7 @@ public sealed class SaldoPendiente
         if (nuevoSaldo.Monto < 0m && Tolerancia.EstaDentro(nuevoSaldo.Monto))
         {
             nuevoCobrado = Total;
-            nuevoSaldo = Dinero.Crear(0m, Total.Moneda);
+            nuevoSaldo = Dinero.Create(0m, Total.Moneda);
         }
 
         return new SaldoPendiente(Total, nuevoCobrado, nuevoSaldo, Tolerancia);

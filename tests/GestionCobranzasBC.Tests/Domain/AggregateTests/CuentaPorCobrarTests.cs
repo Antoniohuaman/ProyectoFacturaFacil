@@ -12,7 +12,7 @@ namespace GestionCobranzasBC.Tests.Domain.AggregateTests;
 [TestFixture]
 public class CuentaPorCobrarTests
 {
-    private static Dinero CrearDinero(decimal monto) => Dinero.Crear(monto, Moneda.Soles());
+    private static Dinero CrearDinero(decimal monto) => Dinero.Create(monto, Moneda.PEN());
 
     [Test]
     public void CrearNueva_con_datos_validos_registra_evento_Creada()
@@ -25,7 +25,7 @@ public class CuentaPorCobrarTests
             "FE01",
             "00000033",
             DateOnly.FromDateTime(DateTime.Today),
-            Moneda.Soles());
+            Moneda.PEN());
 
         var cuota1 = CuotaCredito.Crear(
             1,
@@ -82,7 +82,7 @@ public class CuentaPorCobrarTests
             "FE01",
             "00000033",
             DateOnly.FromDateTime(DateTime.Today),
-            Moneda.Soles());
+            Moneda.PEN());
 
         var cuota = CuotaCredito.Crear(
             1,

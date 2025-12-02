@@ -23,11 +23,11 @@ public sealed class CalculadoraEstadoCuentaService
         var moneda = cuotas.First().ImporteProgramado.Moneda;
 
         var total = cuotas.Aggregate(
-            Dinero.Crear(0m, moneda),
+            Dinero.Create(0m, moneda),
             (acc, cuota) => acc + cuota.ImporteProgramado);
 
         var cobrado = cuotas.Aggregate(
-            Dinero.Crear(0m, moneda),
+            Dinero.Create(0m, moneda),
             (acc, cuota) => acc + cuota.MontoPagado);
 
         var saldo = total - cobrado;

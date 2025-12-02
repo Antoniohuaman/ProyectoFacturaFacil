@@ -45,7 +45,7 @@ public sealed class CuotaCredito
             numeroCuota,
             fechaVencimiento,
             importeProgramado,
-            Dinero.Crear(0m, importeProgramado.Moneda));
+            Dinero.Create(0m, importeProgramado.Moneda));
     }
 
     public void AplicarPago(Dinero monto, ToleranciaRedondeo tolerancia)

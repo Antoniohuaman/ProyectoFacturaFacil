@@ -13,7 +13,7 @@ namespace GestionCobranzasBC.Tests.Domain.AggregateTests;
 [TestFixture]
 public class CobranzaTests
 {
-    private static Dinero CrearPen(decimal monto) => Dinero.Crear(monto, Moneda.Soles());
+    private static Dinero CrearPen(decimal monto) => Dinero.Create(monto, Moneda.PEN());
 
     [Test]
     public void CrearRegistrada_con_datos_validos_calcula_numeroCompleto_y_registra_evento()
