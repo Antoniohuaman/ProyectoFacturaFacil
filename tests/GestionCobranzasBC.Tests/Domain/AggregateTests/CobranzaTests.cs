@@ -14,6 +14,8 @@ namespace GestionCobranzasBC.Tests.Domain.AggregateTests;
 public class CobranzaTests
 {
     private static Dinero CrearPen(decimal monto) => Dinero.Create(monto, Moneda.PEN());
+    private static readonly EmpresaId Empresa = EmpresaId.From("20123456789");
+    private static readonly EstablecimientoId Establecimiento = EstablecimientoId.From(Guid.Parse("bbbbbbbb-cccc-dddd-eeee-ffffffffffff"));
 
     [Test]
     public void CrearRegistrada_con_datos_validos_calcula_numeroCompleto_y_registra_evento()
@@ -49,6 +51,8 @@ public class CobranzaTests
 
         // Act
         var cobranza = Cobranza.CrearRegistrada(
+            Empresa,
+            Establecimiento,
             cobranzaId,
             cuentaId,
             fecha,
@@ -65,6 +69,8 @@ public class CobranzaTests
         Assert.That(cobranza.CuentaPorCobrarId, Is.EqualTo(cuentaId));
         Assert.That(cobranza.NumeroCompleto, Is.EqualTo("CB01-00000011"));
         Assert.That(cobranza.MontoTotal.Monto, Is.EqualTo(2500m));
+        Assert.That(cobranza.EmpresaId, Is.EqualTo(Empresa));
+        Assert.That(cobranza.EstablecimientoId, Is.EqualTo(Establecimiento));
         Assert.That(cobranza.LineasCobro.Count, Is.EqualTo(2));
         Assert.That(cobranza.DistribucionesCuotas.Count, Is.EqualTo(2));
 
@@ -72,6 +78,8 @@ public class CobranzaTests
         Assert.That(evento, Is.Not.Null);
         Assert.That(evento!.CobranzaId, Is.EqualTo(cobranzaId));
         Assert.That(evento.NumeroCompleto, Is.EqualTo("CB01-00000011"));
+        Assert.That(evento.EmpresaId, Is.EqualTo(Empresa));
+        Assert.That(evento.EstablecimientoId, Is.EqualTo(Establecimiento));
     }
 
     [Test]
@@ -99,6 +107,8 @@ public class CobranzaTests
         // Act + Assert
         Assert.That(
             () => Cobranza.CrearRegistrada(
+                Empresa,
+                Establecimiento,
                 cobranzaId,
                 cuentaId,
                 fecha,

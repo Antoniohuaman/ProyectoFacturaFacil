@@ -5,6 +5,7 @@ using GestionCobranzasBC.Domain.Entities;
 using GestionCobranzasBC.Domain.Events;
 using GestionCobranzasBC.Domain.ValueObjects;
 using SharedKernel.Events;
+using SharedKernel.ValueObjects;
 
 namespace GestionCobranzasBC.Domain.Aggregates;
 
@@ -25,6 +26,8 @@ public sealed class CuentaPorCobrar
     private readonly List<CuotaCredito> _cuotas = new();
 
     private CuentaPorCobrar(
+        EmpresaId empresaId,
+        EstablecimientoId? establecimientoId,
         CuentaPorCobrarId id,
         DocumentoOrigen documentoOrigen,
         Guid clienteId,
@@ -34,6 +37,9 @@ public sealed class CuentaPorCobrar
         DateOnly fechaRegistro,
         ToleranciaRedondeo tolerancia)
     {
+        EmpresaId = empresaId ?? throw new ArgumentNullException(nameof(empresaId));
+        EstablecimientoId = establecimientoId;
+
         if (id == default)
         {
             throw new ArgumentException("El identificador de la cuenta por cobrar es obligatorio.", nameof(id));
@@ -67,6 +73,10 @@ public sealed class CuentaPorCobrar
         FechaRegistro = fechaRegistro;
         ToleranciaRedondeo = tolerancia ?? throw new ArgumentNullException(nameof(tolerancia));
     }
+
+    public EmpresaId EmpresaId { get; }
+
+    public EstablecimientoId? EstablecimientoId { get; }
 
     public CuentaPorCobrarId Id { get; }
 
@@ -102,6 +112,8 @@ public sealed class CuentaPorCobrar
     /// y se suministra como Value Objects para mantener la lógica aislada.
     /// </summary>
     public static CuentaPorCobrar CrearNueva(
+        EmpresaId empresaId,
+        EstablecimientoId? establecimientoId,
         CuentaPorCobrarId id,
         DocumentoOrigen documentoOrigen,
         Guid clienteId,
@@ -112,6 +124,8 @@ public sealed class CuentaPorCobrar
         ToleranciaRedondeo tolerancia)
     {
         var cuenta = new CuentaPorCobrar(
+            empresaId,
+            establecimientoId,
             id,
             documentoOrigen,
             clienteId,
@@ -122,6 +136,8 @@ public sealed class CuentaPorCobrar
             tolerancia);
 
         cuenta.AgregarEvento(new CuentaPorCobrarCreada(
+            cuenta.EmpresaId,
+            cuenta.EstablecimientoId,
             cuenta.Id,
             cuenta.DocumentoOrigen,
             cuenta.ClienteId,
@@ -155,6 +171,8 @@ public sealed class CuentaPorCobrar
         FechaUltimaActualizacion = fechaActualizacion;
 
         AgregarEvento(new CuentaPorCobrarActualizada(
+            EmpresaId,
+            EstablecimientoId,
             Id,
             DocumentoOrigen,
             ClienteId,
@@ -165,6 +183,8 @@ public sealed class CuentaPorCobrar
         if (Estado.EsCancelado)
         {
             AgregarEvento(new CuentaPorCobrarCancelada(
+                EmpresaId,
+                EstablecimientoId,
                 Id,
                 DocumentoOrigen,
                 ClienteId,
@@ -174,6 +194,8 @@ public sealed class CuentaPorCobrar
         else if (Estado.EsVencido)
         {
             AgregarEvento(new CuentaPorCobrarVencida(
+                EmpresaId,
+                EstablecimientoId,
                 Id,
                 DocumentoOrigen,
                 ClienteId,
@@ -199,6 +221,8 @@ public sealed class CuentaPorCobrar
         ActualizarEstado(saldoDespuesDePago, estadoDespuesDePago, fechaAplicacion);
 
         AgregarEvento(new PagoAplicadoACuota(
+            EmpresaId,
+            EstablecimientoId,
             Id,
             cobranzaId,
             DocumentoOrigen,

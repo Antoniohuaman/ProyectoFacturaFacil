@@ -13,6 +13,8 @@ namespace GestionCobranzasBC.Tests.Domain.AggregateTests;
 public class CuentaPorCobrarTests
 {
     private static Dinero CrearDinero(decimal monto) => Dinero.Create(monto, Moneda.PEN());
+    private static readonly EmpresaId Empresa = EmpresaId.From("20123456789");
+    private static readonly EstablecimientoId Establecimiento = EstablecimientoId.From(Guid.Parse("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"));
 
     [Test]
     public void CrearNueva_con_datos_validos_registra_evento_Creada()
@@ -51,6 +53,8 @@ public class CuentaPorCobrarTests
 
         // Act
         var cuenta = CuentaPorCobrar.CrearNueva(
+            Empresa,
+            Establecimiento,
             cuentaId,
             documentoOrigen,
             clienteId,
@@ -64,11 +68,15 @@ public class CuentaPorCobrarTests
         Assert.That(cuenta.Id, Is.EqualTo(cuentaId));
         Assert.That(cuenta.DocumentoOrigen.NumeroCompleto, Is.EqualTo("FE01-00000033"));
         Assert.That(cuenta.Saldo.Saldo.Monto, Is.EqualTo(250m));
+        Assert.That(cuenta.EmpresaId, Is.EqualTo(Empresa));
+        Assert.That(cuenta.EstablecimientoId, Is.EqualTo(Establecimiento));
         Assert.That(cuenta.Estado, Is.EqualTo(estado));
 
         var evento = cuenta.DomainEvents.OfType<CuentaPorCobrarCreada>().SingleOrDefault();
         Assert.That(evento, Is.Not.Null);
         Assert.That(evento!.CuentaPorCobrarId, Is.EqualTo(cuentaId));
+        Assert.That(evento.EmpresaId, Is.EqualTo(Empresa));
+        Assert.That(evento.EstablecimientoId, Is.EqualTo(Establecimiento));
     }
 
     [Test]
@@ -101,6 +109,8 @@ public class CuentaPorCobrarTests
         var fechaRegistro = DateOnly.FromDateTime(DateTime.Today);
 
         var cuenta = CuentaPorCobrar.CrearNueva(
+            Empresa,
+            Establecimiento,
             cuentaId,
             documentoOrigen,
             clienteId,
@@ -138,8 +148,11 @@ public class CuentaPorCobrarTests
         var pagoEvento = cuenta.DomainEvents.OfType<PagoAplicadoACuota>().SingleOrDefault();
         Assert.That(pagoEvento, Is.Not.Null);
         Assert.That(pagoEvento!.CobranzaId, Is.EqualTo(cobranzaId));
+        Assert.That(pagoEvento.EmpresaId, Is.EqualTo(Empresa));
+        Assert.That(pagoEvento.EstablecimientoId, Is.EqualTo(Establecimiento));
 
         var canceladaEvento = cuenta.DomainEvents.OfType<CuentaPorCobrarCancelada>().SingleOrDefault();
         Assert.That(canceladaEvento, Is.Not.Null);
+        Assert.That(canceladaEvento!.EmpresaId, Is.EqualTo(Empresa));
     }
 }

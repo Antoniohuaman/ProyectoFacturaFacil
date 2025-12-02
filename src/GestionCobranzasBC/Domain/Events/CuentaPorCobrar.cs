@@ -2,6 +2,7 @@ using System;
 using GestionCobranzasBC.Domain.Entities;
 using GestionCobranzasBC.Domain.ValueObjects;
 using SharedKernel.Events;
+using SharedKernel.ValueObjects;
 
 namespace GestionCobranzasBC.Domain.Events;
 
@@ -12,6 +13,8 @@ namespace GestionCobranzasBC.Domain.Events;
 public sealed class CuentaPorCobrarGenerica : DomainEvent
 {
     public CuentaPorCobrarGenerica(
+        EmpresaId empresaId,
+        EstablecimientoId? establecimientoId,
         CuentaPorCobrarId cuentaPorCobrarId,
         DocumentoOrigen documentoOrigen,
         string descripcion,
@@ -19,11 +22,15 @@ public sealed class CuentaPorCobrarGenerica : DomainEvent
         DateTime? occurredOnUtc = null)
         : base(eventId, occurredOnUtc)
     {
+        EmpresaId = empresaId ?? throw new ArgumentNullException(nameof(empresaId));
+        EstablecimientoId = establecimientoId;
         CuentaPorCobrarId = cuentaPorCobrarId;
         DocumentoOrigen = documentoOrigen;
         Descripcion = descripcion;
     }
 
+    public EmpresaId EmpresaId { get; }
+    public EstablecimientoId? EstablecimientoId { get; }
     public CuentaPorCobrarId CuentaPorCobrarId { get; }
     public DocumentoOrigen DocumentoOrigen { get; }
     public string Descripcion { get; }

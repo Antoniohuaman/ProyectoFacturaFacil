@@ -13,6 +13,8 @@ namespace GestionCobranzasBC.Domain.Events;
 public sealed class CobranzaRegistrada : DomainEvent
 {
 	public CobranzaRegistrada(
+		EmpresaId empresaId,
+		EstablecimientoId? establecimientoId,
 		CobranzaId cobranzaId,
 		CuentaPorCobrarId cuentaPorCobrarId,
 		string numeroCompleto,
@@ -24,6 +26,8 @@ public sealed class CobranzaRegistrada : DomainEvent
 		DateTime? occurredOnUtc = null)
 		: base(eventId, occurredOnUtc)
 	{
+		EmpresaId = empresaId ?? throw new ArgumentNullException(nameof(empresaId));
+		EstablecimientoId = establecimientoId;
 		CobranzaId = cobranzaId;
 		CuentaPorCobrarId = cuentaPorCobrarId;
 		NumeroCompleto = numeroCompleto;
@@ -33,6 +37,8 @@ public sealed class CobranzaRegistrada : DomainEvent
 		LineasCobro = lineasCobro;
 	}
 
+	public EmpresaId EmpresaId { get; }
+	public EstablecimientoId? EstablecimientoId { get; }
 	public CobranzaId CobranzaId { get; }
 	public CuentaPorCobrarId CuentaPorCobrarId { get; }
 	public string NumeroCompleto { get; }

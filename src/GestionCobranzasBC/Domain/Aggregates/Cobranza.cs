@@ -28,6 +28,8 @@ public sealed class Cobranza
     private readonly List<DistribucionCuota> _distribuciones = new();
 
     private Cobranza(
+        EmpresaId empresaId,
+        EstablecimientoId? establecimientoId,
         CobranzaId id,
         CuentaPorCobrarId cuentaPorCobrarId,
         DateOnly fechaDocumento,
@@ -40,6 +42,9 @@ public sealed class Cobranza
         Dinero montoTotal,
         ToleranciaRedondeo tolerancia)
     {
+        EmpresaId = empresaId ?? throw new ArgumentNullException(nameof(empresaId));
+        EstablecimientoId = establecimientoId;
+
         if (id == default)
         {
             throw new ArgumentException("El identificador de cobranza es obligatorio.", nameof(id));
@@ -95,6 +100,10 @@ public sealed class Cobranza
         ValidarConsistenciaMontos();
     }
 
+    public EmpresaId EmpresaId { get; }
+
+    public EstablecimientoId? EstablecimientoId { get; }
+
     public CobranzaId Id { get; }
 
     public CuentaPorCobrarId CuentaPorCobrarId { get; }
@@ -130,6 +139,8 @@ public sealed class Cobranza
     /// Crea una cobranza registrada (documento C1 emitido).
     /// </summary>
     public static Cobranza CrearRegistrada(
+        EmpresaId empresaId,
+        EstablecimientoId? establecimientoId,
         CobranzaId id,
         CuentaPorCobrarId cuentaPorCobrarId,
         DateOnly fechaDocumento,
@@ -144,6 +155,8 @@ public sealed class Cobranza
         var estadoInicial = EstadoCobranza.Registrada();
 
         var cobranza = new Cobranza(
+            empresaId,
+            establecimientoId,
             id,
             cuentaPorCobrarId,
             fechaDocumento,
@@ -157,6 +170,8 @@ public sealed class Cobranza
             tolerancia);
 
         cobranza.AgregarEvento(new CobranzaRegistrada(
+            cobranza.EmpresaId,
+            cobranza.EstablecimientoId,
             cobranza.Id,
             cobranza.CuentaPorCobrarId,
             cobranza.NumeroCompleto,
